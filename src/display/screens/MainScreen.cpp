@@ -1,6 +1,6 @@
 #include "MainScreen.h"
 
-#include "screens/widgets/ButtonCallbackImpl.h"
+#include "display/widgets/ButtonCallbackImpl.h"
 
 MainScreen::MainScreen(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
                        ScreenManager *screenManager)

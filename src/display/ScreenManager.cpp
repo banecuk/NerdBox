@@ -1,4 +1,4 @@
-#include "core/display/ScreenManager.h"
+#include "display/ScreenManager.h"
 
 ScreenManager::ScreenManager(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
                              SystemState::ScreenState &screenState)

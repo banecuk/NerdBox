@@ -5,7 +5,7 @@
 
 #include "BaseWidget.h"
 #include "ButtonCallback.h"
-#include "core/display/ActionTypes.h"
+#include "display/ActionTypes.h"
 
 class ButtonWidget : public BaseWidget {
    public:

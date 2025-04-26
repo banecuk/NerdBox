@@ -5,9 +5,9 @@
 #include <esp_task_wdt.h>
 
 #include "config/AppConfig.h"
-#include "core/display/ScreenManager.h"
+#include "display/ScreenManager.h"
 #include "core/system/SystemState.h"
-#include "core/utils/Logger.h"
+#include "utils/Logger.h"
 #include "services/PcMetrics.h"
 #include "services/PcMetricsService.h"
 

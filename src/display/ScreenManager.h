@@ -1,11 +1,11 @@
 #pragma once
 
-#include "core/display/ScreenTypes.h"
+#include "display/ScreenTypes.h"
 #include "core/system/SystemState.h"
-#include "core/utils/Logger.h"
-#include "screens/BootScreen.h"
-#include "screens/IScreen.h"
-#include "screens/MainScreen.h"
+#include "utils/Logger.h"
+#include "display/screens/BootScreen.h"
+#include "display/screens/IScreen.h"
+#include "display/screens/MainScreen.h"
 #include "services/PcMetrics.h"
 
 // Forward declaration

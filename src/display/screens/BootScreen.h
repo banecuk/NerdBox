@@ -1,5 +1,5 @@
-#include "core/utils/Logger.h"
-#include "screens/IScreen.h"
+#include "utils/Logger.h"
+#include "display/screens/IScreen.h"
 
 class BootScreen : public IScreen {
    public:

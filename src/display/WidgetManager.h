@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "config/LgfxConfig.h"  // For LGFX type
-#include "core/utils/ILogger.h"
-#include "screens/widgets/IWidget.h"
+#include "utils/ILogger.h"
+#include "display/widgets/IWidget.h"
 
 class WidgetManager {
    public:

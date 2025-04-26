@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#include "screens/widgets/IWidget.h"  // Include the interface
+#include "display/widgets/IWidget.h"  // Include the interface
 
 class BaseWidget : public IWidget {
    public:

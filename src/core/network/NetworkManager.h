@@ -6,8 +6,8 @@
 
 #include "config/AppConfig.h"
 #include "config/Environment.h"
-#include "core/display/ScreenManager.h"
-#include "core/utils/Logger.h"
+#include "display/ScreenManager.h"
+#include "utils/Logger.h"
 
 class NetworkManager {
    public:

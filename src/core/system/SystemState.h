@@ -1,7 +1,7 @@
 #ifndef SYSTEM_STATE_H
 #define SYSTEM_STATE_H
 
-#include "core/display/ScreenTypes.h"
+#include "display/ScreenTypes.h"
 #include "services/PcMetrics.h"
 
 class ScreenManager;  // Forward declaration

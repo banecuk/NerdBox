@@ -6,10 +6,10 @@
 #include <LovyanGFX.hpp>
 
 #include "config/AppConfig.h"
-#include "core/display/ScreenManager.h"
+#include "display/ScreenManager.h"
 #include "core/network/NetworkManager.h"
-#include "core/utils/Logger.h"
-#include "core/utils/TaskManager.h"
+#include "utils/Logger.h"
+#include "core/TaskManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
 

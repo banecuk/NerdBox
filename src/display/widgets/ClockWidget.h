@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "screens/widgets/BaseWidget.h"
+#include "display/widgets/BaseWidget.h"
 
 class ClockWidget : public BaseWidget {
    public:

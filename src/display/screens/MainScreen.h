@@ -1,11 +1,11 @@
 #pragma once
 
-#include "core/display/ScreenManager.h"
-#include "core/display/WidgetManager.h"
-#include "core/utils/Logger.h"
-#include "screens/IScreen.h"
-#include "screens/widgets/ButtonWidget.h"
-#include "screens/widgets/ClockWidget.h"
+#include "display/ScreenManager.h"
+#include "display/WidgetManager.h"
+#include "utils/Logger.h"
+#include "display/screens/IScreen.h"
+#include "display/widgets/ButtonWidget.h"
+#include "display/widgets/ClockWidget.h"
 #include "services/PcMetrics.h"
 
 class MainScreen : public IScreen {
