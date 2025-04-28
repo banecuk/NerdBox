@@ -1,5 +1,5 @@
 #include "ActionHandler.h"
-#include <ESP.h>  // For ESP.restart()
+#include <ESP.h>
 
 ActionHandler::ActionHandler(ScreenManager* screenManager, ILogger& logger, LGFX* lcd)
     : screenManager(screenManager), logger_(logger), lcd_(lcd) {
@@ -9,12 +9,29 @@ ActionHandler::ActionHandler(ScreenManager* screenManager, ILogger& logger, LGFX
 void ActionHandler::registerHandlers() {
     auto& eventBus = EventBus::getInstance();
 
-    eventBus.subscribe("reset_device", [this]() { resetDevice(); });
-    eventBus.subscribe("cycle_brightness", [this]() { cycleBrightness(); });
+    eventBus.subscribe(ActionType::NONE, [this]() {
+        logger_.info("ActionHandler- ActionType::NONE called");
+    });
+    
+
+    eventBus.subscribe(ActionType::RESET_DEVICE, [this]() {
+        resetDevice();
+    });
+    
+    eventBus.subscribe(ActionType::CYCLE_BRIGHTNESS, [this]() {
+        cycleBrightness();
+    });
+    
+    // eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() {
+    //     showSettings();
+    // });
+    
+    // eventBus.subscribe(ActionType::SHOW_ABOUT, [this]() {
+    //     showAbout();
+    // });
 }
 
 void ActionHandler::resetDevice() {
-    logger_.info("ActionHandler::resetDevice() called");
     ESP.restart();
 }
 

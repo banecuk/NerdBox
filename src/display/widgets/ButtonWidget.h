@@ -15,7 +15,7 @@ class ButtonWidget : public BaseWidget {
 
     ButtonWidget(const std::string& label, const Dimensions& dims,
                  uint32_t updateIntervalMs = 0,
-                 ActionType action = ActionType::RESET_DEVICE,
+                 ActionType action = ActionType::NONE,
                  ActionCallback callback = nullptr);
 
     void initialize(LGFX* lcd, ILogger& logger) override;

@@ -24,16 +24,6 @@ class ScreenManager {
     void draw();
     void handleTouchInput();
 
-    // Methods for button actions
-
-    void resetDevice() {
-        EventBus::getInstance().publish("reset_device");
-    }
-    
-    void cycleBrightness() {
-        EventBus::getInstance().publish("cycle_brightness");
-    }
-
    private:
     ILogger& logger_;
     LGFX* lcd_;
@@ -46,7 +36,7 @@ class ScreenManager {
 
     SystemState::ScreenState& screenState_;
 
-    std::unique_ptr<ActionHandler> actionHandler;
+    std::unique_ptr<ActionHandler> actionHandler_;
 };
 
 #include "screens/MainScreen.h"

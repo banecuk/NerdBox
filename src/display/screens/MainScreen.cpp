@@ -18,11 +18,6 @@ MainScreen::MainScreen(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
     logger_.debugf("MainScreen created. Free heap: %d", ESP.getFreeHeap());
 }
 
-// void MainScreen::initialize()
-// {
-//     // Initialization code if needed
-// }
-
 // Destructor override
 MainScreen::~MainScreen() {
     logger_.debug("MainScreen destructor");
@@ -88,57 +83,7 @@ void MainScreen::draw() {
         lcd_->setTextSize(1);
 
         pcMetrics_.is_updated = false;  // Reset update flag
-
-        // Remove the simulated touch from here
-        // btn_.handleTouch(24, 24); // <-- REMOVE THIS
     }
-
-    // Logger Messages (Draws if new messages exist)
-    // Check if queue exists and has content before processing
-    // if (logger_.hasScreenMessages()) { // Add a method like this to your logger
-    //      std::queue<String> screenMessages = logger_.getScreenMessages(); // Careful:
-    //      copies queue? Better: process directly or pass reference
-    //      // Example: Limit messages per draw cycle
-    //      int messagesDrawn = 0;
-    //      int maxMessagesPerCycle = 3;
-    //      while (!screenMessages.empty() && messagesDrawn < maxMessagesPerCycle)
-    //      {
-    //          String msg = screenMessages.front();
-    //          // Simple scrolling log area example (needs improvement for real
-    //          scrolling) lcd_->setCursor(0, 320 - 20); // Example fixed position for
-    //          latest log lcd_->fillRect(0, 320 - 20, lcd_->width(), 10, TFT_BLACK); //
-    //          Clear line lcd_->setTextColor(TFT_GREEN, TFT_BLACK); lcd_->println(msg);
-    //          screenMessages.pop(); // Remove from the *local copy*
-    //          logger_.popScreenMessage(); // Add method to remove from original queue in
-    //          logger messagesDrawn++;
-    //      }
-    // }
-
-    // -----------
-
-    // if (hmData_.is_updated)
-    // {
-    //     logger_.debug("HM draw");
-
-    //     this->lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-    //     lcd_->setTextSize(2);
-    //     lcd_->setCursor(360, 64);
-    //     lcd_->printf("CPU: %i", hmData_.cpu_load);
-    //     lcd_->setCursor(360, 64 + 20);
-    //     lcd_->printf("GPU: %i", hmData_.gpu_load);
-    //     lcd_->setTextSize(1);
-    //     hmData_.is_updated = false;
-    //     btn_.handleTouch(24, 24); // Simulates touch within button area
-    // }
-
-    // std::queue<String> screenMessages = logger_.getScreenMessages();
-    // while (!screenMessages.empty())
-    // {
-    //     String msg = screenMessages.front();
-    //     lcd_->setCursor(0, 320 - 60);
-    //     lcd_->println(msg);
-    //     screenMessages.pop();
-    // }
 }
 
 void MainScreen::handleTouch(uint16_t x, uint16_t y) {
@@ -156,17 +101,5 @@ void MainScreen::handleTouch(uint16_t x, uint16_t y) {
 }
 
 void MainScreen::handleAction(ActionType action) {
-    if (!screenManager_) return;
-
-    switch (action) {
-        case ActionType::RESET_DEVICE:
-            screenManager_->resetDevice();
-            break;
-        case ActionType::CYCLE_BRIGHTNESS:
-            screenManager_->cycleBrightness();
-            break;
-        // Handle other actions
-        default:
-            logger_.warning("Unknown action requested: %d", static_cast<int>(action));
-    }
+    EventBus::getInstance().publish(action);
 }

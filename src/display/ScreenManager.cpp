@@ -1,5 +1,5 @@
 #include "display/ScreenManager.h"
-#include <memory>  // For std::make_unique
+#include <memory>
 
 ScreenManager::ScreenManager(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
                              SystemState::ScreenState &screenState)
@@ -13,7 +13,7 @@ ScreenManager::ScreenManager(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
         throw std::invalid_argument("LGFX pointer cannot be null");
     }
 
-    actionHandler = std::unique_ptr<ActionHandler>(new ActionHandler(this, logger_, lcd_));
+    actionHandler_ = std::unique_ptr<ActionHandler>(new ActionHandler(this, logger_, lcd_));
 
     // Create MainScreen after construction is complete
     mainScreen_ = new MainScreen(logger, lcd, pcMetrics, this);
