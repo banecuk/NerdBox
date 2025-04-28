@@ -1,4 +1,5 @@
 #include "display/ScreenManager.h"
+#include <memory>  // For std::make_unique
 
 ScreenManager::ScreenManager(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
                              SystemState::ScreenState &screenState)
@@ -6,11 +7,13 @@ ScreenManager::ScreenManager(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
       lcd_(lcd),
       pcMetrics_(pcMetrics),
       bootScreen_(logger, lcd),
-      mainScreen_(nullptr),  // Initialize as nullptr
+      mainScreen_(nullptr),
       screenState_(screenState) {
     if (!lcd) {
         throw std::invalid_argument("LGFX pointer cannot be null");
     }
+
+    actionHandler = std::unique_ptr<ActionHandler>(new ActionHandler(this, logger_, lcd_));
 
     // Create MainScreen after construction is complete
     mainScreen_ = new MainScreen(logger, lcd, pcMetrics, this);
@@ -73,34 +76,4 @@ void ScreenManager::handleTouchInput() {
             lastTouchTime = currentTime;
         }
     }
-}
-
-void ScreenManager::resetDevice() {
-    logger_.info("ScreenManager::resetDevice() called");
-
-    // lcd_->fillRect(0, 210, 320, 10, TFT_RED);
-    // Implement actual reset logic
-    ESP.restart();
-}
-
-void ScreenManager::cycleBrightness() {
-    logger_.info("ScreenManager::cycleBrightness() called");
-
-    static uint8_t brightnessLevel = 0;
-    brightnessLevel = (brightnessLevel + 1) % 3;  // Cycle through 3 levels
-
-    uint8_t brightness;
-    switch (brightnessLevel) {
-        case 0:
-            brightness = 25;
-            break;
-        case 1:
-            brightness = 100;
-            break;
-        case 2:
-            brightness = 255;
-            break;
-    }
-
-    lcd_->setBrightness(brightness);
 }

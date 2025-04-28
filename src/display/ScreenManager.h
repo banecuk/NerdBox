@@ -7,9 +7,12 @@
 #include "display/screens/IScreen.h"
 #include "display/screens/MainScreen.h"
 #include "services/PcMetrics.h"
+#include "core/EventBus.h"
+#include "core/ActionHandler.h"
 
 // Forward declaration
 class MainScreen;
+class ActionHandler;
 
 class ScreenManager {
    public:
@@ -22,8 +25,14 @@ class ScreenManager {
     void handleTouchInput();
 
     // Methods for button actions
-    void resetDevice();
-    void cycleBrightness();
+
+    void resetDevice() {
+        EventBus::getInstance().publish("reset_device");
+    }
+    
+    void cycleBrightness() {
+        EventBus::getInstance().publish("cycle_brightness");
+    }
 
    private:
     ILogger& logger_;
@@ -36,6 +45,8 @@ class ScreenManager {
     MainScreen* mainScreen_;
 
     SystemState::ScreenState& screenState_;
+
+    std::unique_ptr<ActionHandler> actionHandler;
 };
 
 #include "screens/MainScreen.h"

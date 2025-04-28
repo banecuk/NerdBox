@@ -21,8 +21,8 @@ constexpr uint16_t kBackoffJitterMs = 50;
 };  // namespace Init
 
 namespace Watchdog {
-constexpr unsigned long kTimeoutMs = 60000;  // 60s timeout, TODO reduce
-constexpr bool kEnableOnBoot = true;
+constexpr unsigned long kTimeoutMs = 120000;  // 2min timeout, TODO reduce, enable
+constexpr bool kEnableOnBoot = false;
 }  // namespace Watchdog
 
 namespace Timing {

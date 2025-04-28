@@ -9,9 +9,9 @@ MainScreen::MainScreen(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
       pcMetrics_(pcMetrics),
       screenManager_(screenManager),
       widgetManager_(logger, lcd),
-      button1_("Reset", {10, 10, 100, 40}, 0, ActionType::RESET_DEVICE,
+      button1_("Reset", {0, 0, 100, 40}, 0, ActionType::RESET_DEVICE,
                [this](ActionType action) { this->handleAction(action); }),
-      button2_("Brightness", {120, 10, 100, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
+      button2_("Brightness", {110, 0, 100, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
                [this](ActionType action) { this->handleAction(action); }),
       clockWidget_({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3) {
     // Add memory check
@@ -58,8 +58,6 @@ void MainScreen::onEnter() {
     lcd_->drawString("Main Dashboard", 5, 290);
     lcd_->setTextSize(1);
 
-    // CHANGE THIS LINE:
-    // widgetManager_.drawWidgets(true);
     widgetManager_.updateAndDrawWidgets(true);  // Force draw for all widgets on entry
 }
 
