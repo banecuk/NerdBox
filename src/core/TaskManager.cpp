@@ -6,7 +6,7 @@ TaskManager::TaskManager(ILogger &logger, UIController &screenManager,
                          SystemState::ScreenState &screenState)
     : logger_(logger),
       uiController_(screenManager),
-      hmDataService_(hmDataService),
+      pcMetricsService_(hmDataService),
       hmData_(hmData),
       coreState_(coreState),
       screenState_(screenState) {}
@@ -105,7 +105,7 @@ void TaskManager::resetWatchdog() {
 }
 
 void TaskManager::updateHmData() {
-    bool fetchSuccess = hmDataService_.fetchData(hmData_);
+    bool fetchSuccess = pcMetricsService_.fetchData(hmData_);
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
         coreState_.nextSync_HardwareMonitor =

@@ -1,6 +1,8 @@
 #include "NetworkManager.h"
 
-NetworkManager::NetworkManager(ILogger &logger) : logger_(logger) {}
+
+NetworkManager::NetworkManager(ILogger &logger, HttpDownloader &httpDownloader)
+        : logger_(logger), httpDownloader_(httpDownloader) {}
 
 bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);

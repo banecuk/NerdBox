@@ -2,17 +2,18 @@
 #define PCMETRICS_SERVICE_H
 
 #include "config/Environment.h"
-#include "core/network/HttpDownloader.h"
+#include "network/NetworkManager.h"
 #include "services/PcMetrics.h"
 
 class PcMetricsService {
    public:
-    PcMetricsService();
+    PcMetricsService(NetworkManager &networkManager);
     bool fetchData(PcMetrics &outData);
 
    private:
     bool parseData(const String &rawData, PcMetrics &outData);
-    HttpDownloader downloader_;
+
+    NetworkManager &networkManager_;
 };
 
 #endif

@@ -29,7 +29,7 @@ class TaskManager {
 
     ILogger &logger_;
     UIController &uiController_;
-    PcMetricsService &hmDataService_;
+    PcMetricsService &pcMetricsService_;
     PcMetrics &hmData_;
     uint8_t consecutiveFailures_ = 0;
 

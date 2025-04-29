@@ -7,7 +7,7 @@
 
 #include "config/AppConfig.h"
 #include "core/TaskManager.h"
-#include "core/network/NetworkManager.h"
+#include "network/NetworkManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
 #include "ui/DisplayDriver.h"
@@ -38,10 +38,11 @@ class SystemInit {
     using State = SystemInitStates::State;
 
     SystemInit(ILogger& logger, SystemState::CoreState& coreState, LGFX& display,
-               DisplayDriver& displayDriver, UIController& uiController,
-               NetworkManager& networkManager, NtpService& ntpService,
-               TaskManager& taskManager, HttpServer& httpServer,
-               SystemState::ScreenState& screenState);
+        DisplayDriver& displayDriver, UIController& uiController,
+        NetworkManager& networkManager, HttpDownloader& httpDownloader,
+        NtpService& ntpService,
+        TaskManager& taskManager, HttpServer& httpServer,
+        SystemState::ScreenState& screenState);
 
     bool initializeAll();
 
@@ -76,6 +77,7 @@ class SystemInit {
     DisplayDriver& displayDriver_;
     UIController& screenManager_;
     NetworkManager& networkManager_;
+    HttpDownloader& httpDownloader_;
     NtpService& ntpService_;
     TaskManager& taskManager_;
     HttpServer& httpServer_;

@@ -7,9 +7,9 @@
 
 #include "config/AppConfig.h"
 #include "core/TaskManager.h"
-#include "core/network/NetworkManager.h"
 #include "core/system/SystemInit.h"
 #include "core/system/SystemState.h"
+#include "network/NetworkManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
 #include "services/PcMetricsService.h"
@@ -46,9 +46,10 @@ class System {
     Logger logger_;
     UIController uiController_;
     NetworkManager networkManager_;
+    HttpDownloader httpDownloader_;
     NtpService ntpService_;
     HttpServer httpServer_;
-    PcMetricsService hmDataService_;
+    PcMetricsService pcMetricsService_;
     TaskManager taskManager_;
 };
 #endif  // SYSTEM_H

@@ -1,10 +1,11 @@
 #include "PcMetricsService.h"
 
-PcMetricsService::PcMetricsService() {}
+PcMetricsService::PcMetricsService(NetworkManager &networkManager)
+: networkManager_(networkManager) {};
 
 bool PcMetricsService::fetchData(PcMetrics &outData) {
     String rawData;
-    if (downloader_.download(OHM_API, rawData)) {
+    if (networkManager_.getHttpDownloader().download(OHM_API, rawData)) {
         return parseData(rawData, outData);
     }
     return false;

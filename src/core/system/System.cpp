@@ -9,16 +9,17 @@ System::System()
       logger_(systemState_.core.isTimeSynced),
       uiController_(logger_, &displayDriver_, systemState_.hmData,
                      systemState_.screen),
-      networkManager_(logger_),
+      networkManager_(logger_, httpDownloader_),
       displayDriver_(display_, logger_),
-      taskManager_(logger_, uiController_, hmDataService_, systemState_.hmData,
+      pcMetricsService_(networkManager_),
+      taskManager_(logger_, uiController_, pcMetricsService_, systemState_.hmData,
                    systemState_.core, systemState_.screen) {}
 
 // Public Methods -------------------------------------------------------------
 
 bool System::initialize() {
     SystemInit initializer(logger_, systemState_.core, display_, displayDriver_,
-                           uiController_, networkManager_, ntpService_, taskManager_,
+                           uiController_, networkManager_, httpDownloader_, ntpService_, taskManager_,
                            httpServer_, systemState_.screen);
 
     if (!initializer.initializeAll()) {

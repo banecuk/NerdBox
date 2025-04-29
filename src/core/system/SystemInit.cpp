@@ -1,21 +1,24 @@
 #include "core/system/SystemInit.h"
 
 SystemInit::SystemInit(ILogger& logger, SystemState::CoreState& coreState, LGFX& display,
-                       DisplayDriver& displayDriver, UIController& uiController,
-                       NetworkManager& networkManager, NtpService& ntpService,
-                       TaskManager& taskManager, HttpServer& httpServer,
-                       SystemState::ScreenState& screenState)
-    : logger_(logger),
-      coreState_(coreState),
-      screenState_(screenState),
-      display_(display),
-      displayDriver_(displayDriver),
-      screenManager_(uiController),
-      networkManager_(networkManager),
-      ntpService_(ntpService),
-      taskManager_(taskManager),
-      httpServer_(httpServer),
-      currentState_(State::INITIAL) {}
+    DisplayDriver& displayDriver, UIController& uiController,
+    NetworkManager& networkManager, 
+    HttpDownloader& httpDownloader,
+    NtpService& ntpService,
+    TaskManager& taskManager, HttpServer& httpServer,
+    SystemState::ScreenState& screenState)
+: logger_(logger),
+coreState_(coreState),
+screenState_(screenState),
+display_(display),
+displayDriver_(displayDriver),
+screenManager_(uiController),
+networkManager_(networkManager),
+httpDownloader_(httpDownloader),
+ntpService_(ntpService),
+taskManager_(taskManager),
+httpServer_(httpServer),
+currentState_(State::INITIAL) {}
 
 bool SystemInit::initializeAll() {
     logger_.info("System initialization started", true);
