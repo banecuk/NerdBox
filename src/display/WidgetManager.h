@@ -1,32 +1,28 @@
-// WidgetManager.h
 #ifndef WIDGETMANAGER_H
 #define WIDGETMANAGER_H
 
-#include <LovyanGFX.hpp>
 #include <vector>
-
-#include "config/LgfxConfig.h"  // For LGFX type
+#include <memory>  // For std::unique_ptr
+#include "config/LgfxConfig.h"
 #include "utils/ILogger.h"
 #include "display/widgets/IWidget.h"
 
 class WidgetManager {
-   public:
+public:
     explicit WidgetManager(ILogger& logger, LGFX* lcd);
     ~WidgetManager();
 
-    void addWidget(IWidget* widget);
+    // Takes ownership of the widget
+    void addWidget(std::unique_ptr<IWidget> widget);
     void initializeWidgets();
-
-    // Updates widgets needing timed updates OR draws all if forceRedraw is true.
     void updateAndDrawWidgets(bool forceRedraw = false);
-
     bool handleTouch(uint16_t x, uint16_t y);
     void cleanupWidgets();
 
-   private:
+private:
     ILogger& logger_;
     LGFX* lcd_;
-    std::vector<IWidget*> widgets_;
+    std::vector<std::unique_ptr<IWidget>> widgets_;
 };
 
 #endif  // WIDGETMANAGER_H

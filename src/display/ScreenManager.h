@@ -1,42 +1,39 @@
 #pragma once
 
-#include "display/ScreenTypes.h"
+#include <memory> // For std::unique_ptr
 #include "core/system/SystemState.h"
-#include "utils/Logger.h"
-#include "display/screens/BootScreen.h"
+#include "display/DisplayManager.h"
+#include "display/ScreenTypes.h"
 #include "display/screens/IScreen.h"
-#include "display/screens/MainScreen.h"
 #include "services/PcMetrics.h"
-#include "core/EventBus.h"
-#include "core/ActionHandler.h"
+#include "utils/Logger.h"
 
-// Forward declaration
+// Forward declarations
+class BootScreen;
 class MainScreen;
 class ActionHandler;
 
 class ScreenManager {
-   public:
-    explicit ScreenManager(ILogger& logger, LGFX* lcd, PcMetrics& hmData,
-                           SystemState::ScreenState& screenState);
+public:
+    explicit ScreenManager(ILogger& logger, DisplayManager* displayManager,
+                         PcMetrics& hmData, SystemState::ScreenState& screenState);
+    ~ScreenManager();
 
     void initialize();
     bool setScreen(ScreenName screenName);
     void draw();
     void handleTouchInput();
 
-   private:
+private:
+    void clearDisplay();
+
     ILogger& logger_;
-    LGFX* lcd_;
+    DisplayManager* displayManager_;
     PcMetrics& pcMetrics_;
-
-    IScreen* currentScreen_;
-
-    BootScreen bootScreen_;
-    MainScreen* mainScreen_;
-
     SystemState::ScreenState& screenState_;
 
+    std::unique_ptr<IScreen> currentScreen_;
+    std::unique_ptr<BootScreen> bootScreen_;
+    std::unique_ptr<MainScreen> mainScreen_;
     std::unique_ptr<ActionHandler> actionHandler_;
 };
-
-#include "screens/MainScreen.h"

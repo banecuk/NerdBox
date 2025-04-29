@@ -6,16 +6,16 @@
 #include <LovyanGFX.hpp>
 
 #include "config/AppConfig.h"
-#include "display/ScreenManager.h"
-#include "display/ScreenTypes.h"
+#include "core/TaskManager.h"
 #include "core/network/NetworkManager.h"
 #include "core/system/SystemInit.h"
 #include "core/system/SystemState.h"
-#include "utils/Logger.h"
-#include "core/TaskManager.h"
-#include "services/PcMetricsService.h"
+#include "display/ScreenManager.h"
+#include "display/ScreenTypes.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
+#include "services/PcMetricsService.h"
+#include "utils/Logger.h"
 
 class System {
    public:
@@ -23,17 +23,22 @@ class System {
     ~System() = default;
 
     // Delete copy/move operations
-    System(const System &) = delete;
-    System &operator=(const System &) = delete;
-    System(System &&) = delete;
-    System &operator=(System &&) = delete;
+    System(const System&) = delete;
+    System& operator=(const System&) = delete;
+    System(System&&) = delete;
+    System& operator=(System&&) = delete;
 
     bool initialize();
     void run();
 
    private:
-    // System components
+    // Component Initialization
+    bool initializeSubsystems();
+    void handleInitializationFailure();
+
+    // System Components
     LGFX display_;
+    DisplayManager displayManager_;
     WebServer webServer_;
 
     // Managers and Services
@@ -45,20 +50,5 @@ class System {
     HttpServer httpServer_;
     PcMetricsService hmDataService_;
     TaskManager taskManager_;
-
-    // Private Methods
-    void initializeSerial();
-    bool initializeSubsystems();
-    bool initializeNetwork(uint8_t maxRetries);
-    bool initializeTimeService(uint8_t maxRetries);
-    bool initializeDisplay(uint8_t maxRetries);
-    void postDisplayInitialization();
-    void handleInitializationFailure();
-    void handleTouchInput();
-    void updateScreenTask(void *parameter);
-    void backgroundTask(void *parameter);
-    bool createTasks();
-    void handleDownloadFailure(uint8_t &consecutiveFailures);
 };
-
 #endif  // SYSTEM_H

@@ -1,17 +1,18 @@
 #pragma once
 
+#include "core/EventBus.h"
 #include "display/ScreenManager.h"
 #include "display/WidgetManager.h"
-#include "utils/Logger.h"
 #include "display/screens/IScreen.h"
 #include "display/widgets/ButtonWidget.h"
 #include "display/widgets/ClockWidget.h"
 #include "services/PcMetrics.h"
+#include "utils/Logger.h"
 
 class MainScreen : public IScreen {
-   public:
+public:
     explicit MainScreen(ILogger &logger, LGFX *lcd, PcMetrics &hmData,
-                        ScreenManager *screenManager);
+                      ScreenManager *screenManager);
     ~MainScreen() override;
 
     void onEnter() override;
@@ -19,7 +20,7 @@ class MainScreen : public IScreen {
     void draw() override;
     void handleTouch(uint16_t x, uint16_t y) override;
 
-   private:
+private:
     ILogger &logger_;
     LGFX *lcd_;
     PcMetrics &pcMetrics_;
@@ -27,10 +28,10 @@ class MainScreen : public IScreen {
 
     WidgetManager widgetManager_;
 
-    // --- Widgets ---
-    ClockWidget clockWidget_;
-    ButtonWidget button1_;
-    ButtonWidget button2_;
+    // Widgets as unique_ptr
+    std::unique_ptr<ClockWidget> clockWidget_;
+    std::unique_ptr<ButtonWidget> button1_;
+    std::unique_ptr<ButtonWidget> button2_;
 
     void handleAction(ActionType action);
 };

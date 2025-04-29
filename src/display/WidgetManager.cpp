@@ -1,24 +1,19 @@
 #include "WidgetManager.h"
 
-WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) : logger_(logger), lcd_(lcd) {
+WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) 
+    : logger_(logger), lcd_(lcd) {
     if (!lcd_) {
         logger_.error("WidgetManager created with null LGFX pointer!");
     }
 }
 
 WidgetManager::~WidgetManager() {
-    if (!widgets_.empty()) {
-        logger_.warning(
-            "WidgetManager destroyed while still holding widgets. Call "
-            "cleanupWidgets() "
-            "explicitly.");
-        widgets_.clear();
-    }
+    cleanupWidgets();
 }
 
-void WidgetManager::addWidget(IWidget* widget) {
+void WidgetManager::addWidget(std::unique_ptr<IWidget> widget) {
     if (widget) {
-        widgets_.push_back(widget);
+        widgets_.push_back(std::move(widget));
     } else {
         logger_.warning("Attempted to add null widget.");
     }
@@ -30,12 +25,12 @@ void WidgetManager::initializeWidgets() {
         return;
     }
     logger_.debug("Initializing %d widgets...", widgets_.size());
-    for (IWidget* widget : widgets_) {
+    for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
     }
 }
 
-void WidgetManager::updateAndDrawWidgets(bool forceRedraw /* = false */) {
+void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
     if (!lcd_) {
         if (forceRedraw) {
             logger_.error("Cannot update/draw widgets: LGFX pointer is null.");
@@ -43,9 +38,8 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw /* = false */) {
         return;
     }
 
-    for (IWidget* widget : widgets_) {
+    for (auto& widget : widgets_) {
         bool needsDraw = forceRedraw || widget->needsUpdate();
-
         if (needsDraw) {
             widget->draw(forceRedraw);
         }
@@ -60,15 +54,13 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 
     logger_.debugf("Checking %d widgets for touch at (%d,%d)", widgets_.size(), x, y);
 
+    // Iterate in reverse to handle top-most widgets first
     for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
-        IWidget* widget = *it;
+        auto& widget = *it;
         IWidget::Dimensions dims = widget->getDimensions();
 
-        logger_.debugf("Checking widget at (%d,%d %dx%d)", dims.x, dims.y, dims.width,
-                       dims.height);
-
-        if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y &&
-            y < (dims.y + dims.height)) {
+        if (x >= dims.x && x < (dims.x + dims.width) && 
+            y >= dims.y && y < (dims.y + dims.height)) {
             logger_.debugf("Widget found at (%d,%d)", x, y);
             if (widget->handleTouch(x, y)) {
                 logger_.debug("Widget handled touch");
@@ -82,10 +74,9 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 
 void WidgetManager::cleanupWidgets() {
     logger_.debugf("Cleaning up %d widgets...", widgets_.size());
-    for (IWidget* widget : widgets_) {
+    for (auto& widget : widgets_) {
         widget->cleanUp();
     }
-    // Clear the list of pointers - does NOT delete the actual widget objects
     widgets_.clear();
     logger_.debug("Widget list cleared.");
 }

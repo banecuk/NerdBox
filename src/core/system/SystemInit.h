@@ -6,67 +6,82 @@
 #include <LovyanGFX.hpp>
 
 #include "config/AppConfig.h"
-#include "display/ScreenManager.h"
-#include "core/network/NetworkManager.h"
-#include "utils/Logger.h"
 #include "core/TaskManager.h"
+#include "core/network/NetworkManager.h"
+#include "display/DisplayManager.h"
+#include "display/ScreenManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
+#include "utils/Logger.h"
+
+namespace SystemInitStates {
+enum class State {
+    INITIAL,
+    SERIAL_INIT,
+    DISPLAY_INIT,
+    TASKS_INIT,
+    NETWORK_INIT,
+    TIME_INIT,
+    WATCHDOG_INIT,
+    FINAL_SETUP,
+    COMPLETE,
+    FAILED
+};
+
+constexpr const char* STATE_NAMES[] = {
+    "INITIAL",   "SERIAL_INIT",   "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT",
+    "TIME_INIT", "WATCHDOG_INIT", "FINAL_SETUP",  "COMPLETE",   "FAILED"};
+}  // namespace SystemInitStates
 
 class SystemInit {
    public:
-    SystemInit(ILogger& logger, SystemState::CoreState& coreState_, LGFX& display,
-               ScreenManager& screenManager, NetworkManager& networkManager,
-               NtpService& ntpService, TaskManager& taskManager, HttpServer& httpServer,
+    using State = SystemInitStates::State;
+
+    SystemInit(ILogger& logger, SystemState::CoreState& coreState, LGFX& display,
+               DisplayManager& displayManager, ScreenManager& screenManager,
+               NetworkManager& networkManager, NtpService& ntpService,
+               TaskManager& taskManager, HttpServer& httpServer,
                SystemState::ScreenState& screenState);
 
     bool initializeAll();
 
    private:
-    enum class State {
-        INITIAL,
-        SERIAL_INIT,
-        DISPLAY_INIT,
-        TASKS_INIT,
-        NETWORK_INIT,
-        TIME_INIT,
-        WATCHDOG_INIT,
-        FINAL_SETUP,
-        COMPLETE,
-        FAILED
-    };
-
-    // Initialization methods
+    // Initialization Methods
     bool initializeSerial();
-    bool initializeDisplay(uint8_t maxRetries);
+    bool initializeDisplay();
     bool initializeNetwork(uint8_t maxRetries);
     bool initializeTimeService(uint8_t maxRetries);
     bool initializeWatchdog();
-    void postDisplayInitialization();
-
-    // State machine helpers
-    void transitionTo(State newState);
     void performFinalSetup();
-    void logCompletionStatus(bool success);
-    String getStateName(State state);
 
-    // Helper methods
-    void logRetryAttempt(const char* component, uint8_t attempt, uint8_t maxRetries);
-    uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay);
-    void adjustDisplayOrientation();
+    // State Management
+    void transitionTo(State newState);
+    bool handleStateTransition();
+    bool isTerminalState() const;
 
-    // References
-    SystemState::CoreState& coreState_;
+    // Logging Helpers
+    void logCompletionStatus(bool success) const;
+    String getStateName(State state) const {
+        return SystemInitStates::STATE_NAMES[static_cast<int>(state)];
+    }
+    void logRetryAttempt(const char* component, uint8_t attempt,
+                         uint8_t maxRetries) const;
+    uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
+
+    // Component References
     ILogger& logger_;
+    SystemState::CoreState& coreState_;
+    SystemState::ScreenState& screenState_;
     LGFX& display_;
+    DisplayManager& displayManager_;
     ScreenManager& screenManager_;
     NetworkManager& networkManager_;
     NtpService& ntpService_;
     TaskManager& taskManager_;
     HttpServer& httpServer_;
-    SystemState::ScreenState& screenState_;
 
+    // State Machine
     State currentState_;
 };
 
-#endif
+#endif  // SYSTEM_INIT_H
