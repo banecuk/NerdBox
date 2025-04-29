@@ -1,7 +1,7 @@
 #include "core/system/SystemInit.h"
 
 SystemInit::SystemInit(ILogger& logger, SystemState::CoreState& coreState, LGFX& display,
-                       DisplayManager& displayManager, ScreenManager& screenManager,
+                       DisplayDriver& displayDriver, UIController& uiController,
                        NetworkManager& networkManager, NtpService& ntpService,
                        TaskManager& taskManager, HttpServer& httpServer,
                        SystemState::ScreenState& screenState)
@@ -9,8 +9,8 @@ SystemInit::SystemInit(ILogger& logger, SystemState::CoreState& coreState, LGFX&
       coreState_(coreState),
       screenState_(screenState),
       display_(display),
-      displayManager_(displayManager),
-      screenManager_(screenManager),
+      displayDriver_(displayDriver),
+      screenManager_(uiController),
       networkManager_(networkManager),
       ntpService_(ntpService),
       taskManager_(taskManager),
@@ -39,7 +39,7 @@ bool SystemInit::initializeSerial() {
 
 bool SystemInit::initializeDisplay() {
     logger_.info("Initializing display", true);
-    displayManager_.initialize();
+    displayDriver_.initialize();
     screenState_.isInitialized = true;
     screenManager_.initialize();
     return true;

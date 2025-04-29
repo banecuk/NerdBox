@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "BaseWidget.h"
+#include "Widget.h"
 #include "ButtonCallback.h"
 #include "core/ActionTypes.h"
 
-class ButtonWidget : public BaseWidget {
+class ButtonWidget : public Widget {
    public:
     typedef std::function<void()> Callback;
 

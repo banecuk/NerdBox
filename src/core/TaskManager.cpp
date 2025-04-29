@@ -1,11 +1,11 @@
 #include "TaskManager.h"
 
-TaskManager::TaskManager(ILogger &logger, ScreenManager &screenManager,
+TaskManager::TaskManager(ILogger &logger, UIController &screenManager,
                          PcMetricsService &hmDataService, PcMetrics &hmData,
                          SystemState::CoreState &coreState,
                          SystemState::ScreenState &screenState)
     : logger_(logger),
-      screenManager_(screenManager),
+      uiController_(screenManager),
       hmDataService_(hmDataService),
       hmData_(hmData),
       coreState_(coreState),
@@ -64,7 +64,7 @@ void TaskManager::updateScreenTask(void *parameter) {
     TickType_t lastWakeTime = xTaskGetTickCount();
     while (true) {
         if (taskManager->screenState_.isInitialized) {
-            taskManager->screenManager_.draw();
+            taskManager->uiController_.draw();
             taskManager->resetWatchdog();
         }
         vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(Config::Timing::kScreenTaskMs));
@@ -76,7 +76,7 @@ void TaskManager::touchTask(void *parameter) {
     TickType_t lastWakeTime = xTaskGetTickCount();
     while (true) {
         if (taskManager->screenState_.isInitialized) {
-            taskManager->screenManager_.handleTouchInput();
+            taskManager->uiController_.handleTouchInput();
         }
         vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(Config::Timing::kScreenTaskMs));
     }

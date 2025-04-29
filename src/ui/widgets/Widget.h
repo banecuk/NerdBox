@@ -3,12 +3,12 @@
 
 #include <Arduino.h>
 
-#include "display/widgets/IWidget.h"  // Include the interface
+#include "ui/widgets/IWidget.h"  // Include the interface
 
-class BaseWidget : public IWidget {
+class Widget : public IWidget {
    public:
     // Constructor takes dimensions and update interval
-    BaseWidget(const Dimensions& dims, uint32_t updateIntervalMs);
+    Widget(const Dimensions& dims, uint32_t updateIntervalMs);
 
     // --- IWidget Overrides ---
     void initialize(LGFX* lcd, ILogger& logger) override;

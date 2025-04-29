@@ -4,16 +4,16 @@
 #include <Arduino.h>
 #include <esp_task_wdt.h>
 
+#include "../ui/UIController.h"
 #include "config/AppConfig.h"
-#include "display/ScreenManager.h"
 #include "core/system/SystemState.h"
-#include "utils/Logger.h"
 #include "services/PcMetrics.h"
 #include "services/PcMetricsService.h"
+#include "utils/Logger.h"
 
 class TaskManager {
    public:
-    TaskManager(ILogger &logger, ScreenManager &screenManager,
+    TaskManager(ILogger &logger, UIController &uiController,
                 PcMetricsService &hmDataService, PcMetrics &hmData,
                 SystemState::CoreState &system, SystemState::ScreenState &screenState);
 
@@ -28,7 +28,7 @@ class TaskManager {
     TaskHandle_t backgroundTaskHandle;
 
     ILogger &logger_;
-    ScreenManager &screenManager_;
+    UIController &uiController_;
     PcMetricsService &hmDataService_;
     PcMetrics &hmData_;
     uint8_t consecutiveFailures_ = 0;

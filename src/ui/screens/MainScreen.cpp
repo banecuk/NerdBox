@@ -1,18 +1,22 @@
 #include "MainScreen.h"
-#include "display/widgets/ButtonCallbackImpl.h"
+
+#include "ui/widgets/ButtonCallbackImpl.h"
 
 MainScreen::MainScreen(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
-                     ScreenManager *screenManager)
+                       UIController *uiController)
     : logger_(logger),
       lcd_(lcd),
       pcMetrics_(pcMetrics),
-      screenManager_(screenManager),
+      uiController_(uiController),
       widgetManager_(logger, lcd),
-      clockWidget_(new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)),
-      button1_(new ButtonWidget("Reset", {0, 0, 100, 40}, 0, ActionType::RESET_DEVICE,
-               [this](ActionType action) { this->handleAction(action); })),
-      button2_(new ButtonWidget("Brightness", {110, 0, 100, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
-               [this](ActionType action) { this->handleAction(action); })) {
+      clockWidget_(
+          new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)),
+      button1_(
+          new ButtonWidget("Reset", {0, 0, 100, 40}, 0, ActionType::RESET_DEVICE,
+                           [this](ActionType action) { this->handleAction(action); })),
+      button2_(new ButtonWidget(
+          "Brightness", {110, 0, 100, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
+          [this](ActionType action) { this->handleAction(action); })) {
     logger_.debugf("MainScreen created. Free heap: %d", ESP.getFreeHeap());
 }
 
@@ -27,17 +31,15 @@ void MainScreen::onEnter() {
     lcd_->clear(TFT_BLACK);
 
     // Add debug info about buttons
-    logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", 
-                  button1_->getDimensions().x,
-                  button1_->getDimensions().y,
-                  button1_->getDimensions().x + button1_->getDimensions().width,
-                  button1_->getDimensions().y + button1_->getDimensions().height);
+    logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
+                   button1_->getDimensions().y,
+                   button1_->getDimensions().x + button1_->getDimensions().width,
+                   button1_->getDimensions().y + button1_->getDimensions().height);
 
-    logger_.debugf("Button2 area: (%d,%d) to (%d,%d)", 
-                  button2_->getDimensions().x,
-                  button2_->getDimensions().y,
-                  button2_->getDimensions().x + button2_->getDimensions().width,
-                  button2_->getDimensions().y + button2_->getDimensions().height);
+    logger_.debugf("Button2 area: (%d,%d) to (%d,%d)", button2_->getDimensions().x,
+                   button2_->getDimensions().y,
+                   button2_->getDimensions().x + button2_->getDimensions().width,
+                   button2_->getDimensions().y + button2_->getDimensions().height);
 
     // Add Widgets to Manager (transfer ownership)
     widgetManager_.addWidget(std::unique_ptr<IWidget>(button1_.release()));

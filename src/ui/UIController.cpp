@@ -1,32 +1,30 @@
-#include "display/ScreenManager.h"
-#include "display/screens/BootScreen.h"
-#include "display/screens/MainScreen.h"
-#include "core/ActionHandler.h"
+#include "UIController.h"
 
-ScreenManager::ScreenManager(ILogger& logger, DisplayManager* displayManager,
+#include "core/ActionHandler.h"
+#include "screens/BootScreen.h"
+#include "screens/MainScreen.h"
+
+UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
                            PcMetrics& pcMetrics, SystemState::ScreenState& screenState)
     : logger_(logger),
-      displayManager_(displayManager),
+      displayDriver_(displayDriver),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
-      bootScreen_(new BootScreen(logger, displayManager->getDisplay())),
-      mainScreen_(new MainScreen(logger, displayManager->getDisplay(), pcMetrics, this)),
-      actionHandler_(new ActionHandler(this, logger_, displayManager_)) {
-
-    if (!displayManager_) {
-        throw std::invalid_argument("DisplayManager pointer cannot be null");
+      bootScreen_(new BootScreen(logger, displayDriver->getDisplay())),
+      mainScreen_(new MainScreen(logger, displayDriver->getDisplay(), pcMetrics, this)),
+      actionHandler_(new ActionHandler(this, logger_, displayDriver_)) {
+    if (!displayDriver_) {
+        throw std::invalid_argument("DisplayDriver pointer cannot be null");
     }
 }
 
-ScreenManager::~ScreenManager() {
+UIController::~UIController() {
     // Smart pointers will automatically clean up
 }
 
-void ScreenManager::initialize() {
-    setScreen(ScreenName::BOOT);
-}
+void UIController::initialize() { setScreen(ScreenName::BOOT); }
 
-bool ScreenManager::setScreen(ScreenName screenName) {
+bool UIController::setScreen(ScreenName screenName) {
     if (screenName == screenState_.activeScreen) {
         logger_.warning("Screen already active: %d", static_cast<int>(screenName));
         return false;
@@ -59,18 +57,18 @@ bool ScreenManager::setScreen(ScreenName screenName) {
     return true;
 }
 
-void ScreenManager::draw() {
+void UIController::draw() {
     if (currentScreen_) {
         currentScreen_->draw();
     }
 }
 
-void ScreenManager::handleTouchInput() {
-    if (!currentScreen_ || !displayManager_) {
+void UIController::handleTouchInput() {
+    if (!currentScreen_ || !displayDriver_) {
         return;
     }
 
-    LGFX* lcd = displayManager_->getDisplay();
+    LGFX* lcd = displayDriver_->getDisplay();
     if (!lcd) return;
 
     static unsigned long lastTouchTime = 0;
@@ -87,8 +85,8 @@ void ScreenManager::handleTouchInput() {
     }
 }
 
-void ScreenManager::clearDisplay() {
-    if (displayManager_ && displayManager_->getDisplay()) {
-        displayManager_->getDisplay()->fillScreen(TFT_BLACK);
+void UIController::clearDisplay() {
+    if (displayDriver_ && displayDriver_->getDisplay()) {
+        displayDriver_->getDisplay()->fillScreen(TFT_BLACK);
     }
 }

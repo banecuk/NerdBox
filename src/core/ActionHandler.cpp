@@ -2,9 +2,12 @@
 
 #include <ESP.h>
 
-ActionHandler::ActionHandler(ScreenManager* screenManager, ILogger& logger,
-                             DisplayManager* displayManager)
-    : screenManager(screenManager), logger_(logger), displayManager_(displayManager) {
+#include "ui/DisplayDriver.h"
+#include "ui/UIController.h"
+
+ActionHandler::ActionHandler(UIController* uiController, ILogger& logger,
+                             DisplayDriver* displayDriver)
+    : screenManager(uiController), logger_(logger), displayDriver_(displayDriver) {
     registerHandlers();
 }
 
@@ -30,6 +33,4 @@ void ActionHandler::registerHandlers() {
 
 void ActionHandler::resetDevice() { ESP.restart(); }
 
-void ActionHandler::cycleBrightness() {
-    displayManager_->cycleBrightness();
-}
+void ActionHandler::cycleBrightness() { displayDriver_->cycleBrightness(); }

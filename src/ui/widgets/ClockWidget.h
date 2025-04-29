@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "display/widgets/BaseWidget.h"
+#include "ui/widgets/Widget.h"
 
-class ClockWidget : public BaseWidget {
+class ClockWidget : public Widget {
    public:
     ClockWidget(const Dimensions& dims,              // Position and size
                 uint32_t updateIntervalMs = 1000,    // Default update check every second

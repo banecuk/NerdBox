@@ -4,8 +4,8 @@
 
 #include <Arduino.h>
 
+#include "ui/screens/IScreen.h"
 #include "utils/ILogger.h"
-#include "display/screens/IScreen.h"
 
 class IWidget {
    public:

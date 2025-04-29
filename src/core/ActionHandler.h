@@ -1,25 +1,25 @@
 #ifndef ACTION_HANDLER_H
 #define ACTION_HANDLER_H
 
-#include "../display/DisplayManager.h"
-#include "../display/ScreenManager.h"
-#include "../utils/Logger.h"
 #include "EventBus.h"
+#include "utils/Logger.h"
 
-class ScreenManager;
+// Forward declarations
+class UIController;
+class DisplayDriver;
 
 class ActionHandler {
    public:
-    ActionHandler(ScreenManager* screenManager, ILogger& logger,
-                  DisplayManager* displayManager);
+    ActionHandler(UIController* uiController, ILogger& logger,
+                  DisplayDriver* displayDriver);
 
     void registerHandlers();
     void resetDevice();
     void cycleBrightness();
 
    private:
-    ScreenManager* screenManager;
-    DisplayManager* displayManager_;
+    UIController* screenManager;
+    DisplayDriver* displayDriver_;
     ILogger& logger_;
 };
 

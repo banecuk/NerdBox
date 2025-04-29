@@ -3,14 +3,14 @@
 ButtonWidget::ButtonWidget(const std::string& label, const Dimensions& dims,
                            uint32_t updateIntervalMs, ActionType action,
                            ActionCallback callback)
-    : BaseWidget(dims, updateIntervalMs),
+    : Widget(dims, updateIntervalMs),
       label_(label),
       action_(action),
       callback_(callback),
       lastTouchTime_(0) {}
 
 void ButtonWidget::initialize(LGFX* lcd, ILogger& logger) {
-    BaseWidget::initialize(lcd, logger);
+    Widget::initialize(lcd, logger);
 }
 
 void ButtonWidget::draw(bool forceRedraw /* = false */) {
@@ -47,4 +47,4 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
 }
 
-void ButtonWidget::cleanUp() { BaseWidget::cleanUp(); }
+void ButtonWidget::cleanUp() { Widget::cleanUp(); }

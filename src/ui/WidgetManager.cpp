@@ -1,15 +1,12 @@
 #include "WidgetManager.h"
 
-WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) 
-    : logger_(logger), lcd_(lcd) {
+WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) : logger_(logger), lcd_(lcd) {
     if (!lcd_) {
         logger_.error("WidgetManager created with null LGFX pointer!");
     }
 }
 
-WidgetManager::~WidgetManager() {
-    cleanupWidgets();
-}
+WidgetManager::~WidgetManager() { cleanupWidgets(); }
 
 void WidgetManager::addWidget(std::unique_ptr<IWidget> widget) {
     if (widget) {
@@ -59,8 +56,8 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
         auto& widget = *it;
         IWidget::Dimensions dims = widget->getDimensions();
 
-        if (x >= dims.x && x < (dims.x + dims.width) && 
-            y >= dims.y && y < (dims.y + dims.height)) {
+        if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y &&
+            y < (dims.y + dims.height)) {
             logger_.debugf("Widget found at (%d,%d)", x, y);
             if (widget->handleTouch(x, y)) {
                 logger_.debug("Widget handled touch");

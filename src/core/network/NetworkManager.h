@@ -6,7 +6,6 @@
 
 #include "config/AppConfig.h"
 #include "config/Environment.h"
-#include "display/ScreenManager.h"
 #include "utils/Logger.h"
 
 class NetworkManager {

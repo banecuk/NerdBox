@@ -1,10 +1,10 @@
 #ifndef SYSTEM_STATE_H
 #define SYSTEM_STATE_H
 
-#include "display/ScreenTypes.h"
 #include "services/PcMetrics.h"
+#include "ui/ScreenTypes.h"
 
-class ScreenManager;  // Forward declaration
+class UIController;  // Forward declaration
 
 class SystemState {
    public:

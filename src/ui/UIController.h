@@ -1,11 +1,12 @@
 #pragma once
 
-#include <memory> // For std::unique_ptr
+#include <memory>  // For std::unique_ptr
+
 #include "core/system/SystemState.h"
-#include "display/DisplayManager.h"
-#include "display/ScreenTypes.h"
-#include "display/screens/IScreen.h"
 #include "services/PcMetrics.h"
+#include "ui/DisplayDriver.h"
+#include "ui/ScreenTypes.h"
+#include "ui/screens/IScreen.h"
 #include "utils/Logger.h"
 
 // Forward declarations
@@ -13,22 +14,22 @@ class BootScreen;
 class MainScreen;
 class ActionHandler;
 
-class ScreenManager {
-public:
-    explicit ScreenManager(ILogger& logger, DisplayManager* displayManager,
-                         PcMetrics& hmData, SystemState::ScreenState& screenState);
-    ~ScreenManager();
+class UIController {
+   public:
+    explicit UIController(ILogger& logger, DisplayDriver* displayDriver,
+                          PcMetrics& hmData, SystemState::ScreenState& screenState);
+    ~UIController();
 
     void initialize();
     bool setScreen(ScreenName screenName);
     void draw();
     void handleTouchInput();
 
-private:
+   private:
     void clearDisplay();
 
     ILogger& logger_;
-    DisplayManager* displayManager_;
+    DisplayDriver* displayDriver_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
 

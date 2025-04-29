@@ -8,10 +8,10 @@
 #include "config/AppConfig.h"
 #include "core/TaskManager.h"
 #include "core/network/NetworkManager.h"
-#include "display/DisplayManager.h"
-#include "display/ScreenManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
+#include "ui/DisplayDriver.h"
+#include "ui/UIController.h"
 #include "utils/Logger.h"
 
 namespace SystemInitStates {
@@ -38,7 +38,7 @@ class SystemInit {
     using State = SystemInitStates::State;
 
     SystemInit(ILogger& logger, SystemState::CoreState& coreState, LGFX& display,
-               DisplayManager& displayManager, ScreenManager& screenManager,
+               DisplayDriver& displayDriver, UIController& uiController,
                NetworkManager& networkManager, NtpService& ntpService,
                TaskManager& taskManager, HttpServer& httpServer,
                SystemState::ScreenState& screenState);
@@ -73,8 +73,8 @@ class SystemInit {
     SystemState::CoreState& coreState_;
     SystemState::ScreenState& screenState_;
     LGFX& display_;
-    DisplayManager& displayManager_;
-    ScreenManager& screenManager_;
+    DisplayDriver& displayDriver_;
+    UIController& screenManager_;
     NetworkManager& networkManager_;
     NtpService& ntpService_;
     TaskManager& taskManager_;

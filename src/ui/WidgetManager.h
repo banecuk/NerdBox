@@ -1,14 +1,15 @@
 #ifndef WIDGETMANAGER_H
 #define WIDGETMANAGER_H
 
-#include <vector>
 #include <memory>  // For std::unique_ptr
+#include <vector>
+
 #include "config/LgfxConfig.h"
+#include "ui/widgets/IWidget.h"
 #include "utils/ILogger.h"
-#include "display/widgets/IWidget.h"
 
 class WidgetManager {
-public:
+   public:
     explicit WidgetManager(ILogger& logger, LGFX* lcd);
     ~WidgetManager();
 
@@ -19,7 +20,7 @@ public:
     bool handleTouch(uint16_t x, uint16_t y);
     void cleanupWidgets();
 
-private:
+   private:
     ILogger& logger_;
     LGFX* lcd_;
     std::vector<std::unique_ptr<IWidget>> widgets_;

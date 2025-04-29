@@ -6,7 +6,7 @@
 ClockWidget::ClockWidget(const Dimensions& dims, uint32_t updateIntervalMs,
                          uint16_t textColor, uint16_t bgColor, uint8_t textSize,
                          const std::string& format)
-    : BaseWidget(dims, updateIntervalMs),  // Call base constructor
+    : Widget(dims, updateIntervalMs),  // Call base constructor
       textColor_(textColor),
       bgColor_(bgColor),
       textSize_(textSize),

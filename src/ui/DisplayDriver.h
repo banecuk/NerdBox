@@ -9,9 +9,9 @@
 #include "Config.h"
 #include "utils/ILogger.h"
 
-class DisplayManager {
+class DisplayDriver {
    public:
-    DisplayManager(LGFX& display, ILogger& logger);
+    DisplayDriver(LGFX& display, ILogger& logger);
 
     // Initialize the display
     void initialize();
@@ -40,6 +40,6 @@ class DisplayManager {
     static const uint8_t DEFAULT_BRIGHTNESS = 100;
 };
 
-extern DisplayManager displayManager;
+extern DisplayDriver displayDriver;
 
 #endif  // DISPLAY_MANAGER_H

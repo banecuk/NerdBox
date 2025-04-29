@@ -7,18 +7,18 @@
 System::System()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
-      screenManager_(logger_, &displayManager_, systemState_.hmData,
+      uiController_(logger_, &displayDriver_, systemState_.hmData,
                      systemState_.screen),
       networkManager_(logger_),
-      displayManager_(display_, logger_),
-      taskManager_(logger_, screenManager_, hmDataService_, systemState_.hmData,
+      displayDriver_(display_, logger_),
+      taskManager_(logger_, uiController_, hmDataService_, systemState_.hmData,
                    systemState_.core, systemState_.screen) {}
 
 // Public Methods -------------------------------------------------------------
 
 bool System::initialize() {
-    SystemInit initializer(logger_, systemState_.core, display_, displayManager_,
-                           screenManager_, networkManager_, ntpService_, taskManager_,
+    SystemInit initializer(logger_, systemState_.core, display_, displayDriver_,
+                           uiController_, networkManager_, ntpService_, taskManager_,
                            httpServer_, systemState_.screen);
 
     if (!initializer.initializeAll()) {
@@ -26,7 +26,7 @@ bool System::initialize() {
         return false;
     }
 
-    screenManager_.setScreen(ScreenName::MAIN);
+    uiController_.setScreen(ScreenName::MAIN);
     systemState_.core.isInitialized = true;
     return true;
 }
