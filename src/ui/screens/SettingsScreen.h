@@ -9,10 +9,10 @@
 #include "ui/widgets/ClockWidget.h"
 #include "utils/Logger.h"
 
-class MainScreen : public IScreen {
+class SettingsScreen : public IScreen {
    public:
-    explicit MainScreen(ILogger &logger, PcMetrics &hmData, UIController *uiController);
-    ~MainScreen() override;
+    explicit SettingsScreen(ILogger &logger, UIController *uiController);
+    ~SettingsScreen() override;
 
     void onEnter() override;
     void onExit() override;
@@ -22,7 +22,6 @@ class MainScreen : public IScreen {
    private:
     ILogger &logger_;
     LGFX *lcd_;
-    PcMetrics &pcMetrics_;
     UIController *uiController_;
 
     WidgetManager widgetManager_;

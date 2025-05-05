@@ -16,9 +16,10 @@ class ActionHandler {
     void registerHandlers();
     void resetDevice();
     void cycleBrightness();
+    void showSettings();
 
    private:
-    UIController* screenManager;
+    UIController* uiController_;
     DisplayDriver* displayDriver_;
     ILogger& logger_;
 };

@@ -2,27 +2,36 @@
 
 #include "ui/widgets/ButtonCallbackImpl.h"
 
-MainScreen::MainScreen(ILogger &logger, LGFX *lcd, PcMetrics &pcMetrics,
-                       UIController *uiController)
+MainScreen::MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiController)
     : logger_(logger),
-      lcd_(lcd),
+      lcd_(uiController->getDisplayDriver()->getDisplay()),
       pcMetrics_(pcMetrics),
       uiController_(uiController),
-      widgetManager_(logger, lcd),
-      clockWidget_(
-          new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)),
-      button1_(
-          new ButtonWidget("Reset", {0, 0, 100, 40}, 0, ActionType::RESET_DEVICE,
-                           [this](ActionType action) { this->handleAction(action); })),
-      button2_(new ButtonWidget(
-          "Brightness", {110, 0, 100, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
-          [this](ActionType action) { this->handleAction(action); })) {
+      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay())
+ {
+
+        widgetManager_.addWidget(new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3));
+
+        widgetManager_.addWidget(new ButtonWidget(
+            "<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_SETTINGS,
+            [this](ActionType action) { this->handleAction(action); }
+        ));
+        
+        widgetManager_.addWidget(new ButtonWidget(
+            "Reset", {0, 0, 88, 40}, 0, ActionType::RESET_DEVICE,
+            [this](ActionType action) { this->handleAction(action); }
+        ));
+        
+        widgetManager_.addWidget(new ButtonWidget(
+            "Brightness", {88 + 4, 0, 88, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
+            [this](ActionType action) { this->handleAction(action); }
+        ));
+
     logger_.debugf("MainScreen created. Free heap: %d", ESP.getFreeHeap());
 }
 
 MainScreen::~MainScreen() {
     logger_.debug("MainScreen destructor");
-    // Widgets will be automatically cleaned up by unique_ptr
 }
 
 void MainScreen::onEnter() {
@@ -31,27 +40,25 @@ void MainScreen::onEnter() {
     lcd_->clear(TFT_BLACK);
 
     // Add debug info about buttons
-    logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
-                   button1_->getDimensions().y,
-                   button1_->getDimensions().x + button1_->getDimensions().width,
-                   button1_->getDimensions().y + button1_->getDimensions().height);
+    // logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
+    //                button1_->getDimensions().y,
+    //                button1_->getDimensions().x + button1_->getDimensions().width,
+    //                button1_->getDimensions().y + button1_->getDimensions().height);
 
-    logger_.debugf("Button2 area: (%d,%d) to (%d,%d)", button2_->getDimensions().x,
-                   button2_->getDimensions().y,
-                   button2_->getDimensions().x + button2_->getDimensions().width,
-                   button2_->getDimensions().y + button2_->getDimensions().height);
+    // logger_.debugf("Button2 area: (%d,%d) to (%d,%d)", button2_->getDimensions().x,
+    //                button2_->getDimensions().y,
+    //                button2_->getDimensions().x + button2_->getDimensions().width,
+    //                button2_->getDimensions().y + button2_->getDimensions().height);
 
     // Add Widgets to Manager (transfer ownership)
-    widgetManager_.addWidget(std::unique_ptr<IWidget>(button1_.release()));
-    widgetManager_.addWidget(std::unique_ptr<IWidget>(button2_.release()));
-    widgetManager_.addWidget(std::unique_ptr<IWidget>(clockWidget_.release()));
 
     // Initialize All Widgets
     widgetManager_.initializeWidgets();
 
     // Initial Draw
     lcd_->setTextSize(2);
-    lcd_->drawString("Main Dashboard", 5, 290);
+    lcd_->setTextDatum(TL_DATUM);    
+    lcd_->drawString("Main Dashboard", 5, 250);
     lcd_->setTextSize(1);
 
     widgetManager_.updateAndDrawWidgets(true);  // Force draw for all widgets on entry

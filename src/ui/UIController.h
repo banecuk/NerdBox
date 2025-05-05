@@ -12,6 +12,7 @@
 // Forward declarations
 class BootScreen;
 class MainScreen;
+class SettingsScreen;
 class ActionHandler;
 
 class UIController {
@@ -25,6 +26,8 @@ class UIController {
     void draw();
     void handleTouchInput();
 
+    DisplayDriver* getDisplayDriver() const;
+
    private:
     void clearDisplay();
 
@@ -36,5 +39,6 @@ class UIController {
     std::unique_ptr<IScreen> currentScreen_;
     std::unique_ptr<BootScreen> bootScreen_;
     std::unique_ptr<MainScreen> mainScreen_;
+    std::unique_ptr<SettingsScreen> settingsScreen_;
     std::unique_ptr<ActionHandler> actionHandler_;
 };

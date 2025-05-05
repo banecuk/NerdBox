@@ -6,14 +6,26 @@ WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) : logger_(logger), lcd_
     }
 }
 
-WidgetManager::~WidgetManager() { cleanupWidgets(); }
+WidgetManager::~WidgetManager() {
+    logger_.debug("~WidgetManager: Cleaning up widgets");
+    cleanupWidgets(); // Should safely handle empty vectors
+}
 
-void WidgetManager::addWidget(std::unique_ptr<IWidget> widget) {
-    if (widget) {
-        widgets_.push_back(std::move(widget));
-    } else {
-        logger_.warning("Attempted to add null widget.");
+void WidgetManager::addWidget(IWidget* widget) {
+    if (!widget) {
+        logger_.error("Null widget rejected");
+        return;
     }
+    logger_.debugf("[Heap] Pre-add: %d", ESP.getFreeHeap());
+    widgets_.emplace_back(widget); // Use emplace_back for efficiency
+    logger_.debugf("[Heap] Post-add: %d", ESP.getFreeHeap());
+    logger_.debugf("Widget created at: %p", widget);
+
+    // if (widget) {
+    //     widgets_.push_back(std::unique_ptr<IWidget>(widget));
+    // } else {
+    //     logger_.warning("Attempted to add null widget");
+    // }
 }
 
 void WidgetManager::initializeWidgets() {
@@ -21,10 +33,12 @@ void WidgetManager::initializeWidgets() {
         logger_.error("Cannot initialize widgets: LGFX pointer is null.");
         return;
     }
-    logger_.debug("Initializing %d widgets...", widgets_.size());
+    logger_.debugf("Initializing %d widgets...", widgets_.size());
     for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
+        widget->draw(true);
     }
+    logger_.debug("Widgets initialized");
 }
 
 void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
@@ -49,6 +63,11 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
         return false;
     }
 
+    if (!lcd_ || x >= lcd_->width() || y >= lcd_->height()) {
+        logger_.errorf("Invalid touch coordinates: (%d, %d)", x, y);
+        return false;
+    }
+
     logger_.debugf("Checking %d widgets for touch at (%d,%d)", widgets_.size(), x, y);
 
     // Iterate in reverse to handle top-most widgets first
@@ -70,9 +89,18 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 }
 
 void WidgetManager::cleanupWidgets() {
+    if (widgets_.empty()) {
+        logger_.debug("No widgets to clean up.");
+        return;
+    }
+
     logger_.debugf("Cleaning up %d widgets...", widgets_.size());
     for (auto& widget : widgets_) {
-        widget->cleanUp();
+        if (widget) {
+            widget->cleanUp();  // Call the widget's cleanup method
+        } else {
+            logger_.warning("Encountered a null widget during cleanup.");
+        }
     }
     widgets_.clear();
     logger_.debug("Widget list cleared.");

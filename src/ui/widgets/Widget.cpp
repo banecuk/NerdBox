@@ -27,11 +27,10 @@ void Widget::initialize(LGFX* lcd, ILogger& logger) {
 // Default cleanup is empty, derived classes can override if needed
 void Widget::cleanUp() {
     if (logger_) {
-        // logger_->debug("Widget::cleanUp for widget at (%d, %d)", dimensions_.x,
-        // dimensions_.y);
+        logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x,
+                        dimensions_.y);
     }
     initialized_ = false;
-    // Reset pointers, though lcd_ is typically managed by ScreenManager
     lcd_ = nullptr;
     logger_ = nullptr;
 }

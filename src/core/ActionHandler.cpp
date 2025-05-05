@@ -7,7 +7,7 @@
 
 ActionHandler::ActionHandler(UIController* uiController, ILogger& logger,
                              DisplayDriver* displayDriver)
-    : screenManager(uiController), logger_(logger), displayDriver_(displayDriver) {
+    : uiController_(uiController), logger_(logger), displayDriver_(displayDriver) {
     registerHandlers();
 }
 
@@ -22,9 +22,7 @@ void ActionHandler::registerHandlers() {
 
     eventBus.subscribe(ActionType::CYCLE_BRIGHTNESS, [this]() { cycleBrightness(); });
 
-    // eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() {
-    //     showSettings();
-    // });
+    eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() { showSettings(); });
 
     // eventBus.subscribe(ActionType::SHOW_ABOUT, [this]() {
     //     showAbout();
@@ -34,3 +32,8 @@ void ActionHandler::registerHandlers() {
 void ActionHandler::resetDevice() { ESP.restart(); }
 
 void ActionHandler::cycleBrightness() { displayDriver_->cycleBrightness(); }
+
+void ActionHandler::showSettings() { 
+    logger_.info("Show Settings Screen"); 
+    uiController_->setScreen(ScreenName::SETTINGS);
+}

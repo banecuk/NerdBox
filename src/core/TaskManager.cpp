@@ -1,11 +1,11 @@
 #include "TaskManager.h"
 
-TaskManager::TaskManager(ILogger &logger, UIController &screenManager,
+TaskManager::TaskManager(ILogger &logger, UIController &uiController,
                          PcMetricsService &hmDataService, PcMetrics &hmData,
                          SystemState::CoreState &coreState,
                          SystemState::ScreenState &screenState)
     : logger_(logger),
-      uiController_(screenManager),
+      uiController_(uiController),
       pcMetricsService_(hmDataService),
       hmData_(hmData),
       coreState_(coreState),

@@ -14,7 +14,7 @@ class WidgetManager {
     ~WidgetManager();
 
     // Takes ownership of the widget
-    void addWidget(std::unique_ptr<IWidget> widget);
+    void addWidget(IWidget* widget);
     void initializeWidgets();
     void updateAndDrawWidgets(bool forceRedraw = false);
     bool handleTouch(uint16_t x, uint16_t y);
