@@ -24,9 +24,7 @@ void ActionHandler::registerHandlers() {
 
     eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() { showSettings(); });
 
-    // eventBus.subscribe(ActionType::SHOW_ABOUT, [this]() {
-    //     showAbout();
-    // });
+    eventBus.subscribe(ActionType::SHOW_MAIN, [this]() { showMain(); });
 }
 
 void ActionHandler::resetDevice() { ESP.restart(); }
@@ -36,4 +34,9 @@ void ActionHandler::cycleBrightness() { displayDriver_->cycleBrightness(); }
 void ActionHandler::showSettings() { 
     logger_.info("Show Settings Screen"); 
     uiController_->setScreen(ScreenName::SETTINGS);
+}
+
+void ActionHandler::showMain() { 
+    logger_.info("Show Main Screen"); 
+    uiController_->setScreen(ScreenName::MAIN);
 }

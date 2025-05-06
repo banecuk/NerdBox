@@ -7,37 +7,29 @@ MainScreen::MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiCo
       lcd_(uiController->getDisplayDriver()->getDisplay()),
       pcMetrics_(pcMetrics),
       uiController_(uiController),
-      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay())
- {
-
-        widgetManager_.addWidget(new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3));
-
-        widgetManager_.addWidget(new ButtonWidget(
-            "<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_SETTINGS,
-            [this](ActionType action) { this->handleAction(action); }
-        ));
-        
-        widgetManager_.addWidget(new ButtonWidget(
-            "Reset", {0, 0, 88, 40}, 0, ActionType::RESET_DEVICE,
-            [this](ActionType action) { this->handleAction(action); }
-        ));
-        
-        widgetManager_.addWidget(new ButtonWidget(
-            "Brightness", {88 + 4, 0, 88, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
-            [this](ActionType action) { this->handleAction(action); }
-        ));
-
-    logger_.debugf("MainScreen created. Free heap: %d", ESP.getFreeHeap());
+      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay()) {
+    createWidgets();  // Create widgets in constructor
+    logger_.debugf("MainScreen constructor. Free heap: %d", ESP.getFreeHeap());
 }
 
-MainScreen::~MainScreen() {
-    logger_.debug("MainScreen destructor");
+MainScreen::~MainScreen() { logger_.debug("MainScreen destructor"); }
+
+void MainScreen::createWidgets() {
+    widgetManager_.addWidget(
+        new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3));
+    widgetManager_.addWidget(
+        new ButtonWidget("<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
+                         [this](ActionType action) { this->handleAction(action); }));
+    widgetManager_.addWidget(
+        new ButtonWidget("Reset", {0, 0, 88, 40}, 0, ActionType::RESET_DEVICE,
+                         [this](ActionType action) { this->handleAction(action); }));
+    widgetManager_.addWidget(
+        new ButtonWidget("Brightness", {92, 0, 88, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
+                         [this](ActionType action) { this->handleAction(action); }));
 }
 
 void MainScreen::onEnter() {
     logger_.info("Entering MainScreen");
-    lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-    lcd_->clear(TFT_BLACK);
 
     // Add debug info about buttons
     // logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
@@ -56,8 +48,10 @@ void MainScreen::onEnter() {
     widgetManager_.initializeWidgets();
 
     // Initial Draw
+    lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
+    lcd_->clear(TFT_BLACK);
     lcd_->setTextSize(2);
-    lcd_->setTextDatum(TL_DATUM);    
+    lcd_->setTextDatum(TL_DATUM);
     lcd_->drawString("Main Dashboard", 5, 250);
     lcd_->setTextSize(1);
 

@@ -16,16 +16,9 @@ void WidgetManager::addWidget(IWidget* widget) {
         logger_.error("Null widget rejected");
         return;
     }
-    logger_.debugf("[Heap] Pre-add: %d", ESP.getFreeHeap());
-    widgets_.emplace_back(widget); // Use emplace_back for efficiency
-    logger_.debugf("[Heap] Post-add: %d", ESP.getFreeHeap());
-    logger_.debugf("Widget created at: %p", widget);
-
-    // if (widget) {
-    //     widgets_.push_back(std::unique_ptr<IWidget>(widget));
-    // } else {
-    //     logger_.warning("Attempted to add null widget");
-    // }
+    widgets_.emplace_back(widget);
+    logger_.debugf("[Heap] Widget post-add: %d", ESP.getFreeHeap());
+    //logger_.infof("Widget added: %p", widget);
 }
 
 void WidgetManager::initializeWidgets() {

@@ -8,6 +8,20 @@ SettingsScreen::SettingsScreen(ILogger &logger, UIController *uiController)
       uiController_(uiController),
       widgetManager_(logger, uiController->getDisplayDriver()->getDisplay())
 {
+    createWidgets();
+    logger_.debugf("SettingsScreen constructor. Free heap: %d", ESP.getFreeHeap());
+}
+
+SettingsScreen::~SettingsScreen() {
+    logger_.debug("SettingsScreen destructor");
+}
+
+void SettingsScreen::createWidgets() {
+    widgetManager_.addWidget(new ButtonWidget(
+        "<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_MAIN,
+        [this](ActionType action) { this->handleAction(action); }
+    ));
+
     // Create and add widgets directly to widgetManager
     widgetManager_.addWidget(new ButtonWidget(
         "Reset", {0, 0, 100, 48}, 0, ActionType::RESET_DEVICE,
@@ -18,12 +32,6 @@ SettingsScreen::SettingsScreen(ILogger &logger, UIController *uiController)
         "Brightness", {0, 52, 100, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
         [this](ActionType action) { this->handleAction(action); }
     ));
-
-    logger_.debugf("SettingsScreen created. Free heap: %d", ESP.getFreeHeap());
-}
-
-SettingsScreen::~SettingsScreen() {
-    logger_.debug("SettingsScreen destructor");
 }
 
 void SettingsScreen::onEnter() {

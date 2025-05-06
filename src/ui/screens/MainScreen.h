@@ -27,5 +27,6 @@ class MainScreen : public IScreen {
 
     WidgetManager widgetManager_;
 
+    void createWidgets();
     void handleAction(ActionType action);
 };

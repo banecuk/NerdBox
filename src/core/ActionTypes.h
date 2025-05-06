@@ -5,5 +5,6 @@ enum class ActionType {
     RESET_DEVICE,
     CYCLE_BRIGHTNESS,
     SHOW_SETTINGS,
+    SHOW_MAIN,
     SHOW_ABOUT
 };

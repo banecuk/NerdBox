@@ -17,6 +17,7 @@ class ActionHandler {
     void resetDevice();
     void cycleBrightness();
     void showSettings();
+    void showMain();
 
    private:
     UIController* uiController_;
