@@ -24,10 +24,23 @@ UIController::~UIController() {
 void UIController::initialize() { setScreen(ScreenName::BOOT); }
 
 bool UIController::setScreen(ScreenName screenName) {
-    if (screenName == screenState_.activeScreen) {
-        logger_.warning("Screen already active: %d", static_cast<int>(screenName));
+
+    if (isChangingScreen_) {
+        logger_.error("SCREEN RECURSION DETECTED!");
         return false;
     }
+
+    if (screenName == ScreenName::UNSET) {
+        logger_.error("Attempted transition to UNSET screen");
+        return false;
+    }
+
+    if (screenName == screenState_.activeScreen) {
+        logger_.debug("Screen already active");
+        return false;
+    }
+
+    isChangingScreen_ = true;
 
     if (currentScreen_) {
         logger_.debug("Clearing current screen");
@@ -36,7 +49,7 @@ bool UIController::setScreen(ScreenName screenName) {
         clearDisplay();
     }
 
-    // Create new screen instances each time using new + unique_ptr
+    logger_.debug("Creating new screen...");
     switch (screenName) {
         case ScreenName::BOOT:
             currentScreen_.reset(new BootScreen(logger_, displayDriver_->getDisplay()));
@@ -47,17 +60,17 @@ bool UIController::setScreen(ScreenName screenName) {
         case ScreenName::SETTINGS:
             currentScreen_.reset(new SettingsScreen(logger_, this));
             break;
-        case ScreenName::UNSET:
-            logger_.error("Attempted to set UNSET screen");
-            return false;
     }
 
     logger_.debugf("[Heap] Screen created: %d", ESP.getFreeHeap());
     
     if (currentScreen_) {
+        logger_.debug("Calling onEnter() for new screen");
         currentScreen_->onEnter();
         screenState_.activeScreen = screenName;
     }
+
+    isChangingScreen_ = false;
     return true;
 }
 
@@ -72,6 +85,16 @@ void UIController::handleTouchInput() {
         return;
     }
 
+    if (isHandlingTouch_) return; // Simple guard
+    isHandlingTouch_ = true;
+
+    static uint8_t recursionDepth = 0;
+    if (recursionDepth > 0) {
+        logger_.error("Touch recursion detected!");
+        return;
+    }
+    recursionDepth++;
+
     LGFX* lcd = displayDriver_->getDisplay();
     if (!lcd) return;
 
@@ -82,11 +105,16 @@ void UIController::handleTouchInput() {
     if (lcd->getTouch(&x, &y)) {
         unsigned long currentTime = millis();
         if (currentTime - lastTouchTime > kDebounceMs) {
+            logger_.debug("Handling touch input");
             lcd->fillRect(x - 2, y - 2, 4, 4, TFT_RED);
             currentScreen_->handleTouch(x, y);
             lastTouchTime = currentTime;
         }
     }
+
+    recursionDepth--;
+
+    isHandlingTouch_ = false;
 }
 
 void UIController::clearDisplay() {

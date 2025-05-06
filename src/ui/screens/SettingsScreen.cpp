@@ -1,13 +1,10 @@
 #include "SettingsScreen.h"
 
-#include "ui/widgets/ButtonCallbackImpl.h"
-
 SettingsScreen::SettingsScreen(ILogger &logger, UIController *uiController)
     : logger_(logger),
       lcd_(uiController->getDisplayDriver()->getDisplay()),
       uiController_(uiController),
-      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay())
-{
+      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay()) {
     createWidgets();
     logger_.debugf("SettingsScreen constructor. Free heap: %d", ESP.getFreeHeap());
 }
@@ -17,21 +14,26 @@ SettingsScreen::~SettingsScreen() {
 }
 
 void SettingsScreen::createWidgets() {
-    widgetManager_.addWidget(new ButtonWidget(
-        "<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_MAIN,
-        [this](ActionType action) { this->handleAction(action); }
-    ));
+    widgetManager_.addWidget(
+        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+            "<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_MAIN,
+            [this](ActionType action) { this->handleAction(action); }
+        ))
+    );
 
-    // Create and add widgets directly to widgetManager
-    widgetManager_.addWidget(new ButtonWidget(
-        "Reset", {0, 0, 100, 48}, 0, ActionType::RESET_DEVICE,
-        [this](ActionType action) { this->handleAction(action); }
-    ));
+    widgetManager_.addWidget(
+        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+            "Reset", {0, 0, 100, 48}, 0, ActionType::RESET_DEVICE,
+            [this](ActionType action) { this->handleAction(action); }
+        ))
+    );
     
-    widgetManager_.addWidget(new ButtonWidget(
-        "Brightness", {0, 52, 100, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-        [this](ActionType action) { this->handleAction(action); }
-    ));
+    widgetManager_.addWidget(
+        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+            "Brightness", {0, 52, 100, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
+            [this](ActionType action) { this->handleAction(action); }
+        ))
+    );
 }
 
 void SettingsScreen::onEnter() {

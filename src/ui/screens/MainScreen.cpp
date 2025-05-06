@@ -1,14 +1,12 @@
 #include "MainScreen.h"
 
-#include "ui/widgets/ButtonCallbackImpl.h"
-
 MainScreen::MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiController)
     : logger_(logger),
       lcd_(uiController->getDisplayDriver()->getDisplay()),
       pcMetrics_(pcMetrics),
       uiController_(uiController),
       widgetManager_(logger, uiController->getDisplayDriver()->getDisplay()) {
-    createWidgets();  // Create widgets in constructor
+    createWidgets();
     logger_.debugf("MainScreen constructor. Free heap: %d", ESP.getFreeHeap());
 }
 
@@ -16,16 +14,20 @@ MainScreen::~MainScreen() { logger_.debug("MainScreen destructor"); }
 
 void MainScreen::createWidgets() {
     widgetManager_.addWidget(
-        new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3));
+        std::unique_ptr<ClockWidget>(new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3))
+    );
     widgetManager_.addWidget(
-        new ButtonWidget("<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
-                         [this](ActionType action) { this->handleAction(action); }));
+        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+            "<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
+            [this](ActionType action) { this->handleAction(action); }
+        ))
+    );
     widgetManager_.addWidget(
-        new ButtonWidget("Reset", {0, 0, 88, 40}, 0, ActionType::RESET_DEVICE,
-                         [this](ActionType action) { this->handleAction(action); }));
-    widgetManager_.addWidget(
-        new ButtonWidget("Brightness", {92, 0, 88, 40}, 0, ActionType::CYCLE_BRIGHTNESS,
-                         [this](ActionType action) { this->handleAction(action); }));
+        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+            "Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
+            [this](ActionType action) { this->handleAction(action); }
+        ))
+    );
 }
 
 void MainScreen::onEnter() {
@@ -59,30 +61,42 @@ void MainScreen::onEnter() {
 }
 
 void MainScreen::onExit() {
-    logger_.info("Exiting MainScreen");
+    logger_.info("MainScreen::onExit() - START");
+    logger_.debugf("[Heap] Pre-cleanup: %d", ESP.getFreeHeap());
+    
     widgetManager_.cleanupWidgets();
+    logger_.debugf("Widget count after cleanup: %d", widgetManager_.getWidgetCount());
+    
+    logger_.debugf("[Heap] Post-cleanup: %d", ESP.getFreeHeap());
+    logger_.info("MainScreen::onExit() - COMPLETE");
 }
 
 void MainScreen::draw() {
     if (!lcd_) return;  // Safety check
 
+    static unsigned long lastHeapLog = 0;
+    if (millis() - lastHeapLog > 30000) { // Every 30 seconds
+        logger_.debugf("[Heap] Current free: %d", ESP.getFreeHeap());
+        lastHeapLog = millis();
+    }
+
     // Update and Draw Widgets
     widgetManager_.updateAndDrawWidgets();
 
-    // Draw Other Screen Elements (Non-Widget)
-    if (pcMetrics_.is_updated) {
-        logger_.debug("HM data updated, drawing...");
-        lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-        lcd_->setTextSize(2);
-        lcd_->fillRect(360, 64, 120, 40, TFT_BLACK);
-        lcd_->setCursor(360, 64);
-        lcd_->printf("CPU: %3d%%", pcMetrics_.cpu_load);
-        lcd_->setCursor(360, 64 + 20);
-        lcd_->printf("GPU: %3d%%", pcMetrics_.gpu_load);
-        lcd_->setTextSize(1);
+    // Draw Non-Widget
+    // if (pcMetrics_.is_updated) {
+    //     logger_.debug("HM data drawing...");
+    //     lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
+    //     lcd_->setTextSize(2);
+    //     lcd_->fillRect(360, 64, 120, 40, TFT_BLACK);
+    //     lcd_->setCursor(360, 64);
+    //     lcd_->printf("CPU: %3d%%", pcMetrics_.cpu_load);
+    //     lcd_->setCursor(360, 64 + 20);
+    //     lcd_->printf("GPU: %3d%%", pcMetrics_.gpu_load);
+    //     lcd_->setTextSize(1);
 
-        pcMetrics_.is_updated = false;
-    }
+    //     pcMetrics_.is_updated = false;
+    // }
 }
 
 void MainScreen::handleTouch(uint16_t x, uint16_t y) {

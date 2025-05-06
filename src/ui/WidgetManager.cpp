@@ -8,17 +8,16 @@ WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) : logger_(logger), lcd_
 
 WidgetManager::~WidgetManager() {
     logger_.debug("~WidgetManager: Cleaning up widgets");
-    cleanupWidgets(); // Should safely handle empty vectors
+    cleanupWidgets();
 }
 
-void WidgetManager::addWidget(IWidget* widget) {
+void WidgetManager::addWidget(std::unique_ptr<IWidget> widget) {
     if (!widget) {
         logger_.error("Null widget rejected");
         return;
     }
-    widgets_.emplace_back(widget);
+    widgets_.push_back(std::move(widget));
     logger_.debugf("[Heap] Widget post-add: %d", ESP.getFreeHeap());
-    //logger_.infof("Widget added: %p", widget);
 }
 
 void WidgetManager::initializeWidgets() {
@@ -51,8 +50,8 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
 }
 
 bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
-    if (!lcd_) {
-        logger_.error("Cannot handle touch - LCD not set");
+    if (!lcd_ || !lcd_->width() || !lcd_->height()) {
+        logger_.error("LCD not properly initialized");
         return false;
     }
 
@@ -63,13 +62,12 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 
     logger_.debugf("Checking %d widgets for touch at (%d,%d)", widgets_.size(), x, y);
 
-    // Iterate in reverse to handle top-most widgets first
     for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
         auto& widget = *it;
         IWidget::Dimensions dims = widget->getDimensions();
 
-        if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y &&
-            y < (dims.y + dims.height)) {
+        if (x >= dims.x && x < (dims.x + dims.width) && 
+            y >= dims.y && y < (dims.y + dims.height)) {
             logger_.debugf("Widget found at (%d,%d)", x, y);
             if (widget->handleTouch(x, y)) {
                 logger_.debug("Widget handled touch");
@@ -82,19 +80,15 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 }
 
 void WidgetManager::cleanupWidgets() {
-    if (widgets_.empty()) {
-        logger_.debug("No widgets to clean up.");
-        return;
-    }
+    logger_.debugf("Clearing %d widgets", widgets_.size());
 
-    logger_.debugf("Cleaning up %d widgets...", widgets_.size());
     for (auto& widget : widgets_) {
         if (widget) {
-            widget->cleanUp();  // Call the widget's cleanup method
-        } else {
-            logger_.warning("Encountered a null widget during cleanup.");
+            widget->cleanUp(); // Ensure all widgets clean up their resources
+            widget.reset(); // Explicitly release
         }
     }
-    widgets_.clear();
-    logger_.debug("Widget list cleared.");
+    
+    widgets_.clear(); // Then clear the container
+    logger_.debug("Widgets cleared. Count: %d", widgets_.size());
 }

@@ -32,11 +32,15 @@ void ActionHandler::resetDevice() { ESP.restart(); }
 void ActionHandler::cycleBrightness() { displayDriver_->cycleBrightness(); }
 
 void ActionHandler::showSettings() { 
-    logger_.info("Show Settings Screen"); 
+    logger_.debug("SHOW_SETTINGS action received");
     uiController_->setScreen(ScreenName::SETTINGS);
+    logger_.debug("SHOW_SETTINGS action completed");
 }
 
 void ActionHandler::showMain() { 
-    logger_.info("Show Main Screen"); 
+    logger_.debug("SHOW_MAIN action received");
+    logger_.debugf("[Heap] Pre-transition: %d", ESP.getFreeHeap());
     uiController_->setScreen(ScreenName::MAIN);
+    logger_.debugf("[Heap] Post-transition: %d", ESP.getFreeHeap());
+    logger_.debug("SHOW_MAIN action completed");
 }

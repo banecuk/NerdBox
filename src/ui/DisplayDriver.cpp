@@ -6,7 +6,10 @@ DisplayDriver::DisplayDriver(LGFX& display, ILogger& logger)
     : display_(display), logger_(logger), brightness_(DEFAULT_BRIGHTNESS) {}
 
 void DisplayDriver::initialize() {
-    display_.init();
+    if (!display_.init()) {
+        logger_.error("Display initialization failed");
+        return;
+    }
     display_.setRotation(1);  // Landscape
     display_.fillScreen(TFT_BLACK);
 }

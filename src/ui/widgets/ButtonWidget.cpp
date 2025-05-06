@@ -14,7 +14,7 @@ void ButtonWidget::initialize(LGFX* lcd, ILogger& logger) {
 }
 
 void ButtonWidget::draw(bool forceRedraw /* = false */) {
-    if (!initialized_ || !lcd_) return;
+    if (!initialized_ || !callback_) return;
 
     uint16_t bgColor = TFT_DARKGRAY;
     uint16_t textColor = TFT_WHITE;
@@ -34,12 +34,28 @@ void ButtonWidget::draw(bool forceRedraw /* = false */) {
 void ButtonWidget::setCallback(ActionCallback callback) { callback_ = callback; }
 
 bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!initialized_) return false;
 
-    static unsigned long lastTouch = 0;
-    if (millis() - lastTouch < 200) return false;
-    lastTouch = millis();
+    if (this == nullptr) {
+        logger_->error("THIS PTR NULL IN BUTTON TOUCH!");
+        return false;
+    }
+    if (!callback_) {
+        logger_->debug("Button callback empty (normal during transitions)");
+        return false;
+    }
 
+    if (!initialized_ || !lcd_ || !callback_) { 
+        // logger_.debug("ButtonWidget::handleTouch - Rejected (invalid state)");
+        return false;
+    }
+
+    constexpr unsigned long debounceTime = 300; // ms
+    unsigned long now = millis();
+    
+    if (now - lastTouchTime_ < debounceTime) return false;
+    
+    lastTouchTime_ = now;
+    
     if (callback_) {
         callback_(action_);
         return true;
@@ -47,4 +63,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
 }
 
-void ButtonWidget::cleanUp() { Widget::cleanUp(); }
+void ButtonWidget::cleanUp() { 
+    callback_ = nullptr;
+    Widget::cleanUp();
+}

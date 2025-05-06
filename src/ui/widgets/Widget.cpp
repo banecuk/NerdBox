@@ -3,28 +3,22 @@
 Widget::Widget(const Dimensions& dims, uint32_t updateIntervalMs)
     : dimensions_(dims),
       updateIntervalMs_(updateIntervalMs),
-      lastUpdateTimeMs_(0)  // Ensure last update time starts at 0
+      lastUpdateTimeMs_(0)
 {
-    // Logger and LCD are set during initialize
+
 }
 
 void Widget::initialize(LGFX* lcd, ILogger& logger) {
     if (!lcd) {
-        // Optionally, log an error if logger is available, or handle differently
-        // For now, just prevent initialization with null LCD
+        logger.error("Widget initialization failed - null LCD");
         return;
     }
     lcd_ = lcd;
-    logger_ = &logger;             // Store the logger reference
-    lastUpdateTimeMs_ = millis();  // Set initial time on initialize
+    logger_ = &logger;
+    lastUpdateTimeMs_ = millis();
     initialized_ = true;
-    // Derived classes can override this to add specific initialization
-    // but should call Widget::initialize() or replicate its logic.
-    // logger_->debug("Widget::initialize for widget at (%d, %d)", dimensions_.x,
-    // dimensions_.y);
 }
 
-// Default cleanup is empty, derived classes can override if needed
 void Widget::cleanUp() {
     if (logger_) {
         logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x,

@@ -4,7 +4,6 @@
 #include <string>
 
 #include "Widget.h"
-#include "ButtonCallback.h"
 #include "core/ActionTypes.h"
 
 class ButtonWidget : public Widget {
