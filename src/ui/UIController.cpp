@@ -1,5 +1,7 @@
 #include "UIController.h"
 
+#include <esp_task_wdt.h>
+
 #include "core/ActionHandler.h"
 #include "screens/BootScreen.h"
 #include "screens/MainScreen.h"
@@ -11,7 +13,7 @@ UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
       displayDriver_(displayDriver),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
-      actionHandler_(new ActionHandler(this, logger_, displayDriver_)) {
+      actionHandler_(new ActionHandler(this, logger_)) {
     if (!displayDriver_) {
         throw std::invalid_argument("DisplayDriver pointer cannot be null");
     }
@@ -24,6 +26,11 @@ UIController::~UIController() {
 void UIController::initialize() { setScreen(ScreenName::BOOT); }
 
 bool UIController::setScreen(ScreenName screenName) {
+    uint32_t start = millis();
+
+    // if (Config::Watchdog::kEnableOnBoot) {
+    esp_task_wdt_reset();  // Reset before starting transition
+    //}
 
     if (isChangingScreen_) {
         logger_.error("SCREEN RECURSION DETECTED!");
@@ -45,8 +52,11 @@ bool UIController::setScreen(ScreenName screenName) {
     if (currentScreen_) {
         logger_.debug("Clearing current screen");
         currentScreen_->onExit();
+        yield();
         currentScreen_.reset();
+        yield();
         clearDisplay();
+        yield();
     }
 
     logger_.debug("Creating new screen...");
@@ -63,7 +73,9 @@ bool UIController::setScreen(ScreenName screenName) {
     }
 
     logger_.debugf("[Heap] Screen created: %d", ESP.getFreeHeap());
-    
+
+    yield();
+
     if (currentScreen_) {
         logger_.debug("Calling onEnter() for new screen");
         currentScreen_->onEnter();
@@ -71,6 +83,10 @@ bool UIController::setScreen(ScreenName screenName) {
     }
 
     isChangingScreen_ = false;
+
+    esp_task_wdt_reset();  // Reset after transition
+
+    logger_.debugf("Screen transition took %ums", millis() - start);
     return true;
 }
 
@@ -81,22 +97,17 @@ void UIController::draw() {
 }
 
 void UIController::handleTouchInput() {
-    if (!currentScreen_ || !displayDriver_) {
+    if (!currentScreen_ || !displayDriver_ || isHandlingTouch_) {
         return;
     }
 
-    if (isHandlingTouch_) return; // Simple guard
     isHandlingTouch_ = true;
 
-    static uint8_t recursionDepth = 0;
-    if (recursionDepth > 0) {
-        logger_.error("Touch recursion detected!");
+    LGFX* lcd = displayDriver_->getDisplay();
+    if (!lcd) {
+        isHandlingTouch_ = false;
         return;
     }
-    recursionDepth++;
-
-    LGFX* lcd = displayDriver_->getDisplay();
-    if (!lcd) return;
 
     static unsigned long lastTouchTime = 0;
     constexpr unsigned long kDebounceMs = 50;
@@ -105,14 +116,11 @@ void UIController::handleTouchInput() {
     if (lcd->getTouch(&x, &y)) {
         unsigned long currentTime = millis();
         if (currentTime - lastTouchTime > kDebounceMs) {
-            logger_.debug("Handling touch input");
-            lcd->fillRect(x - 2, y - 2, 4, 4, TFT_RED);
+            logger_.debugf("UIController::handleTouchInput at (%d,%d)", x, y);
             currentScreen_->handleTouch(x, y);
             lastTouchTime = currentTime;
         }
     }
-
-    recursionDepth--;
 
     isHandlingTouch_ = false;
 }
@@ -123,6 +131,4 @@ void UIController::clearDisplay() {
     }
 }
 
-DisplayDriver* UIController::getDisplayDriver() const {
-    return displayDriver_;
-}
+DisplayDriver* UIController::getDisplayDriver() const { return displayDriver_; }

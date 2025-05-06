@@ -10,8 +10,7 @@ class DisplayDriver;
 
 class ActionHandler {
    public:
-    ActionHandler(UIController* uiController, ILogger& logger,
-                  DisplayDriver* displayDriver);
+    ActionHandler(UIController* uiController, ILogger& logger);
 
     void registerHandlers();
     void resetDevice();

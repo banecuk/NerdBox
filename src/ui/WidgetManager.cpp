@@ -1,5 +1,7 @@
 #include "WidgetManager.h"
 
+#include <esp_task_wdt.h>
+
 WidgetManager::WidgetManager(ILogger& logger, LGFX* lcd) : logger_(logger), lcd_(lcd) {
     if (!lcd_) {
         logger_.error("WidgetManager created with null LGFX pointer!");
@@ -28,7 +30,11 @@ void WidgetManager::initializeWidgets() {
     logger_.debugf("Initializing %d widgets...", widgets_.size());
     for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
+        yield();
         widget->draw(true);
+        // if (Config::Watchdog::kEnableOnBoot) {
+        esp_task_wdt_reset();
+        //}
     }
     logger_.debug("Widgets initialized");
 }
@@ -44,6 +50,8 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
     for (auto& widget : widgets_) {
         bool needsDraw = forceRedraw || widget->needsUpdate();
         if (needsDraw) {
+            logger_.debugf("Drawing widget at (%d, %d)", widget->getDimensions().x,
+                            widget->getDimensions().y);
             widget->draw(forceRedraw);
         }
     }
@@ -66,8 +74,8 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
         auto& widget = *it;
         IWidget::Dimensions dims = widget->getDimensions();
 
-        if (x >= dims.x && x < (dims.x + dims.width) && 
-            y >= dims.y && y < (dims.y + dims.height)) {
+        if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y &&
+            y < (dims.y + dims.height)) {
             logger_.debugf("Widget found at (%d,%d)", x, y);
             if (widget->handleTouch(x, y)) {
                 logger_.debug("Widget handled touch");
@@ -84,11 +92,12 @@ void WidgetManager::cleanupWidgets() {
 
     for (auto& widget : widgets_) {
         if (widget) {
-            widget->cleanUp(); // Ensure all widgets clean up their resources
-            widget.reset(); // Explicitly release
+            yield();
+            widget->cleanUp();  // Ensure all widgets clean up their resources
+            widget.reset();     // Explicitly release
         }
     }
-    
-    widgets_.clear(); // Then clear the container
-    logger_.debug("Widgets cleared. Count: %d", widgets_.size());
+
+    widgets_.clear();  // Then clear the container
+    logger_.debugf("Widgets cleared. Count: %d", widgets_.size());
 }

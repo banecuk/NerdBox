@@ -13,25 +13,22 @@ MainScreen::MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiCo
 MainScreen::~MainScreen() { logger_.debug("MainScreen destructor"); }
 
 void MainScreen::createWidgets() {
-    widgetManager_.addWidget(
-        std::unique_ptr<ClockWidget>(new ClockWidget({330, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3))
-    );
-    widgetManager_.addWidget(
-        std::unique_ptr<ButtonWidget>(new ButtonWidget(
-            "<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
-            [this](ActionType action) { this->handleAction(action); }
-        ))
-    );
-    widgetManager_.addWidget(
-        std::unique_ptr<ButtonWidget>(new ButtonWidget(
-            "Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-            [this](ActionType action) { this->handleAction(action); }
-        ))
-    );
+    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
+        new ClockWidget({328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)));
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+        new ButtonWidget("<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
+                         [this](ActionType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+        new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
+                         [this](ActionType action) { this->handleAction(action); })));
 }
 
 void MainScreen::onEnter() {
     logger_.info("Entering MainScreen");
+
+    lcd_->fillRect(0, 0, 480, 320, TFT_NAVY);
+    lcd_->drawSmoothLine(0, 160, 480, 80, TFT_BLACK);
+    lcd_->drawSmoothLine(0, 160, 480, 240, TFT_BLACK);
 
     // Add debug info about buttons
     // logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
@@ -50,12 +47,12 @@ void MainScreen::onEnter() {
     widgetManager_.initializeWidgets();
 
     // Initial Draw
-    lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-    lcd_->clear(TFT_BLACK);
-    lcd_->setTextSize(2);
-    lcd_->setTextDatum(TL_DATUM);
-    lcd_->drawString("Main Dashboard", 5, 250);
-    lcd_->setTextSize(1);
+    // lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
+    // lcd_->clear(TFT_BLACK);
+    // lcd_->setTextSize(2);
+    // lcd_->setTextDatum(TL_DATUM);
+    // lcd_->drawString("Main Dashboard", 5, 250);
+    // lcd_->setTextSize(1);
 
     widgetManager_.updateAndDrawWidgets(true);  // Force draw for all widgets on entry
 }
@@ -63,10 +60,10 @@ void MainScreen::onEnter() {
 void MainScreen::onExit() {
     logger_.info("MainScreen::onExit() - START");
     logger_.debugf("[Heap] Pre-cleanup: %d", ESP.getFreeHeap());
-    
+
     widgetManager_.cleanupWidgets();
     logger_.debugf("Widget count after cleanup: %d", widgetManager_.getWidgetCount());
-    
+
     logger_.debugf("[Heap] Post-cleanup: %d", ESP.getFreeHeap());
     logger_.info("MainScreen::onExit() - COMPLETE");
 }
@@ -75,7 +72,7 @@ void MainScreen::draw() {
     if (!lcd_) return;  // Safety check
 
     static unsigned long lastHeapLog = 0;
-    if (millis() - lastHeapLog > 30000) { // Every 30 seconds
+    if (millis() - lastHeapLog > 30000) {  // Every 30 seconds
         logger_.debugf("[Heap] Current free: %d", ESP.getFreeHeap());
         lastHeapLog = millis();
     }

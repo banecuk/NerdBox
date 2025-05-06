@@ -5,9 +5,8 @@
 #include "ui/DisplayDriver.h"
 #include "ui/UIController.h"
 
-ActionHandler::ActionHandler(UIController* uiController, ILogger& logger,
-                             DisplayDriver* displayDriver)
-    : uiController_(uiController), logger_(logger), displayDriver_(displayDriver) {
+ActionHandler::ActionHandler(UIController* uiController, ILogger& logger)
+    : uiController_(uiController), logger_(logger) {
     registerHandlers();
 }
 
@@ -27,9 +26,24 @@ void ActionHandler::registerHandlers() {
     eventBus.subscribe(ActionType::SHOW_MAIN, [this]() { showMain(); });
 }
 
-void ActionHandler::resetDevice() { ESP.restart(); }
+void ActionHandler::resetDevice() { 
+    logger_.debug("RESET_DEVICE action received");
 
-void ActionHandler::cycleBrightness() { displayDriver_->cycleBrightness(); }
+    if (uiController_->getDisplayDriver()->getDisplay()) {
+        LGFX* display = uiController_->getDisplayDriver()->getDisplay();
+        display->setTextColor(TFT_WHITE, TFT_BLACK);
+        display->setTextSize(3);
+        display->setTextDatum(TL_DATUM);
+        display->drawString("RESETING DEVICE", 0, 0);
+    }
+
+    ESP.restart(); 
+}
+
+void ActionHandler::cycleBrightness() { 
+    logger_.debug("CYCLE_BRIGHTNESS action received");
+    uiController_->getDisplayDriver()->cycleBrightness();
+}
 
 void ActionHandler::showSettings() { 
     logger_.debug("SHOW_SETTINGS action received");
@@ -40,6 +54,7 @@ void ActionHandler::showSettings() {
 void ActionHandler::showMain() { 
     logger_.debug("SHOW_MAIN action received");
     logger_.debugf("[Heap] Pre-transition: %d", ESP.getFreeHeap());
+    logger_.debugf("[Stack] Free stack: %u", uxTaskGetStackHighWaterMark(nullptr));
     uiController_->setScreen(ScreenName::MAIN);
     logger_.debugf("[Heap] Post-transition: %d", ESP.getFreeHeap());
     logger_.debug("SHOW_MAIN action completed");

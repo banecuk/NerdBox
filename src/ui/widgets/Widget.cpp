@@ -1,12 +1,7 @@
 #include "Widget.h"
 
 Widget::Widget(const Dimensions& dims, uint32_t updateIntervalMs)
-    : dimensions_(dims),
-      updateIntervalMs_(updateIntervalMs),
-      lastUpdateTimeMs_(0)
-{
-
-}
+    : dimensions_(dims), updateIntervalMs_(updateIntervalMs), lastUpdateTimeMs_(0) {}
 
 void Widget::initialize(LGFX* lcd, ILogger& logger) {
     if (!lcd) {

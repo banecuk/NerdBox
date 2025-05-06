@@ -90,17 +90,20 @@ bool System::initializeWatchdog() {
 
     esp_err_t ret = esp_task_wdt_init(Config::Watchdog::kTimeoutMs / 1000, true);
     if (ret != ESP_OK) {
-        logger_.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)), true);
+        logger_.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)),
+                      true);
         return false;
     }
 
     ret = esp_task_wdt_add(nullptr);
     if (ret != ESP_OK) {
-        logger_.error("Failed to add main task to watchdog: " + String(esp_err_to_name(ret)), true);
+        logger_.error(
+            "Failed to add main task to watchdog: " + String(esp_err_to_name(ret)), true);
         return false;
     }
 
-    logger_.info("Watchdog initialized with " + String(Config::Watchdog::kTimeoutMs) + "ms timeout", true);
+    logger_.infof("Watchdog initialized with %dms timeout", Config::Watchdog::kTimeoutMs,
+                  true);
     return true;
 }
 
@@ -122,12 +125,12 @@ bool System::handleStateTransition() {
             return true;
 
         case InitState::SERIAL_INIT:
-            return initializeSerial() ? transitionTo(InitState::DISPLAY_INIT), true 
-                                     : (transitionTo(InitState::FAILED), false);
+            return initializeSerial() ? transitionTo(InitState::DISPLAY_INIT),
+                   true               : (transitionTo(InitState::FAILED), false);
 
         case InitState::DISPLAY_INIT:
-            return initializeDisplay() ? transitionTo(InitState::TASKS_INIT), true 
-                                      : (transitionTo(InitState::FAILED), false);
+            return initializeDisplay() ? transitionTo(InitState::TASKS_INIT),
+                   true                : (transitionTo(InitState::FAILED), false);
 
         case InitState::TASKS_INIT:
             if (!taskManager_.createTasks()) {
@@ -177,7 +180,8 @@ void System::transitionTo(InitState newState) {
 }
 
 bool System::isTerminalState() const {
-    return currentInitState_ == InitState::COMPLETE || currentInitState_ == InitState::FAILED;
+    return currentInitState_ == InitState::COMPLETE ||
+           currentInitState_ == InitState::FAILED;
 }
 
 // Logging Helpers ------------------------------------------------------------
@@ -186,10 +190,12 @@ String System::getStateName(InitState state) const {
     return INIT_STATE_NAMES_[static_cast<int>(state)];
 }
 
-void System::logRetryAttempt(const char* component, uint8_t attempt, uint8_t maxRetries) const {
+void System::logRetryAttempt(const char* component, uint8_t attempt,
+                             uint8_t maxRetries) const {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%s init attempt %d/%d failed", component, attempt, maxRetries);
-    //logger_.warning(buffer, true);
+    snprintf(buffer, sizeof(buffer), "%s init attempt %d/%d failed", component, attempt,
+             maxRetries);
+    // logger_.warning(buffer, true);
 }
 
 uint16_t System::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const {
@@ -197,5 +203,6 @@ uint16_t System::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) cons
 }
 
 void System::handleInitializationFailure() {
-    logger_.critical("[FATAL] System initialization failed in state: " + getStateName(currentInitState_));
+    logger_.critical("[FATAL] System initialization failed in state: " +
+                     getStateName(currentInitState_));
 }
