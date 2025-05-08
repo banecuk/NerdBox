@@ -7,7 +7,7 @@ MainScreen::MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiCo
       uiController_(uiController),
       widgetManager_(logger, uiController->getDisplayDriver()->getDisplay()) {
     createWidgets();
-    logger_.debugf("MainScreen constructor. Free heap: %d", ESP.getFreeHeap());
+    // logger_.debugf("MainScreen constructor. Free heap: %d", ESP.getFreeHeap());
 }
 
 MainScreen::~MainScreen() { logger_.debug("MainScreen destructor"); }
@@ -18,17 +18,13 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
         new ButtonWidget("<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
                          [this](ActionType action) { this->handleAction(action); })));
-    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-                         [this](ActionType action) { this->handleAction(action); })));
+    // widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+    //     new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
+    //                      [this](ActionType action) { this->handleAction(action); })));
 }
 
 void MainScreen::onEnter() {
     logger_.info("Entering MainScreen");
-
-    lcd_->fillRect(0, 0, 480, 320, TFT_NAVY);
-    lcd_->drawSmoothLine(0, 160, 480, 80, TFT_BLACK);
-    lcd_->drawSmoothLine(0, 160, 480, 240, TFT_BLACK);
 
     // Add debug info about buttons
     // logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
@@ -69,16 +65,40 @@ void MainScreen::onExit() {
 }
 
 void MainScreen::draw() {
-    if (!lcd_) return;  // Safety check
-
-    static unsigned long lastHeapLog = 0;
-    if (millis() - lastHeapLog > 30000) {  // Every 30 seconds
-        logger_.debugf("[Heap] Current free: %d", ESP.getFreeHeap());
-        lastHeapLog = millis();
+    if (!lcd_ || uiController_->isChangingScreen() || !uiController_->tryAcquireDrawLock()) {
+        return;
     }
+
+    if (draw_counter_ < 5) {
+        logger_.debugf("MainScreen draw_counter_: %d", draw_counter_);
+    }
+
+    // static unsigned long lastHeapLog = 0;
+    // if (millis() - lastHeapLog > 30000) {  // Every 30 seconds
+    //     logger_.debugf("[Heap] Current free: %d", ESP.getFreeHeap());
+    //     lastHeapLog = millis();
+    // }
+
+//    lcd_->startWrite();  // Start transaction
+    lcd_->setTextColor(TFT_YELLOW, TFT_BLUE);
+    lcd_->setTextSize(1);
+    lcd_->setCursor(240, 160);
+    lcd_->printf("Draw: %d", draw_counter_);
+//    lcd_->endWrite();    // End transaction
+
+    uiController_->releaseDrawLock();
+
+    draw_counter_++;
 
     // Update and Draw Widgets
     widgetManager_.updateAndDrawWidgets();
+
+    if (draw_counter_ > 1000) {
+            draw_counter_ = 0;
+    } 
+    if (draw_counter_ < 6) {
+        logger_.debug("MainScreen draw completed");
+    }    
 
     // Draw Non-Widget
     // if (pcMetrics_.is_updated) {

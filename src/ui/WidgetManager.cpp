@@ -19,7 +19,7 @@ void WidgetManager::addWidget(std::unique_ptr<IWidget> widget) {
         return;
     }
     widgets_.push_back(std::move(widget));
-    logger_.debugf("[Heap] Widget post-add: %d", ESP.getFreeHeap());
+    // logger_.debugf("[Heap] Widget post-add: %d", ESP.getFreeHeap());
 }
 
 void WidgetManager::initializeWidgets() {
@@ -30,13 +30,10 @@ void WidgetManager::initializeWidgets() {
     logger_.debugf("Initializing %d widgets...", widgets_.size());
     for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
-        yield();
         widget->draw(true);
-        // if (Config::Watchdog::kEnableOnBoot) {
-        esp_task_wdt_reset();
-        //}
     }
     logger_.debug("Widgets initialized");
+    initialized_ = true;
 }
 
 void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
@@ -44,6 +41,11 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
         if (forceRedraw) {
             logger_.error("Cannot update/draw widgets: LGFX pointer is null.");
         }
+        return;
+    }
+
+    if (!initialized_) {
+        logger_.error("Cannot update/draw widgets: Not initialized.");
         return;
     }
 
@@ -65,6 +67,11 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 
     if (!lcd_ || x >= lcd_->width() || y >= lcd_->height()) {
         logger_.errorf("Invalid touch coordinates: (%d, %d)", x, y);
+        return false;
+    }
+
+    if (!initialized_) {
+        logger_.error("Cannot handle touch: Not initialized.");
         return false;
     }
 
@@ -90,9 +97,10 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 void WidgetManager::cleanupWidgets() {
     logger_.debugf("Clearing %d widgets", widgets_.size());
 
+    initialized_ = false;  // Mark as uninitialized before cleanup
+
     for (auto& widget : widgets_) {
         if (widget) {
-            yield();
             widget->cleanUp();  // Ensure all widgets clean up their resources
             widget.reset();     // Explicitly release
         }
@@ -100,4 +108,8 @@ void WidgetManager::cleanupWidgets() {
 
     widgets_.clear();  // Then clear the container
     logger_.debugf("Widgets cleared. Count: %d", widgets_.size());
+
+    delay(100);  // Allow time for any pending operations to complete
+    logger_.debug("Widgets cleared waiting done.");
+
 }

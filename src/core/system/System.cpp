@@ -12,6 +12,7 @@ System::System()
       pcMetricsService_(networkManager_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.hmData,
                    systemState_.core, systemState_.screen),
+      httpServer_(uiController_),
       currentInitState_(InitState::INITIAL) {}
 
 bool System::initialize() {

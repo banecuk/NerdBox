@@ -17,20 +17,16 @@ UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
     if (!displayDriver_) {
         throw std::invalid_argument("DisplayDriver pointer cannot be null");
     }
+    drawMutex_ = xSemaphoreCreateMutex();
 }
 
 UIController::~UIController() {
-    // Smart pointers will automatically clean up
 }
 
 void UIController::initialize() { setScreen(ScreenName::BOOT); }
 
 bool UIController::setScreen(ScreenName screenName) {
     uint32_t start = millis();
-
-    // if (Config::Watchdog::kEnableOnBoot) {
-    esp_task_wdt_reset();  // Reset before starting transition
-    //}
 
     if (isChangingScreen_) {
         logger_.error("SCREEN RECURSION DETECTED!");
@@ -47,16 +43,21 @@ bool UIController::setScreen(ScreenName screenName) {
         return false;
     }
 
+    // Lock out all drawing
+    drawLock_ = true;
+    if (xSemaphoreTake(drawMutex_, portMAX_DELAY) != pdTRUE) {
+        logger_.error("Failed to acquire draw mutex");
+        return false;
+    }
+
     isChangingScreen_ = true;
+    clearDisplay();  // TODO - don't clear the display twice, testing!!!
 
     if (currentScreen_) {
         logger_.debug("Clearing current screen");
         currentScreen_->onExit();
-        yield();
         currentScreen_.reset();
-        yield();
         clearDisplay();
-        yield();
     }
 
     logger_.debug("Creating new screen...");
@@ -72,32 +73,32 @@ bool UIController::setScreen(ScreenName screenName) {
             break;
     }
 
-    logger_.debugf("[Heap] Screen created: %d", ESP.getFreeHeap());
+    // logger_.debugf("[Heap] Screen created: %d", ESP.getFreeHeap());
 
-    yield();
+    // Release locks
+    xSemaphoreGive(drawMutex_);
+    drawLock_ = false;
 
     if (currentScreen_) {
         logger_.debug("Calling onEnter() for new screen");
-        currentScreen_->onEnter();
         screenState_.activeScreen = screenName;
+        currentScreen_->onEnter();
     }
 
     isChangingScreen_ = false;
-
-    esp_task_wdt_reset();  // Reset after transition
 
     logger_.debugf("Screen transition took %ums", millis() - start);
     return true;
 }
 
 void UIController::draw() {
-    if (currentScreen_) {
+    if ((currentScreen_)&&(!isChangingScreen_)) {
         currentScreen_->draw();
     }
 }
 
 void UIController::handleTouchInput() {
-    if (!currentScreen_ || !displayDriver_ || isHandlingTouch_) {
+    if (!currentScreen_ || !displayDriver_ || isHandlingTouch_ || isChangingScreen_) {
         return;
     }
 
@@ -127,7 +128,12 @@ void UIController::handleTouchInput() {
 
 void UIController::clearDisplay() {
     if (displayDriver_ && displayDriver_->getDisplay()) {
-        displayDriver_->getDisplay()->fillScreen(TFT_BLACK);
+        LGFX* lcd = displayDriver_->getDisplay();
+        //lcd->startWrite();               // Start transaction
+        lcd->fillScreen(TFT_BLACK);      // Clear screen
+        //lcd->endWrite();                 // End transaction
+        lcd->waitDMA();                  // Wait for completion
+        //lcd->display();                  // Force display update (if supported)
     }
 }
 

@@ -25,8 +25,22 @@ class UIController {
     bool setScreen(ScreenName screenName);
     void draw();
     void handleTouchInput();
+    bool isChangingScreen() const { return isChangingScreen_; }
 
     DisplayDriver* getDisplayDriver() const;
+
+    bool tryAcquireDrawLock() {
+        // return xSemaphoreTake(drawMutex_, 0) == pdTRUE;
+
+        const TickType_t timeout = pdMS_TO_TICKS(100);
+        BaseType_t res = xSemaphoreTake(drawMutex_, timeout);
+        if (res != pdTRUE) {
+            logger_.error("Draw lock timeout!");
+            return false;
+        }
+        return true;
+    }
+    void releaseDrawLock() { xSemaphoreGive(drawMutex_); }
 
    private:
     void clearDisplay();
@@ -38,6 +52,9 @@ class UIController {
 
     std::unique_ptr<IScreen> currentScreen_;
     std::unique_ptr<ActionHandler> actionHandler_;
+
+    volatile bool drawLock_ = false;
+    SemaphoreHandle_t drawMutex_;
 
     volatile bool isChangingScreen_ = false;
     volatile bool isHandlingTouch_ = false;

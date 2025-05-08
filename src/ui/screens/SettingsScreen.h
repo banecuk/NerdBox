@@ -26,6 +26,8 @@ class SettingsScreen : public IScreen {
 
     WidgetManager widgetManager_;
 
+    int32_t draw_counter_ = 0;    
+
     void createWidgets();
     void handleAction(ActionType action);
 };

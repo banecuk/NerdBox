@@ -44,3 +44,4 @@ void DisplayDriver::cycleBrightness() {
     }
     setBrightness(brightness);
 }
+

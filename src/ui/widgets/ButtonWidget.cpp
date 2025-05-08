@@ -45,7 +45,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     }
 
     if (!initialized_ || !lcd_ || !callback_) { 
-        // logger_.debug("ButtonWidget::handleTouch - Rejected (invalid state)");
+        logger_->debug("ButtonWidget::handleTouch - Rejected");
         return false;
     }
 

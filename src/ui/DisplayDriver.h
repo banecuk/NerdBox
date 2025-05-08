@@ -38,6 +38,8 @@ class DisplayDriver {
     uint8_t brightness_;
 
     static const uint8_t DEFAULT_BRIGHTNESS = 100;
+
+    
 };
 
 extern DisplayDriver displayDriver;
