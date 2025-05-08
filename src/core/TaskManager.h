@@ -19,12 +19,10 @@ class TaskManager {
 
     bool createTasks();
     static void updateScreenTask(void *parameter);
-    static void touchTask(void *parameter);
     static void backgroundTask(void *parameter);
 
    private:
     TaskHandle_t screenTaskHandle;
-    TaskHandle_t touchTaskHandle;
     TaskHandle_t backgroundTaskHandle;
 
     ILogger &logger_;

@@ -51,7 +51,7 @@ bool UIController::setScreen(ScreenName screenName) {
     }
 
     isChangingScreen_ = true;
-    clearDisplay();  // TODO - don't clear the display twice, testing!!!
+    displayDriver_->getDisplay()->startWrite(); // Start transaction
 
     if (currentScreen_) {
         logger_.debug("Clearing current screen");
@@ -85,6 +85,8 @@ bool UIController::setScreen(ScreenName screenName) {
         currentScreen_->onEnter();
     }
 
+    displayDriver_->getDisplay()->endWrite(); // Start transaction
+
     isChangingScreen_ = false;
 
     logger_.debugf("Screen transition took %ums", millis() - start);
@@ -94,46 +96,41 @@ bool UIController::setScreen(ScreenName screenName) {
 void UIController::draw() {
     if ((currentScreen_)&&(!isChangingScreen_)) {
         currentScreen_->draw();
+        handleTouchInput();
     }
 }
 
 void UIController::handleTouchInput() {
-    if (!currentScreen_ || !displayDriver_ || isHandlingTouch_ || isChangingScreen_) {
-        return;
-    }
-
-    isHandlingTouch_ = true;
-
-    LGFX* lcd = displayDriver_->getDisplay();
-    if (!lcd) {
-        isHandlingTouch_ = false;
+    if (isHandlingTouch_) {
         return;
     }
 
     static unsigned long lastTouchTime = 0;
-    constexpr unsigned long kDebounceMs = 50;
-
-    int32_t x = 0, y = 0;
-    if (lcd->getTouch(&x, &y)) {
-        unsigned long currentTime = millis();
-        if (currentTime - lastTouchTime > kDebounceMs) {
+    constexpr unsigned long kDebounceMs = 500;
+    
+    unsigned long currentTime = millis();
+    if (currentTime - lastTouchTime > kDebounceMs) {
+        isHandlingTouch_ = true;
+        LGFX* lcd = displayDriver_->getDisplay();
+        int32_t x = 0, y = 0;
+        if (lcd->getTouch(&x, &y)) {
             logger_.debugf("UIController::handleTouchInput at (%d,%d)", x, y);
             currentScreen_->handleTouch(x, y);
             lastTouchTime = currentTime;
         }
+        isHandlingTouch_ = false;
+    } else {
+        logger_.debug("Touch event ignored due to debounce");
     }
 
-    isHandlingTouch_ = false;
 }
 
 void UIController::clearDisplay() {
     if (displayDriver_ && displayDriver_->getDisplay()) {
         LGFX* lcd = displayDriver_->getDisplay();
-        //lcd->startWrite();               // Start transaction
+        logger_.debug("Clear display");
         lcd->fillScreen(TFT_BLACK);      // Clear screen
-        //lcd->endWrite();                 // End transaction
-        lcd->waitDMA();                  // Wait for completion
-        //lcd->display();                  // Force display update (if supported)
+        // lcd->waitDMA();                  // Wait for completion
     }
 }
 

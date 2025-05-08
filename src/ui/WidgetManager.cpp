@@ -28,10 +28,14 @@ void WidgetManager::initializeWidgets() {
         return;
     }
     logger_.debugf("Initializing %d widgets...", widgets_.size());
+
+    lcd_->startWrite();
     for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
         widget->draw(true);
     }
+    lcd_->endWrite();
+
     logger_.debug("Widgets initialized");
     initialized_ = true;
 }
@@ -49,6 +53,7 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
         return;
     }
 
+    lcd_->startWrite();
     for (auto& widget : widgets_) {
         bool needsDraw = forceRedraw || widget->needsUpdate();
         if (needsDraw) {
@@ -57,6 +62,7 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
             widget->draw(forceRedraw);
         }
     }
+    lcd_->endWrite();
 }
 
 bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
@@ -109,7 +115,6 @@ void WidgetManager::cleanupWidgets() {
     widgets_.clear();  // Then clear the container
     logger_.debugf("Widgets cleared. Count: %d", widgets_.size());
 
-    delay(100);  // Allow time for any pending operations to complete
     logger_.debug("Widgets cleared waiting done.");
 
 }

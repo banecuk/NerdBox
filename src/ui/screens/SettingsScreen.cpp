@@ -59,14 +59,16 @@ void SettingsScreen::draw() {
         return;
     }
 
-    if (draw_counter_ < 5) {
+    if (draw_counter_ < 4) {
         logger_.debugf("SettingsScreen draw_counter_: %d", draw_counter_);
     }    
 
+    lcd_->startWrite();
     lcd_->setTextColor(TFT_GREEN, TFT_RED);
     lcd_->setTextSize(1);
     lcd_->setCursor(120, 120);
     lcd_->printf("Draw: %d", draw_counter_);
+    lcd_->endWrite();
 
     uiController_->releaseDrawLock();    
 
@@ -79,7 +81,7 @@ void SettingsScreen::draw() {
     if (draw_counter_ > 1000) {
         draw_counter_ = 0;
     }
-    if (draw_counter_ < 6) {
+    if (draw_counter_ < 5) {
         logger_.debug("SettingsScreen draw completed");
     }
     

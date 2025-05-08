@@ -69,7 +69,7 @@ void MainScreen::draw() {
         return;
     }
 
-    if (draw_counter_ < 5) {
+    if (draw_counter_ < 4) {
         logger_.debugf("MainScreen draw_counter_: %d", draw_counter_);
     }
 
@@ -79,12 +79,12 @@ void MainScreen::draw() {
     //     lastHeapLog = millis();
     // }
 
-//    lcd_->startWrite();  // Start transaction
+    lcd_->startWrite();
     lcd_->setTextColor(TFT_YELLOW, TFT_BLUE);
     lcd_->setTextSize(1);
     lcd_->setCursor(240, 160);
     lcd_->printf("Draw: %d", draw_counter_);
-//    lcd_->endWrite();    // End transaction
+    lcd_->endWrite();
 
     uiController_->releaseDrawLock();
 
@@ -96,7 +96,7 @@ void MainScreen::draw() {
     if (draw_counter_ > 1000) {
             draw_counter_ = 0;
     } 
-    if (draw_counter_ < 6) {
+    if (draw_counter_ < 5) {
         logger_.debug("MainScreen draw completed");
     }    
 

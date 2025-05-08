@@ -14,8 +14,7 @@ TaskManager::TaskManager(ILogger &logger, UIController &uiController,
 bool TaskManager::createTasks() {
     logger_.info("Initializing System Tasks", true);
 
-    static constexpr UBaseType_t kScreenPriority = 3;
-    static constexpr UBaseType_t kTouchPriority = 2;
+    static constexpr UBaseType_t kScreenPriority = 2;
     static constexpr UBaseType_t kBackgroundPriority = 1;
 
     BaseType_t screenTaskStatus = xTaskCreatePinnedToCore(
@@ -25,15 +24,6 @@ bool TaskManager::createTasks() {
     if (screenTaskStatus != pdPASS) {
         logger_.critical("Failed to create screen update task! Error code: %d",
                          screenTaskStatus);
-        return false;
-    }
-
-    BaseType_t touchTaskStatus = xTaskCreatePinnedToCore(
-        touchTask, "TouchUpdate", Config::Tasks::kTouchStack, this, kTouchPriority,
-        &touchTaskHandle, ARDUINO_RUNNING_CORE);
-
-    if (screenTaskStatus != pdPASS) {
-        logger_.critical("Failed to create touch task! Error code: %d", screenTaskStatus);
         return false;
     }
 
@@ -71,17 +61,6 @@ void TaskManager::updateScreenTask(void *parameter) {
     }
 }
 
-void TaskManager::touchTask(void *parameter) {
-    auto *taskManager = static_cast<TaskManager *>(parameter);
-    TickType_t lastWakeTime = xTaskGetTickCount();
-    while (true) {
-        if (taskManager->screenState_.isInitialized) {
-            taskManager->uiController_.handleTouchInput();
-        }
-        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(Config::Timing::kScreenTaskMs));
-    }
-}
-
 void TaskManager::backgroundTask(void *parameter) {
     auto *taskManager = static_cast<TaskManager *>(parameter);
     while (true) {
@@ -110,7 +89,7 @@ void TaskManager::updateHmData() {
         consecutiveFailures_ = 0;
         coreState_.nextSync_HardwareMonitor =
             millis() + Config::HardwareMonitor::kRefreshMs;
-        logger_.debug("HM updated", true);
+        // logger_.debug("HM updated", true);
     } else {
         consecutiveFailures_++;
         coreState_.nextSync_HardwareMonitor =

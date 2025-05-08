@@ -31,7 +31,6 @@ constexpr uint32_t kMainLoopMs = 10;
 
 namespace Tasks {
 constexpr uint32_t kScreenStack = 10000;
-constexpr uint32_t kTouchStack = 8192;
 constexpr uint32_t kBackgroundStack = 20000;
 
 };  // namespace Tasks
