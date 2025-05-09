@@ -26,7 +26,7 @@ class SystemState {
     // Non-static members
     CoreState core;
     ScreenState screen;
-    PcMetrics hmData;
+    PcMetrics pcMetrics;
 
     SystemState() : core(), screen() {}
 

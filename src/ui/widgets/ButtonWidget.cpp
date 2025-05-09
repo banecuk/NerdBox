@@ -1,7 +1,7 @@
 #include "ButtonWidget.h"
 
 ButtonWidget::ButtonWidget(const std::string& label, const Dimensions& dims,
-                           uint32_t updateIntervalMs, ActionType action,
+                           uint32_t updateIntervalMs, EventType action,
                            ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       label_(label),

@@ -16,16 +16,16 @@ void SettingsScreen::createWidgets() {
         new ClockWidget({328, 288 - 24, 150, 24}, 1000, TFT_YELLOW, TFT_BLACK, 3)));
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_MAIN,
-                         [this](ActionType action) { this->handleAction(action); })));
+        new ButtonWidget("<", {0, 320 - 1 - 48, 48, 48}, 0, EventType::SHOW_MAIN,
+                         [this](EventType action) { this->handleAction(action); })));
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Reset", {20, 20, 100, 48}, 0, ActionType::RESET_DEVICE,
-                         [this](ActionType action) { this->handleAction(action); })));
+        new ButtonWidget("Reset", {20, 20, 100, 48}, 0, EventType::RESET_DEVICE,
+                         [this](EventType action) { this->handleAction(action); })));
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Brightness", {20, 72, 100, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-                         [this](ActionType action) { this->handleAction(action); })));
+        new ButtonWidget("Brightness", {20, 72, 100, 48}, 0, EventType::CYCLE_BRIGHTNESS,
+                         [this](EventType action) { this->handleAction(action); })));
 }
 
 void SettingsScreen::onEnter() {
@@ -83,6 +83,6 @@ void SettingsScreen::handleTouch(uint16_t x, uint16_t y) {
     widgetManager_.handleTouch(x, y);
 }
 
-void SettingsScreen::handleAction(ActionType action) {
+void SettingsScreen::handleAction(EventType action) {
     EventBus::getInstance().publish(action);
 }

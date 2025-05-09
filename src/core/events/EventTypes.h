@@ -1,6 +1,6 @@
 #pragma once
 
-enum class ActionType {
+enum class EventType {
     NONE,
     RESET_DEVICE,
     CYCLE_BRIGHTNESS,

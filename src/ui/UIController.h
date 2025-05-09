@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "core/system/SystemState.h"
+#include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "ui/DisplayDriver.h"
 #include "ui/ScreenTypes.h"
@@ -13,7 +13,7 @@
 class BootScreen;
 class MainScreen;
 class SettingsScreen;
-class ActionHandler;
+class EventHandler;
 
 class UIController {
    public:
@@ -75,7 +75,7 @@ class UIController {
     SystemState::ScreenState& screenState_;
 
     std::unique_ptr<IScreen> currentScreen_;
-    std::unique_ptr<ActionHandler> actionHandler_;
+    std::unique_ptr<EventHandler> actionHandler_;
     SemaphoreHandle_t displayMutex_;
 
     ScreenTransition transition_;

@@ -1,5 +1,5 @@
-#ifndef ACTION_HANDLER_H
-#define ACTION_HANDLER_H
+#ifndef EVENT_HANDLER_H
+#define EVENT_HANDLER_H
 
 #include "EventBus.h"
 #include "utils/Logger.h"
@@ -8,9 +8,9 @@
 class UIController;
 class DisplayDriver;
 
-class ActionHandler {
+class EventHandler {
    public:
-    ActionHandler(UIController* uiController, ILogger& logger);
+    EventHandler(UIController* uiController, ILogger& logger);
 
     void registerHandlers();
     void resetDevice();
@@ -23,4 +23,4 @@ class ActionHandler {
     ILogger& logger_;
 };
 
-#endif  // ACTION_HANDLER_H
+#endif

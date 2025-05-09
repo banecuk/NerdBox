@@ -4,7 +4,7 @@
 #include <functional>
 #include <map>
 #include <vector>
-#include "ActionTypes.h"
+#include "EventTypes.h"
 
 class EventBus {
 public:
@@ -18,12 +18,12 @@ public:
     using EventCallback = std::function<void()>;
 
     // Subscribe to an event
-    void subscribe(ActionType actionType, EventCallback callback) {
+    void subscribe(EventType actionType, EventCallback callback) {
         subscribers[actionType].push_back(callback);
     }
 
     // Publish an event
-    void publish(ActionType actionType) {
+    void publish(EventType actionType) {
         if (subscribers.find(actionType) != subscribers.end()) {
             for (auto& callback : subscribers[actionType]) {
                 callback();
@@ -37,7 +37,7 @@ private:
     EventBus(const EventBus&) = delete;
     EventBus& operator=(const EventBus&) = delete;
 
-    std::map<ActionType, std::vector<EventCallback>> subscribers;
+    std::map<EventType, std::vector<EventCallback>> subscribers;
 };
 
 #endif // EVENT_BUS_H

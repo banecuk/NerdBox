@@ -6,7 +6,7 @@
 
 #include "../ui/UIController.h"
 #include "config/AppConfig.h"
-#include "core/system/SystemState.h"
+#include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "services/PcMetricsService.h"
 #include "utils/Logger.h"
@@ -14,7 +14,7 @@
 class TaskManager {
    public:
     TaskManager(ILogger &logger, UIController &uiController,
-                PcMetricsService &hmDataService, PcMetrics &hmData,
+                PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
                 SystemState::CoreState &system, SystemState::ScreenState &screenState);
 
     bool createTasks();
@@ -28,13 +28,13 @@ class TaskManager {
     ILogger &logger_;
     UIController &uiController_;
     PcMetricsService &pcMetricsService_;
-    PcMetrics &hmData_;
+    PcMetrics &pcMetrics_;
     uint8_t consecutiveFailures_ = 0;
 
     SystemState::CoreState &coreState_;
     SystemState::ScreenState &screenState_;
 
-    void updateHmData();
+    void updatePcMetrics();
     void handleDownloadFailure();
     void resetWatchdog();
 };

@@ -75,7 +75,7 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
     if (forScreen) {
         timestamp = getTimestamp(forScreen);
         LogEntry entry{timestamp, level, message, true};  // Create the struct
-        screenQueue.push(entry);  // Push the struct, not the formatted string
+        screenQueue_.push(entry);  // Push the struct, not the formatted string
     }
 }
 
@@ -144,19 +144,19 @@ void Logger::criticalf(const char* format, ...) {
 std::queue<String> Logger::getScreenMessages() {
     std::queue<String> result;
 
-    while (!screenQueue.empty()) {
-        LogEntry entry = screenQueue.front();
+    while (!screenQueue_.empty()) {
+        LogEntry entry = screenQueue_.front();
         String formatted = "[" + entry.timestamp + "] [" + levelToString(entry.level) +
                            "] " + entry.message;
         result.push(formatted);
-        screenQueue.pop();
+        screenQueue_.pop();
     }
 
     return result;
 }
 
 void Logger::clearScreenMessages() {
-    while (!screenQueue.empty()) {
-        screenQueue.pop();
+    while (!screenQueue_.empty()) {
+        screenQueue_.pop();
     }
 }

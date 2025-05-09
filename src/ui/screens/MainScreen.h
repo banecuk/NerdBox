@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IScreen.h"
-#include "core/EventBus.h"
+#include "core/events/EventBus.h"
 #include "services/PcMetrics.h"
 #include "ui/UIController.h"
 #include "ui/WidgetManager.h"
@@ -11,7 +11,7 @@
 
 class MainScreen : public IScreen {
    public:
-    explicit MainScreen(ILogger &logger, PcMetrics &hmData, UIController *uiController);
+    explicit MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiController);
     ~MainScreen() override;
 
     void onEnter() override;
@@ -30,5 +30,5 @@ class MainScreen : public IScreen {
     int32_t draw_counter_ = 0;
 
     void createWidgets();
-    void handleAction(ActionType action);
+    void handleAction(EventType action);
 };

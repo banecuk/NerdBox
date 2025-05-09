@@ -4,17 +4,17 @@
 #include <string>
 
 #include "Widget.h"
-#include "core/ActionTypes.h"
+#include "core/events/EventTypes.h"
 
 class ButtonWidget : public Widget {
    public:
     typedef std::function<void()> Callback;
 
-    using ActionCallback = std::function<void(ActionType)>;
+    using ActionCallback = std::function<void(EventType)>;
 
     ButtonWidget(const std::string& label, const Dimensions& dims,
                  uint32_t updateIntervalMs = 0,
-                 ActionType action = ActionType::NONE,
+                 EventType action = EventType::NONE,
                  ActionCallback callback = nullptr);
 
     void initialize(LGFX* lcd, ILogger& logger) override;
@@ -29,7 +29,7 @@ class ButtonWidget : public Widget {
     std::string label_;
     unsigned long lastTouchTime_;  // Track last touch time for debouncing
 
-    ActionType action_;
+    EventType action_;
     ActionCallback callback_;
 };
 

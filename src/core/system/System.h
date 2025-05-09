@@ -7,7 +7,7 @@
 
 #include "config/AppConfig.h"
 #include "core/TaskManager.h"
-#include "core/system/SystemState.h"
+#include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"

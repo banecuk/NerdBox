@@ -6,11 +6,11 @@ constexpr const char* System::INIT_STATE_NAMES_[];
 System::System()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
-      uiController_(logger_, &displayDriver_, systemState_.hmData, systemState_.screen),
+      uiController_(logger_, &displayDriver_, systemState_.pcMetrics, systemState_.screen),
       networkManager_(logger_, httpDownloader_),
       displayDriver_(display_, logger_),
       pcMetricsService_(networkManager_),
-      taskManager_(logger_, uiController_, pcMetricsService_, systemState_.hmData,
+      taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
                    systemState_.core, systemState_.screen),
       httpServer_(uiController_),
       currentInitState_(InitState::INITIAL) {}

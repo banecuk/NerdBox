@@ -16,11 +16,11 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
         new ClockWidget({328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)));
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
-                         [this](ActionType action) { this->handleAction(action); })));
+        new ButtonWidget("<", {0, 272, 48, 48}, 0, EventType::SHOW_SETTINGS,
+                         [this](EventType action) { this->handleAction(action); })));
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-                         [this](ActionType action) { this->handleAction(action); })));
+        new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, EventType::CYCLE_BRIGHTNESS,
+                         [this](EventType action) { this->handleAction(action); })));
 }
 
 void MainScreen::onEnter() {
@@ -104,6 +104,6 @@ void MainScreen::handleTouch(uint16_t x, uint16_t y) {
     widgetManager_.handleTouch(x, y);
 }
 
-void MainScreen::handleAction(ActionType action) {
+void MainScreen::handleAction(EventType action) {
     EventBus::getInstance().publish(action);
 }

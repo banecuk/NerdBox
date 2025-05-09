@@ -1,13 +1,13 @@
 #include "TaskManager.h"
 
 TaskManager::TaskManager(ILogger &logger, UIController &uiController,
-                         PcMetricsService &hmDataService, PcMetrics &hmData,
+                         PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
                          SystemState::CoreState &coreState,
                          SystemState::ScreenState &screenState)
     : logger_(logger),
       uiController_(uiController),
-      pcMetricsService_(hmDataService),
-      hmData_(hmData),
+      pcMetricsService_(pcMetricsService),
+      pcMetrics_(pcMetrics),
       coreState_(coreState),
       screenState_(screenState) {}
 
@@ -67,7 +67,7 @@ void TaskManager::backgroundTask(void *parameter) {
         if (taskManager->coreState_.isInitialized && WiFi.status() == WL_CONNECTED) {
             if (taskManager->screenState_.activeScreen == ScreenName::MAIN) {
                 if (millis() >= taskManager->coreState_.nextSync_HardwareMonitor) {
-                    taskManager->updateHmData();
+                    taskManager->updatePcMetrics();
                     taskManager->resetWatchdog();
                 }
             }
@@ -83,8 +83,8 @@ void TaskManager::resetWatchdog() {
     }
 }
 
-void TaskManager::updateHmData() {
-    bool fetchSuccess = pcMetricsService_.fetchData(hmData_);
+void TaskManager::updatePcMetrics() {
+    bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
         coreState_.nextSync_HardwareMonitor =

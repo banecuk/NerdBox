@@ -1,32 +1,32 @@
-#include "ActionHandler.h"
+#include "EventHandler.h"
 
 #include <ESP.h>
 
 #include "ui/DisplayDriver.h"
 #include "ui/UIController.h"
 
-ActionHandler::ActionHandler(UIController* uiController, ILogger& logger)
+EventHandler::EventHandler(UIController* uiController, ILogger& logger)
     : uiController_(uiController), logger_(logger) {
     registerHandlers();
 }
 
-void ActionHandler::registerHandlers() {
+void EventHandler::registerHandlers() {
     auto& eventBus = EventBus::getInstance();
 
-    eventBus.subscribe(ActionType::NONE, [this]() {
-        logger_.info("ActionHandler- ActionType::NONE called");
+    eventBus.subscribe(EventType::NONE, [this]() {
+        logger_.info("EventHandler- EventType::NONE called");
     });
 
-    eventBus.subscribe(ActionType::RESET_DEVICE, [this]() { resetDevice(); });
+    eventBus.subscribe(EventType::RESET_DEVICE, [this]() { resetDevice(); });
 
-    eventBus.subscribe(ActionType::CYCLE_BRIGHTNESS, [this]() { cycleBrightness(); });
+    eventBus.subscribe(EventType::CYCLE_BRIGHTNESS, [this]() { cycleBrightness(); });
 
-    eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() { requestSettingsScreen(); });
+    eventBus.subscribe(EventType::SHOW_SETTINGS, [this]() { requestSettingsScreen(); });
 
-    eventBus.subscribe(ActionType::SHOW_MAIN, [this]() { requestMainScreen(); });
+    eventBus.subscribe(EventType::SHOW_MAIN, [this]() { requestMainScreen(); });
 }
 
-void ActionHandler::resetDevice() {
+void EventHandler::resetDevice() {
     logger_.debug("RESET action received");
 
     if (uiController_->getDisplayDriver()->getDisplay()) {
@@ -40,17 +40,17 @@ void ActionHandler::resetDevice() {
     ESP.restart();
 }
 
-void ActionHandler::cycleBrightness() {
+void EventHandler::cycleBrightness() {
     logger_.debug("BRIGHTNESS action received");
     uiController_->getDisplayDriver()->cycleBrightness();
 }
 
-void ActionHandler::requestSettingsScreen() {
+void EventHandler::requestSettingsScreen() {
     logger_.debug("SETTINGS action received");
     uiController_->requestScreen(ScreenName::SETTINGS);
 }
 
-void ActionHandler::requestMainScreen() {
+void EventHandler::requestMainScreen() {
     logger_.debug("MAIN action received");
     uiController_->requestScreen(ScreenName::MAIN);
     // logger_.debugf("[Heap] Post-transition: %d", ESP.getFreeHeap());

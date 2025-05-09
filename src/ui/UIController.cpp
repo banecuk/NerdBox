@@ -2,7 +2,7 @@
 
 #include <esp_task_wdt.h>
 
-#include "core/ActionHandler.h"
+#include "core/events/EventHandler.h"
 #include "screens/BootScreen.h"
 #include "screens/MainScreen.h"
 #include "screens/ScreenFactory.h"
@@ -14,7 +14,7 @@ UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
       displayDriver_(displayDriver),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
-      actionHandler_(std::make_unique<ActionHandler>(this, logger)) {
+      actionHandler_(std::make_unique<EventHandler>(this, logger)) {
     if (!displayDriver_) {
         throw std::invalid_argument(
             "[UIController] DisplayDriver pointer cannot be null");
