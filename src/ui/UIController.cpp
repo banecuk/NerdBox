@@ -5,6 +5,7 @@
 #include "core/ActionHandler.h"
 #include "screens/BootScreen.h"
 #include "screens/MainScreen.h"
+#include "screens/ScreenFactory.h"
 #include "screens/SettingsScreen.h"
 
 UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
@@ -13,125 +14,180 @@ UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
       displayDriver_(displayDriver),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
-      actionHandler_(new ActionHandler(this, logger_)) {
+      actionHandler_(std::make_unique<ActionHandler>(this, logger)) {
     if (!displayDriver_) {
-        throw std::invalid_argument("DisplayDriver pointer cannot be null");
+        throw std::invalid_argument(
+            "[UIController] DisplayDriver pointer cannot be null");
     }
-    drawMutex_ = xSemaphoreCreateMutex();
+    displayMutex_ = xSemaphoreCreateMutex();
+    if (!displayMutex_) {
+        throw std::runtime_error("[UIController] Failed to create display mutex");
+    }
 }
 
 UIController::~UIController() {
+    if (displayMutex_) {
+        vSemaphoreDelete(displayMutex_);
+    }
 }
 
-void UIController::initialize() { setScreen(ScreenName::BOOT); }
+void UIController::initialize() {
+    logger_.info("[UIController] Initializing UI");
+    scheduleScreenTransition(ScreenName::BOOT);
+}
 
-bool UIController::setScreen(ScreenName screenName) {
-    uint32_t start = millis();
-
-    if (isChangingScreen_) {
-        logger_.error("SCREEN RECURSION DETECTED!");
-        return false;
-    }
+bool UIController::scheduleScreenTransition(ScreenName screenName) {
+    logger_.debugf("[UIController] Scheduling transition to screen %d, current=%d",
+                   static_cast<int>(screenName),
+                   static_cast<int>(screenState_.activeScreen));
 
     if (screenName == ScreenName::UNSET) {
-        logger_.error("Attempted transition to UNSET screen");
+        logger_.error("[UIController] Invalid screen: UNSET");
         return false;
     }
 
-    if (screenName == screenState_.activeScreen) {
-        logger_.debug("Screen already active");
+    if (screenName == screenState_.activeScreen && !transition_.isActive) {
+        logger_.debug("[UIController] Screen already active");
         return false;
     }
 
-    // Lock out all drawing
-    drawLock_ = true;
-    if (xSemaphoreTake(drawMutex_, portMAX_DELAY) != pdTRUE) {
-        logger_.error("Failed to acquire draw mutex");
-        return false;
-    }
-
-    isChangingScreen_ = true;
-    displayDriver_->getDisplay()->startWrite(); // Start transaction
-
-    if (currentScreen_) {
-        logger_.debug("Clearing current screen");
-        currentScreen_->onExit();
-        currentScreen_.reset();
-        clearDisplay();
-    }
-
-    logger_.debug("Creating new screen...");
-    switch (screenName) {
-        case ScreenName::BOOT:
-            currentScreen_.reset(new BootScreen(logger_, displayDriver_->getDisplay()));
-            break;
-        case ScreenName::MAIN:
-            currentScreen_.reset(new MainScreen(logger_, pcMetrics_, this));
-            break;
-        case ScreenName::SETTINGS:
-            currentScreen_.reset(new SettingsScreen(logger_, this));
-            break;
-    }
-
-    // logger_.debugf("[Heap] Screen created: %d", ESP.getFreeHeap());
-
-    // Release locks
-    xSemaphoreGive(drawMutex_);
-    drawLock_ = false;
-
-    if (currentScreen_) {
-        logger_.debug("Calling onEnter() for new screen");
-        screenState_.activeScreen = screenName;
-        currentScreen_->onEnter();
-    }
-
-    displayDriver_->getDisplay()->endWrite(); // Start transaction
-
-    isChangingScreen_ = false;
-
-    logger_.debugf("Screen transition took %ums", millis() - start);
+    transition_.nextScreen = screenName;
+    transition_.state = ScreenTransitionState::UNLOADING;
+    transition_.isActive = true;
+    transition_.startTime = millis();
+    logger_.debugf("[UIController] Transition scheduled: nextScreen=%d, state=%d",
+                   static_cast<int>(transition_.nextScreen),
+                   static_cast<int>(transition_.state));
     return true;
 }
 
-void UIController::draw() {
-    if ((currentScreen_)&&(!isChangingScreen_)) {
+void UIController::updateDisplay() {
+    if (transition_.isActive) {
+        logger_.debug("[UIController] Processing screen transition");
+        handleScreenTransition();
+
+        if (millis() - transition_.startTime > 1000) {
+            logger_.error("[UIController] Transition timeout, resetting");
+            resetTransitionState();
+        }
+    } else if (currentScreen_) {
         currentScreen_->draw();
-        handleTouchInput();
+        processTouchInput();
+    } else {
+        logger_.warning("[UIController] No screen to draw");
+        scheduleScreenTransition(ScreenName::BOOT);  // Fallback to boot screen
     }
 }
 
-void UIController::handleTouchInput() {
-    if (isHandlingTouch_) {
+void UIController::handleScreenTransition() {
+    logger_.debugf("[UIController] Transition state=%d",
+                   static_cast<int>(transition_.state));
+    if (!tryAcquireDisplayLock()) {
+        logger_.error("[UIController] Failed to acquire display lock");
         return;
     }
 
-    static unsigned long lastTouchTime = 0;
-    constexpr unsigned long kDebounceMs = 500;
-    
-    unsigned long currentTime = millis();
-    if (currentTime - lastTouchTime > kDebounceMs) {
-        isHandlingTouch_ = true;
-        LGFX* lcd = displayDriver_->getDisplay();
-        int32_t x = 0, y = 0;
-        if (lcd->getTouch(&x, &y)) {
-            logger_.debugf("UIController::handleTouchInput at (%d,%d)", x, y);
-            currentScreen_->handleTouch(x, y);
-            lastTouchTime = currentTime;
-        }
-        isHandlingTouch_ = false;
-    } else {
-        logger_.debug("Touch event ignored due to debounce");
+    displayDriver_->getDisplay()->startWrite();
+    logger_.debugf("[Heap] %d", ESP.getFreeHeap());
+    logger_.debugf("[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
+
+    switch (transition_.state) {
+        case ScreenTransitionState::UNLOADING:
+            logger_.debug("[UIController] Unloading current screen");
+            unloadCurrentScreen();
+            transition_.state = ScreenTransitionState::CLEARING;
+            break;
+
+        case ScreenTransitionState::CLEARING:
+            logger_.debug("[UIController] Clearing display");
+            clearDisplay();
+            transition_.state = ScreenTransitionState::ACTIVATING;
+            break;
+
+        case ScreenTransitionState::ACTIVATING:
+            logger_.debug("[UIController] Activating new screen");
+            activateNextScreen();
+            resetTransitionState();
+            break;
+
+        case ScreenTransitionState::IDLE:
+            logger_.error("[UIController] Unexpected IDLE state in transition");
+            resetTransitionState();
+            break;
     }
 
+    displayDriver_->getDisplay()->endWrite();
+    releaseDisplayLock();
+}
+
+void UIController::unloadCurrentScreen() {
+    if (currentScreen_) {
+        logger_.debug("[UIController] Unloading screen");
+        currentScreen_->onExit();
+        currentScreen_.reset();
+    }
 }
 
 void UIController::clearDisplay() {
     if (displayDriver_ && displayDriver_->getDisplay()) {
-        LGFX* lcd = displayDriver_->getDisplay();
-        logger_.debug("Clear display");
-        lcd->fillScreen(TFT_BLACK);      // Clear screen
-        // lcd->waitDMA();                  // Wait for completion
+        logger_.debug("[UIController] Clearing display");
+        displayDriver_->getDisplay()->fillScreen(TFT_BLACK);
+    } else {
+        logger_.error("[UIController] Invalid display driver");
     }
 }
 
-DisplayDriver* UIController::getDisplayDriver() const { return displayDriver_; }
+void UIController::activateNextScreen() {
+    if (transition_.nextScreen == ScreenName::UNSET) {
+        logger_.error("[UIController] No screen to activate");
+        resetTransitionState();
+        return;
+    }
+
+    logger_.debugf("[UIController] Loading screen %d",
+                   static_cast<int>(transition_.nextScreen));
+    std::unique_ptr<IScreen> newScreen;
+    newScreen = ScreenFactory::createScreen(transition_.nextScreen, logger_,
+                                            displayDriver_, pcMetrics_, this);
+
+    if (newScreen) {
+        currentScreen_ = std::move(newScreen);
+        screenState_.activeScreen = transition_.nextScreen;
+        currentScreen_->onEnter();
+        logger_.debug("[UIController] Screen activated");
+    } else {
+        logger_.error("[UIController] Failed to create screen");
+        scheduleScreenTransition(ScreenName::BOOT);  // Fallback
+    }
+}
+
+void UIController::resetTransitionState() {
+    transition_.nextScreen = ScreenName::UNSET;
+    transition_.state = ScreenTransitionState::IDLE;
+    transition_.isActive = false;
+    transition_.startTime = 0;
+    logger_.debug("[UIController] Transition state reset");
+}
+
+void UIController::processTouchInput() {
+    static unsigned long lastTouchTime = 0;
+    constexpr unsigned long kDebounceMs = 300;
+
+    unsigned long currentTime = millis();
+    if (currentTime - lastTouchTime < kDebounceMs) {
+        logger_.debug("[UIController] Touch ignored due to debounce");
+        return;
+    }
+
+    LGFX* lcd = displayDriver_->getDisplay();
+    int32_t x = 0, y = 0;
+    if (lcd->getTouch(&x, &y)) {
+        logger_.debugf("[UIController] Touch at (%d,%d)", x, y);
+        if (currentScreen_) {
+            currentScreen_->handleTouch(x, y);
+        } else {
+            logger_.warning("[UIController] No screen to handle touch");
+        }
+        lastTouchTime = currentTime;
+    }
+}

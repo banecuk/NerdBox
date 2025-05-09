@@ -18,37 +18,16 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
         new ButtonWidget("<", {0, 272, 48, 48}, 0, ActionType::SHOW_SETTINGS,
                          [this](ActionType action) { this->handleAction(action); })));
-    // widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-    //     new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-    //                      [this](ActionType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+        new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
+                         [this](ActionType action) { this->handleAction(action); })));
 }
 
 void MainScreen::onEnter() {
     logger_.info("Entering MainScreen");
 
-    // Add debug info about buttons
-    // logger_.debugf("Button1 area: (%d,%d) to (%d,%d)", button1_->getDimensions().x,
-    //                button1_->getDimensions().y,
-    //                button1_->getDimensions().x + button1_->getDimensions().width,
-    //                button1_->getDimensions().y + button1_->getDimensions().height);
-
-    // logger_.debugf("Button2 area: (%d,%d) to (%d,%d)", button2_->getDimensions().x,
-    //                button2_->getDimensions().y,
-    //                button2_->getDimensions().x + button2_->getDimensions().width,
-    //                button2_->getDimensions().y + button2_->getDimensions().height);
-
-    // Add Widgets to Manager (transfer ownership)
-
     // Initialize All Widgets
     widgetManager_.initializeWidgets();
-
-    // Initial Draw
-    // lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-    // lcd_->clear(TFT_BLACK);
-    // lcd_->setTextSize(2);
-    // lcd_->setTextDatum(TL_DATUM);
-    // lcd_->drawString("Main Dashboard", 5, 250);
-    // lcd_->setTextSize(1);
 
     widgetManager_.updateAndDrawWidgets(true);  // Force draw for all widgets on entry
 }
@@ -65,7 +44,8 @@ void MainScreen::onExit() {
 }
 
 void MainScreen::draw() {
-    if (!lcd_ || uiController_->isChangingScreen() || !uiController_->tryAcquireDrawLock()) {
+    if (!lcd_ || uiController_->isTransitioning() ||
+        !uiController_->tryAcquireDisplayLock()) {
         return;
     }
 
@@ -86,7 +66,7 @@ void MainScreen::draw() {
     lcd_->printf("Draw: %d", draw_counter_);
     lcd_->endWrite();
 
-    uiController_->releaseDrawLock();
+    uiController_->releaseDisplayLock();
 
     draw_counter_++;
 
@@ -94,11 +74,11 @@ void MainScreen::draw() {
     widgetManager_.updateAndDrawWidgets();
 
     if (draw_counter_ > 1000) {
-            draw_counter_ = 0;
-    } 
+        draw_counter_ = 0;
+    }
     if (draw_counter_ < 5) {
         logger_.debug("MainScreen draw completed");
-    }    
+    }
 
     // Draw Non-Widget
     // if (pcMetrics_.is_updated) {

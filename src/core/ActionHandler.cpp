@@ -21,13 +21,13 @@ void ActionHandler::registerHandlers() {
 
     eventBus.subscribe(ActionType::CYCLE_BRIGHTNESS, [this]() { cycleBrightness(); });
 
-    eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() { showSettings(); });
+    eventBus.subscribe(ActionType::SHOW_SETTINGS, [this]() { requestSettingsScreen(); });
 
-    eventBus.subscribe(ActionType::SHOW_MAIN, [this]() { showMain(); });
+    eventBus.subscribe(ActionType::SHOW_MAIN, [this]() { requestMainScreen(); });
 }
 
-void ActionHandler::resetDevice() { 
-    logger_.debug("RESET_DEVICE action received");
+void ActionHandler::resetDevice() {
+    logger_.debug("RESET action received");
 
     if (uiController_->getDisplayDriver()->getDisplay()) {
         LGFX* display = uiController_->getDisplayDriver()->getDisplay();
@@ -37,25 +37,21 @@ void ActionHandler::resetDevice() {
         display->drawString("RESETING DEVICE", 0, 0);
     }
 
-    ESP.restart(); 
+    ESP.restart();
 }
 
-void ActionHandler::cycleBrightness() { 
-    logger_.debug("CYCLE_BRIGHTNESS action received");
+void ActionHandler::cycleBrightness() {
+    logger_.debug("BRIGHTNESS action received");
     uiController_->getDisplayDriver()->cycleBrightness();
 }
 
-void ActionHandler::showSettings() { 
-    logger_.debug("SHOW_SETTINGS action received");
-    uiController_->setScreen(ScreenName::SETTINGS);
-    logger_.debug("SHOW_SETTINGS action completed");
+void ActionHandler::requestSettingsScreen() {
+    logger_.debug("SETTINGS action received");
+    uiController_->requestScreen(ScreenName::SETTINGS);
 }
 
-void ActionHandler::showMain() { 
-    logger_.debug("SHOW_MAIN action received");
-    logger_.debugf("[Heap] Pre-transition: %d", ESP.getFreeHeap());
-    logger_.debugf("[Stack] Free stack: %u", uxTaskGetStackHighWaterMark(nullptr));
-    uiController_->setScreen(ScreenName::MAIN);
-    logger_.debugf("[Heap] Post-transition: %d", ESP.getFreeHeap());
-    logger_.debug("SHOW_MAIN action completed");
+void ActionHandler::requestMainScreen() {
+    logger_.debug("MAIN action received");
+    uiController_->requestScreen(ScreenName::MAIN);
+    // logger_.debugf("[Heap] Post-transition: %d", ESP.getFreeHeap());
 }

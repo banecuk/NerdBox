@@ -13,39 +13,27 @@ SettingsScreen::~SettingsScreen() { logger_.debug("SettingsScreen destructor"); 
 
 void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
-        new ClockWidget({328, 288-24, 150, 24}, 1000, TFT_YELLOW, TFT_BLACK, 3)));
+        new ClockWidget({328, 288 - 24, 150, 24}, 1000, TFT_YELLOW, TFT_BLACK, 3)));
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("<", {52, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_MAIN,
+        new ButtonWidget("<", {0, 320 - 1 - 48, 48, 48}, 0, ActionType::SHOW_MAIN,
                          [this](ActionType action) { this->handleAction(action); })));
 
-    // widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-    //     new ButtonWidget("Reset", {20, 20, 100, 48}, 0, ActionType::RESET_DEVICE,
-    //                      [this](ActionType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+        new ButtonWidget("Reset", {20, 20, 100, 48}, 0, ActionType::RESET_DEVICE,
+                         [this](ActionType action) { this->handleAction(action); })));
 
-    // widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-    //     new ButtonWidget("Brightness", {20, 72, 100, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
-    //                      [this](ActionType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+        new ButtonWidget("Brightness", {20, 72, 100, 48}, 0, ActionType::CYCLE_BRIGHTNESS,
+                         [this](ActionType action) { this->handleAction(action); })));
 }
 
 void SettingsScreen::onEnter() {
     logger_.info("Entering SettingsScreen");
-
-    // lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-    // lcd_->clear(TFT_BLACK);
-    // lcd_->setTextSize(2);
-    // lcd_->setTextDatum(TL_DATUM);
-    // lcd_->drawString("Settings Dashboard", 25, 250);
-    // lcd_->setTextSize(1);
-
     logger_.debugf("Free heap: %d", ESP.getFreeHeap());
-
-    logger_.debug("SettingsScreen - Initialize widgets.");
 
     // Initialize All Widgets
     widgetManager_.initializeWidgets();
-
-    logger_.debug("SettingsScreen - Widgets initialized");
 }
 
 void SettingsScreen::onExit() {
@@ -55,22 +43,23 @@ void SettingsScreen::onExit() {
 }
 
 void SettingsScreen::draw() {
-    if (!lcd_ || uiController_->isChangingScreen() || !uiController_->tryAcquireDrawLock()) {
+    if (!lcd_ || uiController_->isTransitioning() ||
+        !uiController_->tryAcquireDisplayLock()) {
         return;
     }
 
     if (draw_counter_ < 4) {
         logger_.debugf("SettingsScreen draw_counter_: %d", draw_counter_);
-    }    
+    }
 
     lcd_->startWrite();
     lcd_->setTextColor(TFT_GREEN, TFT_RED);
     lcd_->setTextSize(1);
-    lcd_->setCursor(120, 120);
+    lcd_->setCursor(240, 120);
     lcd_->printf("Draw: %d", draw_counter_);
     lcd_->endWrite();
 
-    uiController_->releaseDrawLock();    
+    uiController_->releaseDisplayLock();
 
     // Update and Draw Widgets
     // logger_.info("Drawing SettingsScreen");
@@ -84,8 +73,6 @@ void SettingsScreen::draw() {
     if (draw_counter_ < 5) {
         logger_.debug("SettingsScreen draw completed");
     }
-    
-
 }
 
 void SettingsScreen::handleTouch(uint16_t x, uint16_t y) {

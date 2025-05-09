@@ -1,6 +1,6 @@
 #pragma once
 
-#include <memory>  // For std::unique_ptr
+#include <memory>
 
 #include "core/system/SystemState.h"
 #include "services/PcMetrics.h"
@@ -18,32 +18,56 @@ class ActionHandler;
 class UIController {
    public:
     explicit UIController(ILogger& logger, DisplayDriver* displayDriver,
-                          PcMetrics& hmData, SystemState::ScreenState& screenState);
+                          PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
     ~UIController();
 
     void initialize();
-    bool setScreen(ScreenName screenName);
-    void draw();
-    void handleTouchInput();
-    bool isChangingScreen() const { return isChangingScreen_; }
+    bool scheduleScreenTransition(ScreenName screenName);
+    void updateDisplay();
+    bool isTransitioning() const { return transition_.isActive; }
 
-    DisplayDriver* getDisplayDriver() const;
+    DisplayDriver* getDisplayDriver() const { return displayDriver_; }
 
-    bool tryAcquireDrawLock() {
-        // return xSemaphoreTake(drawMutex_, 0) == pdTRUE;
+    void requestScreen(ScreenName screenName) {
+        logger_.debugf("[UIController] Requesting screen %d",
+                       static_cast<int>(screenName));
+        scheduleScreenTransition(screenName);
+    }
 
-        const TickType_t timeout = pdMS_TO_TICKS(100);
-        BaseType_t res = xSemaphoreTake(drawMutex_, timeout);
+    bool tryAcquireDisplayLock() {
+        const TickType_t timeout = pdMS_TO_TICKS(200);
+        BaseType_t res = xSemaphoreTake(displayMutex_, timeout);
         if (res != pdTRUE) {
-            logger_.error("Draw lock timeout!");
+            logger_.error("[UIController] Display lock timeout after 200ms");
             return false;
         }
         return true;
     }
-    void releaseDrawLock() { xSemaphoreGive(drawMutex_); }
+
+    void releaseDisplayLock() { xSemaphoreGive(displayMutex_); }
 
    private:
+    enum class ScreenTransitionState {
+        IDLE,       // No transition in progress
+        UNLOADING,  // Unloading current screen
+        CLEARING,   // Clearing display
+        ACTIVATING  // Loading and activating new screen
+    };
+
+    struct ScreenTransition {
+        ScreenName nextScreen = ScreenName::UNSET;
+        ScreenTransitionState state = ScreenTransitionState::IDLE;
+        bool isActive = false;
+        unsigned long startTime = 0;
+    };
+
+    void handleScreenTransition();
+    void unloadCurrentScreen();
     void clearDisplay();
+    void activateNextScreen();
+    void resetTransitionState();
+
+    void processTouchInput();
 
     ILogger& logger_;
     DisplayDriver* displayDriver_;
@@ -52,10 +76,7 @@ class UIController {
 
     std::unique_ptr<IScreen> currentScreen_;
     std::unique_ptr<ActionHandler> actionHandler_;
+    SemaphoreHandle_t displayMutex_;
 
-    volatile bool drawLock_ = false;
-    SemaphoreHandle_t drawMutex_;
-
-    volatile bool isChangingScreen_ = false;
-    volatile bool isHandlingTouch_ = false;
+    ScreenTransition transition_;
 };

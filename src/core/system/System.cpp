@@ -26,7 +26,7 @@ bool System::initialize() {
     }
 
     logger_.info("System initialization completed successfully", true);
-    uiController_.setScreen(ScreenName::MAIN);
+    uiController_.requestScreen(ScreenName::MAIN);
     systemState_.core.isInitialized = true;
     return true;
 }

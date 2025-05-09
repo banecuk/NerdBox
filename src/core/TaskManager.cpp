@@ -54,7 +54,7 @@ void TaskManager::updateScreenTask(void *parameter) {
     TickType_t lastWakeTime = xTaskGetTickCount();
     while (true) {
         if (taskManager->screenState_.isInitialized) {
-            taskManager->uiController_.draw();
+            taskManager->uiController_.updateDisplay();
             taskManager->resetWatchdog();
         }
         vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(Config::Timing::kScreenTaskMs));
