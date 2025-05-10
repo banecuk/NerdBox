@@ -24,9 +24,7 @@ class SettingsScreen : public IScreen {
     LGFX *lcd_;
     UIController *uiController_;
 
-    WidgetManager widgetManager_;
-
-    int32_t draw_count_ = 0;    
+    WidgetManager widgetManager_; 
 
     void createWidgets();
     void handleAction(EventType action);
