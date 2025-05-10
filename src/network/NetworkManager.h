@@ -7,20 +7,20 @@
 #include "config/AppConfig.h"
 #include "config/Environment.h"
 #include "utils/Logger.h"
-#include "HttpDownloader.h"
+#include "HttpClient.h"
 
 class NetworkManager {
    public:
-    NetworkManager(ILogger &logger, HttpDownloader &httpDownloader);
+    NetworkManager(ILogger &logger, HttpClient &httpClient);
     bool connect();
     bool isConnected() const;
     String get(const String &url);
 
-    HttpDownloader& getHttpDownloader() { return httpDownloader_; }
+    HttpClient& getHttpClient() { return httpClient_; }
 
    private:
     ILogger &logger_;
-    HttpDownloader &httpDownloader_; // TODO rename to HttpClient or something more generic
+    HttpClient &httpClient_; // TODO rename to HttpClient or something more generic
 
     bool connected_ = false;
 };

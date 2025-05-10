@@ -1,10 +1,10 @@
-#include "HttpDownloader.h"
+#include "HttpClient.h"
 
-HttpDownloader::HttpDownloader() {}
+HttpClient::HttpClient() {}
 
-HttpDownloader::~HttpDownloader() { http_.end(); }
+HttpClient::~HttpClient() { http_.end(); }
 
-bool HttpDownloader::download(const char* url, String& outResponse, uint8_t maxRetries,
+bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetries,
                               uint32_t retryDelayMs) {
     bool success = false;
     uint8_t retryCount = 0;

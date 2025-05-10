@@ -52,17 +52,17 @@ void SettingsScreen::draw() {
     lcd_->setTextColor(TFT_GREEN, TFT_RED);
     lcd_->setTextSize(1);
     lcd_->setCursor(240, 120);
-    lcd_->printf("Draw: %d", draw_counter_);
+    lcd_->printf("Draw: %d", draw_count_);
     lcd_->endWrite();
 
     uiController_->releaseDisplayLock();
 
     widgetManager_.updateAndDrawWidgets();
 
-    draw_counter_++;
+    draw_count_++;
 
-    if (draw_counter_ > 1000) {
-        draw_counter_ = 0;
+    if (draw_count_ > 1000) {
+        draw_count_ = 0;
     }
 }
 

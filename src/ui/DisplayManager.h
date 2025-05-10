@@ -27,7 +27,7 @@ class DisplayManager {
     uint8_t getBrightness() const;
 
     // Helper for saving brightness to preferences
-    void saveBrightnessToPreferences();
+    void saveBrightnessToPreferences(); // TODO: Implement this method
 
     void cycleBrightness();
 

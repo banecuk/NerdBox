@@ -5,8 +5,8 @@
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "ui/DisplayManager.h"
-#include "ui/ScreenTypes.h"
 #include "ui/screens/IScreen.h"
+#include "ui/screens/ScreenTypes.h"
 #include "utils/Logger.h"
 
 // Forward declarations

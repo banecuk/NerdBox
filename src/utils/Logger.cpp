@@ -64,7 +64,9 @@ String Logger::levelToString(LogLevel level) {
 }
 
 void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
-    // TODO: if debug mode is not enabled, skip debug messages
+    if (level == LogLevel::DEBUG && !DEBUG_MODE) {
+        return;
+    }
 
     String timestamp = getTimestamp();
     String levelStr = levelToString(level);
@@ -76,8 +78,8 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
     // If marked for screen, add to queue
     if (forScreen) {
         timestamp = getTimestamp(forScreen);
-        LogEntry entry{timestamp, level, message, true};  // Create the struct
-        screenQueue_.push(entry);  // Push the struct, not the formatted string
+        LogEntry entry{timestamp, level, message.substring(0, 200), true};  // Limit to 200 chars
+        screenQueue_.push(entry); 
     }
 }
 

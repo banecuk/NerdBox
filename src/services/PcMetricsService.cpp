@@ -5,7 +5,7 @@ PcMetricsService::PcMetricsService(NetworkManager &networkManager)
 
 bool PcMetricsService::fetchData(PcMetrics &outData) {
     String rawData;
-    if (networkManager_.getHttpDownloader().download(OHM_API, rawData)) {
+    if (networkManager_.getHttpClient().download(OHM_API, rawData)) {
         return parseData(rawData, outData);
     }
     return false;

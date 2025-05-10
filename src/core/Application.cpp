@@ -1,13 +1,13 @@
-#include "System.h"
+#include "Application.h"
 
 // Add this definition for the static member
-constexpr const char* System::INIT_STATE_NAMES_[];
+constexpr const char* Application::INIT_STATE_NAMES_[];
 
-System::System()
+Application::Application()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
       uiController_(logger_, &displayManager_, systemState_.pcMetrics, systemState_.screen),
-      networkManager_(logger_, httpDownloader_),
+      networkManager_(logger_, httpClient_),
       displayManager_(display_, logger_),
       pcMetricsService_(networkManager_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
@@ -15,8 +15,8 @@ System::System()
       httpServer_(uiController_),
       currentInitState_(InitState::INITIAL) {}
 
-bool System::initialize() {
-    logger_.info("System initialization started", true);
+bool Application::initialize() {
+    logger_.info("Application initialization started", true);
 
     while (!isTerminalState()) {
         if (!handleStateTransition()) {
@@ -25,13 +25,14 @@ bool System::initialize() {
         }
     }
 
-    logger_.info("System initialization completed successfully", true);
+    logger_.info("Application initialization completed successfully", true);
+    logger_.debugf("Free heap post-init: %d", ESP.getFreeHeap());
     uiController_.requestScreen(ScreenName::MAIN);
     systemState_.core.isInitialized = true;
     return true;
 }
 
-void System::run() {
+void Application::run() {
     if (!systemState_.core.isInitialized) {
         return;
     }
@@ -46,13 +47,13 @@ void System::run() {
 
 // Initialization Methods -----------------------------------------------------
 
-bool System::initializeSerial() {
+bool Application::initializeSerial() {
     logger_.info("Initializing serial communication", true);
     Serial.begin(Config::Debug::kSerialBaudRate);
     return true;
 }
 
-bool System::initializeDisplay() {
+bool Application::initializeDisplay() {
     logger_.info("Initializing display", true);
     displayManager_.initialize();
     systemState_.screen.isInitialized = true;
@@ -60,12 +61,12 @@ bool System::initializeDisplay() {
     return true;
 }
 
-bool System::initializeNetwork(uint8_t maxRetries) {
+bool Application::initializeNetwork(uint8_t maxRetries) {
     logger_.info("Connecting to WiFi", true);
     return networkManager_.connect();
 }
 
-bool System::initializeTimeService(uint8_t maxRetries) {
+bool Application::initializeTimeService(uint8_t maxRetries) {
     logger_.info("Syncing time", true);
 
     for (uint8_t attempt = 1; attempt <= maxRetries; ++attempt) {
@@ -83,7 +84,7 @@ bool System::initializeTimeService(uint8_t maxRetries) {
     return false;
 }
 
-bool System::initializeWatchdog() {
+bool Application::initializeWatchdog() {
     if (!Config::Watchdog::kEnableOnBoot) {
         logger_.info("Watchdog disabled in configuration", true);
         return true;
@@ -108,7 +109,7 @@ bool System::initializeWatchdog() {
     return true;
 }
 
-void System::completeInitialization() {
+void Application::completeInitialization() {
     if (networkManager_.isConnected()) {
         httpServer_.begin();
         logger_.info("HTTP Server started", true);
@@ -119,7 +120,7 @@ void System::completeInitialization() {
 
 // State Management -----------------------------------------------------------
 
-bool System::handleStateTransition() {
+bool Application::handleStateTransition() {
     switch (currentInitState_) {
         case InitState::INITIAL:
             transitionTo(InitState::SERIAL_INIT);
@@ -175,23 +176,23 @@ bool System::handleStateTransition() {
     }
 }
 
-void System::transitionTo(InitState newState) {
+void Application::transitionTo(InitState newState) {
     logger_.debug(getStateName(currentInitState_) + " -> " + getStateName(newState));
     currentInitState_ = newState;
 }
 
-bool System::isTerminalState() const {
+bool Application::isTerminalState() const {
     return currentInitState_ == InitState::COMPLETE ||
            currentInitState_ == InitState::FAILED;
 }
 
 // Logging Helpers ------------------------------------------------------------
 
-String System::getStateName(InitState state) const {
+String Application::getStateName(InitState state) const {
     return INIT_STATE_NAMES_[static_cast<int>(state)];
 }
 
-void System::logRetryAttempt(const char* component, uint8_t attempt,
+void Application::logRetryAttempt(const char* component, uint8_t attempt,
                              uint8_t maxRetries) const {
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%s init attempt %d/%d failed", component, attempt,
@@ -199,11 +200,11 @@ void System::logRetryAttempt(const char* component, uint8_t attempt,
     // logger_.warning(buffer, true);
 }
 
-uint16_t System::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const {
+uint16_t Application::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const {
     return baseDelay * (1 << (attempt - 1)) + (random(0, Config::Init::kBackoffJitterMs));
 }
 
-void System::handleInitializationFailure() {
-    logger_.critical("[FATAL] System initialization failed in state: " +
+void Application::handleInitializationFailure() {
+    logger_.critical("[FATAL] Application initialization failed in state: " +
                      getStateName(currentInitState_));
 }

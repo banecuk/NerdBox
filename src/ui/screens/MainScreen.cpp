@@ -59,7 +59,7 @@ void MainScreen::draw() {
     lcd_->setTextColor(TFT_YELLOW, TFT_BLUE);
     lcd_->setTextSize(1);
     lcd_->setCursor(240, 160);
-    lcd_->printf("Draw: %d", draw_counter_);
+    lcd_->printf("Draw: %d", draw_count_);
     lcd_->endWrite();
 
     uiController_->releaseDisplayLock();
@@ -67,8 +67,8 @@ void MainScreen::draw() {
     // Update and Draw Widgets
     widgetManager_.updateAndDrawWidgets();
 
-    if (draw_counter_ > 1000) {
-        draw_counter_ = 0;
+    if (draw_count_ > 1000) {
+        draw_count_ = 0;
     }
 
     // Draw Non-Widget

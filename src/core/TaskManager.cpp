@@ -12,7 +12,7 @@ TaskManager::TaskManager(ILogger &logger, UIController &uiController,
       screenState_(screenState) {}
 
 bool TaskManager::createTasks() {
-    logger_.info("Initializing System Tasks", true);
+    logger_.info("Initializing Application Tasks", true);
 
     static constexpr UBaseType_t kScreenPriority = 2;
     static constexpr UBaseType_t kBackgroundPriority = 1;

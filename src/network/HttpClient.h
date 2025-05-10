@@ -1,14 +1,13 @@
-// HttpDownloader.h
-#ifndef HTTP_DOWNLOADER_H
-#define HTTP_DOWNLOADER_H
+#ifndef HTTP_CLIENT_H
+#define HTTP_CLIENT_H
 
 #include <HTTPClient.h>
 #include <WiFiClient.h>
 
-class HttpDownloader {
+class HttpClient {
    public:
-    HttpDownloader();
-    ~HttpDownloader();
+    HttpClient();
+    ~HttpClient();
 
     bool download(const char* url, String& outResponse, uint8_t maxRetries = 2,
                   uint32_t retryDelayMs = 100);
@@ -20,4 +19,4 @@ class HttpDownloader {
     int lastHttpCode_ = 0;
 };
 
-#endif  // HTTP_DOWNLOADER_H
+#endif

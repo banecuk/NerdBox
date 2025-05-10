@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IScreen.h"
-#include "ui/ScreenTypes.h"
+#include "ui/screens/ScreenTypes.h"
 
 class ILogger;
 class DisplayManager;

@@ -2,7 +2,7 @@
 #define SYSTEM_STATE_H
 
 #include "services/PcMetrics.h"
-#include "ui/ScreenTypes.h"
+#include "ui/screens/ScreenTypes.h"
 
 class UIController;  // Forward declaration
 

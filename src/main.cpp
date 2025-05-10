@@ -1,7 +1,7 @@
-#include "core/system/System.h"
+#include "core/Application.h"
 #include "utils/Logger.h"
 
-System app;
+Application app;
 
 void waitForSerial(uint32_t timeoutMs) {
     uint32_t start = millis();
