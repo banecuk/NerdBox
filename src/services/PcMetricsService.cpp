@@ -27,4 +27,16 @@ bool PcMetricsService::parseData(const String &rawData,
     outData.is_updated = true;
 
     return true;  // TODO false if parsing fails
+
+
+    // StaticJsonDocument<512> doc;
+    // DeserializationError error = deserializeJson(doc, rawData);
+    // if (error) {
+    //     logger_.error("JSON parsing failed: " + String(error.c_str()));
+    //     return false;
+    // }
+    // outData.cpu_load = doc["cpu_load"] | 0;
+    // outData.gpu_load = doc["gpu_load"] | 0;
+    // outData.is_updated = true;
+    // return true;
 }

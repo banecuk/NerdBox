@@ -6,7 +6,7 @@
 
 // Forward declarations
 class UIController;
-class DisplayDriver;
+class DisplayManager;
 
 class EventHandler {
    public:

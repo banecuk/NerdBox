@@ -9,9 +9,9 @@
 #include "Config.h"
 #include "utils/ILogger.h"
 
-class DisplayDriver {
+class DisplayManager {
    public:
-    DisplayDriver(LGFX& display, ILogger& logger);
+    DisplayManager(LGFX& display, ILogger& logger);
 
     // Initialize the display
     void initialize();
@@ -42,6 +42,6 @@ class DisplayDriver {
     
 };
 
-extern DisplayDriver displayDriver;
+extern DisplayManager displayManager;
 
 #endif  // DISPLAY_MANAGER_H

@@ -1,12 +1,13 @@
 #include "ScreenFactory.h"
+
 #include "BootScreen.h"
 #include "MainScreen.h"
 #include "SettingsScreen.h"
 
 std::unique_ptr<IScreen> ScreenFactory::createScreen(ScreenName name, ILogger& logger,
-                                                    DisplayDriver* display,
-                                                    PcMetrics& metrics,
-                                                    UIController* controller) {
+                                                     DisplayManager* display,
+                                                     PcMetrics& metrics,
+                                                     UIController* controller) {
     switch (name) {
         case ScreenName::BOOT:
             return std::make_unique<BootScreen>(logger, display->getDisplay());

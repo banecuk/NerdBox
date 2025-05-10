@@ -8,16 +8,16 @@
 #include "screens/ScreenFactory.h"
 #include "screens/SettingsScreen.h"
 
-UIController::UIController(ILogger& logger, DisplayDriver* displayDriver,
+UIController::UIController(ILogger& logger, DisplayManager* displayManager,
                            PcMetrics& pcMetrics, SystemState::ScreenState& screenState)
     : logger_(logger),
-      displayDriver_(displayDriver),
+      displayManager_(displayManager),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
       actionHandler_(std::make_unique<EventHandler>(this, logger)) {
-    if (!displayDriver_) {
+    if (!displayManager_) {
         throw std::invalid_argument(
-            "[UIController] DisplayDriver pointer cannot be null");
+            "[UIController] DisplayManager pointer cannot be null");
     }
     displayMutex_ = xSemaphoreCreateMutex();
     if (!displayMutex_) {
@@ -33,10 +33,10 @@ UIController::~UIController() {
 
 void UIController::initialize() {
     logger_.info("[UIController] Initializing UI");
-    scheduleScreenTransition(ScreenName::BOOT);
+    requestsScreenTransition(ScreenName::BOOT);
 }
 
-bool UIController::scheduleScreenTransition(ScreenName screenName) {
+bool UIController::requestsScreenTransition(ScreenName screenName) {
     logger_.debugf("[UIController] Scheduling transition to screen %d, current=%d",
                    static_cast<int>(screenName),
                    static_cast<int>(screenState_.activeScreen));
@@ -75,7 +75,7 @@ void UIController::updateDisplay() {
         processTouchInput();
     } else {
         logger_.warning("[UIController] No screen to draw");
-        scheduleScreenTransition(ScreenName::BOOT);  // Fallback to boot screen
+        requestsScreenTransition(ScreenName::BOOT);  // Fallback to boot screen
     }
 }
 
@@ -87,7 +87,7 @@ void UIController::handleScreenTransition() {
         return;
     }
 
-    displayDriver_->getDisplay()->startWrite();
+    displayManager_->getDisplay()->startWrite();
     logger_.debugf("[Heap] %d", ESP.getFreeHeap());
     logger_.debugf("[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
 
@@ -116,7 +116,7 @@ void UIController::handleScreenTransition() {
             break;
     }
 
-    displayDriver_->getDisplay()->endWrite();
+    displayManager_->getDisplay()->endWrite();
     releaseDisplayLock();
 }
 
@@ -129,9 +129,9 @@ void UIController::unloadCurrentScreen() {
 }
 
 void UIController::clearDisplay() {
-    if (displayDriver_ && displayDriver_->getDisplay()) {
+    if (displayManager_ && displayManager_->getDisplay()) {
         logger_.debug("[UIController] Clearing display");
-        displayDriver_->getDisplay()->fillScreen(TFT_BLACK);
+        displayManager_->getDisplay()->fillScreen(TFT_BLACK);
     } else {
         logger_.error("[UIController] Invalid display driver");
     }
@@ -148,7 +148,7 @@ void UIController::activateNextScreen() {
                    static_cast<int>(transition_.nextScreen));
     std::unique_ptr<IScreen> newScreen;
     newScreen = ScreenFactory::createScreen(transition_.nextScreen, logger_,
-                                            displayDriver_, pcMetrics_, this);
+                                            displayManager_, pcMetrics_, this);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);
@@ -157,7 +157,7 @@ void UIController::activateNextScreen() {
         logger_.debug("[UIController] Screen activated");
     } else {
         logger_.error("[UIController] Failed to create screen");
-        scheduleScreenTransition(ScreenName::BOOT);  // Fallback
+        requestsScreenTransition(ScreenName::BOOT);  // Fallback
     }
 }
 
@@ -179,7 +179,7 @@ void UIController::processTouchInput() {
         return;
     }
 
-    LGFX* lcd = displayDriver_->getDisplay();
+    LGFX* lcd = displayManager_->getDisplay();
     int32_t x = 0, y = 0;
     if (lcd->getTouch(&x, &y)) {
         logger_.debugf("[UIController] Touch at (%d,%d)", x, y);

@@ -2,9 +2,9 @@
 
 SettingsScreen::SettingsScreen(ILogger &logger, UIController *uiController)
     : logger_(logger),
-      lcd_(uiController->getDisplayDriver()->getDisplay()),
+      lcd_(uiController->getDisplayManager()->getDisplay()),
       uiController_(uiController),
-      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay()) {
+      widgetManager_(logger, uiController->getDisplayManager()->getDisplay()) {
     createWidgets();
     logger_.debugf("SettingsScreen constructor. Free heap: %d", ESP.getFreeHeap());
 }
@@ -48,10 +48,6 @@ void SettingsScreen::draw() {
         return;
     }
 
-    if (draw_counter_ < 4) {
-        logger_.debugf("SettingsScreen draw_counter_: %d", draw_counter_);
-    }
-
     lcd_->startWrite();
     lcd_->setTextColor(TFT_GREEN, TFT_RED);
     lcd_->setTextSize(1);
@@ -61,17 +57,12 @@ void SettingsScreen::draw() {
 
     uiController_->releaseDisplayLock();
 
-    // Update and Draw Widgets
-    // logger_.info("Drawing SettingsScreen");
     widgetManager_.updateAndDrawWidgets();
 
     draw_counter_++;
 
     if (draw_counter_ > 1000) {
         draw_counter_ = 0;
-    }
-    if (draw_counter_ < 5) {
-        logger_.debug("SettingsScreen draw completed");
     }
 }
 

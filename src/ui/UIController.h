@@ -4,7 +4,7 @@
 
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
-#include "ui/DisplayDriver.h"
+#include "ui/DisplayManager.h"
 #include "ui/ScreenTypes.h"
 #include "ui/screens/IScreen.h"
 #include "utils/Logger.h"
@@ -17,21 +17,21 @@ class EventHandler;
 
 class UIController {
    public:
-    explicit UIController(ILogger& logger, DisplayDriver* displayDriver,
+    explicit UIController(ILogger& logger, DisplayManager* displayManager,
                           PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
     ~UIController();
 
     void initialize();
-    bool scheduleScreenTransition(ScreenName screenName);
+    bool requestsScreenTransition(ScreenName screenName);
     void updateDisplay();
     bool isTransitioning() const { return transition_.isActive; }
 
-    DisplayDriver* getDisplayDriver() const { return displayDriver_; }
+    DisplayManager* getDisplayManager() const { return displayManager_; }
 
     void requestScreen(ScreenName screenName) {
         logger_.debugf("[UIController] Requesting screen %d",
                        static_cast<int>(screenName));
-        scheduleScreenTransition(screenName);
+        requestsScreenTransition(screenName);
     }
 
     bool tryAcquireDisplayLock() {
@@ -70,7 +70,7 @@ class UIController {
     void processTouchInput();
 
     ILogger& logger_;
-    DisplayDriver* displayDriver_;
+    DisplayManager* displayManager_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
 

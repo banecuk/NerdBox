@@ -2,10 +2,10 @@
 
 MainScreen::MainScreen(ILogger &logger, PcMetrics &pcMetrics, UIController *uiController)
     : logger_(logger),
-      lcd_(uiController->getDisplayDriver()->getDisplay()),
+      lcd_(uiController->getDisplayManager()->getDisplay()),
       pcMetrics_(pcMetrics),
       uiController_(uiController),
-      widgetManager_(logger, uiController->getDisplayDriver()->getDisplay()) {
+      widgetManager_(logger, uiController->getDisplayManager()->getDisplay()) {
     createWidgets();
     // logger_.debugf("MainScreen constructor. Free heap: %d", ESP.getFreeHeap());
 }
@@ -49,10 +49,6 @@ void MainScreen::draw() {
         return;
     }
 
-    if (draw_counter_ < 4) {
-        logger_.debugf("MainScreen draw_counter_: %d", draw_counter_);
-    }
-
     // static unsigned long lastHeapLog = 0;
     // if (millis() - lastHeapLog > 30000) {  // Every 30 seconds
     //     logger_.debugf("[Heap] Current free: %d", ESP.getFreeHeap());
@@ -68,16 +64,11 @@ void MainScreen::draw() {
 
     uiController_->releaseDisplayLock();
 
-    draw_counter_++;
-
     // Update and Draw Widgets
     widgetManager_.updateAndDrawWidgets();
 
     if (draw_counter_ > 1000) {
         draw_counter_ = 0;
-    }
-    if (draw_counter_ < 5) {
-        logger_.debug("MainScreen draw completed");
     }
 
     // Draw Non-Widget

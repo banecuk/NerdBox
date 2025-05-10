@@ -6,9 +6,9 @@ constexpr const char* System::INIT_STATE_NAMES_[];
 System::System()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
-      uiController_(logger_, &displayDriver_, systemState_.pcMetrics, systemState_.screen),
+      uiController_(logger_, &displayManager_, systemState_.pcMetrics, systemState_.screen),
       networkManager_(logger_, httpDownloader_),
-      displayDriver_(display_, logger_),
+      displayManager_(display_, logger_),
       pcMetricsService_(networkManager_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
                    systemState_.core, systemState_.screen),
@@ -54,7 +54,7 @@ bool System::initializeSerial() {
 
 bool System::initializeDisplay() {
     logger_.info("Initializing display", true);
-    displayDriver_.initialize();
+    displayManager_.initialize();
     systemState_.screen.isInitialized = true;
     uiController_.initialize();
     return true;
@@ -108,7 +108,7 @@ bool System::initializeWatchdog() {
     return true;
 }
 
-void System::performFinalSetup() {
+void System::completeInitialization() {
     if (networkManager_.isConnected()) {
         httpServer_.begin();
         logger_.info("HTTP Server started", true);
@@ -164,7 +164,7 @@ bool System::handleStateTransition() {
             return true;
 
         case InitState::FINAL_SETUP:
-            performFinalSetup();
+            completeInitialization();
             transitionTo(InitState::COMPLETE);
             return true;
 

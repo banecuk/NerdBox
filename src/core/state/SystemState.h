@@ -13,9 +13,8 @@ class SystemState {
         bool isTimeSynced = false;
 
         // Service sync timestamps
-        unsigned long nextSync_HardwareMonitor = 0;
+        unsigned long nextSync_pcMetrics = 0;
         // unsigned long nextSync_Weather = 0;
-        // unsigned long nextSync_NetworkStatus = 0;
     };
 
     struct ScreenState {

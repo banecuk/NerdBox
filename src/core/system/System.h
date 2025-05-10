@@ -51,7 +51,7 @@ class System {
     bool initializeNetwork(uint8_t maxRetries);
     bool initializeTimeService(uint8_t maxRetries);
     bool initializeWatchdog();
-    void performFinalSetup();
+    void completeInitialization();
 
     // State Management
     void transitionTo(InitState newState);
@@ -67,7 +67,7 @@ class System {
 
     // System Components
     LGFX display_;
-    DisplayDriver displayDriver_;
+    DisplayManager displayManager_;
     WebServer webServer_;
 
     // Managers and Services

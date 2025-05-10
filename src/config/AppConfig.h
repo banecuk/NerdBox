@@ -6,7 +6,7 @@ namespace Config {
 
 namespace Debug {
 constexpr uint32_t kSerialBaudRate = 115200;
-constexpr uint32_t kSerialTimeoutMs = 2000;
+constexpr uint32_t kSerialTimeoutMs = 10000;
 };  // namespace Debug
 
 namespace Init {

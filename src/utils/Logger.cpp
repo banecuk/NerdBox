@@ -64,6 +64,8 @@ String Logger::levelToString(LogLevel level) {
 }
 
 void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
+    // TODO: if debug mode is not enabled, skip debug messages
+
     String timestamp = getTimestamp();
     String levelStr = levelToString(level);
     String logEntry = timestamp + " [" + levelStr + "] " + message;

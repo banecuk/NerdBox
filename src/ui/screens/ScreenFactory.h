@@ -4,14 +4,14 @@
 #include "ui/ScreenTypes.h"
 
 class ILogger;
-class DisplayDriver;
+class DisplayManager;
 class PcMetrics;
 class UIController;
 
 class ScreenFactory {
-public:
+   public:
     static std::unique_ptr<IScreen> createScreen(ScreenName name, ILogger& logger,
-                                                DisplayDriver* display,
-                                                PcMetrics& metrics,
-                                                UIController* controller);
+                                                 DisplayManager* display,
+                                                 PcMetrics& metrics,
+                                                 UIController* controller);
 };

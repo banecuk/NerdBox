@@ -2,7 +2,7 @@
 
 #include <ESP.h>
 
-#include "ui/DisplayDriver.h"
+#include "ui/DisplayManager.h"
 #include "ui/UIController.h"
 
 EventHandler::EventHandler(UIController* uiController, ILogger& logger)
@@ -29,8 +29,8 @@ void EventHandler::registerHandlers() {
 void EventHandler::resetDevice() {
     logger_.debug("RESET action received");
 
-    if (uiController_->getDisplayDriver()->getDisplay()) {
-        LGFX* display = uiController_->getDisplayDriver()->getDisplay();
+    if (uiController_->getDisplayManager()->getDisplay()) {
+        LGFX* display = uiController_->getDisplayManager()->getDisplay();
         display->setTextColor(TFT_WHITE, TFT_BLACK);
         display->setTextSize(3);
         display->setTextDatum(TL_DATUM);
@@ -42,7 +42,7 @@ void EventHandler::resetDevice() {
 
 void EventHandler::cycleBrightness() {
     logger_.debug("BRIGHTNESS action received");
-    uiController_->getDisplayDriver()->cycleBrightness();
+    uiController_->getDisplayManager()->cycleBrightness();
 }
 
 void EventHandler::requestSettingsScreen() {

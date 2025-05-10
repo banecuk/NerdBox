@@ -66,7 +66,7 @@ void TaskManager::backgroundTask(void *parameter) {
     while (true) {
         if (taskManager->coreState_.isInitialized && WiFi.status() == WL_CONNECTED) {
             if (taskManager->screenState_.activeScreen == ScreenName::MAIN) {
-                if (millis() >= taskManager->coreState_.nextSync_HardwareMonitor) {
+                if (millis() >= taskManager->coreState_.nextSync_pcMetrics) {
                     taskManager->updatePcMetrics();
                     taskManager->resetWatchdog();
                 }
@@ -87,12 +87,11 @@ void TaskManager::updatePcMetrics() {
     bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
-        coreState_.nextSync_HardwareMonitor =
-            millis() + Config::HardwareMonitor::kRefreshMs;
+        coreState_.nextSync_pcMetrics = millis() + Config::HardwareMonitor::kRefreshMs;
         // logger_.debug("HM updated", true);
     } else {
         consecutiveFailures_++;
-        coreState_.nextSync_HardwareMonitor =
+        coreState_.nextSync_pcMetrics =
             millis() + Config::HardwareMonitor::kRefreshAfterFailureMs;
         handleDownloadFailure();
         logger_.debug("HM update failed", true);
