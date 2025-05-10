@@ -27,7 +27,7 @@ class Logger : public ILogger {
 
    private:
     const bool& isTimeSynced_;
-    std::queue<LogEntry> screenQueue;
+    std::queue<LogEntry> screenQueue_;
 
     String getTimestamp(bool forScreen = false);
     String getUptimeTimestamp(bool forScreen);

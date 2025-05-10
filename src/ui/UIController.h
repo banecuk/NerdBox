@@ -1,44 +1,82 @@
 #pragma once
 
-#include <memory>  // For std::unique_ptr
+#include <memory>
 
-#include "core/system/SystemState.h"
+#include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
-#include "ui/DisplayDriver.h"
-#include "ui/ScreenTypes.h"
+#include "ui/DisplayManager.h"
 #include "ui/screens/IScreen.h"
+#include "ui/screens/ScreenTypes.h"
 #include "utils/Logger.h"
 
 // Forward declarations
 class BootScreen;
 class MainScreen;
 class SettingsScreen;
-class ActionHandler;
+class EventHandler;
 
 class UIController {
    public:
-    explicit UIController(ILogger& logger, DisplayDriver* displayDriver,
-                          PcMetrics& hmData, SystemState::ScreenState& screenState);
+    explicit UIController(ILogger& logger, DisplayManager* displayManager,
+                          PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
     ~UIController();
 
     void initialize();
-    bool setScreen(ScreenName screenName);
-    void draw();
-    void handleTouchInput();
+    bool requestsScreenTransition(ScreenName screenName);
+    void updateDisplay();
+    bool isTransitioning() const { return transition_.isActive; }
 
-    DisplayDriver* getDisplayDriver() const;
+    DisplayManager* getDisplayManager() const { return displayManager_; }
+
+    void requestScreen(ScreenName screenName) {
+        logger_.debugf("[UIController] Requesting screen %d",
+                       static_cast<int>(screenName));
+        requestsScreenTransition(screenName);
+    }
+
+    bool tryAcquireDisplayLock() {
+        const TickType_t timeout = pdMS_TO_TICKS(200);
+        BaseType_t res = xSemaphoreTake(displayMutex_, timeout);
+        if (res != pdTRUE) {
+            logger_.error("[UIController] Display lock timeout after 200ms");
+            return false;
+        }
+        return true;
+    }
+
+    void releaseDisplayLock() { xSemaphoreGive(displayMutex_); }
 
    private:
+    enum class ScreenTransitionState {
+        IDLE,       // No transition in progress
+        UNLOADING,  // Unloading current screen
+        CLEARING,   // Clearing display
+        ACTIVATING  // Loading and activating new screen
+    };
+
+    struct ScreenTransition {
+        ScreenName nextScreen = ScreenName::UNSET;
+        ScreenTransitionState state = ScreenTransitionState::IDLE;
+        bool isActive = false;
+        unsigned long startTime = 0;
+    };
+
+    void handleScreenTransition();
+    void unloadCurrentScreen();
     void clearDisplay();
+    void activateNextScreen();
+    void resetTransitionState();
+
+    void processTouchInput();
 
     ILogger& logger_;
-    DisplayDriver* displayDriver_;
+    DisplayManager* displayManager_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
 
     std::unique_ptr<IScreen> currentScreen_;
-    std::unique_ptr<ActionHandler> actionHandler_;
+    std::unique_ptr<EventHandler> actionHandler_;
+    SemaphoreHandle_t displayMutex_;
 
-    volatile bool isChangingScreen_ = false;
-    volatile bool isHandlingTouch_ = false;
+    ScreenTransition transition_;
 };

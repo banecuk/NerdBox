@@ -19,7 +19,7 @@ void WidgetManager::addWidget(std::unique_ptr<IWidget> widget) {
         return;
     }
     widgets_.push_back(std::move(widget));
-    logger_.debugf("[Heap] Widget post-add: %d", ESP.getFreeHeap());
+    // logger_.debugf("[Heap] Widget post-add: %d", ESP.getFreeHeap());
 }
 
 void WidgetManager::initializeWidgets() {
@@ -28,15 +28,16 @@ void WidgetManager::initializeWidgets() {
         return;
     }
     logger_.debugf("Initializing %d widgets...", widgets_.size());
+
+    lcd_->startWrite();
     for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
-        yield();
         widget->draw(true);
-        // if (Config::Watchdog::kEnableOnBoot) {
-        esp_task_wdt_reset();
-        //}
     }
+    lcd_->endWrite();
+
     logger_.debug("Widgets initialized");
+    initialized_ = true;
 }
 
 void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
@@ -47,6 +48,12 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
         return;
     }
 
+    if (!initialized_) {
+        logger_.error("Cannot update/draw widgets: Not initialized.");
+        return;
+    }
+
+    lcd_->startWrite();
     for (auto& widget : widgets_) {
         bool needsDraw = forceRedraw || widget->needsUpdate();
         if (needsDraw) {
@@ -55,6 +62,7 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
             widget->draw(forceRedraw);
         }
     }
+    lcd_->endWrite();
 }
 
 bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
@@ -65,6 +73,11 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 
     if (!lcd_ || x >= lcd_->width() || y >= lcd_->height()) {
         logger_.errorf("Invalid touch coordinates: (%d, %d)", x, y);
+        return false;
+    }
+
+    if (!initialized_) {
+        logger_.error("Cannot handle touch: Not initialized.");
         return false;
     }
 
@@ -90,9 +103,10 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 void WidgetManager::cleanupWidgets() {
     logger_.debugf("Clearing %d widgets", widgets_.size());
 
+    initialized_ = false;  // Mark as uninitialized before cleanup
+
     for (auto& widget : widgets_) {
         if (widget) {
-            yield();
             widget->cleanUp();  // Ensure all widgets clean up their resources
             widget.reset();     // Explicitly release
         }
@@ -100,4 +114,7 @@ void WidgetManager::cleanupWidgets() {
 
     widgets_.clear();  // Then clear the container
     logger_.debugf("Widgets cleared. Count: %d", widgets_.size());
+
+    logger_.debug("Widgets cleared waiting done.");
+
 }

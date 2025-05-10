@@ -2,7 +2,7 @@
 #define SYSTEM_STATE_H
 
 #include "services/PcMetrics.h"
-#include "ui/ScreenTypes.h"
+#include "ui/screens/ScreenTypes.h"
 
 class UIController;  // Forward declaration
 
@@ -13,9 +13,8 @@ class SystemState {
         bool isTimeSynced = false;
 
         // Service sync timestamps
-        unsigned long nextSync_HardwareMonitor = 0;
+        unsigned long nextSync_pcMetrics = 0;
         // unsigned long nextSync_Weather = 0;
-        // unsigned long nextSync_NetworkStatus = 0;
     };
 
     struct ScreenState {
@@ -26,7 +25,7 @@ class SystemState {
     // Non-static members
     CoreState core;
     ScreenState screen;
-    PcMetrics hmData;
+    PcMetrics pcMetrics;
 
     SystemState() : core(), screen() {}
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IScreen.h"
-#include "core/EventBus.h"
+#include "core/events/EventBus.h"
 #include "services/PcMetrics.h"
 #include "ui/UIController.h"
 #include "ui/WidgetManager.h"
@@ -26,6 +26,8 @@ class SettingsScreen : public IScreen {
 
     WidgetManager widgetManager_;
 
+    int32_t draw_count_ = 0;    
+
     void createWidgets();
-    void handleAction(ActionType action);
+    void handleAction(EventType action);
 };

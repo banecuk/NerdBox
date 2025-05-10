@@ -1,11 +1,11 @@
-#include "DisplayDriver.h"
+#include "DisplayManager.h"
 
 #include <Preferences.h>
 
-DisplayDriver::DisplayDriver(LGFX& display, ILogger& logger)
+DisplayManager::DisplayManager(LGFX& display, ILogger& logger)
     : display_(display), logger_(logger), brightness_(DEFAULT_BRIGHTNESS) {}
 
-void DisplayDriver::initialize() {
+void DisplayManager::initialize() {
     if (!display_.init()) {
         logger_.error("Display initialization failed");
         return;
@@ -14,19 +14,19 @@ void DisplayDriver::initialize() {
     display_.fillScreen(TFT_BLACK);
 }
 
-void DisplayDriver::postInitialization() { setBrightness(brightness_); }
+void DisplayManager::postInitialization() { setBrightness(brightness_); }
 
-LGFX* DisplayDriver::getDisplay() { return &display_; }
+LGFX* DisplayManager::getDisplay() { return &display_; }
 
-void DisplayDriver::setBrightness(uint8_t level) {
+void DisplayManager::setBrightness(uint8_t level) {
     brightness_ = level;
     display_.setBrightness(brightness_);
     logger_.infof("Brightness set to %d", brightness_);
 }
 
-uint8_t DisplayDriver::getBrightness() const { return brightness_; }
+uint8_t DisplayManager::getBrightness() const { return brightness_; }
 
-void DisplayDriver::cycleBrightness() {
+void DisplayManager::cycleBrightness() {
     uint8_t brightness = 0;
     switch (getBrightness()) {
         case 255:
@@ -44,3 +44,4 @@ void DisplayDriver::cycleBrightness() {
     }
     setBrightness(brightness);
 }
+

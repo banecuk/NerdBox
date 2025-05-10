@@ -1,7 +1,7 @@
 #include "ButtonWidget.h"
 
 ButtonWidget::ButtonWidget(const std::string& label, const Dimensions& dims,
-                           uint32_t updateIntervalMs, ActionType action,
+                           uint32_t updateIntervalMs, EventType action,
                            ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       label_(label),
@@ -45,7 +45,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     }
 
     if (!initialized_ || !lcd_ || !callback_) { 
-        // logger_.debug("ButtonWidget::handleTouch - Rejected (invalid state)");
+        logger_->debug("ButtonWidget::handleTouch - Rejected");
         return false;
     }
 

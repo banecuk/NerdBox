@@ -1,10 +1,15 @@
 #include "HttpServer.h"
 
-HttpServer::HttpServer() : server_(80) {}
+HttpServer::HttpServer(UIController &uiController)
+    : server_(80), uiController_(uiController) {}
 
 void HttpServer::begin() {
     server_.on("/", [this]() { this->handleHome(); });
     server_.on("/system-info", [this]() { this->handleSystemInfo(); });
+    server_.on("/screen/main",
+               [this]() { uiController_.requestScreen(ScreenName::MAIN); });
+    server_.on("/screen/settings",
+               [this]() { uiController_.requestScreen(ScreenName::SETTINGS); });
     server_.onNotFound([this]() { this->handleNotFound(); });
     server_.begin();
 }

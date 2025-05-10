@@ -9,9 +9,9 @@
 #include "Config.h"
 #include "utils/ILogger.h"
 
-class DisplayDriver {
+class DisplayManager {
    public:
-    DisplayDriver(LGFX& display, ILogger& logger);
+    DisplayManager(LGFX& display, ILogger& logger);
 
     // Initialize the display
     void initialize();
@@ -27,7 +27,7 @@ class DisplayDriver {
     uint8_t getBrightness() const;
 
     // Helper for saving brightness to preferences
-    void saveBrightnessToPreferences();
+    void saveBrightnessToPreferences(); // TODO: Implement this method
 
     void cycleBrightness();
 
@@ -38,8 +38,10 @@ class DisplayDriver {
     uint8_t brightness_;
 
     static const uint8_t DEFAULT_BRIGHTNESS = 100;
+
+    
 };
 
-extern DisplayDriver displayDriver;
+extern DisplayManager displayManager;
 
 #endif  // DISPLAY_MANAGER_H

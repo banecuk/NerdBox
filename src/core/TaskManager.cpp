@@ -1,21 +1,20 @@
 #include "TaskManager.h"
 
 TaskManager::TaskManager(ILogger &logger, UIController &uiController,
-                         PcMetricsService &hmDataService, PcMetrics &hmData,
+                         PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
                          SystemState::CoreState &coreState,
                          SystemState::ScreenState &screenState)
     : logger_(logger),
       uiController_(uiController),
-      pcMetricsService_(hmDataService),
-      hmData_(hmData),
+      pcMetricsService_(pcMetricsService),
+      pcMetrics_(pcMetrics),
       coreState_(coreState),
       screenState_(screenState) {}
 
 bool TaskManager::createTasks() {
-    logger_.info("Initializing System Tasks", true);
+    logger_.info("Initializing Application Tasks", true);
 
-    static constexpr UBaseType_t kScreenPriority = 3;
-    static constexpr UBaseType_t kTouchPriority = 2;
+    static constexpr UBaseType_t kScreenPriority = 2;
     static constexpr UBaseType_t kBackgroundPriority = 1;
 
     BaseType_t screenTaskStatus = xTaskCreatePinnedToCore(
@@ -25,15 +24,6 @@ bool TaskManager::createTasks() {
     if (screenTaskStatus != pdPASS) {
         logger_.critical("Failed to create screen update task! Error code: %d",
                          screenTaskStatus);
-        return false;
-    }
-
-    BaseType_t touchTaskStatus = xTaskCreatePinnedToCore(
-        touchTask, "TouchUpdate", Config::Tasks::kTouchStack, this, kTouchPriority,
-        &touchTaskHandle, ARDUINO_RUNNING_CORE);
-
-    if (screenTaskStatus != pdPASS) {
-        logger_.critical("Failed to create touch task! Error code: %d", screenTaskStatus);
         return false;
     }
 
@@ -64,19 +54,8 @@ void TaskManager::updateScreenTask(void *parameter) {
     TickType_t lastWakeTime = xTaskGetTickCount();
     while (true) {
         if (taskManager->screenState_.isInitialized) {
-            taskManager->uiController_.draw();
+            taskManager->uiController_.updateDisplay();
             taskManager->resetWatchdog();
-        }
-        vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(Config::Timing::kScreenTaskMs));
-    }
-}
-
-void TaskManager::touchTask(void *parameter) {
-    auto *taskManager = static_cast<TaskManager *>(parameter);
-    TickType_t lastWakeTime = xTaskGetTickCount();
-    while (true) {
-        if (taskManager->screenState_.isInitialized) {
-            taskManager->uiController_.handleTouchInput();
         }
         vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(Config::Timing::kScreenTaskMs));
     }
@@ -87,8 +66,8 @@ void TaskManager::backgroundTask(void *parameter) {
     while (true) {
         if (taskManager->coreState_.isInitialized && WiFi.status() == WL_CONNECTED) {
             if (taskManager->screenState_.activeScreen == ScreenName::MAIN) {
-                if (millis() >= taskManager->coreState_.nextSync_HardwareMonitor) {
-                    taskManager->updateHmData();
+                if (millis() >= taskManager->coreState_.nextSync_pcMetrics) {
+                    taskManager->updatePcMetrics();
                     taskManager->resetWatchdog();
                 }
             }
@@ -104,16 +83,15 @@ void TaskManager::resetWatchdog() {
     }
 }
 
-void TaskManager::updateHmData() {
-    bool fetchSuccess = pcMetricsService_.fetchData(hmData_);
+void TaskManager::updatePcMetrics() {
+    bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
-        coreState_.nextSync_HardwareMonitor =
-            millis() + Config::HardwareMonitor::kRefreshMs;
-        logger_.debug("HM updated", true);
+        coreState_.nextSync_pcMetrics = millis() + Config::HardwareMonitor::kRefreshMs;
+        // logger_.debug("HM updated", true);
     } else {
         consecutiveFailures_++;
-        coreState_.nextSync_HardwareMonitor =
+        coreState_.nextSync_pcMetrics =
             millis() + Config::HardwareMonitor::kRefreshAfterFailureMs;
         handleDownloadFailure();
         logger_.debug("HM update failed", true);

@@ -3,14 +3,17 @@
 
 #include <WebServer.h>
 
+#include "ui/UIController.h" 
+
 class HttpServer {
    public:
-    HttpServer();
+    HttpServer(UIController& uiController);
     void begin();
     void processRequests();
 
    private:
     WebServer server_;
+    UIController& uiController_; 
 
     void handleNotFound();
     void handleHome();

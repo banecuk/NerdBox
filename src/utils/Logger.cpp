@@ -64,6 +64,10 @@ String Logger::levelToString(LogLevel level) {
 }
 
 void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
+    if (level == LogLevel::DEBUG && !DEBUG_MODE) {
+        return;
+    }
+
     String timestamp = getTimestamp();
     String levelStr = levelToString(level);
     String logEntry = timestamp + " [" + levelStr + "] " + message;
@@ -74,8 +78,8 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
     // If marked for screen, add to queue
     if (forScreen) {
         timestamp = getTimestamp(forScreen);
-        LogEntry entry{timestamp, level, message, true};  // Create the struct
-        screenQueue.push(entry);  // Push the struct, not the formatted string
+        LogEntry entry{timestamp, level, message.substring(0, 200), true};  // Limit to 200 chars
+        screenQueue_.push(entry); 
     }
 }
 
@@ -144,19 +148,19 @@ void Logger::criticalf(const char* format, ...) {
 std::queue<String> Logger::getScreenMessages() {
     std::queue<String> result;
 
-    while (!screenQueue.empty()) {
-        LogEntry entry = screenQueue.front();
+    while (!screenQueue_.empty()) {
+        LogEntry entry = screenQueue_.front();
         String formatted = "[" + entry.timestamp + "] [" + levelToString(entry.level) +
                            "] " + entry.message;
         result.push(formatted);
-        screenQueue.pop();
+        screenQueue_.pop();
     }
 
     return result;
 }
 
 void Logger::clearScreenMessages() {
-    while (!screenQueue.empty()) {
-        screenQueue.pop();
+    while (!screenQueue_.empty()) {
+        screenQueue_.pop();
     }
 }
