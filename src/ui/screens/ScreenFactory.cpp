@@ -1,8 +1,8 @@
 #include "ScreenFactory.h"
 
 #include "BootScreen.h"
-#include "MainScreen.h"
-#include "SettingsScreen.h"
+#include "ui/widgetScreens/MainScreen.h"
+#include "ui/widgetScreens/SettingsScreen.h"
 
 std::unique_ptr<IScreen> ScreenFactory::createScreen(ScreenName name, ILogger& logger,
                                                      DisplayManager* display,

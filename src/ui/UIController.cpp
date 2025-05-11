@@ -4,9 +4,9 @@
 
 #include "core/events/EventHandler.h"
 #include "screens/BootScreen.h"
-#include "screens/MainScreen.h"
 #include "screens/ScreenFactory.h"
-#include "screens/SettingsScreen.h"
+#include "widgetScreens/MainScreen.h"
+#include "widgetScreens/SettingsScreen.h"
 
 UIController::UIController(ILogger& logger, DisplayManager* displayManager,
                            PcMetrics& pcMetrics, SystemState::ScreenState& screenState)

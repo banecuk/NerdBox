@@ -52,6 +52,7 @@ class Application {
     bool initializeTimeService(uint8_t maxRetries);
     bool initializeWatchdog();
     void completeInitialization();
+    void waitForSerial(uint32_t timeoutMs);
 
     // State Management
     void transitionTo(InitState newState);

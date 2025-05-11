@@ -1,0 +1,16 @@
+#pragma once
+
+#include "BaseWidgetScreen.h"
+#include "services/PcMetrics.h"
+#include "ui/widgets/ButtonWidget.h"
+#include "ui/widgets/ClockWidget.h"
+
+class MainScreen : public BaseWidgetScreen {
+   public:
+    MainScreen(ILogger& logger, PcMetrics& pcMetrics, UIController* uiController);
+    ~MainScreen() override = default;
+
+   private:
+    void createWidgets() override;
+    PcMetrics& pcMetrics_;
+};

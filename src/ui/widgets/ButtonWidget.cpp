@@ -34,11 +34,6 @@ void ButtonWidget::draw(bool forceRedraw /* = false */) {
 void ButtonWidget::setCallback(ActionCallback callback) { callback_ = callback; }
 
 bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
-
-    if (this == nullptr) {
-        logger_->error("THIS PTR NULL IN BUTTON TOUCH!");
-        return false;
-    }
     if (!callback_) {
         logger_->debug("Button callback empty (normal during transitions)");
         return false;

@@ -47,9 +47,25 @@ void Application::run() {
 
 // Initialization Methods -----------------------------------------------------
 
+void Application::waitForSerial(uint32_t timeoutMs) {
+    uint32_t start = millis();
+    while (!Serial && millis() - start < timeoutMs) {
+        delay(100);
+    }
+    Serial.println("------------------------------");
+    Serial.println("Serial connection established!");
+}
+
 bool Application::initializeSerial() {
     logger_.info("Initializing serial communication", true);
     Serial.begin(Config::Debug::kSerialBaudRate);
+    waitForSerial(Config::Debug::kSerialTimeoutMs);
+
+    // Print the last reset reason
+    esp_reset_reason_t reason = esp_reset_reason();
+    if (reason != ESP_RST_POWERON) {
+        logger_.infof("Last reset reason: %d",reason, true);
+    }
     return true;
 }
 
@@ -123,12 +139,12 @@ void Application::completeInitialization() {
 bool Application::handleStateTransition() {
     switch (currentInitState_) {
         case InitState::INITIAL:
-            transitionTo(InitState::SERIAL_INIT);
+            transitionTo(InitState::DISPLAY_INIT);
             return true;
 
         case InitState::SERIAL_INIT:
             return initializeSerial() ? transitionTo(InitState::DISPLAY_INIT),
-                   true               : (transitionTo(InitState::FAILED), false);
+                   true               : (transitionTo(InitState::FAILED), false);            
 
         case InitState::DISPLAY_INIT:
             return initializeDisplay() ? transitionTo(InitState::TASKS_INIT),
@@ -193,11 +209,8 @@ String Application::getStateName(InitState state) const {
 }
 
 void Application::logRetryAttempt(const char* component, uint8_t attempt,
-                             uint8_t maxRetries) const {
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%s init attempt %d/%d failed", component, attempt,
-             maxRetries);
-    // logger_.warning(buffer, true);
+                             uint8_t maxRetries) const { // TODO enable logging retry attempts
+    // logger_.warningf("%s init attempt %d/%d failed", component, attempt, maxRetries);
 }
 
 uint16_t Application::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const {
