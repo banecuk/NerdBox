@@ -21,7 +21,6 @@ class Application {
    public:
     enum class InitState {
         INITIAL,
-        SERIAL_INIT,
         DISPLAY_INIT,
         TASKS_INIT,
         NETWORK_INIT,
@@ -46,13 +45,11 @@ class Application {
 
    private:
     // Initialization Methods
-    bool initializeSerial();
     bool initializeDisplay();
     bool initializeNetwork(uint8_t maxRetries);
     bool initializeTimeService(uint8_t maxRetries);
     bool initializeWatchdog();
     void completeInitialization();
-    void waitForSerial(uint32_t timeoutMs);
 
     // State Management
     void transitionTo(InitState newState);
@@ -87,7 +84,7 @@ class Application {
     InitState currentInitState_;
 
     static constexpr const char* INIT_STATE_NAMES_[] = {
-        "INITIAL",   "SERIAL_INIT",   "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT",
-        "TIME_INIT", "WATCHDOG_INIT", "FINAL_SETUP",  "COMPLETE",   "FAILED"};
+        "INITIAL", "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT", "TIME_INIT",
+        "WATCHDOG_INIT", "FINAL_SETUP", "COMPLETE", "FAILED"};
 };
 #endif  // SYSTEM_H

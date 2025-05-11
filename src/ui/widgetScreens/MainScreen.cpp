@@ -9,7 +9,7 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
         new ButtonWidget("<", {0, 272, 48, 48}, 0, EventType::SHOW_SETTINGS,
                          [this](EventType action) { this->handleAction(action); })));
-    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, EventType::CYCLE_BRIGHTNESS,
-                         [this](EventType action) { this->handleAction(action); })));
+    // widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
+    //     new ButtonWidget("Brightness", {0, 0, 88, 48}, 0, EventType::CYCLE_BRIGHTNESS,
+    //                      [this](EventType action) { this->handleAction(action); })));
 }

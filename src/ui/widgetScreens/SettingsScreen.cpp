@@ -10,9 +10,9 @@ void SettingsScreen::createWidgets() {
         new ButtonWidget("<", {0, 320 - 1 - 48, 48, 48}, 0, EventType::SHOW_MAIN,
                          [this](EventType action) { this->handleAction(action); })));
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Reset", {20, 20, 100, 48}, 0, EventType::RESET_DEVICE,
+        new ButtonWidget("Reset", {480-20-100, 20, 100, 48}, 0, EventType::RESET_DEVICE,
                          [this](EventType action) { this->handleAction(action); })));
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(
-        new ButtonWidget("Brightness", {20, 72, 100, 48}, 0, EventType::CYCLE_BRIGHTNESS,
+        new ButtonWidget("Brightness", {20, 20, 100, 48}, 0, EventType::CYCLE_BRIGHTNESS,
                          [this](EventType action) { this->handleAction(action); })));
 }

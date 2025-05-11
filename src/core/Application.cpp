@@ -6,7 +6,8 @@ constexpr const char* Application::INIT_STATE_NAMES_[];
 Application::Application()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
-      uiController_(logger_, &displayManager_, systemState_.pcMetrics, systemState_.screen),
+      uiController_(logger_, &displayManager_, systemState_.pcMetrics,
+                    systemState_.screen),
       networkManager_(logger_, httpClient_),
       displayManager_(display_, logger_),
       pcMetricsService_(networkManager_),
@@ -46,28 +47,6 @@ void Application::run() {
 }
 
 // Initialization Methods -----------------------------------------------------
-
-void Application::waitForSerial(uint32_t timeoutMs) {
-    uint32_t start = millis();
-    while (!Serial && millis() - start < timeoutMs) {
-        delay(100);
-    }
-    Serial.println("------------------------------");
-    Serial.println("Serial connection established!");
-}
-
-bool Application::initializeSerial() {
-    logger_.info("Initializing serial communication", true);
-    Serial.begin(Config::Debug::kSerialBaudRate);
-    waitForSerial(Config::Debug::kSerialTimeoutMs);
-
-    // Print the last reset reason
-    esp_reset_reason_t reason = esp_reset_reason();
-    if (reason != ESP_RST_POWERON) {
-        logger_.infof("Last reset reason: %d",reason, true);
-    }
-    return true;
-}
 
 bool Application::initializeDisplay() {
     logger_.info("Initializing display", true);
@@ -142,13 +121,9 @@ bool Application::handleStateTransition() {
             transitionTo(InitState::DISPLAY_INIT);
             return true;
 
-        case InitState::SERIAL_INIT:
-            return initializeSerial() ? transitionTo(InitState::DISPLAY_INIT),
-                   true               : (transitionTo(InitState::FAILED), false);            
-
         case InitState::DISPLAY_INIT:
-            return initializeDisplay() ? transitionTo(InitState::TASKS_INIT),
-                   true                : (transitionTo(InitState::FAILED), false);
+            return initializeDisplay() ? (transitionTo(InitState::TASKS_INIT), true)
+                                       : (transitionTo(InitState::FAILED), false);
 
         case InitState::TASKS_INIT:
             if (!taskManager_.createTasks()) {
@@ -209,7 +184,7 @@ String Application::getStateName(InitState state) const {
 }
 
 void Application::logRetryAttempt(const char* component, uint8_t attempt,
-                             uint8_t maxRetries) const { // TODO enable logging retry attempts
+                                  uint8_t maxRetries) const {
     // logger_.warningf("%s init attempt %d/%d failed", component, attempt, maxRetries);
 }
 
