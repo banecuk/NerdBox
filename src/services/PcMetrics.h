@@ -2,16 +2,19 @@
 
 #include <Arduino.h>
 
+#define ARDUINOJSON_DEFAULT_NESTING_LIMIT 20 
+#include <ArduinoJson.h>
+
 class PcMetrics {
    private:
    public:
-    // bool    is_available = false;
+    bool is_available = false;
     bool is_updated = false;
 
     uint8_t cpu_temperature = 0;
     uint8_t gpu_temperature = 0;
 
-    uint8_t cpu_load = 0;  // done (not displayed)
+    uint8_t cpu_load = 0;
     uint8_t gpu_load = 0;
     uint8_t mem_load = 0;
     float cpu_thread_load[20] = {};
