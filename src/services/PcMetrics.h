@@ -15,13 +15,13 @@ class PcMetrics {
     uint8_t gpu_temperature = 0;
 
     uint8_t cpu_load = 0;
-    uint8_t gpu_load = 0;
+    uint8_t gpu_load = 0; // not available
     uint8_t mem_load = 0;
     float cpu_thread_load[20] = {};
 
     uint16_t cpu_power = 0;
-    uint16_t gpu_power = 0;
-
+    uint16_t gpu_power = 0; // not available
+ 
     uint16_t cpu_fan = 0;
     uint16_t gpu_fan = 0;
     uint16_t front_fan = 0;

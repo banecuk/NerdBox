@@ -14,12 +14,12 @@ TaskManager::TaskManager(ILogger &logger, UIController &uiController,
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
 
-    static constexpr UBaseType_t kScreenPriority = 2;
+    static constexpr UBaseType_t kScreenPriority = 1;
     static constexpr UBaseType_t kBackgroundPriority = 1;
 
     BaseType_t screenTaskStatus = xTaskCreatePinnedToCore(
         updateScreenTask, "ScreenUpdate", Config::Tasks::kScreenStack, this,
-        kScreenPriority, &screenTaskHandle, ARDUINO_RUNNING_CORE);
+        kScreenPriority, &screenTaskHandle, ARDUINO_RUNNING_CORE); //ARDUINO_RUNNING_CORE
 
     if (screenTaskStatus != pdPASS) {
         logger_.critical("Failed to create screen update task! Error code: %d",
@@ -29,8 +29,7 @@ bool TaskManager::createTasks() {
 
     BaseType_t backgroundTaskStatus = xTaskCreatePinnedToCore(
         backgroundTask, "BackgroundTask", Config::Tasks::kBackgroundStack, this,
-        kBackgroundPriority, &backgroundTaskHandle, ARDUINO_RUNNING_CORE);
-
+        kBackgroundPriority, &backgroundTaskHandle, 0); //ARDUINO_RUNNING_CORE
     if (backgroundTaskStatus != pdPASS) {
         logger_.critical("Failed to create background task! Error code: %d",
                          backgroundTaskStatus);

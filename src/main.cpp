@@ -24,10 +24,22 @@ void setup() {
         waitForSerial(Config::Debug::kSerialTimeoutMs);
     }
 
+    Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());
+    Serial.printf("Free PSRAM: %d bytes\n", ESP.getFreePsram());
+
     // Print the last reset reason
     esp_reset_reason_t reason = esp_reset_reason();
     if (reason != ESP_RST_POWERON) {
         Serial.printf("Last reset reason: %d\n", reason);
+        esp_err_t err = esp_task_wdt_status(NULL);
+        Serial.printf("WDT Status: %d\n", err);
+        // Print panic details if available
+        Serial.println("Panic details (if any):");
+        esp_reset_reason_t reason = esp_reset_reason();
+        if (reason == ESP_RST_PANIC) {
+            // You may need to include esp_debug_helpers.h for more details
+            Serial.println("Panic occurred. Check backtrace in debugger.");
+        }
     }
 
     if (!app.initialize()) {
