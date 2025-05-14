@@ -28,12 +28,16 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
         lcd_->drawString(gpu3D.c_str(), dimensions_.x + 0, dimensions_.y + 25);
 
         // Draw GPU Load
-        String gpuCompute = "GPU Compute: " + String(pcMetrics_.gpu_3d) + "%  ";
+        String gpuCompute = "GPU Compute: " + String(pcMetrics_.gpu_compute) + "%  ";
         lcd_->drawString(gpuCompute.c_str(), dimensions_.x + 0, dimensions_.y + 50);
 
+        // Draw GPU mem
+        String gpuMem = "GPU RAM: " + String(pcMetrics_.gpu_mem) + "%  ";
+        lcd_->drawString(gpuMem.c_str(), dimensions_.x + 0, dimensions_.y + 75);        
+
         // Draw RAM Load
-        String ram = "RAM: " + String(pcMetrics_.gpu_mem) + "%  ";
-        lcd_->drawString(ram.c_str(), dimensions_.x + 0, dimensions_.y + 75);
+        String ram = "RAM: " + String(pcMetrics_.mem_load) + "%  ";
+        lcd_->drawString(ram.c_str(), dimensions_.x + 0, dimensions_.y + 100);
 
         // lastCpuLoad_ = pcMetrics_.cpu_load;
         // lastGpuLoad_ = pcMetrics_.gpu_load;
