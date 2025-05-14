@@ -4,6 +4,14 @@ PcMetricsWidget::PcMetricsWidget(const Dimensions& dims, uint32_t updateInterval
                                  PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
 
+
+void PcMetricsWidget::drawStatic() {
+    if (!initialized_ || !lcd_) return;
+
+    lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_RED);
+    // lcd_->fillRect(dimensions_.x + 1, dimensions_.y + 1, dimensions_.width - 2, dimensions_.height - 2, TFT_BLACK);
+}
+
 void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
     if (!initialized_ || !lcd_) return;
 
@@ -39,24 +47,16 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
         String ram = "RAM: " + String(pcMetrics_.mem_load) + "%  ";
         lcd_->drawString(ram.c_str(), dimensions_.x + 0, dimensions_.y + 100);
 
-        // lastCpuLoad_ = pcMetrics_.cpu_load;
-        // lastGpuLoad_ = pcMetrics_.gpu_load;
         pcMetrics_.is_updated = false;  // Reset update flag
         lastUpdateTimeMs_ = millis();
     }
 }
 
 bool PcMetricsWidget::needsUpdate() const {
-
     if (!initialized_ || !pcMetrics_.is_available || !pcMetrics_.is_updated) {
         return false;
     }
-
     return true;
-    // if (!initialized_ || !pcMetrics_.is_available || !pcMetrics_.is_updated) {
-    //     return false;
-    // }
-    // return (pcMetrics_.cpu_load != lastCpuLoad_ || pcMetrics_.gpu_load != lastGpuLoad_);
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {

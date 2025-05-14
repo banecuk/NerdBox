@@ -20,6 +20,7 @@ class IWidget {
 
     // Core methods
     virtual void initialize(LGFX* lcd, ILogger& logger) = 0;
+    virtual void drawStatic() = 0;
     virtual void draw(bool forceRedraw = false) = 0;
     virtual void cleanUp() = 0;
 

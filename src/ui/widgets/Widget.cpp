@@ -12,6 +12,14 @@ void Widget::initialize(LGFX* lcd, ILogger& logger) {
     logger_ = &logger;
     lastUpdateTimeMs_ = millis();
     initialized_ = true;
+    drawStatic();
+    staticDrawn_ = true;
+}
+
+void Widget::drawStatic() {
+    // if (logger_) {
+    //     logger_->debug("Widget::drawStatic - Default implementation");
+    // }
 }
 
 void Widget::cleanUp() {
@@ -20,6 +28,7 @@ void Widget::cleanUp() {
                         dimensions_.y);
     }
     initialized_ = false;
+    staticDrawn_ = false;
     lcd_ = nullptr;
     logger_ = nullptr;
 }
@@ -27,7 +36,6 @@ void Widget::cleanUp() {
 void Widget::setUpdateInterval(uint32_t intervalMs) { updateIntervalMs_ = intervalMs; }
 
 bool Widget::needsUpdate() const {
-    // If interval is 0, it never needs time-based updates (only forced redraw)
     if (updateIntervalMs_ == 0) {
         return false;
     }
@@ -35,7 +43,3 @@ bool Widget::needsUpdate() const {
 }
 
 IWidget::Dimensions Widget::getDimensions() const { return dimensions_; }
-
-// Note: draw() and handleTouch() are not implemented here as they
-// depend on the specific widget's appearance and behavior.
-// Derived classes MUST provide their own implementations.

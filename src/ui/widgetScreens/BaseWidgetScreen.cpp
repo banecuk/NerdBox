@@ -20,7 +20,7 @@ void BaseWidgetScreen::draw() {
         !uiController_->tryAcquireDisplayLock()) {
         return;
     }
-    widgetManager_.updateAndDrawWidgets();
+    widgetManager_.updateAndDrawWidgets(false);
     uiController_->releaseDisplayLock();
 }
 

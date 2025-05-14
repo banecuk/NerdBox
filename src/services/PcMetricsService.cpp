@@ -1,7 +1,9 @@
+// src/services/PcMetricsService.cpp
 #include "PcMetricsService.h"
+#include <cstdlib> // For strtod
 
 PcMetricsService::PcMetricsService(NetworkManager &networkManager)
-: networkManager_(networkManager) {};
+    : networkManager_(networkManager) {}
 
 bool PcMetricsService::fetchData(PcMetrics &outData) {
     String rawData;
@@ -14,94 +16,232 @@ bool PcMetricsService::fetchData(PcMetrics &outData) {
     return false;
 }
 
+// Template function to parse JSON values safely
+template<typename T>
+T parseValue(JsonVariant value, T defaultValue) {
+    if (value.isNull()) {
+        return defaultValue;
+    }
+    if (value.is<float>() || value.is<int>()) {
+        return value.as<T>();
+    }
+    // Handle string values (e.g., "45.0 %", "40.5 °C", "2149.0 MB")
+    String str = value.as<String>();
+    str.replace("%", "");
+    str.replace(" °C", "");
+    str.replace(" RPM", "");
+    str.replace(" W", "");
+    str.replace(" V", "");
+    str.replace(" MB", "");
+    str.replace(" GB", "");
+    str.trim();
+    char* endPtr;
+    float result = strtod(str.c_str(), &endPtr);
+    if (endPtr == str.c_str()) {
+        return defaultValue; // Conversion failed
+    }
+    return static_cast<T>(result);
+}
+
 bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
+    // Start timing
+    unsigned long startTime = millis();
 
-    // Check available heap memory
-    size_t freeHeap = ESP.getFreeHeap();
-    Serial.print("Free heap memory: ");
-    Serial.println(freeHeap);
+    // Clear outData to ensure no stale values
+    outData = PcMetrics();
 
-    Serial.print("Raw JSON size: ");
-    Serial.println(rawData.length());
+    // Allocate JSON document (96 KB to handle ~59 KB JSON)
+    const size_t jsonBufferSize = 98304;
+    DynamicJsonDocument doc(jsonBufferSize);
 
-    DynamicJsonDocument doc(64536);
-
-    // Deserialize the JSON data
+    // Deserialize without filter
     DeserializationError error = deserializeJson(doc, rawData);
     if (error) {
         outData.is_available = false;
-        Serial.print("JSON deserialization failed: ");
-        Serial.println(error.c_str());
+        Serial.printf("JSON deserialization failed: %s\n", error.c_str());
         return false;
     }
 
-    Serial.print("Free heap memory after deserialization: ");
-    Serial.println(freeHeap);
+    // Validate top-level structure
+    JsonArray children = doc["Children"];
+    if (children.isNull() || children.size() == 0) {
+        outData.is_available = false;
+        Serial.println("Invalid JSON structure: Missing or empty Children array");
+        return false;
+    }
 
-    Serial.print("Memory usage: ");
-    Serial.println(doc.memoryUsage());
+    // Navigate to hardware sections
+    JsonArray childrenPC = children[0]["Children"];
+    if (childrenPC.isNull()) {
+        outData.is_available = false;
+        Serial.println("Invalid JSON structure: Missing Children[0].Children");
+        return false;
+    }
 
-    // Navigate through the JSON structure and extract data
-    const JsonArrayConst &childrenPC = doc["Children"][0]["Children"];
+    bool dataValid = true;
+
+    // Find sections (flexible matching)
+    int mbIndex = -1, cpuIndex = -1, ramIndex = -1, gpuIndex = -1;
+    for (size_t i = 0; i < childrenPC.size(); i++) {
+        String text = childrenPC[i]["Text"] | "";
+        if (text.indexOf("Z790 TOMAHAWK") >= 0 || text.indexOf("Mainboard") >= 0) mbIndex = i;
+        else if (text.indexOf("Intel Core") >= 0 || text.indexOf("CPU") >= 0) cpuIndex = i;
+        else if (text.indexOf("Generic Memory") >= 0 || text.indexOf("Memory") >= 0) ramIndex = i;
+        else if (text.indexOf("Radeon RX") >= 0 || text.indexOf("GPU") >= 0) gpuIndex = i;
+    }
 
     // Motherboard data
-    const JsonArrayConst &childrenMB = childrenPC[0]["Children"][0]["Children"];
-    outData.cpu_temperature = atof(childrenMB[1]["Children"][0]["Value"]);
-    outData.cpu_fan = atoi(childrenMB[2]["Children"][0]["Value"]);
-    outData.front_fan = atoi(childrenMB[2]["Children"][2]["Value"]);
-    outData.back_fan = atoi(childrenMB[2]["Children"][6]["Value"]);
+    if (mbIndex >= 0) {
+        JsonArray mbChildren = childrenPC[mbIndex]["Children"][0]["Children"]; // Assume chip (e.g., Nuvoton)
+        bool foundTemp = false, foundFans = false;
+        for (JsonObject mbChild : mbChildren) {
+            String text = mbChild["Text"] | "";
+            if (text.indexOf("Temperature") >= 0) {
+                JsonArray temps = mbChild["Children"];
+                for (JsonObject temp : temps) {
+                    String tempText = temp["Text"] | "";
+                    if (tempText.indexOf("CPU") >= 0) {
+                        outData.cpu_temperature = parseValue(temp["Value"], 0.0f);
+                        foundTemp = true;
+                        break;
+                    }
+                }
+            } else if (text.indexOf("Fan") >= 0) {
+                JsonArray fans = mbChild["Children"];
+                for (JsonObject fan : fans) {
+                    String fanText = fan["Text"] | "";
+                    if (fanText.indexOf("CPU Fan") >= 0) {
+                        outData.cpu_fan = parseValue(fan["Value"], 0);
+                    } else if (fanText.indexOf("System Fan #1") >= 0 || fanText.indexOf("Front") >= 0) {
+                        outData.front_fan = parseValue(fan["Value"], 0);
+                    } else if (fanText.indexOf("System Fan #5") >= 0 || fanText.indexOf("Back") >= 0) {
+                        outData.back_fan = parseValue(fan["Value"], 0);
+                    }
+                }
+                foundFans = true;
+            }
+        }
+        if (!foundTemp || !foundFans) {
+            dataValid = false;
+        }
+    } else {
+        dataValid = false;
+    }
 
     // CPU data
-    const JsonArrayConst &childrenCPU = childrenPC[1]["Children"];
-    outData.cpu_power = static_cast<uint16_t>(atof(childrenCPU[1]["Children"][0]["Value"]) + 0.5);
-    outData.cpu_load = static_cast<uint8_t>(atof(childrenCPU[4]["Children"][0]["Value"]) + 0.5);
-
-    Serial.println(outData.cpu_load);
-
-    for (int i = 1; i < 21; i++) {
-        outData.cpu_thread_load[i - 1] = atof(childrenCPU[4]["Children"][i]["Value"]);
+    if (cpuIndex >= 0) {
+        JsonArray cpuChildren = childrenPC[cpuIndex]["Children"];
+        bool foundPower = false, foundLoad = false;
+        for (JsonObject cpuChild : cpuChildren) {
+            String text = cpuChild["Text"] | "";
+            if (text.indexOf("Power") >= 0) {
+                JsonArray powers = cpuChild["Children"];
+                for (JsonObject power : powers) {
+                    String powerText = power["Text"] | "";
+                    if (powerText.indexOf("CPU Package") >= 0 || powerText.indexOf("CPU") >= 0) {
+                        outData.cpu_power = parseValue(power["Value"], 0.0f);
+                        foundPower = true;
+                        break;
+                    }
+                }
+            } else if (text.indexOf("Load") >= 0) {
+                JsonArray loads = cpuChild["Children"];
+                for (JsonObject load : loads) {
+                    String loadText = load["Text"] | "";
+                    if (loadText.indexOf("CPU Total") >= 0 || loadText.indexOf("CPU") >= 0) {
+                        outData.cpu_load = parseValue(load["Value"], 0.0f);
+                        foundLoad = true;
+                    } else if (loadText.startsWith("CPU Core #") && loadText.indexOf("Thread") >= 0) {
+                        int coreNum = atoi(loadText.substring(10, loadText.indexOf(" Thread")).c_str()) - 1;
+                        if (coreNum >= 0 && coreNum < 20) {
+                            outData.cpu_thread_load[coreNum] = parseValue(load["Value"], 0.0f);
+                        }
+                    }
+                }
+            }
+        }
+        if (!foundPower || !foundLoad) {
+            dataValid = false;
+        }
+    } else {
+        dataValid = false;
     }
 
     // Memory data
-    const JsonArrayConst &childrenRAM = childrenPC[2]["Children"][0]["Children"];
-    outData.mem_load = static_cast<uint8_t>(atof(childrenRAM[0]["Value"]) + 0.5);
-
-    Serial.print("MEM Load: ");
-    Serial.println(outData.mem_load);
+    if (ramIndex >= 0) {
+        JsonArray ramChildren = childrenPC[ramIndex]["Children"];
+        bool foundLoad = false;
+        for (JsonObject ramChild : ramChildren) {
+            String text = ramChild["Text"] | "";
+            if (text.indexOf("Load") >= 0) {
+                JsonArray loads = ramChild["Children"];
+                for (JsonObject load : loads) {
+                    String loadText = load["Text"] | "";
+                    if (loadText.indexOf("Memory") >= 0) {
+                        outData.mem_load = parseValue(load["Value"], 0.0f);
+                        foundLoad = true;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (!foundLoad) {
+            dataValid = false;
+        }
+    } else {
+        dataValid = false;
+    }
 
     // GPU data
-    const JsonArrayConst &childrenGPU = childrenPC[3]["Children"];
-    //outData.gpu_power = static_cast<uint16_t>(atof(childrenGPU[1]["Children"][0]["Value"]) + 0.5);
-    // outData.gpu_temperature = atof(childrenGPU[3]["Children"][0]["Value"]);
-    // outData.gpu_load = static_cast<uint8_t>(atof(childrenGPU[4]["Children"][0]["Value"]) + 0.5);
-    outData.gpu_3d = static_cast<uint8_t>(atof(childrenGPU[0]["Children"][0]["Value"]) + 0.5);
-    outData.gpu_compute = static_cast<uint8_t>(atof(childrenGPU[0]["Children"][1]["Value"]) + 0.5);
-    // outData.gpu_decode = static_cast<uint8_t>(atof(childrenGPU[4]["Children"][8]["Value"]) + 0.5);
-    // outData.gpu_fan = atoi(childrenGPU[5]["Children"][0]["Value"]);
-    outData.gpu_mem = atof(childrenGPU[1]["Children"][0]["Value"]) / 163.84;
+    if (gpuIndex >= 0) {
+        JsonArray gpuChildren = childrenPC[gpuIndex]["Children"];
+        bool foundLoad = false, foundMem = false;
+        for (JsonObject gpuChild : gpuChildren) {
+            String text = gpuChild["Text"] | "";
+            if (text.indexOf("Load") >= 0) {
+                JsonArray loads = gpuChild["Children"];
+                for (JsonObject load : loads) {
+                    String loadText = load["Text"] | "";
+                    if (loadText.indexOf("D3D 3D") >= 0 || loadText.indexOf("GPU Core") >= 0) {
+                        outData.gpu_3d = parseValue(load["Value"], 0.0f);
+                    } else if (loadText.indexOf("D3D Compute") >= 0 || loadText.indexOf("Compute") >= 0) {
+                        outData.gpu_compute = parseValue(load["Value"], 0.0f);
+                    }
+                }
+                outData.gpu_load = outData.gpu_3d; // Use D3D 3D or GPU Core as primary load
+                foundLoad = true;
+            } else if (text.indexOf("Data") >= 0 || text.indexOf("Memory") >= 0) {
+                JsonArray data = gpuChild["Children"];
+                for (JsonObject datum : data) {
+                    String dataText = datum["Text"] | "";
+                    if (dataText.indexOf("GPU Memory Used") >= 0 || dataText.indexOf("Memory Used") >= 0) {
+                        float memUsed = parseValue(datum["Value"], 0.0f);
+                        outData.gpu_mem = (memUsed / 16368.0) * 100.0; // Convert MB to % of 16 GB
+                        foundMem = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!foundLoad || !foundMem) {
+            dataValid = false;
+        }
+    } else {
+        dataValid = false;
+    }
 
-    outData.gpu_load = 50; // For testing purposes
+    // Set availability
+    outData.is_available = dataValid;
+    outData.is_updated = dataValid;
 
-    Serial.print("GPU 3D: ");
-    Serial.println(outData.gpu_3d);
-    Serial.print("GPU Compute: ");
-    Serial.println(outData.gpu_compute);
-    Serial.print("GPU Memory: ");
-    Serial.println(outData.gpu_mem);
-
-    // Ethernet data
-    const JsonArrayConst &childrenETH = childrenPC[12]["Children"];
-    const JsonArrayConst &childrenETHThroughput = childrenETH[2]["Children"];
-    //outData.eth_up = this->parseNetworkSpeed(childrenETHThroughput[0]["Value"]);
-    //outData.eth_dn = this->parseNetworkSpeed(childrenETHThroughput[1]["Value"]);
-
-    Serial.println("Ethernet parsed successfully");
-
-    // Mark data as available and updated
-    outData.is_available = true;
-    outData.is_updated = true;
-
-    Serial.println("Parsing completed successfully.");
-
-    return true;
+    // Log parsing time and result
+    unsigned long parseTime = millis() - startTime;
+    if (dataValid) {
+        Serial.println("Parsing completed successfully.");
+        Serial.printf("Parsing time: %lu ms\n", parseTime);
+    } else {
+        Serial.println("Warning: Missing some hardware data");
+    }
+    return dataValid;
 }

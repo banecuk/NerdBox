@@ -32,6 +32,7 @@ void WidgetManager::initializeWidgets() {
     lcd_->startWrite();
     for (auto& widget : widgets_) {
         widget->initialize(lcd_, logger_);
+        widget->drawStatic();
         widget->draw(true);
     }
     lcd_->endWrite();
@@ -59,6 +60,9 @@ void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
         if (needsDraw) {
             logger_.debugf("Drawing widget at (%d, %d)", widget->getDimensions().x,
                             widget->getDimensions().y);
+            if (forceRedraw) {
+                widget->drawStatic();
+            }
             widget->draw(forceRedraw);
         }
     }
