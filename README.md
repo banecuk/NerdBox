@@ -1,46 +1,110 @@
 # PC Metrics Display
 
-This project displays real-time PC performance metrics (CPU load, temperature, RAM usage, GPU load, etc.) on a WT32-SC01-PLUS ESP32-based touchscreen device. The metrics are fetched from a PC running Libre Hardware Monitor, a fork of Open Hardware Monitor, via a JSON API.
+This project enables real-time monitoring of PC performance metrics, including CPU load, temperature, RAM usage, GPU load, and more, on a WT32-SC01-PLUS ESP32-based touchscreen device. Metrics are fetched from a PC running **Libre Hardware Monitor**, a fork of **Open Hardware Monitor**, via its JSON API.
 
 ## Features
 - Displays CPU load, temperature, power, and per-core thread loads.
 - Shows GPU load (3D and compute), memory usage, and fan speeds.
-- Monitors RAM usage and motherboard sensor data (e.g., CPU fan, system fans).
-- Updates metrics periodically from the Libre Hardware Monitor API.
-- User-friendly touchscreen interface on the WT32-SC01-PLUS.
+- Monitors RAM usage and motherboard sensors (e.g., CPU fan, system fans).
+- Periodically updates metrics from the Libre Hardware Monitor API.
+- Provides a user-friendly touchscreen interface on the WT32-SC01-PLUS.
 
 ## Data Source
-The PC metrics are sourced from **Libre Hardware Monitor**, a fork of **Open Hardware Monitor**. Libre Hardware Monitor runs on the host PC and exposes sensor data via a JSON API (e.g., `http://192.168.1.11:8085/data.json`). Ensure Libre Hardware Monitor is installed and configured to enable the web server for remote access.
+PC metrics are sourced from **Libre Hardware Monitor**, a fork of **Open Hardware Monitor**. Libre Hardware Monitor runs on the host PC and exposes sensor data through a JSON API (e.g., `http://192.168.1.11:8085/data.json`). Ensure Libre Hardware Monitor is installed and its web server is enabled for remote access.
 
 ## Requirements
-- **Hardware**:
-  - WT32-SC01-PLUS (ESP32 with touchscreen display)
-  - USB cable for programming and power
-  - PC running Libre Hardware Monitor
-- **Software**:
-  - PlatformIO for building and uploading the firmware
-  - Arduino framework with ESP32 support
-  - Libre Hardware Monitor installed on the PC
-- **Dependencies** (specified in `platformio.ini`):
-  - `lovyan03/LovyanGFX`
-  - `bblanchon/ArduinoJson`
+
+### Hardware
+- WT32-SC01-PLUS (ESP32 with touchscreen display)
+- USB cable for programming and power
+- PC running Libre Hardware Monitor
+
+### Software
+- [PlatformIO](https://platformio.org/) for building and uploading firmware
+- Arduino framework with ESP32 support
+- [Libre Hardware Monitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) installed on the PC
+
+### Dependencies
+Specified in `platformio.ini`:
+- `lovyan03/LovyanGFX` (for WT32-SC01-PLUS display)
+- `bblanchon/ArduinoJson` (for JSON parsing)
 
 ## Setup
+
 1. **Install Libre Hardware Monitor**:
-   - Download and install Libre Hardware Monitor from its [official repository](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
-   - Enable the web server in Libre Hardware Monitor settings to expose the JSON API (default: `http://localhost:8085/data.json`).
-   - Note the IP address of the PC (e.g., `192.168.1.11`) and ensure it's accessible from the ESP32.
+   - Download from the [official repository](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
+   - Install and run Libre Hardware Monitor on your PC.
+   - Enable the web server in settings to expose the JSON API (default: `http://localhost:8085/data.json`).
+   - Note the PC's IP address (e.g., `192.168.1.11`) and verify accessibility from the ESP32's network.
 
 2. **Configure the ESP32**:
-   - Clone this repository to your computer.
+   - Clone this repository:
+     ```bash
+     git clone <repository-url>
+     ```
    - Open the project in PlatformIO.
-   - Copy Environment.h.example to Environment.h and update information
-   - Ensure the WT32-SC01-PLUS is connected via USB.
+   - Copy `Environment.h.example` to `Environment.h`:
+     ```bash
+     cp include/Environment.h.example include/Environment.h
+     ```
+   - Edit `Environment.h` to set the API endpoint:
+     ```cpp
+     #define OHM_API "http://192.168.1.11:8085/data.json"
+     ```
+   - Edit `Environment.h` to set WiFi credentials:  
+   - Connect the WT32-SC01-PLUS via USB.
 
-3. **Build and Upload:**
-    Build the project in PlatformIO: pio run.
-    Upload the firmware to the WT32-SC01-PLUS: pio run --target upload.
-    Open the Serial Monitor (pio device monitor) to verify parsing (baud rate: 115200).
+3. **Build and Upload**:
+   - Build the project:
+     ```bash
+     pio run
+     ```
+   - Upload the firmware to the WT32-SC01-PLUS:
+     ```bash
+     pio run --target upload
+     ```
+   - Open the Serial Monitor to verify parsing (baud rate: 115200):
+     ```bash
+     pio device monitor
+     ```
 
-4. **Verify Operation:**
-  - The display should show current time and metrics like CPU load, RAM usage, and GPU memory
+4. **Verify Operation**:
+   - The WT32-SC01-PLUS display should show the current time and metrics (e.g., CPU load: ~4%, RAM usage: ~47%, GPU memory: ~13%).
+   - Serial output should confirm successful parsing:
+     ```
+     Parsing completed successfully.
+     Parsing time: 150 ms
+     ```
+
+## Troubleshooting
+
+- **No metrics displayed**:
+  - Verify Libre Hardware Monitor is running and its web server is enabled.
+  - Check the IP address and port in `Environment.h`.
+  - Inspect Serial Monitor for errors (e.g., `JSON deserialization failed`).
+- **"HM update failed" in Serial output**:
+  - Indicates missing hardware data. Ensure Libre Hardware Monitor reports all sensors (CPU, GPU, RAM).
+  - Confirm network connectivity between the ESP32 and PC.
+  - Check for memory constraints in Serial output.
+
+## Contributing
+
+Contributions are welcome! To contribute:
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/your-feature`).
+3. Commit changes (`git commit -m "Add your feature"`).
+4. Push to the branch (`git push origin feature/your-feature`).
+5. Open a pull request.
+
+Please include tests and update documentation as needed.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+## Acknowledgments
+
+- **Libre Hardware Monitor**: For providing the JSON API for PC metrics.
+- **Open Hardware Monitor**: The original project forked by Libre Hardware Monitor.
+- **PlatformIO** and **Arduino** communities: For robust development tools and libraries.
+- **LovyanGFX**: For WT32-SC01-PLUS display support.
