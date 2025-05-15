@@ -19,7 +19,6 @@ class PcMetrics {
     float cpu_thread_load[20] = {};
 
     uint16_t cpu_power = 0;
-    uint16_t gpu_power = 0; // not available
  
     uint16_t cpu_fan = 0;
     uint16_t gpu_fan = 0;

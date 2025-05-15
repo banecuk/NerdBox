@@ -3,7 +3,29 @@
 #include <cstdlib> // For strtod
 
 PcMetricsService::PcMetricsService(NetworkManager &networkManager)
-    : networkManager_(networkManager) {}
+    : networkManager_(networkManager) {
+    initFilter();
+}
+
+void PcMetricsService::initFilter() {
+    JsonObject filter_Children_0 = filter_["Children"].add<JsonObject>();
+    filter_Children_0["Text"] = true;
+
+    JsonObject filter_Children_0_Children_0 = filter_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0["Text"] = true;
+
+    JsonObject filter_Children_0_Children_0_Children_0 = filter_Children_0_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0_Children_0["Text"] = true;
+
+    JsonObject filter_Children_0_Children_0_Children_0_Children_0 = filter_Children_0_Children_0_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0_Children_0_Children_0["Text"] = true;
+    filter_Children_0_Children_0_Children_0_Children_0["Value"] = true;
+
+    JsonObject filter_Children_0_Children_0_Children_0_Children_0_Children_0 = filter_Children_0_Children_0_Children_0_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Text"] = true;
+    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Value"] = true;
+    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Children"] = true;
+}
 
 bool PcMetricsService::fetchData(PcMetrics &outData) {
     String rawData;
@@ -53,28 +75,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
     JsonDocument doc;
 
     // Deserialize with filter
-    JsonDocument filter;
-
-    JsonObject filter_Children_0 = filter["Children"].add<JsonObject>();
-    filter_Children_0["Text"] = true;
-
-    JsonObject filter_Children_0_Children_0 = filter_Children_0["Children"].add<JsonObject>();
-    filter_Children_0_Children_0["Text"] = true;
-
-    JsonObject filter_Children_0_Children_0_Children_0 = filter_Children_0_Children_0["Children"].add<JsonObject>();
-    filter_Children_0_Children_0_Children_0["Text"] = true;
-
-    JsonObject filter_Children_0_Children_0_Children_0_Children_0 = filter_Children_0_Children_0_Children_0["Children"].add<JsonObject>();
-    filter_Children_0_Children_0_Children_0_Children_0["Text"] = true;
-    filter_Children_0_Children_0_Children_0_Children_0["Value"] = true;
-
-    JsonObject filter_Children_0_Children_0_Children_0_Children_0_Children_0 = filter_Children_0_Children_0_Children_0_Children_0["Children"].add<JsonObject>();
-    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Text"] = true;
-    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Value"] = true;
-    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Children"] = true;
-
-
-    DeserializationError error = deserializeJson(doc, rawData, DeserializationOption::Filter(filter));
+    DeserializationError error = deserializeJson(doc, rawData, DeserializationOption::Filter(filter_));
     if (error) {
         outData.is_available = false;
         Serial.printf("JSON deserialization failed: %s\n", error.c_str());
