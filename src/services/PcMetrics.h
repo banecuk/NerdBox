@@ -15,7 +15,6 @@ class PcMetrics {
     uint8_t gpu_temperature = 0;
 
     uint8_t cpu_load = 0;
-    uint8_t gpu_load = 0; // not available
     uint8_t mem_load = 0;
     float cpu_thread_load[20] = {};
 

@@ -21,31 +21,29 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
         // lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width,
         //                dimensions_.height, TFT_BLACK);
 
-        Serial.print("Drawing PC metrics");
-
         lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
         lcd_->setTextSize(2);
         lcd_->setTextDatum(TL_DATUM);
 
         // Draw CPU Load
         String cpuLabel = "CPU: " + String(pcMetrics_.cpu_load) + "%  ";
-        lcd_->drawString(cpuLabel.c_str(), dimensions_.x + 0, dimensions_.y + 0);
+        lcd_->drawString(cpuLabel.c_str(), dimensions_.x + 2, dimensions_.y + 0 + 2);
 
         // Draw GPU Load
         String gpu3D = "GPU 3D: " + String(pcMetrics_.gpu_3d) + "%  ";
-        lcd_->drawString(gpu3D.c_str(), dimensions_.x + 0, dimensions_.y + 25);
+        lcd_->drawString(gpu3D.c_str(), dimensions_.x + 2, dimensions_.y + 25 + 2);
 
         // Draw GPU Load
         String gpuCompute = "GPU Compute: " + String(pcMetrics_.gpu_compute) + "%  ";
-        lcd_->drawString(gpuCompute.c_str(), dimensions_.x + 0, dimensions_.y + 50);
+        lcd_->drawString(gpuCompute.c_str(), dimensions_.x + 2, dimensions_.y + 50 + 2);
 
         // Draw GPU mem
         String gpuMem = "GPU RAM: " + String(pcMetrics_.gpu_mem) + "%  ";
-        lcd_->drawString(gpuMem.c_str(), dimensions_.x + 0, dimensions_.y + 75);        
+        lcd_->drawString(gpuMem.c_str(), dimensions_.x + 2, dimensions_.y + 75 + 2);        
 
         // Draw RAM Load
         String ram = "RAM: " + String(pcMetrics_.mem_load) + "%  ";
-        lcd_->drawString(ram.c_str(), dimensions_.x + 0, dimensions_.y + 100);
+        lcd_->drawString(ram.c_str(), dimensions_.x + 2, dimensions_.y + 100 + 2);
 
         pcMetrics_.is_updated = false;  // Reset update flag
         lastUpdateTimeMs_ = millis();

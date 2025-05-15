@@ -50,12 +50,31 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
     // Clear outData to ensure no stale values
     outData = PcMetrics();
 
-    // Allocate JSON document (96 KB to handle ~59 KB JSON)
-    const size_t jsonBufferSize = 98304;
-    DynamicJsonDocument doc(jsonBufferSize);
+    JsonDocument doc;
 
-    // Deserialize without filter
-    DeserializationError error = deserializeJson(doc, rawData);
+    // Deserialize with filter
+    JsonDocument filter;
+
+    JsonObject filter_Children_0 = filter["Children"].add<JsonObject>();
+    filter_Children_0["Text"] = true;
+
+    JsonObject filter_Children_0_Children_0 = filter_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0["Text"] = true;
+
+    JsonObject filter_Children_0_Children_0_Children_0 = filter_Children_0_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0_Children_0["Text"] = true;
+
+    JsonObject filter_Children_0_Children_0_Children_0_Children_0 = filter_Children_0_Children_0_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0_Children_0_Children_0["Text"] = true;
+    filter_Children_0_Children_0_Children_0_Children_0["Value"] = true;
+
+    JsonObject filter_Children_0_Children_0_Children_0_Children_0_Children_0 = filter_Children_0_Children_0_Children_0_Children_0["Children"].add<JsonObject>();
+    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Text"] = true;
+    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Value"] = true;
+    filter_Children_0_Children_0_Children_0_Children_0_Children_0["Children"] = true;
+
+
+    DeserializationError error = deserializeJson(doc, rawData, DeserializationOption::Filter(filter));
     if (error) {
         outData.is_available = false;
         Serial.printf("JSON deserialization failed: %s\n", error.c_str());
@@ -84,10 +103,10 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
     int mbIndex = -1, cpuIndex = -1, ramIndex = -1, gpuIndex = -1;
     for (size_t i = 0; i < childrenPC.size(); i++) {
         String text = childrenPC[i]["Text"] | "";
-        if (text.indexOf("Z790 TOMAHAWK") >= 0 || text.indexOf("Mainboard") >= 0) mbIndex = i;
-        else if (text.indexOf("Intel Core") >= 0 || text.indexOf("CPU") >= 0) cpuIndex = i;
-        else if (text.indexOf("Generic Memory") >= 0 || text.indexOf("Memory") >= 0) ramIndex = i;
-        else if (text.indexOf("Radeon RX") >= 0 || text.indexOf("GPU") >= 0) gpuIndex = i;
+        if (text.indexOf("Z790") >= 0) mbIndex = i;
+        else if (text.indexOf("Intel Core") >= 0) cpuIndex = i;
+        else if (text.indexOf("Generic Memory") >= 0) ramIndex = i;
+        else if (text.indexOf("AMD Radeon") >= 0) gpuIndex = i;
     }
 
     // Motherboard data
@@ -209,7 +228,6 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                         outData.gpu_compute = parseValue(load["Value"], 0.0f);
                     }
                 }
-                outData.gpu_load = outData.gpu_3d; // Use D3D 3D or GPU Core as primary load
                 foundLoad = true;
             } else if (text.indexOf("Data") >= 0 || text.indexOf("Memory") >= 0) {
                 JsonArray data = gpuChild["Children"];
@@ -238,7 +256,6 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
     // Log parsing time and result
     unsigned long parseTime = millis() - startTime;
     if (dataValid) {
-        Serial.println("Parsing completed successfully.");
         Serial.printf("Parsing time: %lu ms\n", parseTime);
     } else {
         Serial.println("Warning: Missing some hardware data");
