@@ -252,7 +252,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
 
     // Set availability
     outData.is_available = dataValid;
-    outData.is_updated = dataValid;
+    outData.last_update_timestamp = millis();
 
     // Log parsing time and result
     unsigned long parseTime = millis() - startTime;

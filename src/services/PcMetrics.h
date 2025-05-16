@@ -9,7 +9,7 @@ class PcMetrics {
    private:
    public:
     bool is_available = false;
-    bool is_updated = false;
+    unsigned long last_update_timestamp = 0; 
 
     uint8_t cpu_temperature = 0;
     uint8_t gpu_temperature = 0;

@@ -4,12 +4,11 @@ PcMetricsWidget::PcMetricsWidget(const Dimensions& dims, uint32_t updateInterval
                                  PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
 
-
 void PcMetricsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
 
-    lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_RED);
-    // lcd_->fillRect(dimensions_.x + 1, dimensions_.y + 1, dimensions_.width - 2, dimensions_.height - 2, TFT_BLACK);
+    lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
+                   TFT_RED);
 }
 
 void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
@@ -17,7 +16,7 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
 
     bool needsRedraw = forceRedraw || needsUpdate();
 
-    if (needsRedraw && pcMetrics_.is_available) {
+    if (needsRedraw && pcMetrics_.is_available) {  // TODO clear the area if not available
         // lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width,
         //                dimensions_.height, TFT_BLACK);
 
@@ -39,19 +38,23 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
 
         // Draw GPU mem
         String gpuMem = "GPU RAM: " + String(pcMetrics_.gpu_mem) + "%  ";
-        lcd_->drawString(gpuMem.c_str(), dimensions_.x + 2, dimensions_.y + 75 + 2);        
+        lcd_->drawString(gpuMem.c_str(), dimensions_.x + 2, dimensions_.y + 75 + 2);
 
         // Draw RAM Load
         String ram = "RAM: " + String(pcMetrics_.mem_load) + "%  ";
         lcd_->drawString(ram.c_str(), dimensions_.x + 2, dimensions_.y + 100 + 2);
 
-        pcMetrics_.is_updated = false;  // Reset update flag
+        // last update of the data
+        lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
+
+        // last update of the widget
         lastUpdateTimeMs_ = millis();
     }
 }
 
 bool PcMetricsWidget::needsUpdate() const {
-    if (!initialized_ || !pcMetrics_.is_available || !pcMetrics_.is_updated) {
+    if (!initialized_ || !pcMetrics_.is_available ||
+        !(pcMetrics_.last_update_timestamp > lastUpdateTimestamp_)) {
         return false;
     }
     return true;

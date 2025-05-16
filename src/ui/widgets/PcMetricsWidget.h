@@ -17,4 +17,5 @@ class PcMetricsWidget : public Widget {
 
    private:
     PcMetrics& pcMetrics_;
+    unsigned long lastUpdateTimestamp_ = 0; 
 };
