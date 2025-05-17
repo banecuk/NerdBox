@@ -17,6 +17,7 @@ public:
     void addScreenDrawTime(uint32_t timeMs);
     const std::array<uint32_t, Config::Metrics::kMaxScreenDrawTimes>& getScreenDrawTimes() const;
     float getAverageScreenDrawTime() const;
+    size_t getScreenDrawCount() const; 
 
 private:
     uint32_t pcMetricsJsonParseTime_; // Latest JSON parse time for PC metrics

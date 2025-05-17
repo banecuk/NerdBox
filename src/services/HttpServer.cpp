@@ -62,32 +62,31 @@ String HttpServer::getSystemInfo() {
 }
 
 String HttpServer::getAppInfo() {
-    char buffer[768];
+    char buffer[2048];
     size_t offset = 0;
 
-    // Write opening tag
+    // Write metrics in pre tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
-
-    // PC Metrics JSON Parse Time
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
                        "PC Metrics JSON Parse Time: %u ms\n",
                        systemMetrics_.getPcMetricsJsonParseTime());
-
-    // Average Screen Draw Time
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
                        "Average Screen Draw Time: %u ms\n",
                        static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
-
-    // Screen Draw Times
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Screen Draw Times (ms):\n");
-    const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
-    for (size_t i = 0; i < drawTimes.size(); ++i) {
-        offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                           "  Draw %u: %u\n", i + 1, drawTimes[i]);
-    }
-
-    // Write closing tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
+
+    // Write screen draw times as a table
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                       "<table class='draw-times'>"
+                       "<tr><th>Draw</th><th>Draw time (ms)</th></tr>");
+    const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
+    size_t count = systemMetrics_.getScreenDrawCount();
+    for (size_t i = 0; i < count && i < drawTimes.size(); ++i) {
+        offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                           "<tr><td>%u</td><td>%u</td></tr>",
+                           i + 1, drawTimes[i]);
+    }
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</table>");
 
     // Convert to String for compatibility
     String info;

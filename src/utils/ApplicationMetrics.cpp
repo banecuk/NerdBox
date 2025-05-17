@@ -45,3 +45,7 @@ float ApplicationMetrics::getAverageScreenDrawTime() const {
     }
     return static_cast<float>(sum) / Config::Metrics::kMaxScreenDrawTimes;
 }
+
+size_t ApplicationMetrics::getScreenDrawCount() const {
+    return screenDrawCount_;
+}
