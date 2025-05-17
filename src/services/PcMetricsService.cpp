@@ -33,7 +33,7 @@ void PcMetricsService::initFilter() {
 
 bool PcMetricsService::fetchData(PcMetrics &outData) {
     String rawData;
-    if (networkManager_.getHttpClient().download(OHM_API, rawData)) {
+    if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData)) {
         return parseData(rawData, outData);
     } else {
         outData.is_available = false;

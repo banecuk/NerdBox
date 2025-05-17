@@ -38,5 +38,3 @@ class DisplayManager {
 
     static const uint8_t DEFAULT_BRIGHTNESS = 100;
 };
-
-extern DisplayManager displayManager;

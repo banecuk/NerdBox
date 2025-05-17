@@ -27,7 +27,7 @@ constexpr bool kEnableOnBoot = true;
 } 
 
 namespace Timing {
-constexpr uint32_t kScreenTaskMs = 50;
+constexpr uint32_t kScreenTaskMs = 33;
 constexpr uint32_t kBackgroundTaskMs = 20;
 constexpr uint32_t kMainLoopMs = 10;
 };

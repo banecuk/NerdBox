@@ -19,6 +19,9 @@ public:
     float getAverageScreenDrawTime() const;
     size_t getScreenDrawCount() const; 
 
+    // Uptime method
+    String getFormattedUptime() const;
+
 private:
     uint32_t pcMetricsJsonParseTime_; // Latest JSON parse time for PC metrics
     std::array<uint32_t, Config::Metrics::kMaxScreenDrawTimes> screenDrawTimes_; // Circular buffer for screen draw times

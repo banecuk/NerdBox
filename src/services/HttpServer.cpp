@@ -30,9 +30,9 @@ String HttpServer::getSystemInfo() {
     // Write opening tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
 
-    // Free Heap
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
-                       ESP.getFreeHeap());
+    // CPU Frequency
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                       "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
 
     // PSRAM Size
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Size: %u bytes\n",
@@ -41,10 +41,6 @@ String HttpServer::getSystemInfo() {
     // PSRAM Free
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Free: %u bytes\n",
                        ESP.getFreePsram());
-
-    // CPU Frequency
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
 
     // SDK Version
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "SDK Version: %s\n",
@@ -68,7 +64,11 @@ String HttpServer::getAppInfo() {
     // Write metrics in pre tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "PC Metrics JSON Parse Time: %u ms\n",
+                       "Uptime: %s\n", systemMetrics_.getFormattedUptime().c_str());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
+                       ESP.getFreeHeap());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                       "Libre Hardware Monitor JSON Parse Time: %u ms\n",
                        systemMetrics_.getPcMetricsJsonParseTime());
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
                        "Average Screen Draw Time: %u ms\n",
