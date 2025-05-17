@@ -1,10 +1,9 @@
-// src/services/PcMetricsService.cpp
 #include "PcMetricsService.h"
 
 #include <cstdlib>  // For strtod
 
-PcMetricsService::PcMetricsService(NetworkManager &networkManager)
-    : networkManager_(networkManager) {
+PcMetricsService::PcMetricsService(NetworkManager &networkManager, ApplicationMetrics &systemMetrics)
+    : networkManager_(networkManager), systemMetrics_(systemMetrics) {
     initFilter();
 }
 
@@ -154,6 +153,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
             }
         }
         if (!foundTemp || !foundFans) {
+            Serial.println("Warning: Missing some motherboard data");
             dataValid = false;
         }
     } else {
@@ -200,6 +200,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
             }
         }
         if (!foundPower || !foundLoad) {
+            Serial.println("Warning: Missing some CPU data");
             dataValid = false;
         }
     } else {
@@ -226,6 +227,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
             }
         }
         if (!foundLoad) {
+            Serial.println("Warning: Missing memory data");
             dataValid = false;
         }
     } else {
@@ -251,7 +253,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     }
                 }
                 foundLoad = true;
-            } else if (text.indexOf("Data") >= 0 || text.indexOf("Memory") >= 0) {
+            } else if (text.indexOf("Data") >= 0) {
                 JsonArray data = gpuChild["Children"];
                 for (JsonObject datum : data) {
                     String dataText = datum["Text"] | "";
@@ -267,6 +269,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
             }
         }
         if (!foundLoad || !foundMem) {
+            Serial.println("Warning: Missing some GPU data");
             dataValid = false;
         }
     } else {
@@ -274,13 +277,14 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
     }
 
     // Set availability
-    outData.is_available = dataValid;
     outData.last_update_timestamp = millis();
+    outData.is_available = dataValid;
 
-    // Log parsing time and result
-    unsigned long parseTime = millis() - startTime;
+    // Log parsing time in ApplicationMetrics
     if (dataValid) {
-        Serial.printf("Parsing time: %lu ms\n", parseTime);
+        unsigned long parseTime = millis() - startTime;
+        systemMetrics_.setPcMetricsJsonParseTime(parseTime);
+        // Serial.printf("Parsing time: %lu ms\n", parseTime);
     } else {
         Serial.println("Warning: Missing some hardware data");
     }

@@ -46,4 +46,8 @@ constexpr uint32_t kRetryDelayMs = 200;
 constexpr uint32_t kMaxRetries = 2;
 };
 
+namespace Metrics {
+constexpr uint8_t kMaxScreenDrawTimes = 30;
+};
+
 }  // namespace Config

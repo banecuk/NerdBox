@@ -1,11 +1,12 @@
 #include "HttpServer.h"
 
-HttpServer::HttpServer(UIController &uiController)
-    : server_(80), uiController_(uiController) {}
+HttpServer::HttpServer(UIController &uiController, ApplicationMetrics &systemMetrics)
+    : server_(80), uiController_(uiController), systemMetrics_(systemMetrics) {}
 
 void HttpServer::begin() {
     server_.on("/", [this]() { this->handleHome(); });
     server_.on("/system-info", [this]() { this->handleSystemInfo(); });
+    server_.on("/app-info", [this]() { this->handleAppInfo(); });
     server_.on("/screen/main",
                [this]() { uiController_.requestScreen(ScreenName::MAIN); });
     server_.on("/screen/settings",
@@ -23,26 +24,31 @@ void HttpServer::handleHome() {
 }
 
 String HttpServer::getSystemInfo() {
-char buffer[300];
+    char buffer[300];
     size_t offset = 0;
 
     // Write opening tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
 
     // Free Heap
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n", ESP.getFreeHeap());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
+                       ESP.getFreeHeap());
 
     // PSRAM Size
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Size: %u bytes\n", ESP.getPsramSize());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Size: %u bytes\n",
+                       ESP.getPsramSize());
 
     // PSRAM Free
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Free: %u bytes\n", ESP.getFreePsram());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Free: %u bytes\n",
+                       ESP.getFreePsram());
 
     // CPU Frequency
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                       "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
 
     // SDK Version
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "SDK Version: %s\n", ESP.getSdkVersion());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "SDK Version: %s\n",
+                       ESP.getSdkVersion());
 
     // Write closing tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
@@ -55,7 +61,45 @@ char buffer[300];
     return wrapHtmlContent("System Information", info);
 }
 
+String HttpServer::getAppInfo() {
+    char buffer[768];
+    size_t offset = 0;
+
+    // Write opening tag
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
+
+    // PC Metrics JSON Parse Time
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                       "PC Metrics JSON Parse Time: %u ms\n",
+                       systemMetrics_.getPcMetricsJsonParseTime());
+
+    // Average Screen Draw Time
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                       "Average Screen Draw Time: %u ms\n",
+                       static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
+
+    // Screen Draw Times
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Screen Draw Times (ms):\n");
+    const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
+    for (size_t i = 0; i < drawTimes.size(); ++i) {
+        offset += snprintf(buffer + offset, sizeof(buffer) - offset,
+                           "  Draw %u: %u\n", i + 1, drawTimes[i]);
+    }
+
+    // Write closing tag
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
+
+    // Convert to String for compatibility
+    String info;
+    info.reserve(offset + 1);
+    info.concat(buffer, offset);
+
+    return wrapHtmlContent("App Information", info);
+}
+
 void HttpServer::handleSystemInfo() { server_.send(200, "text/html", getSystemInfo()); }
+
+void HttpServer::handleAppInfo() { server_.send(200, "text/html", getAppInfo()); }
 
 String HttpServer::wrapHtmlContent(const String &title, const String &content) {
     // Static HTML parts stored in flash
@@ -64,29 +108,37 @@ String HttpServer::wrapHtmlContent(const String &title, const String &content) {
         "<meta charset='UTF-8'>"
         "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
         "<title>";
-    static constexpr char kTitleSuffix[] = " - NerdBox</title>"
+    static constexpr char kTitleSuffix[] =
+        " - NerdBox</title>"
         "<style>"
-        "body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; line-height: 1.6; color: #333; }"
-        "header { background: #2c3e50; color: white; padding: 1rem 0; margin-bottom: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }"
+        "body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; "
+        "line-height: 1.6; color: #333; }"
+        "header { background: #2c3e50; color: white; padding: 1rem 0; margin-bottom: "
+        "1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }"
         ".header-content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
         "nav { margin-top: 1rem; }"
         "nav ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1rem; }"
-        "nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.3s; }"
+        "nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; "
+        "border-radius: 4px; transition: background-color 0.3s; }"
         "nav a:hover { background-color: #34495e; }"
         "h1 { margin: 0; }"
         ".content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
-        "footer { background: #f8f9fa; margin-top: 2rem; padding: 1.5rem 0; border-top: 1px solid #ddd; color: #666; text-align: center; }"
-        "pre { background: #f8f9fa; padding: 1.5rem; border-radius: 5px; overflow-x: auto; border: 1px solid #ddd; }"
+        "footer { background: #f8f9fa; margin-top: 2rem; padding: 1.5rem 0; border-top: "
+        "1px solid #ddd; color: #666; text-align: center; }"
+        "pre { background: #f8f9fa; padding: 1.5rem; border-radius: 5px; overflow-x: "
+        "auto; border: 1px solid #ddd; }"
         "</style></head>"
         "<body>"
         "<header>"
         "<div class='header-content'>"
         "<span>NerdBox</span>"
         "<h1>";
-    static constexpr char kHeaderSuffix[] = "</h1>"
+    static constexpr char kHeaderSuffix[] =
+        "</h1>"
         "<nav>"
         "<ul>"
         "<li><a href='/'>Home</a></li>"
+        "<li><a href='/app-info'>App Info</a></li>"
         "<li><a href='/system-info'>System Info</a></li>"
         "</ul>"
         "</nav>"
@@ -100,7 +152,7 @@ String HttpServer::wrapHtmlContent(const String &title, const String &content) {
 
     // Estimate required size to minimize reallocations
     size_t estimatedSize = sizeof(kHtmlPrefix) + title.length() + sizeof(kTitleSuffix) +
-                          sizeof(kHeaderSuffix) + content.length() + sizeof(kHtmlSuffix);
+                           sizeof(kHeaderSuffix) + content.length() + sizeof(kHtmlSuffix);
     String html;
     html.reserve(estimatedSize);
 

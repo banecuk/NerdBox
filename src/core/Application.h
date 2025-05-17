@@ -17,6 +17,7 @@
 #include "ui/UIController.h"
 #include "ui/screens/ScreenTypes.h"
 #include "utils/Logger.h"
+#include "utils/ApplicationMetrics.h"
 
 class Application {
    public:
@@ -80,6 +81,7 @@ class Application {
     HttpServer httpServer_;
     PcMetricsService pcMetricsService_;
     TaskManager taskManager_;
+    ApplicationMetrics systemMetrics_;
 
     // Initialization State
     InitState currentInitState_;
