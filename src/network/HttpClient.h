@@ -1,5 +1,4 @@
-#ifndef HTTP_CLIENT_H
-#define HTTP_CLIENT_H
+#pragma once
 
 #include <HTTPClient.h>
 #include <WiFiClient.h>
@@ -18,5 +17,3 @@ class HttpClient {
     HTTPClient http_;
     int lastHttpCode_ = 0;
 };
-
-#endif

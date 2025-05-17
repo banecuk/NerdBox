@@ -1,5 +1,4 @@
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#pragma once
 
 #include <WebServer.h>
 #include <esp_task_wdt.h>
@@ -9,10 +8,12 @@
 #include "config/AppConfig.h"
 #include "core/TaskManager.h"
 #include "core/state/SystemState.h"
+#include "network/HttpClient.h"
 #include "network/NetworkManager.h"
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
 #include "services/PcMetricsService.h"
+#include "ui/DisplayManager.h"
 #include "ui/UIController.h"
 #include "ui/screens/ScreenTypes.h"
 #include "utils/Logger.h"
@@ -84,7 +85,6 @@ class Application {
     InitState currentInitState_;
 
     static constexpr const char* INIT_STATE_NAMES_[] = {
-        "INITIAL", "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT", "TIME_INIT",
-        "WATCHDOG_INIT", "FINAL_SETUP", "COMPLETE", "FAILED"};
+        "INITIAL",       "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT", "TIME_INIT",
+        "WATCHDOG_INIT", "FINAL_SETUP",  "COMPLETE",   "FAILED"};
 };
-#endif  // SYSTEM_H

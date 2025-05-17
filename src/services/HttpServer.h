@@ -1,9 +1,8 @@
-#ifndef HTTP_SERVER_H
-#define HTTP_SERVER_H
+#pragma once
 
 #include <WebServer.h>
 
-#include "ui/UIController.h" 
+#include "ui/UIController.h"
 
 class HttpServer {
    public:
@@ -13,7 +12,7 @@ class HttpServer {
 
    private:
     WebServer server_;
-    UIController& uiController_; 
+    UIController& uiController_;
 
     void handleNotFound();
     void handleHome();
@@ -21,7 +20,5 @@ class HttpServer {
 
     String getSystemInfo();
 
-    String wrapHtmlContent(const String &title, const String &content);
+    String wrapHtmlContent(const String& title, const String& content);
 };
-
-#endif  // HTTP_SERVER_H

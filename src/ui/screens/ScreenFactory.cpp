@@ -4,7 +4,7 @@
 #include "ui/widgetScreens/MainScreen.h"
 #include "ui/widgetScreens/SettingsScreen.h"
 
-std::unique_ptr<IScreen> ScreenFactory::createScreen(ScreenName name, ILogger& logger,
+std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name, LoggerInterface& logger,
                                                      DisplayManager* display,
                                                      PcMetrics& metrics,
                                                      UIController* controller) {

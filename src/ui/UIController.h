@@ -5,7 +5,7 @@
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "ui/DisplayManager.h"
-#include "ui/screens/IScreen.h"
+#include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
 #include "utils/Logger.h"
 
@@ -17,7 +17,7 @@ class EventHandler;
 
 class UIController {
    public:
-    explicit UIController(ILogger& logger, DisplayManager* displayManager,
+    explicit UIController(LoggerInterface& logger, DisplayManager* displayManager,
                           PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
     ~UIController();
 
@@ -69,12 +69,12 @@ class UIController {
 
     void processTouchInput();
 
-    ILogger& logger_;
+    LoggerInterface& logger_;
     DisplayManager* displayManager_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
 
-    std::unique_ptr<IScreen> currentScreen_;
+    std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<EventHandler> actionHandler_;
     SemaphoreHandle_t displayMutex_;
 

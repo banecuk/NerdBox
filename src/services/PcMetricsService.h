@@ -1,5 +1,6 @@
-#ifndef PCMETRICS_SERVICE_H
-#define PCMETRICS_SERVICE_H
+#pragma once
+
+#include <ArduinoJson.h>
 
 #include "config/Environment.h"
 #include "network/NetworkManager.h"
@@ -11,9 +12,9 @@ class PcMetricsService {
     bool fetchData(PcMetrics &outData);
 
    private:
+    void initFilter();
     bool parseData(const String &rawData, PcMetrics &outData);
 
     NetworkManager &networkManager_;
+    JsonDocument filter_;
 };
-
-#endif

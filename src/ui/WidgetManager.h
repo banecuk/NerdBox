@@ -1,20 +1,18 @@
-#ifndef WIDGETMANAGER_H
-#define WIDGETMANAGER_H
+#pragma once
 
 #include <memory>
 #include <vector>
 
 #include "config/LgfxConfig.h"
-#include "ui/widgets/IWidget.h"
-#include "utils/ILogger.h"
+#include "ui/widgets/WidgetInterface.h"
+#include "utils/LoggerInterface.h"
 
 class WidgetManager {
    public:
-    explicit WidgetManager(ILogger& logger, LGFX* lcd);
+    explicit WidgetManager(LoggerInterface& logger, LGFX* lcd);
     ~WidgetManager();
 
-    // Takes ownership of the widget via unique_ptr
-    void addWidget(std::unique_ptr<IWidget> widget);
+    void addWidget(std::unique_ptr<WidgetIterface> widget);
     void initializeWidgets();
     void updateAndDrawWidgets(bool forceRedraw = false);
     bool handleTouch(uint16_t x, uint16_t y);
@@ -22,10 +20,8 @@ class WidgetManager {
     size_t getWidgetCount() const { return widgets_.size(); }
 
    private:
-    ILogger& logger_;
+    LoggerInterface& logger_;
     LGFX* lcd_;
-    std::vector<std::unique_ptr<IWidget>> widgets_;
+    std::vector<std::unique_ptr<WidgetIterface>> widgets_;
     bool initialized_ = false;
 };
-
-#endif  // WIDGETMANAGER_H

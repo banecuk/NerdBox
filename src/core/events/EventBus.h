@@ -1,5 +1,4 @@
-#ifndef EVENT_BUS_H
-#define EVENT_BUS_H
+#pragma once
 
 #include <functional>
 #include <map>
@@ -39,5 +38,3 @@ private:
 
     std::map<EventType, std::vector<EventCallback>> subscribers;
 };
-
-#endif // EVENT_BUS_H

@@ -5,7 +5,7 @@
 #include "ui/DisplayManager.h"
 #include "ui/UIController.h"
 
-EventHandler::EventHandler(UIController* uiController, ILogger& logger)
+EventHandler::EventHandler(UIController* uiController, LoggerInterface& logger)
     : uiController_(uiController), logger_(logger) {
     registerHandlers();
 }

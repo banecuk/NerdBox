@@ -1,10 +1,10 @@
-#ifndef SYSTEM_STATE_H
-#define SYSTEM_STATE_H
+#pragma once
 
 #include "services/PcMetrics.h"
 #include "ui/screens/ScreenTypes.h"
 
-class UIController;  // Forward declaration
+// Forward declaration
+class UIController;  
 
 class SystemState {
    public:
@@ -31,5 +31,3 @@ class SystemState {
 
    private:
 };
-
-#endif

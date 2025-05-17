@@ -1,6 +1,14 @@
 #include "Application.h"
 
-// Add this definition for the static member
+#include "core/TaskManager.h"
+#include "network/HttpClient.h"
+#include "network/NetworkManager.h"
+#include "services/HttpServer.h"
+#include "services/NtpService.h"
+#include "services/PcMetricsService.h"
+#include "ui/DisplayManager.h"
+#include "ui/UIController.h"
+
 constexpr const char* Application::INIT_STATE_NAMES_[];
 
 Application::Application()

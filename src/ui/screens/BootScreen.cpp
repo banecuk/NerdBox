@@ -1,6 +1,6 @@
 #include "BootScreen.h"
 
-BootScreen::BootScreen(ILogger &logger, LGFX *lcd) : logger_(logger), lcd_(lcd) {
+BootScreen::BootScreen(LoggerInterface &logger, LGFX *lcd) : logger_(logger), lcd_(lcd) {
     if (lcd == nullptr) {
         // Handle null pointer case (e.g., log an error or throw an exception)
     }

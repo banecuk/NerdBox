@@ -1,5 +1,4 @@
-#ifndef CLOCKWIDGET_H
-#define CLOCKWIDGET_H
+#pragma once
 
 #include <string>
 
@@ -27,5 +26,3 @@ class ClockWidget : public Widget {
     // State to prevent unnecessary redraws
     int lastDisplayedSecond_ = -1;
 };
-
-#endif  // CLOCKWIDGET_H

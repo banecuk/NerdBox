@@ -6,7 +6,7 @@
 
 class SettingsScreen : public BaseWidgetScreen {
    public:
-    SettingsScreen(ILogger& logger, UIController* uiController);
+    SettingsScreen(LoggerInterface& logger, UIController* uiController);
     ~SettingsScreen() override = default;
 
    private:

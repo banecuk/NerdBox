@@ -1,37 +1,26 @@
-#ifndef BASEWIDGET_H
-#define BASEWIDGET_H
+#pragma once
 
 #include <Arduino.h>
 
-#include "ui/widgets/IWidget.h"  // Include the interface
+#include "ui/widgets/WidgetInterface.h"
 
-class Widget : public IWidget {
+class Widget : public WidgetIterface {
    public:
-    // Constructor takes dimensions and update interval
     Widget(const Dimensions& dims, uint32_t updateIntervalMs);
 
-    // --- IWidget Overrides ---
-    void initialize(LGFX* lcd, ILogger& logger) override;
-    // draw() remains pure virtual - concrete widgets MUST implement drawing
-    // virtual void draw(bool forceRedraw = false) = 0;
-    void cleanUp() override;  // Provide a default empty cleanup
-
+    void initialize(LGFX* lcd, LoggerInterface& logger) override;
+    void drawStatic() override;
+    void cleanUp() override;
     void setUpdateInterval(uint32_t intervalMs) override;
     bool needsUpdate() const override;
-
-    // handleTouch() remains pure virtual - concrete widgets MUST implement touch handling
-    // virtual bool handleTouch(uint16_t x, uint16_t y) = 0;
-
     Dimensions getDimensions() const override;
 
    protected:
-    // Make lcd and logger accessible to derived classes
     LGFX* lcd_ = nullptr;
-    ILogger* logger_ = nullptr;
+    LoggerInterface* logger_ = nullptr;
     Dimensions dimensions_;
     uint32_t updateIntervalMs_;
     uint32_t lastUpdateTimeMs_ = 0;
     bool initialized_ = false;
+    bool staticDrawn_ = false;
 };
-
-#endif  // BASEWIDGET_H
