@@ -8,7 +8,7 @@
 
 class MainScreen : public BaseWidgetScreen {
    public:
-    MainScreen(ILogger& logger, PcMetrics& pcMetrics, UIController* uiController);
+    MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UIController* uiController);
     ~MainScreen() override = default;
 
    private:

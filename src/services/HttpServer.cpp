@@ -23,29 +23,34 @@ void HttpServer::handleHome() {
 }
 
 String HttpServer::getSystemInfo() {
+char buffer[300];
+    size_t offset = 0;
+
+    // Write opening tag
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
+
+    // Free Heap
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n", ESP.getFreeHeap());
+
+    // PSRAM Size
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Size: %u bytes\n", ESP.getPsramSize());
+
+    // PSRAM Free
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Free: %u bytes\n", ESP.getFreePsram());
+
+    // CPU Frequency
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
+
+    // SDK Version
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "SDK Version: %s\n", ESP.getSdkVersion());
+
+    // Write closing tag
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
+
+    // Convert to String for compatibility
     String info;
-    info.reserve(300);
-
-    info += "<pre>";
-    info += "Free Heap: ";
-    info += ESP.getFreeHeap();
-    info += " bytes\n";
-
-    info += "PSRAM Size: ";
-    info += ESP.getPsramSize();
-    info += " bytes\n";
-
-    info += "PSRAM Free: ";
-    info += ESP.getFreePsram();
-    info += " bytes\n";
-
-    info += "CPU Frequency: ";
-    info += ESP.getCpuFreqMHz();
-    info += " MHz\n";
-
-    info += "SDK Version: ";
-    info += ESP.getSdkVersion();
-    info += "</pre>";
+    info.reserve(offset + 1);
+    info.concat(buffer, offset);
 
     return wrapHtmlContent("System Information", info);
 }
@@ -53,98 +58,59 @@ String HttpServer::getSystemInfo() {
 void HttpServer::handleSystemInfo() { server_.send(200, "text/html", getSystemInfo()); }
 
 String HttpServer::wrapHtmlContent(const String &title, const String &content) {
-    String html;
-    html.reserve(800 +
-                 content.length());  // Increased reserve for menu and additional styles
+    // Static HTML parts stored in flash
+    static constexpr char kHtmlPrefix[] =
+        "<!DOCTYPE html><html><head>"
+        "<meta charset='UTF-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+        "<title>";
+    static constexpr char kTitleSuffix[] = " - NerdBox</title>"
+        "<style>"
+        "body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; line-height: 1.6; color: #333; }"
+        "header { background: #2c3e50; color: white; padding: 1rem 0; margin-bottom: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }"
+        ".header-content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
+        "nav { margin-top: 1rem; }"
+        "nav ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1rem; }"
+        "nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.3s; }"
+        "nav a:hover { background-color: #34495e; }"
+        "h1 { margin: 0; }"
+        ".content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
+        "footer { background: #f8f9fa; margin-top: 2rem; padding: 1.5rem 0; border-top: 1px solid #ddd; color: #666; text-align: center; }"
+        "pre { background: #f8f9fa; padding: 1.5rem; border-radius: 5px; overflow-x: auto; border: 1px solid #ddd; }"
+        "</style></head>"
+        "<body>"
+        "<header>"
+        "<div class='header-content'>"
+        "<span>NerdBox</span>"
+        "<h1>";
+    static constexpr char kHeaderSuffix[] = "</h1>"
+        "<nav>"
+        "<ul>"
+        "<li><a href='/'>Home</a></li>"
+        "<li><a href='/system-info'>System Info</a></li>"
+        "</ul>"
+        "</nav>"
+        "</div>"
+        "</header>"
+        "<div class='content'>";
+    static constexpr char kHtmlSuffix[] =
+        "</div>"
+        "<footer>NerdBox 2025<br /><small>WT32-SC01-PLUS</small></footer>"
+        "</body></html>";
 
-    html += "<!DOCTYPE html><html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
-    html += "<title>";
-    html += title;
-    html += " - NerdBox</title>";
-    html += "<style>";
-    html += "body {";
-    html += "  font-family: 'Segoe UI', Arial, sans-serif;";
-    html += "  margin: 0;";
-    html += "  padding: 0;";
-    html += "  line-height: 1.6;";
-    html += "  color: #333;";
-    html += "}";
-    html += "header {";
-    html += "  background: #2c3e50;";
-    html += "  color: white;";
-    html += "  padding: 1rem 0;";
-    html += "  margin-bottom: 1.5rem;";
-    html += "  box-shadow: 0 2px 5px rgba(0,0,0,0.1);";
-    html += "}";
-    html += ".header-content {";
-    html += "  max-width: 1200px;";
-    html += "  margin: 0 auto;";
-    html += "  padding: 0 1rem;";
-    html += "}";
-    html += "nav {";
-    html += "  margin-top: 1rem;";
-    html += "}";
-    html += "nav ul {";
-    html += "  list-style: none;";
-    html += "  padding: 0;";
-    html += "  margin: 0;";
-    html += "  display: flex;";
-    html += "  gap: 1rem;";
-    html += "}";
-    html += "nav a {";
-    html += "  color: white;";
-    html += "  text-decoration: none;";
-    html += "  padding: 0.5rem 1rem;";
-    html += "  border-radius: 4px;";
-    html += "  transition: background-color 0.3s;";
-    html += "}";
-    html += "nav a:hover {";
-    html += "  background-color: #34495e;";
-    html += "}";
-    html += "h1 { margin: 0; }";
-    html += ".content {";
-    html += "  max-width: 1200px;";
-    html += "  margin: 0 auto;";
-    html += "  padding: 0 1rem;";
-    html += "}";
-    html += "footer {";
-    html += "  background: #f8f9fa;";
-    html += "  margin-top: 2rem;";
-    html += "  padding: 1.5rem 0;";
-    html += "  border-top: 1px solid #ddd;";
-    html += "  color: #666;";
-    html += "  text-align: center;";
-    html += "}";
-    html += "pre {";
-    html += "  background: #f8f9fa;";
-    html += "  padding: 1.5rem;";
-    html += "  border-radius: 5px;";
-    html += "  overflow-x: auto;";
-    html += "  border: 1px solid #ddd;";
-    html += "}";
-    html += "</style></head>";
-    html += "<body>";
-    html += "<header>";
-    html += "<div class='header-content'>";
-    html += "<span>NerdBox</span>";
-    html += "<h1>";
-    html += title;
-    html += "</h1>";
-    html += "<nav>";
-    html += "<ul>";
-    html += "<li><a href='/'>Home</a></li>";
-    html += "<li><a href='/system-info'>System Info</a></li>";
-    html += "</ul>";
-    html += "</nav>";
-    html += "</div>";
-    html += "</header>";
-    html += "<div class='content'>";
-    html += content;
-    html += "</div>";
-    html += "<footer>NerdBox&copy; 2025<br /><small>WT32-SC01-PLUS</small></footer>";
-    html += "</body></html>";
+    // Estimate required size to minimize reallocations
+    size_t estimatedSize = sizeof(kHtmlPrefix) + title.length() + sizeof(kTitleSuffix) +
+                          sizeof(kHeaderSuffix) + content.length() + sizeof(kHtmlSuffix);
+    String html;
+    html.reserve(estimatedSize);
+
+    // Append static and dynamic parts
+    html.concat(kHtmlPrefix, sizeof(kHtmlPrefix) - 1);
+    html.concat(title.c_str(), title.length());
+    html.concat(kTitleSuffix, sizeof(kTitleSuffix) - 1);
+    html.concat(kHeaderSuffix, sizeof(kHeaderSuffix) - 1);
+    html.concat(content.c_str(), content.length());
+    html.concat(kHtmlSuffix, sizeof(kHtmlSuffix) - 1);
 
     return html;
 }

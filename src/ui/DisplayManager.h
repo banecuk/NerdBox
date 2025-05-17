@@ -1,5 +1,4 @@
-#ifndef DISPLAY_MANAGER_H
-#define DISPLAY_MANAGER_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -7,11 +6,11 @@
 
 #include "../config/LgfxConfig.h"
 #include "Config.h"
-#include "utils/ILogger.h"
+#include "utils/LoggerInterface.h"
 
 class DisplayManager {
    public:
-    DisplayManager(LGFX& display, ILogger& logger);
+    DisplayManager(LGFX& display, LoggerInterface& logger);
 
     // Initialize the display
     void initialize();
@@ -27,21 +26,17 @@ class DisplayManager {
     uint8_t getBrightness() const;
 
     // Helper for saving brightness to preferences
-    void saveBrightnessToPreferences(); // TODO: Implement this method
+    void saveBrightnessToPreferences();  // TODO: Implement this method
 
     void cycleBrightness();
 
    private:
     LGFX& display_;
-    ILogger& logger_;
+    LoggerInterface& logger_;
 
     uint8_t brightness_;
 
     static const uint8_t DEFAULT_BRIGHTNESS = 100;
-
-    
 };
 
 extern DisplayManager displayManager;
-
-#endif  // DISPLAY_MANAGER_H

@@ -3,12 +3,12 @@
 #include "core/events/EventBus.h"
 #include "ui/UIController.h"
 #include "ui/WidgetManager.h"
-#include "ui/screens/IScreen.h"
+#include "ui/screens/ScreenInterface.h"
 #include "utils/Logger.h"
 
-class BaseWidgetScreen : public IScreen {
+class BaseWidgetScreen : public ScreenInterface {
    public:
-    BaseWidgetScreen(ILogger& logger, UIController* uiController);
+    BaseWidgetScreen(LoggerInterface& logger, UIController* uiController);
     virtual ~BaseWidgetScreen() override;
 
     void onEnter() override;
@@ -21,7 +21,7 @@ class BaseWidgetScreen : public IScreen {
     createWidgets() = 0;  // Pure virtual to force derived classes to implement
     void handleAction(EventType action);
 
-    ILogger& logger_;
+    LoggerInterface& logger_;
     LGFX* lcd_;
     UIController* uiController_;
     WidgetManager widgetManager_;

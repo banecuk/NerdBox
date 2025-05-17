@@ -3,7 +3,7 @@
 Widget::Widget(const Dimensions& dims, uint32_t updateIntervalMs)
     : dimensions_(dims), updateIntervalMs_(updateIntervalMs), lastUpdateTimeMs_(0) {}
 
-void Widget::initialize(LGFX* lcd, ILogger& logger) {
+void Widget::initialize(LGFX* lcd, LoggerInterface& logger) {
     if (!lcd) {
         logger.error("Widget initialization failed - null LCD");
         return;
@@ -42,4 +42,4 @@ bool Widget::needsUpdate() const {
     return (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
-IWidget::Dimensions Widget::getDimensions() const { return dimensions_; }
+WidgetIterface::Dimensions Widget::getDimensions() const { return dimensions_; }

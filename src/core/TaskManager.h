@@ -1,31 +1,30 @@
-#ifndef TASK_MANAGER_H
-#define TASK_MANAGER_H
+#pragma once
 
 #include <Arduino.h>
 #include <esp_task_wdt.h>
 
-#include "../ui/UIController.h"
 #include "config/AppConfig.h"
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "services/PcMetricsService.h"
+#include "ui/UIController.h"
 #include "utils/Logger.h"
 
 class TaskManager {
    public:
-    TaskManager(ILogger &logger, UIController &uiController,
+    TaskManager(LoggerInterface &logger, UIController &uiController,
                 PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
-                SystemState::CoreState &system, SystemState::ScreenState &screenState);
+                SystemState::CoreState &coreState, SystemState::ScreenState &screenState);
 
     bool createTasks();
     static void updateScreenTask(void *parameter);
     static void backgroundTask(void *parameter);
 
    private:
-    TaskHandle_t screenTaskHandle;
-    TaskHandle_t backgroundTaskHandle;
+    TaskHandle_t screenTaskHandle = nullptr;
+    TaskHandle_t backgroundTaskHandle = nullptr;
 
-    ILogger &logger_;
+    LoggerInterface &logger_;
     UIController &uiController_;
     PcMetricsService &pcMetricsService_;
     PcMetrics &pcMetrics_;
@@ -38,5 +37,3 @@ class TaskManager {
     void handleDownloadFailure();
     void resetWatchdog();
 };
-
-#endif

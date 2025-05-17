@@ -1,13 +1,11 @@
-// IWidget.h
-#ifndef IWIDGET_H
-#define IWIDGET_H
+#pragma once
 
 #include <Arduino.h>
 
-#include "ui/screens/IScreen.h"
-#include "utils/ILogger.h"
+#include "ui/screens/ScreenInterface.h"
+#include "utils/LoggerInterface.h"
 
-class IWidget {
+class WidgetIterface {
    public:
     struct Dimensions {
         uint16_t x;       // X position (pixels)
@@ -16,10 +14,10 @@ class IWidget {
         uint16_t height;  // Height (pixels)
     };
 
-    virtual ~IWidget() = default;
+    virtual ~WidgetIterface() = default;
 
     // Core methods
-    virtual void initialize(LGFX* lcd, ILogger& logger) = 0;
+    virtual void initialize(LGFX* lcd, LoggerInterface& logger) = 0;
     virtual void drawStatic() = 0;
     virtual void draw(bool forceRedraw = false) = 0;
     virtual void cleanUp() = 0;
@@ -34,5 +32,3 @@ class IWidget {
     // Immutable dimensions access
     virtual Dimensions getDimensions() const = 0;
 };
-
-#endif

@@ -1,6 +1,6 @@
 #include "BaseWidgetScreen.h"
 
-BaseWidgetScreen::BaseWidgetScreen(ILogger& logger, UIController* uiController)
+BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UIController* uiController)
     : logger_(logger),
       lcd_(uiController->getDisplayManager()->getDisplay()),
       uiController_(uiController),

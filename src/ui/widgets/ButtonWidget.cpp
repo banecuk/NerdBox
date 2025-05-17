@@ -9,7 +9,7 @@ ButtonWidget::ButtonWidget(const std::string& label, const Dimensions& dims,
       callback_(callback),
       lastTouchTime_(0) {}
 
-void ButtonWidget::initialize(LGFX* lcd, ILogger& logger) {
+void ButtonWidget::initialize(LGFX* lcd, LoggerInterface& logger) {
     Widget::initialize(lcd, logger);
 }
 

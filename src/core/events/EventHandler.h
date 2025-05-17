@@ -1,5 +1,4 @@
-#ifndef EVENT_HANDLER_H
-#define EVENT_HANDLER_H
+#pragma once
 
 #include "EventBus.h"
 #include "utils/Logger.h"
@@ -10,7 +9,7 @@ class DisplayManager;
 
 class EventHandler {
    public:
-    EventHandler(UIController* uiController, ILogger& logger);
+    EventHandler(UIController* uiController, LoggerInterface& logger);
 
     void registerHandlers();
     void resetDevice();
@@ -20,7 +19,5 @@ class EventHandler {
 
    private:
     UIController* uiController_;
-    ILogger& logger_;
+    LoggerInterface& logger_;
 };
-
-#endif

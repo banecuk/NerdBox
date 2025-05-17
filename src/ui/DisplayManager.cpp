@@ -2,7 +2,7 @@
 
 #include <Preferences.h>
 
-DisplayManager::DisplayManager(LGFX& display, ILogger& logger)
+DisplayManager::DisplayManager(LGFX& display, LoggerInterface& logger)
     : display_(display), logger_(logger), brightness_(DEFAULT_BRIGHTNESS) {}
 
 void DisplayManager::initialize() {
@@ -12,6 +12,7 @@ void DisplayManager::initialize() {
     }
     display_.setRotation(1);  // Landscape
     display_.fillScreen(TFT_BLACK);
+    display_.setBrightness(75);
 }
 
 void DisplayManager::postInitialization() { setBrightness(brightness_); }
@@ -30,16 +31,16 @@ void DisplayManager::cycleBrightness() {
     uint8_t brightness = 0;
     switch (getBrightness()) {
         case 255:
-            brightness = 25;
+            brightness = 20;
             break;
-        case 25:
-            brightness = 100;
+        case 20:
+            brightness = 75;
             break;
-        case 100:
+        case 75:
             brightness = 255;
             break;
         default:
-            brightness = 100;
+            brightness = 75;
             break;
     }
     setBrightness(brightness);

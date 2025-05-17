@@ -1,9 +1,11 @@
-#include "IScreen.h"
+#pragma once
+
+#include "ScreenInterface.h"
 #include "utils/Logger.h"
 
-class BootScreen : public IScreen {
+class BootScreen : public ScreenInterface {
    public:
-    explicit BootScreen(ILogger& logger, LGFX* lcd);
+    explicit BootScreen(LoggerInterface& logger, LGFX* lcd);
 
     void initialize();
     void onEnter() override;
@@ -11,7 +13,7 @@ class BootScreen : public IScreen {
     void draw() override;
 
    private:
-    ILogger& logger_;
+    LoggerInterface& logger_;
     LGFX* lcd_;
 
     int lineNumber_ = 0;

@@ -1,14 +1,12 @@
-// ILogger.h
-#ifndef ILOGGER_H
-#define ILOGGER_H
+#pragma once
 
 #include <Arduino.h>
-#include <stdarg.h>  // For va_list
+#include <stdarg.h>
 
 #include <queue>
 #include <string>
 
-class ILogger {
+class LoggerInterface {
    public:
     enum class LogLevel {
         DEBUG,    // For detailed debugging information
@@ -25,7 +23,7 @@ class ILogger {
         bool forScreen;
     };
 
-    virtual ~ILogger() = default;
+    virtual ~LoggerInterface() = default;
 
     // Basic log methods
     virtual void debug(const String& message, bool forScreen = false) = 0;
@@ -47,5 +45,3 @@ class ILogger {
     // Clear the screen message queue
     virtual void clearScreenMessages() = 0;
 };
-
-#endif

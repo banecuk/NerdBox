@@ -1,5 +1,4 @@
-#ifndef NTP_SERVICE_H
-#define NTP_SERVICE_H
+#pragma once
 
 #include <WiFi.h>
 #include <time.h>
@@ -28,5 +27,3 @@ class NtpService {
     uint32_t gmtOffsetSec_;
     uint32_t daylightOffsetSec_;
 };
-
-#endif  // NTP_SERVICE_H

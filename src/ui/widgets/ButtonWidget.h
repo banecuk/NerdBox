@@ -1,5 +1,4 @@
-#ifndef BUTTONWIDGET_H
-#define BUTTONWIDGET_H
+#pragma once
 
 #include <string>
 
@@ -13,11 +12,10 @@ class ButtonWidget : public Widget {
     using ActionCallback = std::function<void(EventType)>;
 
     ButtonWidget(const std::string& label, const Dimensions& dims,
-                 uint32_t updateIntervalMs = 0,
-                 EventType action = EventType::NONE,
+                 uint32_t updateIntervalMs = 0, EventType action = EventType::NONE,
                  ActionCallback callback = nullptr);
 
-    void initialize(LGFX* lcd, ILogger& logger) override;
+    void initialize(LGFX* lcd, LoggerInterface& logger) override;
 
     void draw(bool forceRedraw = false) override;
     void cleanUp() override;
@@ -32,5 +30,3 @@ class ButtonWidget : public Widget {
     EventType action_;
     ActionCallback callback_;
 };
-
-#endif  // BUTTONWIDGET_H

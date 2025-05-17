@@ -1,9 +1,8 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
-#include "ILogger.h"
+#include "LoggerInterface.h"
 
-class Logger : public ILogger {
+class Logger : public LoggerInterface {
    public:
     Logger(const bool& isTimeSynced);
     ~Logger();
@@ -35,5 +34,3 @@ class Logger : public ILogger {
     void logMessage(LogLevel level, const String& message, bool forScreen);
     void logFormatted(LogLevel level, const char* format, va_list args, bool forScreen);
 };
-
-#endif

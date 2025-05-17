@@ -1,6 +1,3 @@
-#ifndef TYPES_H
-#define TYPES_H
+#pragma once
 
 enum class ScreenName { UNSET, BOOT, MAIN, SETTINGS };
-
-#endif  // TYPES_H

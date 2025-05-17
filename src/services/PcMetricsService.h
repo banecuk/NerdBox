@@ -1,10 +1,10 @@
-#ifndef PCMETRICS_SERVICE_H
-#define PCMETRICS_SERVICE_H
+#pragma once
+
+#include <ArduinoJson.h>
 
 #include "config/Environment.h"
 #include "network/NetworkManager.h"
 #include "services/PcMetrics.h"
-#include <ArduinoJson.h>
 
 class PcMetricsService {
    public:
@@ -18,5 +18,3 @@ class PcMetricsService {
     NetworkManager &networkManager_;
     JsonDocument filter_;
 };
-
-#endif

@@ -1,5 +1,7 @@
 # PC Metrics Display
 
+**Note: This project is a work in progress. Features, functionality, and documentation may change significantly as development continues. Contributions and feedback are welcome to help improve the project.**
+
 This project enables real-time monitoring of PC performance metrics, including CPU load, temperature, RAM usage, GPU load, and more, on a WT32-SC01-PLUS ESP32-based touchscreen device. Metrics are fetched from a PC running **Libre Hardware Monitor**, a fork of **Open Hardware Monitor**, via its JSON API.
 
 ## Features
@@ -72,8 +74,7 @@ Specified in `platformio.ini`:
    - The WT32-SC01-PLUS display should show the current time and metrics (e.g., CPU load: ~4%, RAM usage: ~47%, GPU memory: ~13%).
    - Serial output should confirm successful parsing:
      ```
-     Parsing completed successfully.
-     Parsing time: 150 ms
+     Parsing time: 110 ms
      ```
 
 ## Troubleshooting
@@ -82,10 +83,12 @@ Specified in `platformio.ini`:
   - Verify Libre Hardware Monitor is running and its web server is enabled.
   - Check the IP address and port in `Environment.h`.
   - Inspect Serial Monitor for errors (e.g., `JSON deserialization failed`).
+  - Ensure the JSON parsing logic in `PcMetricsService.cpp` matches your hardware's sensor data structure.
 - **"HM update failed" in Serial output**:
   - Indicates missing hardware data. Ensure Libre Hardware Monitor reports all sensors (CPU, GPU, RAM).
   - Confirm network connectivity between the ESP32 and PC.
   - Check for memory constraints in Serial output.
+  - Adjust JSON parsing logic if your hardware uses different sensor names or structures.
 
 ## Contributing
 
