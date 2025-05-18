@@ -31,6 +31,7 @@ void ButtonWidget::draw(bool forceRedraw /* = false */) {
 
     lcd_->setTextColor(textColor_, bgColor_ == TFT_BLACK ? TFT_BLACK : bgColor_);
     lcd_->setTextDatum(MC_DATUM);
+    lcd_->setTextSize(1);
     uint16_t textX = dimensions_.x + dimensions_.width / 2;
     uint16_t textY = dimensions_.y + dimensions_.height / 2;
     lcd_->drawString(label_.c_str(), textX, textY);
