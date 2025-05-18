@@ -51,7 +51,7 @@ Specified in `platformio.ini`:
      ```
    - Edit `Environment.h` to set the API endpoint:
      ```cpp
-     #define OHM_API "http://192.168.1.11:8085/data.json"
+     #define LIBRE_HM_API "http://192.168.1.11:8085/data.json"
      ```
    - Edit `Environment.h` to set WiFi credentials:  
    - Connect the WT32-SC01-PLUS via USB.

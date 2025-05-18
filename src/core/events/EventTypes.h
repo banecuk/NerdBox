@@ -1,7 +1,7 @@
 #pragma once
 
-enum class EventType {
-    NONE,
+enum class EventType : uint8_t {
+    NONE = 0,
     RESET_DEVICE,
     CYCLE_BRIGHTNESS,
     SHOW_SETTINGS,

@@ -1,3 +1,3 @@
 #pragma once
 
-enum class ScreenName { UNSET, BOOT, MAIN, SETTINGS };
+enum class ScreenName : uint8_t { UNSET, BOOT, MAIN, SETTINGS };
