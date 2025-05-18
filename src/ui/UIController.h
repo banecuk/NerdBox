@@ -8,6 +8,7 @@
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
 #include "utils/Logger.h"
+#include "utils/ApplicationMetrics.h"
 
 // Forward declarations
 class BootScreen;
@@ -18,6 +19,7 @@ class EventHandler;
 class UIController {
    public:
     explicit UIController(LoggerInterface& logger, DisplayManager* displayManager,
+                          ApplicationMetrics& systemMetrics,
                           PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
     ~UIController();
 
@@ -71,6 +73,7 @@ class UIController {
 
     LoggerInterface& logger_;
     DisplayManager* displayManager_;
+    ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
 

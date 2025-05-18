@@ -27,7 +27,7 @@ constexpr bool kEnableOnBoot = true;
 } 
 
 namespace Timing {
-constexpr uint32_t kScreenTaskMs = 50;
+constexpr uint32_t kScreenTaskMs = 33;
 constexpr uint32_t kBackgroundTaskMs = 20;
 constexpr uint32_t kMainLoopMs = 10;
 };
@@ -44,6 +44,10 @@ constexpr uint32_t kRefreshMs = 2000;
 constexpr uint32_t kRefreshAfterFailureMs = 3000;
 constexpr uint32_t kRetryDelayMs = 200;
 constexpr uint32_t kMaxRetries = 2;
+};
+
+namespace Metrics {
+constexpr uint8_t kMaxScreenDrawTimes = 30;
 };
 
 }  // namespace Config

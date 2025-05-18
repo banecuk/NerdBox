@@ -13,7 +13,8 @@ class ButtonWidget : public Widget {
 
     ButtonWidget(const std::string& label, const Dimensions& dims,
                  uint32_t updateIntervalMs = 0, EventType action = EventType::NONE,
-                 ActionCallback callback = nullptr);
+                 ActionCallback callback = nullptr, uint16_t bgColor = TFT_DARKGRAY,
+                 uint16_t textColor = TFT_WHITE);
 
     void initialize(LGFX* lcd, LoggerInterface& logger) override;
 
@@ -29,4 +30,6 @@ class ButtonWidget : public Widget {
 
     EventType action_;
     ActionCallback callback_;
+    uint16_t bgColor_;
+    uint16_t textColor_;
 };

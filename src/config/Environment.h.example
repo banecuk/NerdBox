@@ -3,7 +3,7 @@
 constexpr char WIFI_SSID[] = "-";
 constexpr char WIFI_PASSWORD[] = "-";
 
-constexpr char OHM_API[] = "http://192.168.1.11:8085/data.json";
+constexpr char LIBRE_HM_API[] = "http://192.168.1.11:8085/data.json";
 
 constexpr char AIR_VISUAL_API[] = "http://api.airvisual.com/v2/nearest_city?lat=44.8023831&lon=20.3712837&key=YOUR_KEY";
 

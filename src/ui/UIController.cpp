@@ -9,9 +9,11 @@
 #include "widgetScreens/SettingsScreen.h"
 
 UIController::UIController(LoggerInterface& logger, DisplayManager* displayManager,
+                           ApplicationMetrics& systemMetrics,
                            PcMetrics& pcMetrics, SystemState::ScreenState& screenState)
     : logger_(logger),
       displayManager_(displayManager),
+      systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
       actionHandler_(std::make_unique<EventHandler>(this, logger)) {
@@ -62,6 +64,7 @@ bool UIController::requestsScreenTransition(ScreenName screenName) {
 }
 
 void UIController::updateDisplay() {
+    unsigned long startTime = millis();
     if (transition_.isActive) {
         // logger_.debug("[UIController] Processing screen transition");
         handleScreenTransition();
@@ -77,6 +80,7 @@ void UIController::updateDisplay() {
         logger_.warning("[UIController] No screen to draw");
         requestsScreenTransition(ScreenName::BOOT);  // Fallback to boot screen
     }
+    systemMetrics_.addScreenDrawTime(millis() - startTime);
 }
 
 void UIController::handleScreenTransition() {

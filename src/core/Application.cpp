@@ -14,14 +14,14 @@ constexpr const char* Application::INIT_STATE_NAMES_[];
 Application::Application()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
-      uiController_(logger_, &displayManager_, systemState_.pcMetrics,
+      uiController_(logger_, &displayManager_, systemMetrics_, systemState_.pcMetrics,
                     systemState_.screen),
       networkManager_(logger_, httpClient_),
       displayManager_(display_, logger_),
-      pcMetricsService_(networkManager_),
+      pcMetricsService_(networkManager_, systemMetrics_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
                    systemState_.core, systemState_.screen),
-      httpServer_(uiController_),
+      httpServer_(uiController_, systemMetrics_),
       currentInitState_(InitState::INITIAL) {}
 
 bool Application::initialize() {

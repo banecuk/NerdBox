@@ -2,12 +2,15 @@
 
 ButtonWidget::ButtonWidget(const std::string& label, const Dimensions& dims,
                            uint32_t updateIntervalMs, EventType action,
-                           ActionCallback callback)
+                           ActionCallback callback,
+                           uint16_t bgColor, uint16_t textColor)
     : Widget(dims, updateIntervalMs),
       label_(label),
       action_(action),
       callback_(callback),
-      lastTouchTime_(0) {}
+      lastTouchTime_(0),
+      bgColor_(bgColor),
+      textColor_(textColor) {}
 
 void ButtonWidget::initialize(LGFX* lcd, LoggerInterface& logger) {
     Widget::initialize(lcd, logger);
@@ -16,14 +19,19 @@ void ButtonWidget::initialize(LGFX* lcd, LoggerInterface& logger) {
 void ButtonWidget::draw(bool forceRedraw /* = false */) {
     if (!initialized_ || !callback_) return;
 
-    uint16_t bgColor = TFT_DARKGRAY;
-    uint16_t textColor = TFT_WHITE;
+    if (bgColor_ == TFT_BLACK) {
+        // Draw outlined button
+        lcd_->drawRoundRect(dimensions_.x, dimensions_.y, dimensions_.width,
+                           dimensions_.height, 5, TFT_DARKGRAY);
+    } else {
+        // Draw filled button
+        lcd_->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width,
+                           dimensions_.height, 5, bgColor_);
+    }
 
-    lcd_->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width,
-                        dimensions_.height, 5, bgColor);
-
-    lcd_->setTextColor(textColor, bgColor);
+    lcd_->setTextColor(textColor_, bgColor_ == TFT_BLACK ? TFT_BLACK : bgColor_);
     lcd_->setTextDatum(MC_DATUM);
+    lcd_->setTextSize(1);
     uint16_t textX = dimensions_.x + dimensions_.width / 2;
     uint16_t textY = dimensions_.y + dimensions_.height / 2;
     lcd_->drawString(label_.c_str(), textX, textY);
@@ -32,6 +40,7 @@ void ButtonWidget::draw(bool forceRedraw /* = false */) {
 }
 
 void ButtonWidget::setCallback(ActionCallback callback) { callback_ = callback; }
+
 
 bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     if (!callback_) {
@@ -44,7 +53,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
         return false;
     }
 
-    constexpr unsigned long debounceTime = 300; // ms
+    constexpr unsigned long debounceTime = 200; // ms
     unsigned long now = millis();
     
     if (now - lastTouchTime_ < debounceTime) return false;
