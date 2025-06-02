@@ -2,8 +2,10 @@
 
 #include <cstdlib>  // For strtod
 
-PcMetricsService::PcMetricsService(NetworkManager &networkManager, ApplicationMetrics &systemMetrics)
-    : networkManager_(networkManager), systemMetrics_(systemMetrics) {
+PcMetricsService::PcMetricsService(NetworkManager &networkManager,
+                                   ApplicationMetrics &systemMetrics,
+                                   LoggerInterface &logger)
+    : networkManager_(networkManager), systemMetrics_(systemMetrics), logger_(logger) {
     initFilter();
 }
 
@@ -178,32 +180,45 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     }
                 }
             } else if (text.indexOf("Load") >= 0) {
+                logger_.debug("Found CPU Load section");
                 JsonArray loads = cpuChild["Children"];
-                for (JsonObject load : loads) {
-                    String loadText = load["Text"] | "";
-                    if (loadText.indexOf("CPU Total") >= 0 ||
-                        loadText.indexOf("CPU") >= 0) {
-                        outData.cpu_load = parseValue(load["Value"], 0.0f);
-                        foundLoad = true;
-                    } else if (loadText.startsWith("CPU Core #") &&
-                               loadText.indexOf("Thread") >= 0) {
-                        int coreNum =
-                            atoi(loadText.substring(10, loadText.indexOf(" Thread"))
-                                     .c_str()) -
-                            1;
-                        if (coreNum >= 0 && coreNum < 20) {
-                            outData.cpu_thread_load[coreNum] =
-                                parseValue(load["Value"], 0.0f);
+                logger_.debugf("CPU Load section has %d entries", loads.size());
+                if (loads.size() > 0) {
+                    // Parse CPU Total load from index 0
+                    JsonObject cpuTotalLoad = loads[0];
+                    String loadText = cpuTotalLoad["Text"] | "";
+                    logger_.debugf("Index 0 Text: %s", loadText.c_str());
+                    outData.cpu_load = parseValue(cpuTotalLoad["Value"], 0.0f);
+                    foundLoad = true;
+                } else {
+                    logger_.warning("CPU Load section is empty");
+                    foundLoad = false;
+                }
+                // Parse thread loads from indices 2 to 21
+                if (loads.size() >= 22) {
+                    for (size_t i = 2; i <= 21; ++i) {
+                        JsonObject load = loads[i];
+                        String loadText = load["Text"] | "";
+                        int threadIndex = i - 2; // Map index 2 to thread 0, 3 to thread 1, etc.
+                        // logger_.debugf("Found CPU Thread %d load at index %d, Text: %s", threadIndex, i, loadText.c_str());
+                        if (threadIndex >= 0 && threadIndex < 20) {
+                            outData.cpu_thread_load[threadIndex] = parseValue(load["Value"], 0.0f);
+                        } else {
+                            logger_.warningf("Invalid thread index %d for CPU thread load at JSON index %d", threadIndex, i);
                         }
                     }
+                } else {
+                    logger_.warningf("Insufficient entries in CPU Load section: expected at least 22, found %d", loads.size());
+                    foundLoad = false;
                 }
             }
         }
         if (!foundPower || !foundLoad) {
-            Serial.println("Warning: Missing some CPU data");
+            logger_.warning("Missing some CPU data");
             dataValid = false;
         }
     } else {
+        logger_.warning("CPU section not found");
         dataValid = false;
     }
 

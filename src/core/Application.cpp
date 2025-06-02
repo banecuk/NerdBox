@@ -18,7 +18,7 @@ Application::Application()
                     systemState_.screen),
       networkManager_(logger_, httpClient_),
       displayManager_(display_, logger_),
-      pcMetricsService_(networkManager_, systemMetrics_),
+      pcMetricsService_(networkManager_, systemMetrics_, logger_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
                    systemState_.core, systemState_.screen),
       httpServer_(uiController_, systemMetrics_),

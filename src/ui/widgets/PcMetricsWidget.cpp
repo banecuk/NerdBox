@@ -2,13 +2,21 @@
 
 PcMetricsWidget::PcMetricsWidget(const Dimensions& dims, uint32_t updateIntervalMs,
                                  PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {
+    threadsWidget_ = std::make_unique<ThreadsWidget>(Dimensions{0, 125, 480, 40},
+                                                     updateIntervalMs, pcMetrics_);
+}
 
 void PcMetricsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
 
     lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                    TFT_RED);
+
+    if (threadsWidget_) {
+        threadsWidget_->initialize(lcd_, *logger_);
+        threadsWidget_->drawStatic();
+    }
 }
 
 void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
@@ -44,6 +52,11 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
         String ram = "RAM: " + String(pcMetrics_.mem_load) + "%  ";
         lcd_->drawString(ram.c_str(), dimensions_.x + 2, dimensions_.y + 100 + 2);
 
+        // Draw ThreadsWidget
+        if (threadsWidget_) {
+            threadsWidget_->draw(forceRedraw);
+        }
+
         // last update of the data
         lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
 
@@ -61,5 +74,8 @@ bool PcMetricsWidget::needsUpdate() const {
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
+    if (threadsWidget_ && threadsWidget_->handleTouch(x, y)) {
+        return true;
+    }
     return false;  // No touch interaction
 }
