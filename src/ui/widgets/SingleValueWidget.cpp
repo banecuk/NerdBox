@@ -1,15 +1,36 @@
 #include "SingleValueWidget.h"
 
 SingleValueWidget::SingleValueWidget(const Dimensions& dims, uint32_t updateIntervalMs)
-    : Widget(dims, updateIntervalMs) {}
+    : Widget(dims, updateIntervalMs) {
+    updateDimensions();
+}
 
 void SingleValueWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
     
-    // Draw static elements (border)
-    // lcd_->drawRect(dimensions_.x, dimensions_.y, 
-    //               dimensions_.width, dimensions_.height, 
-    //               TFT_DARKGREY);
+    if (dimensionsDirty_) {
+        updateDimensions();
+    }
+    
+    // Draw static elements (border and label if exists)
+    if (hasLabel_ && labelWidth_ > 0) {
+        // Draw label area (left part)
+        lcd_->fillRect(dimensions_.x, dimensions_.y, 
+                      labelWidth_, dimensions_.height, 
+                      TFT_BLACK);
+        
+        // Draw label text
+        lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
+        lcd_->setTextDatum(CL_DATUM);
+        lcd_->setTextSize(1);
+        
+        int16_t labelX = dimensions_.x + (labelWidth_ / 2);
+        int16_t labelY = dimensions_.y + (dimensions_.height / 2);
+        lcd_->drawString(label_, labelX, labelY);
+        
+        // Draw separator line
+        lcd_->drawFastVLine(dimensions_.x + labelWidth_, dimensions_.y, dimensions_.height, TFT_DARKGREY);
+    }
     
     staticDrawn_ = true;
 }
@@ -18,6 +39,12 @@ void SingleValueWidget::draw(bool forceRedraw) {
     if (!initialized_ || !lcd_) return;
     
     if (forceRedraw || needsUpdate()) {
+        if (dimensionsDirty_) {
+            updateDimensions();
+        }
+        if (textSizeDirty_) {
+            updateTextSize();
+        }
         drawValue();
         lastUpdateTimeMs_ = millis();
     }
@@ -28,8 +55,8 @@ void SingleValueWidget::drawValue() {
     uint16_t textColor = getTextColor(bgColor);
     
     // Fill background
-    lcd_->fillRect(dimensions_.x + 1, dimensions_.y + 1,
-                  dimensions_.width - 2, dimensions_.height - 2,
+    lcd_->fillRect(valueX_, dimensions_.y + 1,
+                  valueWidth_, dimensions_.height - 2,
                   bgColor);
     
     // Prepare value text
@@ -38,25 +65,39 @@ void SingleValueWidget::drawValue() {
     // Set text properties
     lcd_->setTextColor(textColor, bgColor);
     lcd_->setTextDatum(MC_DATUM);
+    lcd_->setTextSize(optimalTextSize_);
     
-    // Calculate optimal text size
-    uint8_t textSize = 1;
-    lcd_->setTextSize(textSize);
+    // Draw the text centered in the value area
+    int16_t centerX = valueX_ + valueWidth_ / 2;
+    int16_t centerY = dimensions_.y + dimensions_.height / 2;
+    lcd_->drawString(valueText, centerX, centerY);
+}
+
+void SingleValueWidget::updateDimensions() {
+    valueX_ = hasLabel_ ? dimensions_.x + labelWidth_ + 1 : dimensions_.x + 1;
+    valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - 2 : dimensions_.width - 2;
+    dimensionsDirty_ = false;
+    textSizeDirty_ = true; // Dimensions changed, so text size might need update
+}
+
+void SingleValueWidget::updateTextSize() {
+    if (!lcd_) return;
+    
+    String valueText = String(value_) + unit_;
+    optimalTextSize_ = 1;
+    lcd_->setTextSize(optimalTextSize_);
     int16_t textWidth = lcd_->textWidth(valueText);
     
     // Increase text size if it fits
-    while (textSize < 4 && 
-           textWidth < (dimensions_.width - 10) && 
+    while (optimalTextSize_ < 4 && 
+           textWidth < (valueWidth_ - 10) && 
            lcd_->fontHeight() < (dimensions_.height - 10)) {
-        textSize++;
-        lcd_->setTextSize(textSize);
+        optimalTextSize_++;
+        lcd_->setTextSize(optimalTextSize_);
         textWidth = lcd_->textWidth(valueText);
     }
     
-    // Draw the text centered
-    int16_t centerX = dimensions_.x + dimensions_.width / 2;
-    int16_t centerY = dimensions_.y + dimensions_.height / 2;
-    lcd_->drawString(valueText, centerX, centerY);
+    textSizeDirty_ = false;
 }
 
 uint16_t SingleValueWidget::getBackgroundColor() const {
@@ -96,6 +137,7 @@ bool SingleValueWidget::handleTouch(uint16_t x, uint16_t y) {
 void SingleValueWidget::setValue(int value) {
     if (value_ != value) {
         value_ = value;
+        textSizeDirty_ = true; // Value changed, text size might need update
         draw();
     }
 }
@@ -103,6 +145,7 @@ void SingleValueWidget::setValue(int value) {
 void SingleValueWidget::setUnit(const String& unit) {
     if (unit_ != unit) {
         unit_ = unit;
+        textSizeDirty_ = true; // Unit changed, text size might need update
         draw();
     }
 }
@@ -120,4 +163,27 @@ void SingleValueWidget::setColorThresholds(float greenThreshold, float yellowThr
     yellowThreshold_ = yellowThreshold;
     redThreshold_ = redThreshold;
     draw();
+}
+
+void SingleValueWidget::setLabel(const String& label) {
+    if (label_ != label) {
+        label_ = label;
+        hasLabel_ = !label_.isEmpty();
+        dimensionsDirty_ = true;
+        if (staticDrawn_) {
+            drawStatic(); // Redraw static elements if label changed
+            draw(true);  // Force redraw of value
+        }
+    }
+}
+
+void SingleValueWidget::setLabelWidth(uint16_t width) {
+    if (labelWidth_ != width) {
+        labelWidth_ = width;
+        dimensionsDirty_ = true;
+        if (staticDrawn_) {
+            drawStatic(); // Redraw static elements if label width changed
+            draw(true);  // Force redraw of value
+        }
+    }
 }

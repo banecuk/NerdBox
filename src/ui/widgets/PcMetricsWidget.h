@@ -24,4 +24,5 @@ class PcMetricsWidget : public Widget {
     std::unique_ptr<ThreadsWidget> threadsWidget_;
     std::unique_ptr<SingleValueWidget> cpuLoadWidget_;
     std::unique_ptr<SingleValueWidget> gpu3dWidget_;
+    std::unique_ptr<SingleValueWidget> gpuComputeWidget_;
 };

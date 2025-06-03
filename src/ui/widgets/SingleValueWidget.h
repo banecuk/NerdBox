@@ -15,6 +15,9 @@ public:
     void setRange(int minValue, int maxValue);
     void setColorThresholds(float greenThreshold, float yellowThreshold, float redThreshold);
 
+    void setLabel(const String& label);
+    void setLabelWidth(uint16_t width);
+
 private:
     int value_ = 0;
     int minValue_ = 0;
@@ -24,8 +27,21 @@ private:
     float greenThreshold_ = 0.5f;
     float yellowThreshold_ = 0.75f;
     float redThreshold_ = 1.0f;
+
+    String label_;
+    uint16_t labelWidth_ = 0;
+    bool hasLabel_ = false;
+
+    // Cached values for optimization
+    int16_t valueX_ = 0;
+    uint16_t valueWidth_ = 0;
+    uint8_t optimalTextSize_ = 1;
+    bool dimensionsDirty_ = true;
+    bool textSizeDirty_ = true;
     
     uint16_t getBackgroundColor() const;
     uint16_t getTextColor(uint16_t bgColor) const;
     void drawValue();
+    void updateDimensions();
+    void updateTextSize();
 };
