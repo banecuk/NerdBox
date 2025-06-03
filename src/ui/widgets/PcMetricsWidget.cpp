@@ -3,15 +3,14 @@
 PcMetricsWidget::PcMetricsWidget(const Dimensions& dims, uint32_t updateIntervalMs,
                                  PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {
-    threadsWidget_ = std::make_unique<ThreadsWidget>(Dimensions{0, 125, 480, 40},
+    threadsWidget_ = std::make_unique<ThreadsWidget>(Dimensions{0, 125, 480, 55},
                                                      updateIntervalMs, pcMetrics_);
 }
 
 void PcMetricsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
-
-    lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                   TFT_RED);
+    // lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
+    //                TFT_RED);
 
     if (threadsWidget_) {
         threadsWidget_->initialize(lcd_, *logger_);

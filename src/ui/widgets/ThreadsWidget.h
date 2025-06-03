@@ -16,4 +16,5 @@ private:
     PcMetrics& pcMetrics_;
     unsigned long lastUpdateTimestamp_ = 0;
     void drawBars(bool forceRedraw);
+    uint16_t previousBarHeights_[20] = {0};
 };

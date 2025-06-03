@@ -180,14 +180,12 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     }
                 }
             } else if (text.indexOf("Load") >= 0) {
-                logger_.debug("Found CPU Load section");
+                // logger_.debug("Found CPU Load section");
                 JsonArray loads = cpuChild["Children"];
-                logger_.debugf("CPU Load section has %d entries", loads.size());
                 if (loads.size() > 0) {
                     // Parse CPU Total load from index 0
                     JsonObject cpuTotalLoad = loads[0];
                     String loadText = cpuTotalLoad["Text"] | "";
-                    logger_.debugf("Index 0 Text: %s", loadText.c_str());
                     outData.cpu_load = parseValue(cpuTotalLoad["Value"], 0.0f);
                     foundLoad = true;
                 } else {
@@ -200,7 +198,6 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                         JsonObject load = loads[i];
                         String loadText = load["Text"] | "";
                         int threadIndex = i - 2; // Map index 2 to thread 0, 3 to thread 1, etc.
-                        // logger_.debugf("Found CPU Thread %d load at index %d, Text: %s", threadIndex, i, loadText.c_str());
                         if (threadIndex >= 0 && threadIndex < 20) {
                             outData.cpu_thread_load[threadIndex] = parseValue(load["Value"], 0.0f);
                         } else {

@@ -17,7 +17,6 @@ constexpr uint8_t kDefaultNetworkRetries = 3;
 constexpr uint8_t kDefaultTimeSyncRetries = 3;
 constexpr uint32_t kNetworkRetryDelayMs = 200;
 constexpr uint32_t kTimeSyncRetryDelayBaseMs = 100;
-
 constexpr uint16_t kBackoffJitterMs = 50;
 };
 
@@ -40,7 +39,7 @@ constexpr UBaseType_t kBackgroundPriority = 1;
 };
 
 namespace HardwareMonitor {
-constexpr uint32_t kRefreshMs = 2000;
+constexpr uint32_t kRefreshMs = 500;
 constexpr uint32_t kRefreshAfterFailureMs = 3000;
 constexpr uint32_t kRetryDelayMs = 200;
 constexpr uint32_t kMaxRetries = 2;
