@@ -5,6 +5,16 @@ PcMetricsWidget::PcMetricsWidget(const Dimensions& dims, uint32_t updateInterval
     : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {
     threadsWidget_ = std::make_unique<ThreadsWidget>(Dimensions{0, 125, 480, 55},
                                                      updateIntervalMs, pcMetrics_);
+
+    cpuLoadWidget_ = std::make_unique<SingleValueWidget>(Dimensions{400, 0, 80, 20}, updateIntervalMs);
+    cpuLoadWidget_->setUnit("%");
+    cpuLoadWidget_->setRange(0, 100);
+    cpuLoadWidget_->setColorThresholds(0.5f, 0.75f, 1.0f);                                                     
+
+    gpu3dWidget_ = std::make_unique<SingleValueWidget>(Dimensions{400, 20, 80, 20}, updateIntervalMs);
+    gpu3dWidget_->setUnit("%");
+    gpu3dWidget_->setRange(0, 100);
+    gpu3dWidget_->setColorThresholds(0.5f, 0.75f, 1.0f);  
 }
 
 void PcMetricsWidget::drawStatic() {
@@ -16,6 +26,16 @@ void PcMetricsWidget::drawStatic() {
         threadsWidget_->initialize(lcd_, *logger_);
         threadsWidget_->drawStatic();
     }
+
+    if (cpuLoadWidget_) {
+        cpuLoadWidget_->initialize(lcd_, *logger_);
+        cpuLoadWidget_->drawStatic();
+    }
+
+    if (gpu3dWidget_) {
+        gpu3dWidget_->initialize(lcd_, *logger_);
+        gpu3dWidget_->drawStatic();
+    }
 }
 
 void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
@@ -26,6 +46,20 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
     if (needsRedraw && pcMetrics_.is_available) {  // TODO clear the area if not available
         // lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width,
         //                dimensions_.height, TFT_BLACK);
+
+        // Update CPU load widget
+        if (cpuLoadWidget_) {
+            cpuLoadWidget_->setValue(pcMetrics_.cpu_load);
+            cpuLoadWidget_->draw(forceRedraw);
+        }
+
+        // Update GPU load widget
+        if (gpu3dWidget_) {
+            gpu3dWidget_->setValue(pcMetrics_.gpu_3d);
+            gpu3dWidget_->draw(forceRedraw);
+        }
+
+
 
         lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
         lcd_->setTextSize(2);

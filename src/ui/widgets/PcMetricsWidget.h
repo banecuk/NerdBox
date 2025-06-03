@@ -5,6 +5,7 @@
 #include "services/PcMetrics.h"
 #include "ui/widgets/ThreadsWidget.h"
 #include "ui/widgets/Widget.h"
+#include "SingleValueWidget.h"
 
 class PcMetricsWidget : public Widget {
    public:
@@ -19,5 +20,8 @@ class PcMetricsWidget : public Widget {
    private:
     PcMetrics& pcMetrics_;
     unsigned long lastUpdateTimestamp_ = 0;
+
     std::unique_ptr<ThreadsWidget> threadsWidget_;
+    std::unique_ptr<SingleValueWidget> cpuLoadWidget_;
+    std::unique_ptr<SingleValueWidget> gpu3dWidget_;
 };
