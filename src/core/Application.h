@@ -13,11 +13,12 @@
 #include "services/HttpServer.h"
 #include "services/NtpService.h"
 #include "services/PcMetricsService.h"
+#include "ui/Colors.h"
 #include "ui/DisplayManager.h"
 #include "ui/UIController.h"
 #include "ui/screens/ScreenTypes.h"
-#include "utils/Logger.h"
 #include "utils/ApplicationMetrics.h"
+#include "utils/Logger.h"
 
 class Application {
    public:
@@ -74,7 +75,9 @@ class Application {
     // Managers and Services
     SystemState systemState_;
     Logger logger_;
+    DisplayContext displayContext_;
     UIController uiController_;
+    Colors colors_;
     NetworkManager networkManager_;
     HttpClient httpClient_;
     NtpService ntpService_;

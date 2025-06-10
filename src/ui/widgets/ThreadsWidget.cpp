@@ -1,8 +1,8 @@
 #include "ThreadsWidget.h"
 
-ThreadsWidget::ThreadsWidget(const Dimensions& dims, uint32_t updateIntervalMs,
-                             PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
+ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
+                             uint32_t updateIntervalMs, PcMetrics& pcMetrics)
+    : Widget(dims, updateIntervalMs), context_(context), pcMetrics_(pcMetrics) {}
 
 void ThreadsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
@@ -26,7 +26,8 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
     const uint16_t maxBarHeight = dimensions_.height;
 
     for (int i = 0; i < 20; ++i) {
-        uint16_t newHeight = static_cast<uint16_t>(pcMetrics_.cpu_thread_load[i] * maxBarHeight / 100.0f);
+        uint16_t newHeight =
+            static_cast<uint16_t>(pcMetrics_.cpu_thread_load[i] * maxBarHeight / 100.0f);
         newHeight = min(newHeight, maxBarHeight);
         if (newHeight == 0) newHeight = 1;
 
@@ -36,11 +37,11 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
             // Clear the area between old and new height
             if (newHeight < prevHeights[i]) {
                 // Bar shrunk - clear the top part
-                lcd_->fillRect(x, dimensions_.y, barWidth - 1, 
-                              maxBarHeight - newHeight, TFT_BLACK);
+                lcd_->fillRect(x, dimensions_.y, barWidth - 1, maxBarHeight - newHeight,
+                               TFT_BLACK);
             } else if (newHeight > prevHeights[i]) {
                 // Bar grew - clear the area above previous height
-                //lcd_->fillRect(x, dimensions_.y, barWidth - 1,
+                // lcd_->fillRect(x, dimensions_.y, barWidth - 1,
                 //              maxBarHeight - prevHeights[i], TFT_BLACK);
             }
 
@@ -57,8 +58,8 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
             } else {
                 color = TFT_RED;
             }
-            lcd_->fillRect(x, dimensions_.y + maxBarHeight - newHeight,
-                         barWidth - 1, newHeight, color);
+            lcd_->fillRect(x, dimensions_.y + maxBarHeight - newHeight, barWidth - 1,
+                           newHeight, color);
 
             prevHeights[i] = newHeight;
         }

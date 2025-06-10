@@ -1,8 +1,6 @@
 #pragma once
 
 #include <inttypes.h>
-#include <freertos/FreeRTOS.h>
-
 
 namespace Config {
 
@@ -34,8 +32,8 @@ constexpr uint32_t kMainLoopMs = 10;
 namespace Tasks {
 constexpr uint32_t kScreenStack = 4096;
 constexpr uint32_t kBackgroundStack = 8096;
-constexpr UBaseType_t kScreenPriority = 2;
-constexpr UBaseType_t kBackgroundPriority = 1;
+constexpr uint32_t kScreenPriority = 2;
+constexpr uint32_t kBackgroundPriority = 1;
 };
 
 namespace HardwareMonitor {

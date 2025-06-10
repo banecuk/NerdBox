@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "LoggerInterface.h"
 
 class Logger : public LoggerInterface {

@@ -4,7 +4,6 @@
 #include <stdarg.h>
 
 #include <queue>
-#include <string>
 
 class LoggerInterface {
    public:

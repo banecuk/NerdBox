@@ -1,6 +1,6 @@
 #include "DisplayManager.h"
 
-#include <Preferences.h>
+//#include <Preferences.h>
 
 DisplayManager::DisplayManager(LGFX& display, LoggerInterface& logger)
     : display_(display), logger_(logger), brightness_(DEFAULT_BRIGHTNESS) {}

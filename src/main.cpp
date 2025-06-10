@@ -1,6 +1,5 @@
 #include "config/AppConfig.h"
 #include "core/Application.h"
-#include "utils/Logger.h"
 
 Application app;
 

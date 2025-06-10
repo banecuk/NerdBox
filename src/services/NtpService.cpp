@@ -1,5 +1,7 @@
 #include "NtpService.h"
 
+#include <WiFi.h>
+
 const char *NtpService::DEFAULT_NTP_SERVER1 = "europe.pool.ntp.org";
 const char *NtpService::DEFAULT_NTP_SERVER2 = "time.google.com";
 const char *NtpService::DEFAULT_NTP_SERVER3 = "time.cloudflare.com";

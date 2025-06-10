@@ -4,6 +4,7 @@
 
 #include "Widget.h"
 #include "core/events/EventTypes.h"
+#include "ui/DisplayContext.h"
 
 class ButtonWidget : public Widget {
    public:
@@ -11,12 +12,12 @@ class ButtonWidget : public Widget {
 
     using ActionCallback = std::function<void(EventType)>;
 
-    ButtonWidget(const std::string& label, const Dimensions& dims,
+    ButtonWidget(DisplayContext& context, const std::string& label, const Dimensions& dims,
                  uint32_t updateIntervalMs = 0, EventType action = EventType::NONE,
                  ActionCallback callback = nullptr, uint16_t bgColor = TFT_DARKGRAY,
                  uint16_t textColor = TFT_WHITE);
 
-    void initialize(LGFX* lcd, LoggerInterface& logger) override;
+    // void initialize(DisplayContext& context) override;
 
     void draw(bool forceRedraw = false) override;
     void cleanUp() override;
@@ -25,6 +26,7 @@ class ButtonWidget : public Widget {
     void setCallback(ActionCallback callback);
 
    private:
+    DisplayContext& context_;
     std::string label_;
     unsigned long lastTouchTime_;  // Track last touch time for debouncing
 

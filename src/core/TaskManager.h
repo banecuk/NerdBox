@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <esp_task_wdt.h>
 
 #include "config/AppConfig.h"
 #include "core/state/SystemState.h"

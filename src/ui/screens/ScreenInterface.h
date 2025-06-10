@@ -1,6 +1,5 @@
 #pragma once
 
-#include <LovyanGFX.hpp>
 #include <cstdint>
 
 #include "config/LgfxConfig.h"

@@ -2,13 +2,14 @@
 
 #include <memory>
 
+#include "DisplayContext.h"
+#include "DisplayManager.h"
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
-#include "ui/DisplayManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
-#include "utils/Logger.h"
 #include "utils/ApplicationMetrics.h"
+#include "utils/Logger.h"
 
 // Forward declarations
 class BootScreen;
@@ -18,15 +19,17 @@ class EventHandler;
 
 class UIController {
    public:
-    explicit UIController(LoggerInterface& logger, DisplayManager* displayManager,
-                          ApplicationMetrics& systemMetrics,
-                          PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
+    explicit UIController(DisplayContext& context, DisplayManager* displayManager,
+                          ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
+                          SystemState::ScreenState& screenState);
     ~UIController();
 
     void initialize();
     bool requestsScreenTransition(ScreenName screenName);
     void updateDisplay();
     bool isTransitioning() const { return transition_.isActive; }
+
+    DisplayContext& getDisplayContext() { return context_; }
 
     DisplayManager* getDisplayManager() const { return displayManager_; }
 
@@ -73,6 +76,7 @@ class UIController {
 
     LoggerInterface& logger_;
     DisplayManager* displayManager_;
+    DisplayContext& context_;
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;

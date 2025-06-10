@@ -1,6 +1,6 @@
 #include "EventHandler.h"
 
-#include <ESP.h>
+#include <esp_system.h>
 
 #include "ui/DisplayManager.h"
 #include "ui/UIController.h"

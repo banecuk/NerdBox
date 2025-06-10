@@ -1,9 +1,7 @@
 #pragma once
 
-#include <Arduino.h>
-
+#include "ui/DisplayContext.h"
 #include "ui/screens/ScreenInterface.h"
-#include "utils/LoggerInterface.h"
 
 class WidgetIterface {
    public:
@@ -17,7 +15,7 @@ class WidgetIterface {
     virtual ~WidgetIterface() = default;
 
     // Core methods
-    virtual void initialize(LGFX* lcd, LoggerInterface& logger) = 0;
+    virtual void initialize(DisplayContext& context) = 0;
     virtual void drawStatic() = 0;
     virtual void draw(bool forceRedraw = false) = 0;
     virtual void cleanUp() = 0;

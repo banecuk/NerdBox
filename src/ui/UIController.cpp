@@ -1,22 +1,21 @@
 #include "UIController.h"
 
-#include <esp_task_wdt.h>
-
 #include "core/events/EventHandler.h"
 #include "screens/BootScreen.h"
 #include "screens/ScreenFactory.h"
 #include "widgetScreens/MainScreen.h"
 #include "widgetScreens/SettingsScreen.h"
 
-UIController::UIController(LoggerInterface& logger, DisplayManager* displayManager,
-                           ApplicationMetrics& systemMetrics,
-                           PcMetrics& pcMetrics, SystemState::ScreenState& screenState)
-    : logger_(logger),
+UIController::UIController(DisplayContext& context, DisplayManager* displayManager,
+                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
+                           SystemState::ScreenState& screenState)
+    : context_(context),
+      logger_(context.getLogger()),
       displayManager_(displayManager),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
-      actionHandler_(std::make_unique<EventHandler>(this, logger)) {
+      actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())) {
     if (!displayManager_) {
         throw std::invalid_argument(
             "[UIController] DisplayManager pointer cannot be null");
