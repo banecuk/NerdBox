@@ -1,6 +1,5 @@
 #include "ClockWidget.h"
 
-#include <stdio.h>
 #include <time.h>
 
 ClockWidget::ClockWidget(DisplayContext& context, const Dimensions& dims,

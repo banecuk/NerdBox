@@ -1,7 +1,5 @@
 #include "UIController.h"
 
-#include <esp_task_wdt.h>
-
 #include "core/events/EventHandler.h"
 #include "screens/BootScreen.h"
 #include "screens/ScreenFactory.h"

@@ -1,5 +1,7 @@
 #include "TaskManager.h"
 
+#include <esp_task_wdt.h>
+
 TaskManager::TaskManager(LoggerInterface &logger, UIController &uiController,
                          PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
                          SystemState::CoreState &coreState,
