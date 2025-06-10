@@ -75,6 +75,7 @@ class Application {
     // Managers and Services
     SystemState systemState_;
     Logger logger_;
+    DisplayContext displayContext_;
     UIController uiController_;
     Colors colors_;
     NetworkManager networkManager_;

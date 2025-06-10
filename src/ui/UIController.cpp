@@ -8,16 +8,16 @@
 #include "widgetScreens/MainScreen.h"
 #include "widgetScreens/SettingsScreen.h"
 
-UIController::UIController(LoggerInterface& logger, DisplayManager* displayManager,
+UIController::UIController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                           SystemState::ScreenState& screenState, Colors& colors)
-    : logger_(logger),
+                           SystemState::ScreenState& screenState)
+    : context_(context),
+      logger_(context.getLogger()),
       displayManager_(displayManager),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
-      colors_(colors),
-      actionHandler_(std::make_unique<EventHandler>(this, logger)) {
+      actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())) {
     if (!displayManager_) {
         throw std::invalid_argument(
             "[UIController] DisplayManager pointer cannot be null");

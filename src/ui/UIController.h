@@ -2,10 +2,10 @@
 
 #include <memory>
 
+#include "DisplayContext.h"
+#include "DisplayManager.h"
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
-#include "ui/Colors.h"
-#include "ui/DisplayManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"
@@ -19,15 +19,17 @@ class EventHandler;
 
 class UIController {
    public:
-    explicit UIController(LoggerInterface& logger, DisplayManager* displayManager,
+    explicit UIController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                          SystemState::ScreenState& screenState, Colors& colors);
+                          SystemState::ScreenState& screenState);
     ~UIController();
 
     void initialize();
     bool requestsScreenTransition(ScreenName screenName);
     void updateDisplay();
     bool isTransitioning() const { return transition_.isActive; }
+
+    DisplayContext& getDisplayContext() { return context_; }
 
     DisplayManager* getDisplayManager() const { return displayManager_; }
 
@@ -74,10 +76,10 @@ class UIController {
 
     LoggerInterface& logger_;
     DisplayManager* displayManager_;
+    DisplayContext& context_;
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
-    Colors& colors_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<EventHandler> actionHandler_;
