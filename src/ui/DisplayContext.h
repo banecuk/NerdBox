@@ -9,6 +9,9 @@ class DisplayContext {
     DisplayContext(LGFX& display, Colors& colors, LoggerInterface& logger)
         : display_(display), colors_(colors), logger_(logger) {}
 
+    DisplayContext(const DisplayContext&) = delete;
+    DisplayContext& operator=(const DisplayContext&) = delete;
+
     LGFX& getDisplay() { return display_; }
     Colors& getColors() { return colors_; }
     LoggerInterface& getLogger() { return logger_; }
