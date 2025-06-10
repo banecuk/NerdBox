@@ -12,8 +12,8 @@ ButtonWidget::ButtonWidget(const std::string& label, const Dimensions& dims,
       bgColor_(bgColor),
       textColor_(textColor) {}
 
-void ButtonWidget::initialize(LGFX* lcd, LoggerInterface& logger) {
-    Widget::initialize(lcd, logger);
+void ButtonWidget::initialize(DisplayContext& context) {
+    Widget::initialize(context);
 }
 
 void ButtonWidget::draw(bool forceRedraw /* = false */) {

@@ -2,13 +2,15 @@
 
 #include <Arduino.h>
 
+#include "ui/DisplayContext.h"
+#include "ui/screens/ScreenInterface.h"
 #include "ui/widgets/WidgetInterface.h"
 
 class Widget : public WidgetIterface {
    public:
     Widget(const Dimensions& dims, uint32_t updateIntervalMs);
 
-    void initialize(LGFX* lcd, LoggerInterface& logger) override;
+    void initialize(DisplayContext& context) override;
     void drawStatic() override;
     void cleanUp() override;
     void setUpdateInterval(uint32_t intervalMs) override;

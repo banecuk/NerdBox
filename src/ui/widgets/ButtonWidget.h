@@ -4,6 +4,7 @@
 
 #include "Widget.h"
 #include "core/events/EventTypes.h"
+#include "ui/DisplayContext.h"
 
 class ButtonWidget : public Widget {
    public:
@@ -16,7 +17,7 @@ class ButtonWidget : public Widget {
                  ActionCallback callback = nullptr, uint16_t bgColor = TFT_DARKGRAY,
                  uint16_t textColor = TFT_WHITE);
 
-    void initialize(LGFX* lcd, LoggerInterface& logger) override;
+    void initialize(DisplayContext& context) override;
 
     void draw(bool forceRedraw = false) override;
     void cleanUp() override;

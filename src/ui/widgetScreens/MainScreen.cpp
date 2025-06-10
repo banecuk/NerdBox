@@ -5,8 +5,8 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics,
     : BaseWidgetScreen(logger, uiController), pcMetrics_(pcMetrics) {}
 
 void MainScreen::createWidgets() {
-    widgetManager_.addWidget(std::unique_ptr<PcMetricsWidget>(
-        new PcMetricsWidget({0, 0, 480, 180}, 100, pcMetrics_)));
+    widgetManager_.addWidget(std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
+        uiController_->getDisplayContext(), {0, 0, 480, 180}, 100, pcMetrics_)));
 
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
         new ClockWidget({328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)));

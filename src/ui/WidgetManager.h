@@ -4,12 +4,13 @@
 #include <vector>
 
 #include "config/LgfxConfig.h"
+#include "ui/DisplayContext.h"
 #include "ui/widgets/WidgetInterface.h"
 #include "utils/LoggerInterface.h"
 
 class WidgetManager {
    public:
-    explicit WidgetManager(LoggerInterface& logger, LGFX* lcd);
+    explicit WidgetManager(DisplayContext& context);
     ~WidgetManager();
 
     void addWidget(std::unique_ptr<WidgetIterface> widget);
@@ -20,6 +21,7 @@ class WidgetManager {
     size_t getWidgetCount() const { return widgets_.size(); }
 
    private:
+    DisplayContext& context_;
     LoggerInterface& logger_;
     LGFX* lcd_;
     std::vector<std::unique_ptr<WidgetIterface>> widgets_;

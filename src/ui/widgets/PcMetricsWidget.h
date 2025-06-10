@@ -2,15 +2,16 @@
 
 #include <string>
 
+#include "SingleValueWidget.h"
 #include "services/PcMetrics.h"
+#include "ui/DisplayContext.h"
 #include "ui/widgets/ThreadsWidget.h"
 #include "ui/widgets/Widget.h"
-#include "SingleValueWidget.h"
 
 class PcMetricsWidget : public Widget {
    public:
-    PcMetricsWidget(const Dimensions& dims, uint32_t updateIntervalMs,
-                    PcMetrics& pcMetrics);
+    PcMetricsWidget(DisplayContext& context, const Dimensions& dims,
+                    uint32_t updateIntervalMs, PcMetrics& pcMetrics);
 
     void drawStatic() override;
     void draw(bool forceRedraw = false) override;
@@ -18,6 +19,7 @@ class PcMetricsWidget : public Widget {
     bool needsUpdate() const override;
 
    private:
+    DisplayContext& context_;
     PcMetrics& pcMetrics_;
     unsigned long lastUpdateTimestamp_ = 0;
 

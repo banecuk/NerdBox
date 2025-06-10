@@ -2,8 +2,8 @@
 
 #include <esp_task_wdt.h>
 
-WidgetManager::WidgetManager(LoggerInterface& logger, LGFX* lcd)
-    : logger_(logger), lcd_(lcd) {
+WidgetManager::WidgetManager(DisplayContext& context)
+    : logger_(context.getLogger()), lcd_(&context.getDisplay()), context_(context) {
     if (!lcd_) {
         logger_.error("WidgetManager created with null LGFX pointer!");
     }
@@ -32,7 +32,7 @@ void WidgetManager::initializeWidgets() {
 
     lcd_->startWrite();
     for (auto& widget : widgets_) {
-        widget->initialize(lcd_, logger_);
+        widget->initialize(context_);
         widget->drawStatic();
         widget->draw(true);
     }

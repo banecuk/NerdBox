@@ -3,17 +3,17 @@
 Widget::Widget(const Dimensions& dims, uint32_t updateIntervalMs)
     : dimensions_(dims), updateIntervalMs_(updateIntervalMs), lastUpdateTimeMs_(0) {}
 
-void Widget::initialize(LGFX* lcd, LoggerInterface& logger) {
-    if (!lcd) {
-        logger.error("Widget initialization failed - null LCD");
-        return;
-    }
-    if (!&logger) {
-        Serial.println("Widget initialization failed - null logger");
-        return;
-    }    
-    lcd_ = lcd;
-    logger_ = &logger;
+void Widget::initialize(DisplayContext& context) {
+    // if (!context.getDisplay()) {
+    //     Serial.println("Widget initialization failed - null display");
+    //     return;
+    // }
+    // if (!context.getLogger()) {
+    //     Serial.println("Widget initialization failed - null logger");
+    //     return;
+    // }    
+    lcd_ = &context.getDisplay();
+    logger_ = &context.getLogger();
     lastUpdateTimeMs_ = millis();
     initialized_ = true;
     drawStatic();

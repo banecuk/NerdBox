@@ -4,7 +4,7 @@ BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UIController* uiCont
     : logger_(logger),
       lcd_(uiController->getDisplayManager()->getDisplay()),
       uiController_(uiController),
-      widgetManager_(logger, uiController->getDisplayManager()->getDisplay()) {}
+      widgetManager_(uiController->getDisplayContext()) {}
 
 BaseWidgetScreen::~BaseWidgetScreen() { logger_.debug("BaseWidgetScreen destructor"); }
 
