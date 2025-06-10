@@ -4,11 +4,12 @@
 
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
+#include "ui/Colors.h"
 #include "ui/DisplayManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
-#include "utils/Logger.h"
 #include "utils/ApplicationMetrics.h"
+#include "utils/Logger.h"
 
 // Forward declarations
 class BootScreen;
@@ -19,8 +20,8 @@ class EventHandler;
 class UIController {
    public:
     explicit UIController(LoggerInterface& logger, DisplayManager* displayManager,
-                          ApplicationMetrics& systemMetrics,
-                          PcMetrics& pcMetrics, SystemState::ScreenState& screenState);
+                          ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
+                          SystemState::ScreenState& screenState, Colors& colors);
     ~UIController();
 
     void initialize();
@@ -76,6 +77,7 @@ class UIController {
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
+    Colors& colors_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<EventHandler> actionHandler_;

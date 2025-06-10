@@ -15,7 +15,7 @@ Application::Application()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
       uiController_(logger_, &displayManager_, systemMetrics_, systemState_.pcMetrics,
-                    systemState_.screen),
+                    systemState_.screen, colors_),
       networkManager_(logger_, httpClient_),
       displayManager_(display_, logger_),
       pcMetricsService_(networkManager_, systemMetrics_, logger_),

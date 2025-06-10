@@ -9,13 +9,14 @@
 #include "widgetScreens/SettingsScreen.h"
 
 UIController::UIController(LoggerInterface& logger, DisplayManager* displayManager,
-                           ApplicationMetrics& systemMetrics,
-                           PcMetrics& pcMetrics, SystemState::ScreenState& screenState)
+                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
+                           SystemState::ScreenState& screenState, Colors& colors)
     : logger_(logger),
       displayManager_(displayManager),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
+      colors_(colors),
       actionHandler_(std::make_unique<EventHandler>(this, logger)) {
     if (!displayManager_) {
         throw std::invalid_argument(
