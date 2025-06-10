@@ -8,6 +8,10 @@ void Widget::initialize(LGFX* lcd, LoggerInterface& logger) {
         logger.error("Widget initialization failed - null LCD");
         return;
     }
+    if (!&logger) {
+        Serial.println("Widget initialization failed - null logger");
+        return;
+    }    
     lcd_ = lcd;
     logger_ = &logger;
     lastUpdateTimeMs_ = millis();
