@@ -4,26 +4,26 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const Dimensions& dims
                                  uint32_t updateIntervalMs, PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs), context_(context), pcMetrics_(pcMetrics) {
     threadsWidget_ = std::make_unique<ThreadsWidget>(
-        Dimensions{0, 125 - 65, 480, 55 + 65}, updateIntervalMs, pcMetrics_);
+        context_, Dimensions{0, 125 - 65, 480, 55 + 65}, updateIntervalMs, pcMetrics_);
 
-    cpuLoadWidget_ = std::make_unique<SingleValueWidget>(Dimensions{380, 0, 100, 20},
-                                                         updateIntervalMs);
+    cpuLoadWidget_ = std::make_unique<SingleValueWidget>(
+        context_, Dimensions{380, 0, 100, 20}, updateIntervalMs);
     cpuLoadWidget_->setUnit("%");
     cpuLoadWidget_->setRange(0, 100);
     cpuLoadWidget_->setColorThresholds(0.5f, 0.75f, 1.0f);
     cpuLoadWidget_->setLabel("CPU");
     cpuLoadWidget_->setLabelWidth(44);
 
-    gpu3dWidget_ = std::make_unique<SingleValueWidget>(Dimensions{380, 20, 100, 20},
-                                                       updateIntervalMs);
+    gpu3dWidget_ = std::make_unique<SingleValueWidget>(
+        context_, Dimensions{380, 20, 100, 20}, updateIntervalMs);
     gpu3dWidget_->setUnit("%");
     gpu3dWidget_->setRange(0, 100);
     gpu3dWidget_->setColorThresholds(0.5f, 0.75f, 1.0f);
     gpu3dWidget_->setLabel("3D");
     gpu3dWidget_->setLabelWidth(44);
 
-    gpuComputeWidget_ = std::make_unique<SingleValueWidget>(Dimensions{380, 40, 100, 20},
-                                                            updateIntervalMs);
+    gpuComputeWidget_ = std::make_unique<SingleValueWidget>(
+        context_, Dimensions{380, 40, 100, 20}, updateIntervalMs);
     gpuComputeWidget_->setUnit("%");
     gpuComputeWidget_->setRange(0, 100);
     gpuComputeWidget_->setColorThresholds(0.5f, 0.75f, 1.0f);
