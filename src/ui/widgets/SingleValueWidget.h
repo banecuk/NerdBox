@@ -42,7 +42,6 @@ class SingleValueWidget : public Widget {
     bool textSizeDirty_ = true;
 
     uint16_t getBackgroundColor() const;
-    uint16_t getTextColor(uint16_t bgColor) const;
     void drawValue();
     void updateDimensions();
     void updateTextSize();

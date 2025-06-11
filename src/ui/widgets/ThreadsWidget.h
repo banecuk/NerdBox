@@ -17,7 +17,8 @@ class ThreadsWidget : public Widget {
    private:
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
+    uint16_t barWidth_;
+    uint16_t previousBarHeights_[20] = {0};
     unsigned long lastUpdateTimestamp_ = 0;
     void drawBars(bool forceRedraw);
-    uint16_t previousBarHeights_[20] = {0};
 };

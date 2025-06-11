@@ -53,7 +53,6 @@ void SingleValueWidget::draw(bool forceRedraw) {
 
 void SingleValueWidget::drawValue() {
     uint16_t bgColor = getBackgroundColor();
-    uint16_t textColor = getTextColor(bgColor);
 
     // Fill background
     lcd_->fillRect(valueX_, dimensions_.y + 1, valueWidth_, dimensions_.height - 2,
@@ -63,7 +62,7 @@ void SingleValueWidget::drawValue() {
     String valueText = String(value_) + unit_;
 
     // Set text properties
-    lcd_->setTextColor(textColor, bgColor);
+    lcd_->setTextColor(TFT_WHITE, bgColor);
     lcd_->setTextDatum(MC_DATUM);
     lcd_->setTextSize(optimalTextSize_);
 
@@ -107,20 +106,6 @@ uint16_t SingleValueWidget::getBackgroundColor() const {
     uint8_t normalizedValue = static_cast<uint8_t>(normalizedValueFloat);
 
     return context_.getColors().getColorFromPercent(normalizedValue, true);
-}
-
-uint16_t SingleValueWidget::getTextColor(uint16_t bgColor) const {
-    // Return contrasting text color based on background
-    switch (bgColor) {
-        case TFT_DARKGREEN:
-        case TFT_RED:
-            return TFT_WHITE;
-        case TFT_GREEN:
-        case TFT_YELLOW:
-            return TFT_BLACK;
-        default:
-            return TFT_WHITE;
-    }
 }
 
 bool SingleValueWidget::handleTouch(uint16_t x, uint16_t y) {

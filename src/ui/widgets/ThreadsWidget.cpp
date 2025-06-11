@@ -2,7 +2,10 @@
 
 ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), context_(context), pcMetrics_(pcMetrics) {}
+    : Widget(dims, updateIntervalMs),
+      context_(context),
+      pcMetrics_(pcMetrics),
+      barWidth_(dims.width / 20) {}
 
 void ThreadsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
@@ -21,21 +24,21 @@ void ThreadsWidget::draw(bool forceRedraw) {
 }
 
 void ThreadsWidget::drawBars(bool forceRedraw) {
-    static uint16_t prevHeights[20] = {0};
-    const uint16_t barWidth = dimensions_.width / 20;
     const uint16_t maxBarHeight = dimensions_.height;
 
     for (int i = 0; i < 20; ++i) {
-        uint16_t newHeight = static_cast<uint16_t>(pcMetrics_.cpu_thread_load[i] * maxBarHeight / 100);;
+        uint16_t newHeight =
+            static_cast<uint16_t>(pcMetrics_.cpu_thread_load[i] * maxBarHeight / 100);
+        ;
         newHeight = min(newHeight, maxBarHeight);
         if (newHeight == 0) newHeight = 1;
 
-        uint16_t x = dimensions_.x + i * barWidth;
+        uint16_t x = dimensions_.x + i * barWidth_;
 
-        if (forceRedraw || newHeight != prevHeights[i]) {
+        if (forceRedraw || newHeight != previousBarHeights_[i]) {
             // Clear the area between old and new height when bar shrinks
-            if (newHeight < prevHeights[i]) {
-                lcd_->fillRect(x, dimensions_.y, barWidth - 1, maxBarHeight - newHeight,
+            if (newHeight < previousBarHeights_[i]) {
+                lcd_->fillRect(x, dimensions_.y, barWidth_ - 1, maxBarHeight - newHeight,
                                TFT_BLACK);
             }
 
@@ -44,13 +47,14 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
             if (newHeight == 1) {
                 color = TFT_DARKGREY;
             } else {
-                color = context_.getColors().getColorFromPercent(pcMetrics_.cpu_thread_load[i],false);
+                color = context_.getColors().getColorFromPercent(
+                    pcMetrics_.cpu_thread_load[i], false);
             }
 
-            lcd_->fillRect(x, dimensions_.y + maxBarHeight - newHeight, barWidth - 1,
+            lcd_->fillRect(x, dimensions_.y + maxBarHeight - newHeight, barWidth_ - 1,
                            newHeight, color);
 
-            prevHeights[i] = newHeight;
+            previousBarHeights_[i] = newHeight;
         }
     }
 }
