@@ -50,7 +50,12 @@ T parseValue(JsonVariant value, T defaultValue) {
         return defaultValue;
     }
     if (value.is<float>() || value.is<int>()) {
-        return value.as<T>();
+        float val = value.as<float>();
+        if constexpr (std::is_integral_v<T>) {
+            int rounded = static_cast<int>(val + 0.5f); // Round to nearest integer
+            return static_cast<T>(rounded);
+        }
+        return static_cast<T>(val);
     }
     // Handle string values (e.g., "45.0 %", "40.5 °C", "2149.0 MB")
     String str = value.as<String>();
@@ -66,6 +71,10 @@ T parseValue(JsonVariant value, T defaultValue) {
     float result = strtod(str.c_str(), &endPtr);
     if (endPtr == str.c_str()) {
         return defaultValue;  // Conversion failed
+    }
+    if constexpr (std::is_integral_v<T>) {
+        int rounded = static_cast<int>(result + 0.5f); // Round to nearest integer
+        return static_cast<T>(rounded);
     }
     return static_cast<T>(result);
 }

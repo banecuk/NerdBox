@@ -14,7 +14,7 @@ class PcMetrics {
 
     uint8_t cpu_load = 0;
     uint8_t mem_load = 0;
-    float cpu_thread_load[20] = {};
+    uint8_t cpu_thread_load[20] = {};
 
     uint16_t cpu_power = 0;
 

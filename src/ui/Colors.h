@@ -19,7 +19,7 @@ public:
     Colors();
     ~Colors();
 
-    uint16_t getColorFromPercent(byte value, bool dim);
-    uint16_t getColorFromPercent30plus(byte value, bool dim);
+    uint16_t getColorFromPercent(uint8_t value, bool dim = false);
+    uint16_t getColorFromPercent30plus(uint8_t value, bool dim = false);
     uint16_t darken(uint16_t color, uint8_t alpha);
 };

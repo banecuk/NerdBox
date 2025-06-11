@@ -1,17 +1,15 @@
 #include "Colors.h"
 
-//<<constructor>>
 Colors::Colors()
 {
   generateGradient();
 }
 
-//<<destructor>>
 Colors::~Colors()
 {
 }
 
-uint16_t Colors::getColorFromPercent(byte value, bool dim)
+uint16_t Colors::getColorFromPercent(uint8_t value, bool dim)
 {
   if (value>99) {
     value = 99;
@@ -25,7 +23,7 @@ uint16_t Colors::getColorFromPercent(byte value, bool dim)
   return result;
 }
 
-uint16_t Colors::generateColorFromPercent(byte value)
+uint16_t Colors::generateColorFromPercent(uint8_t value)
 {
   uint16_t blue = 0x09ea; 
   uint16_t green = 0x3ba2; //0x3363; //0x22c6;
@@ -58,7 +56,7 @@ void Colors::generateGradient()
   }
 }
 
-uint16_t Colors::getColorFromPercent30plus(byte value, bool dim) {
+uint16_t Colors::getColorFromPercent30plus(uint8_t value, bool dim) {
   if (value > 29) {
     value = trunc((value - 30) * 1.42857 + 0.5);
   } else {

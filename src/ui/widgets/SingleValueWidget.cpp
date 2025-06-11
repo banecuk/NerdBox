@@ -102,18 +102,11 @@ void SingleValueWidget::updateTextSize() {
 uint16_t SingleValueWidget::getBackgroundColor() const {
     if (maxValue_ <= minValue_) return TFT_BLACK;
 
-    float normalizedValue =
-        static_cast<float>(value_ - minValue_) / (maxValue_ - minValue_);
+    float normalizedValueFloat = 
+        99.0f * static_cast<float>(value_ - minValue_) / (maxValue_ - minValue_);
+    uint8_t normalizedValue = static_cast<uint8_t>(normalizedValueFloat);
 
-    if (normalizedValue <= greenThreshold_) {
-        return TFT_DARKGREEN;
-    } else if (normalizedValue <= yellowThreshold_) {
-        return TFT_GREEN;
-    } else if (normalizedValue <= redThreshold_) {
-        return TFT_YELLOW;
-    } else {
-        return TFT_RED;
-    }
+    return context_.getColors().getColorFromPercent(normalizedValue, true);
 }
 
 uint16_t SingleValueWidget::getTextColor(uint16_t bgColor) const {
