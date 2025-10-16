@@ -6,6 +6,20 @@
 class AppConfigService : public AppConfigInterface {
 public:
 
+    // Debug getters
+    
+    uint32_t getDebugSerialBaudRate() const override {
+        return Config::Debug::kSerialBaudRate;
+    }
+
+    uint32_t getDebugSerialTimeoutMs() const override {
+        return Config::Debug::kSerialTimeoutMs;
+    }
+
+    bool getDebugWaitForSerial() const override {
+        return Config::Debug::kWaitForSerial;
+    }
+
     // Timing getters
 
     uint32_t getTimingScreenTaskMs() const override {

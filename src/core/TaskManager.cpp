@@ -5,20 +5,22 @@
 TaskManager::TaskManager(LoggerInterface &logger, UIController &uiController,
                          PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
                          SystemState::CoreState &coreState,
-                         SystemState::ScreenState &screenState)
+                         SystemState::ScreenState &screenState,
+                         AppConfigInterface& config)
     : logger_(logger),
       uiController_(uiController),
       pcMetricsService_(pcMetricsService),
       pcMetrics_(pcMetrics),
       coreState_(coreState),
-      screenState_(screenState) {}
+      screenState_(screenState),
+      config_(config) {}
 
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
 
     BaseType_t screenTaskStatus = xTaskCreatePinnedToCore(
-        updateScreenTask, "ScreenUpdate", Config::Tasks::kScreenStack, this,
-        Config::Tasks::kScreenPriority, &screenTaskHandle, ARDUINO_RUNNING_CORE);
+        updateScreenTask, "ScreenUpdate", config_.getTasksScreenStack(), this,
+        config_.getTasksScreenPriority(), &screenTaskHandle, ARDUINO_RUNNING_CORE);
 
     if (screenTaskStatus != pdPASS) {
         logger_.critical("Failed to create screen update task! Error code: %d",
@@ -27,8 +29,8 @@ bool TaskManager::createTasks() {
     }
 
     BaseType_t backgroundTaskStatus = xTaskCreatePinnedToCore(
-        backgroundTask, "BackgroundTask", Config::Tasks::kBackgroundStack, this,
-        Config::Tasks::kBackgroundPriority, &backgroundTaskHandle, 0);
+        backgroundTask, "BackgroundTask", config_.getTasksBackgroundStack(), this,
+        config_.getTasksBackgroundPriority(), &backgroundTaskHandle, 0);
     if (backgroundTaskStatus != pdPASS) {
         logger_.critical("Failed to create background task! Error code: %d",
                          backgroundTaskStatus);
@@ -50,7 +52,8 @@ bool TaskManager::createTasks() {
 void TaskManager::updateScreenTask(void *parameter) {
     auto *taskManager = static_cast<TaskManager *>(parameter);
     TickType_t lastWakeTime = xTaskGetTickCount();
-    const TickType_t frequency = pdMS_TO_TICKS(Config::Timing::kScreenTaskMs);
+
+    const TickType_t frequency = pdMS_TO_TICKS(taskManager->config_.getTimingScreenTaskMs());
     unsigned long lastLogTime = 0;
     const unsigned long logIntervalMs = 20000;  // Log every 20 seconds
 
@@ -74,7 +77,7 @@ void TaskManager::updateScreenTask(void *parameter) {
 
 void TaskManager::backgroundTask(void *parameter) {
     auto *taskManager = static_cast<TaskManager *>(parameter);
-    const TickType_t frequency = pdMS_TO_TICKS(Config::Timing::kBackgroundTaskMs);
+    const TickType_t frequency = pdMS_TO_TICKS(taskManager->config_.getTimingBackgroundTaskMs());
     unsigned long lastLogTime = 0;
     const unsigned long logIntervalMs = 20000;  // Log every 20 seconds
 

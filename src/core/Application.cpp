@@ -21,7 +21,7 @@ Application::Application()
       displayManager_(display_, logger_),
       pcMetricsService_(networkManager_, systemMetrics_, logger_, config_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
-                   systemState_.core, systemState_.screen),
+                   systemState_.core, systemState_.screen, config_),
       httpServer_(uiController_, systemMetrics_),
       currentInitState_(InitState::INITIAL) {}
 

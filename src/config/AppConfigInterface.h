@@ -6,6 +6,11 @@ class AppConfigInterface {
 public:
     virtual ~AppConfigInterface() = default;
 
+    // Debug getters
+    virtual uint32_t getDebugSerialBaudRate() const = 0;
+    virtual uint32_t getDebugSerialTimeoutMs() const = 0;
+    virtual bool     getDebugWaitForSerial() const = 0;    
+
     // Timing getters
     virtual uint32_t getTimingScreenTaskMs() const = 0;
     virtual uint32_t getTimingBackgroundTaskMs() const = 0;

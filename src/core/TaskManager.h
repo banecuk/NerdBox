@@ -8,12 +8,13 @@
 #include "services/PcMetricsService.h"
 #include "ui/UIController.h"
 #include "utils/Logger.h"
+#include "config/AppConfigInterface.h"
 
 class TaskManager {
    public:
     TaskManager(LoggerInterface &logger, UIController &uiController,
                 PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
-                SystemState::CoreState &coreState, SystemState::ScreenState &screenState);
+                SystemState::CoreState &coreState, SystemState::ScreenState &screenState, AppConfigInterface& config);
 
     bool createTasks();
     static void updateScreenTask(void *parameter);
@@ -27,6 +28,8 @@ class TaskManager {
     UIController &uiController_;
     PcMetricsService &pcMetricsService_;
     PcMetrics &pcMetrics_;
+    AppConfigInterface& config_;
+
     uint8_t consecutiveFailures_ = 0;
 
     SystemState::CoreState &coreState_;
