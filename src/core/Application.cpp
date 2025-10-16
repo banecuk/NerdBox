@@ -47,7 +47,7 @@ void Application::run() {
         return;
     }
 
-    if (Config::Watchdog::kEnableOnBoot) {
+    if (config_.getWatchdogEnableOnBoot()) {
         esp_task_wdt_reset();
     }
 
@@ -81,7 +81,7 @@ bool Application::initializeTimeService(uint8_t maxRetries) {
         }
 
         logRetryAttempt("Time sync", attempt, maxRetries);
-        delay(calculateBackoffDelay(attempt, Config::Init::kTimeSyncRetryDelayBaseMs));
+        delay(calculateBackoffDelay(attempt, config_.getTimeSyncRetryDelayBaseMs()));
     }
 
     logger_.warning("Time sync failed, using local time", true);
@@ -89,12 +89,12 @@ bool Application::initializeTimeService(uint8_t maxRetries) {
 }
 
 bool Application::initializeWatchdog() {
-    if (!Config::Watchdog::kEnableOnBoot) {
+    if (!config_.getWatchdogEnableOnBoot()) {
         logger_.info("Watchdog disabled in configuration", true);
         return true;
     }
 
-    esp_err_t ret = esp_task_wdt_init(Config::Watchdog::kTimeoutMs / 1000, true);
+    esp_err_t ret = esp_task_wdt_init(config_.getWatchdogTimeoutMs() / 1000, true);
     if (ret != ESP_OK) {
         logger_.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)),
                       true);
@@ -108,8 +108,8 @@ bool Application::initializeWatchdog() {
         return false;
     }
 
-    logger_.infof("Watchdog initialized with %dms timeout", Config::Watchdog::kTimeoutMs,
-                  true);
+    logger_.infof("Watchdog initialized with %dms timeout",
+                  config_.getWatchdogTimeoutMs(), true);
     return true;
 }
 
@@ -144,14 +144,14 @@ bool Application::handleStateTransition() {
             return true;
 
         case InitState::NETWORK_INIT:
-            if (!initializeNetwork(Config::Init::kDefaultNetworkRetries)) {
+            if (!initializeNetwork(config_.getDefaultNetworkRetries())) {
                 logger_.warning("Network init failed, continuing", true);
             }
             transitionTo(InitState::TIME_INIT);
             return true;
 
         case InitState::TIME_INIT:
-            if (!initializeTimeService(Config::Init::kDefaultTimeSyncRetries)) {
+            if (!initializeTimeService(config_.getDefaultTimeSyncRetries())) {
                 logger_.warning("Time sync failed, continuing", true);
             }
             transitionTo(InitState::WATCHDOG_INIT);
@@ -198,7 +198,7 @@ void Application::logRetryAttempt(const char* component, uint8_t attempt,
 }
 
 uint16_t Application::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const {
-    return baseDelay * (1 << (attempt - 1)) + (random(0, Config::Init::kBackoffJitterMs));
+    return baseDelay * (1 << (attempt - 1)) + (random(0, config_.getBackoffJitterMs()));
 }
 
 void Application::handleInitializationFailure() {

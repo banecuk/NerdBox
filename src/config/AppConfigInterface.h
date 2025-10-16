@@ -12,11 +12,11 @@ public:
     // virtual bool     getDebugWaitForSerial() const = 0;
 
     // Init getters
-    // virtual uint8_t  getDefaultNetworkRetries() const = 0;
-    // virtual uint8_t  getDefaultTimeSyncRetries() const = 0;
-    // virtual uint32_t getNetworkRetryDelayMs() const = 0;
-    // virtual uint32_t getTimeSyncRetryDelayBaseMs() const = 0;
-    // virtual uint16_t getBackoffJitterMs() const = 0;
+    virtual uint8_t  getDefaultNetworkRetries() const = 0;
+    virtual uint8_t  getDefaultTimeSyncRetries() const = 0;
+    virtual uint32_t getNetworkRetryDelayMs() const = 0;
+    virtual uint32_t getTimeSyncRetryDelayBaseMs() const = 0;
+    virtual uint16_t getBackoffJitterMs() const = 0;
 
     // Watchdog getters
     virtual unsigned long getWatchdogTimeoutMs() const = 0;

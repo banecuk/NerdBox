@@ -22,26 +22,25 @@ public:
 
     // Init getters
 
-    // uint8_t getDefaultNetworkRetries() const override {
-    //     return Config::Init::kDefaultNetworkRetries;
-    // }
+    uint8_t getDefaultNetworkRetries() const override {
+        return Config::Init::kDefaultNetworkRetries;
+    }
 
-    // uint8_t getDefaultTimeSyncRetries() const override {
-    //     return Config::Init::kDefaultTimeSyncRetries;
-    // }
+    uint8_t getDefaultTimeSyncRetries() const override {
+        return Config::Init::kDefaultTimeSyncRetries;
+    }
 
-    // uint32_t getNetworkRetryDelayMs() const override {
-    //     return Config::Init::kNetworkRetryDelayMs;
-    // }
+    uint32_t getNetworkRetryDelayMs() const override {
+        return Config::Init::kNetworkRetryDelayMs;
+    }
 
-    // uint32_t getTimeSyncRetryDelayBaseMs() const override {
-    //     return Config::Init::kTimeSyncRetryDelayBaseMs;
-    // }
+    uint32_t getTimeSyncRetryDelayBaseMs() const override {
+        return Config::Init::kTimeSyncRetryDelayBaseMs;
+    }
 
-    // uint16_t getBackoffJitterMs() const override {
-    //     return Config::Init::kBackoffJitterMs;
-    // }
-
+    uint16_t getBackoffJitterMs() const override {
+        return Config::Init::kBackoffJitterMs;
+    }
 
     // Watchdog getters
 

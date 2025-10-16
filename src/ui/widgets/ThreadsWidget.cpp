@@ -5,7 +5,7 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
-      barWidth_(dims.width / Config::PcMetrics::kCores),
+      barWidth_(dims.width / config_.getPcMetricsCores()),
       config_(config) {}
 
 void ThreadsWidget::drawStatic() {
