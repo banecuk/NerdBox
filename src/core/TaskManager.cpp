@@ -41,7 +41,7 @@ bool TaskManager::createTasks() {
         return false;
     }
 
-    if (Config::Watchdog::kEnableOnBoot) {
+    if (config_.getWatchdogEnableOnBoot()) {
         esp_task_wdt_add(screenTaskHandle);
         esp_task_wdt_add(backgroundTaskHandle);
     }
@@ -105,7 +105,7 @@ void TaskManager::backgroundTask(void *parameter) {
 }
 
 void TaskManager::resetWatchdog() {
-    if (Config::Watchdog::kEnableOnBoot) {
+    if (config_.getWatchdogEnableOnBoot()) {
         esp_task_wdt_reset();
     }
 }
