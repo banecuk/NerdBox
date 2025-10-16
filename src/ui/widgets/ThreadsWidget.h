@@ -3,6 +3,7 @@
 #include "services/PcMetrics.h"
 #include "ui/DisplayContext.h"
 #include "ui/widgets/Widget.h"
+#include <config/AppConfig.h>
 
 class ThreadsWidget : public Widget {
    public:
@@ -18,7 +19,7 @@ class ThreadsWidget : public Widget {
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
     uint16_t barWidth_;
-    uint16_t previousBarHeights_[20] = {0};
+    uint16_t previousBarHeights_[Config::PcMetrics::kCores] = {0};
     unsigned long lastUpdateTimestamp_ = 0;
     void drawBars(bool forceRedraw);
 };

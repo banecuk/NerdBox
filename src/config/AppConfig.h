@@ -47,4 +47,8 @@ namespace Metrics {
 constexpr uint8_t kMaxScreenDrawTimes = 30;
 };
 
+namespace PcMetrics {
+    constexpr uint8_t kCores = 18;
+}
+
 }  // namespace Config

@@ -201,13 +201,13 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     logger_.warning("CPU Load section is empty");
                     foundLoad = false;
                 }
-                // Parse thread loads from indices 2 to 21
-                if (loads.size() >= 22) {
-                    for (size_t i = 2; i <= 21; ++i) {
+                // Parse thread loads
+                if (loads.size() >= Config::PcMetrics::kCores + 2) {
+                    for (size_t i = 2; i < Config::PcMetrics::kCores + 2; ++i) { // skip CPU total and CPU core max
                         JsonObject load = loads[i];
                         String loadText = load["Text"] | "";
                         int threadIndex = i - 2; // Map index 2 to thread 0, 3 to thread 1, etc.
-                        if (threadIndex >= 0 && threadIndex < 20) {
+                         if (threadIndex >= 0 && threadIndex < Config::PcMetrics::kCores) {
                             outData.cpu_thread_load[threadIndex] = parseValue(load["Value"], 0.0f);
                         } else {
                             logger_.warningf("Invalid thread index %d for CPU thread load at JSON index %d", threadIndex, i);

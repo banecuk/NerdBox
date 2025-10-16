@@ -5,7 +5,7 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
-      barWidth_(dims.width / 20) {}
+      barWidth_(dims.width / Config::PcMetrics::kCores) {}
 
 void ThreadsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;
@@ -26,7 +26,7 @@ void ThreadsWidget::draw(bool forceRedraw) {
 void ThreadsWidget::drawBars(bool forceRedraw) {
     const uint16_t maxBarHeight = dimensions_.height;
 
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < Config::PcMetrics::kCores; ++i) {
         uint16_t newHeight =
             static_cast<uint16_t>(pcMetrics_.cpu_thread_load[i] * maxBarHeight / 100);
         ;
