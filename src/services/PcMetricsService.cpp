@@ -4,8 +4,9 @@
 
 PcMetricsService::PcMetricsService(NetworkManager &networkManager,
                                    ApplicationMetrics &systemMetrics,
-                                   LoggerInterface &logger)
-    : networkManager_(networkManager), systemMetrics_(systemMetrics), logger_(logger) {
+                                   LoggerInterface &logger,
+                                   AppConfigInterface& config)
+    : networkManager_(networkManager), systemMetrics_(systemMetrics), logger_(logger), config_(config) {
     initFilter();
 }
 
@@ -202,12 +203,12 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     foundLoad = false;
                 }
                 // Parse thread loads
-                if (loads.size() >= Config::PcMetrics::kCores + 2) {
-                    for (size_t i = 2; i < Config::PcMetrics::kCores + 2; ++i) { // skip CPU total and CPU core max
+                if (loads.size() >= config_.getPcMetricsCores() + 2) {
+                    for (size_t i = 2; i < config_.getPcMetricsCores() + 2; ++i) { // skip CPU total and CPU core max
                         JsonObject load = loads[i];
                         String loadText = load["Text"] | "";
                         int threadIndex = i - 2; // Map index 2 to thread 0, 3 to thread 1, etc.
-                         if (threadIndex >= 0 && threadIndex < Config::PcMetrics::kCores) {
+                         if (threadIndex >= 0 && threadIndex < config_.getPcMetricsCores()) {
                             outData.cpu_thread_load[threadIndex] = parseValue(load["Value"], 0.0f);
                         } else {
                             logger_.warningf("Invalid thread index %d for CPU thread load at JSON index %d", threadIndex, i);

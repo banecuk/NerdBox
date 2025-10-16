@@ -10,6 +10,7 @@
 #include "ui/screens/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
+#include "config/AppConfigInterface.h"
 
 // Forward declarations
 class BootScreen;
@@ -21,7 +22,7 @@ class UIController {
    public:
     explicit UIController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                          SystemState::ScreenState& screenState);
+                          SystemState::ScreenState& screenState, AppConfigInterface& config);
     ~UIController();
 
     void initialize();
@@ -80,6 +81,7 @@ class UIController {
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
+    AppConfigInterface& config_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<EventHandler> actionHandler_;

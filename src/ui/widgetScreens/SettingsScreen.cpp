@@ -1,7 +1,7 @@
 #include "SettingsScreen.h"
 
-SettingsScreen::SettingsScreen(LoggerInterface& logger, UIController* uiController)
-    : BaseWidgetScreen(logger, uiController) {}
+SettingsScreen::SettingsScreen(LoggerInterface& logger, UIController* uiController, AppConfigInterface& config)
+    : BaseWidgetScreen(logger, uiController, config) {}
 
 void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(

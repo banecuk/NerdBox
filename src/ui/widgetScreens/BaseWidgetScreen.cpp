@@ -1,10 +1,11 @@
 #include "BaseWidgetScreen.h"
 
-BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UIController* uiController)
+BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UIController* uiController, AppConfigInterface& config)
     : logger_(logger),
       lcd_(uiController->getDisplayManager()->getDisplay()),
       uiController_(uiController),
-      widgetManager_(uiController->getDisplayContext()) {}
+      widgetManager_(uiController->getDisplayContext()),
+      config_(config) {}
 
 BaseWidgetScreen::~BaseWidgetScreen() { logger_.debug("BaseWidgetScreen destructor"); }
 

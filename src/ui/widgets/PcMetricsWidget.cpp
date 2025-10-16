@@ -1,10 +1,10 @@
 #include "PcMetricsWidget.h"
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const Dimensions& dims,
-                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), context_(context), pcMetrics_(pcMetrics) {
+                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config)
+    : Widget(dims, updateIntervalMs), context_(context), pcMetrics_(pcMetrics), config_(config) {
     threadsWidget_ = std::make_unique<ThreadsWidget>(
-        context_, Dimensions{0, 125 - 65, 480, 55 + 65}, updateIntervalMs, pcMetrics_);
+        context_, Dimensions{0, 125 - 65, 480, 55 + 65}, updateIntervalMs, pcMetrics_, config_);
 
     cpuLoadWidget_ = std::make_unique<SingleValueWidget>(
         context_, Dimensions{380, 0, 100, 20}, updateIntervalMs);

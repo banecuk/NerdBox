@@ -5,10 +5,11 @@
 #include "ui/WidgetManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "utils/Logger.h"
+#include "config/AppConfigInterface.h"
 
 class BaseWidgetScreen : public ScreenInterface {
    public:
-    BaseWidgetScreen(LoggerInterface& logger, UIController* uiController);
+    BaseWidgetScreen(LoggerInterface& logger, UIController* uiController, AppConfigInterface& config);
     virtual ~BaseWidgetScreen() override;
 
     void onEnter() override;
@@ -22,6 +23,8 @@ class BaseWidgetScreen : public ScreenInterface {
     void handleAction(EventType action);
 
     LoggerInterface& logger_;
+    AppConfigInterface& config_;
+
     LGFX* lcd_;
     UIController* uiController_;
     WidgetManager widgetManager_;

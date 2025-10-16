@@ -7,10 +7,11 @@
 #include "services/PcMetrics.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/LoggerInterface.h"
+#include <config/AppConfigInterface.h>
 
 class PcMetricsService {
    public:
-    PcMetricsService(NetworkManager &networkManager, ApplicationMetrics &systemMetrics, LoggerInterface& logger);
+    PcMetricsService(NetworkManager &networkManager, ApplicationMetrics &systemMetrics, LoggerInterface& logger, AppConfigInterface& config);
     bool fetchData(PcMetrics &outData);
 
    private:
@@ -20,5 +21,7 @@ class PcMetricsService {
     NetworkManager &networkManager_;
     ApplicationMetrics &systemMetrics_;
     LoggerInterface& logger_;
+    AppConfigInterface& config_;
+
     JsonDocument filter_;
 };

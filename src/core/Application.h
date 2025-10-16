@@ -19,6 +19,7 @@
 #include "ui/screens/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
+#include <config/AppConfigService.h>
 
 class Application {
    public:
@@ -73,6 +74,7 @@ class Application {
     WebServer webServer_;
 
     // Managers and Services
+    AppConfigService config_;
     SystemState systemState_;
     Logger logger_;
     DisplayContext displayContext_;

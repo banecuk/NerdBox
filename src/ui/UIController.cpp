@@ -8,13 +8,14 @@
 
 UIController::UIController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                           SystemState::ScreenState& screenState)
+                           SystemState::ScreenState& screenState, AppConfigInterface& config)
     : context_(context),
       logger_(context.getLogger()),
       displayManager_(displayManager),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       screenState_(screenState),
+      config_(config),
       actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())) {
     if (!displayManager_) {
         throw std::invalid_argument(
@@ -151,7 +152,7 @@ void UIController::activateNextScreen() {
     //                static_cast<int>(transition_.nextScreen));
     std::unique_ptr<ScreenInterface> newScreen;
     newScreen = ScreenFactory::createScreen(transition_.nextScreen, logger_,
-                                            displayManager_, pcMetrics_, this);
+                                            displayManager_, pcMetrics_, this, config_);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);

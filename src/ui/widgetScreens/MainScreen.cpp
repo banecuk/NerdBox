@@ -1,12 +1,12 @@
 #include "MainScreen.h"
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics,
-                       UIController* uiController)
-    : BaseWidgetScreen(logger, uiController), pcMetrics_(pcMetrics) {}
+                       UIController* uiController, AppConfigInterface& config)
+    : BaseWidgetScreen(logger, uiController, config), pcMetrics_(pcMetrics) {}
 
 void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
-        uiController_->getDisplayContext(), {0, 0, 480, 180}, 100, pcMetrics_)));
+        uiController_->getDisplayContext(), {0, 0, 480, 180}, 100, pcMetrics_, config_)));
 
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
         new ClockWidget(uiController_->getDisplayContext(), {328, 288, 150, 24}, 1000,

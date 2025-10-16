@@ -15,11 +15,11 @@ Application::Application()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
       uiController_(displayContext_, &displayManager_, systemMetrics_,
-                    systemState_.pcMetrics, systemState_.screen),
+                    systemState_.pcMetrics, systemState_.screen, config_),
       displayContext_(display_, colors_, logger_),
       networkManager_(logger_, httpClient_),
       displayManager_(display_, logger_),
-      pcMetricsService_(networkManager_, systemMetrics_, logger_),
+      pcMetricsService_(networkManager_, systemMetrics_, logger_, config_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
                    systemState_.core, systemState_.screen),
       httpServer_(uiController_, systemMetrics_),
@@ -52,7 +52,7 @@ void Application::run() {
     }
 
     httpServer_.processRequests();
-    vTaskDelay(Config::Timing::kMainLoopMs);
+    vTaskDelay(config_.getTimingMainLoopMs());
 }
 
 // Initialization Methods -----------------------------------------------------

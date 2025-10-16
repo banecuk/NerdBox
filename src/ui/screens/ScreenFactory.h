@@ -2,6 +2,7 @@
 
 #include "ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
+#include "config/AppConfigInterface.h"
 
 class LoggerInterface;
 class DisplayManager;
@@ -13,5 +14,6 @@ class ScreenFactory {
     static std::unique_ptr<ScreenInterface> createScreen(ScreenName name, LoggerInterface& logger,
                                                  DisplayManager* display,
                                                  PcMetrics& metrics,
-                                                 UIController* controller);
+                                                 UIController* controller,
+                                                 AppConfigInterface& config);
 };
