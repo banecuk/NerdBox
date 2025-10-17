@@ -4,57 +4,57 @@
 
 namespace Config {
 
-namespace Debug {
-constexpr uint32_t kSerialBaudRate = 115200;
-constexpr uint32_t kSerialTimeoutMs = 10000;
-constexpr bool kWaitForSerial = false;
-};  // namespace Debug
-
-namespace Init {
-constexpr uint8_t kDefaultNetworkRetries = 3;
-constexpr uint8_t kDefaultTimeSyncRetries = 3;
-constexpr uint32_t kNetworkRetryDelayMs = 200;
-constexpr uint32_t kTimeSyncRetryDelayBaseMs = 100;
-constexpr uint16_t kBackoffJitterMs = 50;
-};  // namespace Init
-
-namespace Watchdog {
-constexpr unsigned long kTimeoutMs = 20000;  // 20s timeout, TODO reduce
-constexpr bool kEnableOnBoot = true;
-}  // namespace Watchdog
-
-namespace Timing {
-constexpr uint32_t kScreenTaskMs = 33;
-constexpr uint32_t kBackgroundTaskMs = 20;
-constexpr uint32_t kMainLoopMs = 10;
-};  // namespace Timing
-
-namespace Tasks {
-constexpr uint32_t kScreenStack = 4096;
-constexpr uint32_t kBackgroundStack = 8096;
-constexpr uint32_t kScreenPriority = 2;
-constexpr uint32_t kBackgroundPriority = 1;
-};  // namespace Tasks
-
-namespace HardwareMonitor {
-constexpr uint32_t kRefreshMs = 500;
-constexpr uint32_t kRefreshAfterFailureMs = 3000;
-constexpr uint32_t kRetryDelayMs = 200;
-constexpr uint32_t kMaxRetries = 2;
-};  // namespace HardwareMonitor
-
-namespace Metrics {
-constexpr uint8_t kMaxScreenDrawTimes = 30;
+struct Debug {
+    static constexpr uint32_t kSerialBaudRate = 115200;
+    static constexpr uint32_t kSerialTimeoutMs = 10000;
+    static constexpr bool kWaitForSerial = false;
 };
 
-namespace PcMetrics {
-constexpr uint8_t kCores = 18;
-}
+struct Init {
+    static constexpr uint8_t kDefaultNetworkRetries = 3;
+    static constexpr uint8_t kDefaultTimeSyncRetries = 3;
+    static constexpr uint32_t kNetworkRetryDelayMs = 200;
+    static constexpr uint32_t kTimeSyncRetryDelayBaseMs = 100;
+    static constexpr uint16_t kBackoffJitterMs = 50;
+};
 
-namespace Ui {
-constexpr uint32_t kTransitionTimeoutMs = 1000;
-constexpr uint32_t kTouchDebounceIntervalMs = 200;
-constexpr uint32_t kDisplayLockTimeoutMs = 200;
-};  // namespace UI
+struct Watchdog {
+    static constexpr unsigned long kTimeoutMs = 20000;  // 20s timeout, TODO reduce
+    static constexpr bool kEnableOnBoot = true;
+};
+
+struct Timing {
+    static constexpr uint32_t kScreenTaskMs = 33;
+    static constexpr uint32_t kBackgroundTaskMs = 20;
+    static constexpr uint32_t kMainLoopMs = 10;
+};
+
+struct Tasks {
+    static constexpr uint32_t kScreenStack = 4096;
+    static constexpr uint32_t kBackgroundStack = 8096;
+    static constexpr uint32_t kScreenPriority = 2;
+    static constexpr uint32_t kBackgroundPriority = 1;
+};
+
+struct HardwareMonitor {
+    static constexpr uint32_t kRefreshMs = 500;
+    static constexpr uint32_t kRefreshAfterFailureMs = 3000;
+    static constexpr uint32_t kRetryDelayMs = 200;
+    static constexpr uint32_t kMaxRetries = 2;
+};
+
+struct Metrics {
+    static constexpr uint8_t kMaxScreenDrawTimes = 30;
+};
+
+struct PcMetrics {
+    static constexpr uint8_t kCores = 18;
+};
+
+struct Ui {
+    static constexpr uint32_t kTransitionTimeoutMs = 1000;
+    static constexpr uint32_t kTouchDebounceIntervalMs = 200;
+    static constexpr uint32_t kDisplayLockTimeoutMs = 200;
+};
 
 }  // namespace Config
