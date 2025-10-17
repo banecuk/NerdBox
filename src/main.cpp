@@ -1,7 +1,8 @@
 #include "core/Application.h"
+#include "core/ApplicationFactory.h"
 
-Application app;
 static AppConfigService config;
+static Application* app = nullptr;
 
 void waitForSerial(uint32_t timeoutMs) {
     uint32_t start = millis();
@@ -42,7 +43,12 @@ void setup() {
         }
     }
 
-    if (!app.initialize()) {
+    // Create application instance using factory
+    app = ApplicationFactory::createApplication();
+    
+    if (!app->initialize()) {
+        ApplicationFactory::destroyApplication(app);
+        app = nullptr;
         while (true) {
             Serial.println("Init failed!");
             delay(1000);
@@ -51,5 +57,10 @@ void setup() {
 }
 
 void loop() {
-    app.run();
+    if (app) {
+        app->run();
+    } else {
+        // Safety fallback
+        delay(1000);
+    }
 }
