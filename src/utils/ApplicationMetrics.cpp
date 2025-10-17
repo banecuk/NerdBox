@@ -2,7 +2,7 @@
 
 ApplicationMetrics::ApplicationMetrics(AppConfigInterface& config) 
     : pcMetricsJsonParseTime_(0),
-      screenDrawCapacity_(static_cast<size_t>(config_.getMaxScreenDrawTimes())),
+      screenDrawCapacity_(static_cast<size_t>(config_.getMetricsMaxScreenDrawTimes())),
       screenDrawIndex_(0), 
       screenDrawCount_(0),
       screenDrawTimes_(),

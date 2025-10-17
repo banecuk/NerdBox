@@ -8,8 +8,8 @@ bool NetworkManager::connect() {
 
     uint8_t attempts = 0;
     while (WiFi.status() != WL_CONNECTED &&
-           attempts < config_.getDefaultNetworkRetries()) {
-        delay(config_.getNetworkRetryDelayMs());
+           attempts < config_.getInitNetworkRetries()) {
+        delay(config_.getInitNetworkRetryDelayMs());
         attempts++;
 
         logger_.warning("Retry connect...", true);

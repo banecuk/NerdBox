@@ -98,7 +98,7 @@ bool InitializationStateMachine::handleNetworkInit() {
 bool InitializationStateMachine::handleTimeInit() {
     components_.logger.info("Syncing time", true);
 
-    for (uint8_t attempt = 1; attempt <= components_.config.getDefaultTimeSyncRetries();
+    for (uint8_t attempt = 1; attempt <= components_.config.getInitTimeSyncRetries();
          ++attempt) {
         if (components_.ntpService.syncTime()) {
             components_.logger.info("Time synchronized successfully", true);
@@ -108,9 +108,9 @@ bool InitializationStateMachine::handleTimeInit() {
         }
 
         logRetryAttempt("Time sync", attempt,
-                        components_.config.getDefaultTimeSyncRetries());
+                        components_.config.getInitTimeSyncRetries());
         delay(calculateBackoffDelay(attempt,
-                                    components_.config.getTimeSyncRetryDelayBaseMs()));
+                                    components_.config.getInitTimeSyncBaseDelayMs()));
     }
 
     components_.logger.warning("Time sync failed, using local time", true);
@@ -189,5 +189,5 @@ void InitializationStateMachine::logRetryAttempt(const char* component, uint8_t 
 uint16_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,
                                                            uint16_t baseDelay) const {
     return baseDelay * (1 << (attempt - 1)) +
-           (random(0, components_.config.getBackoffJitterMs()));
+           (random(0, components_.config.getInitBackoffJitterMs()));
 }

@@ -11,9 +11,9 @@ struct Debug {
 };
 
 struct Init {
-    static constexpr uint8_t kDefaultNetworkRetries = 3;
-    static constexpr uint8_t kDefaultTimeSyncRetries = 3;
+    static constexpr uint8_t kNetworkRetries = 3;
     static constexpr uint32_t kNetworkRetryDelayMs = 200;
+    static constexpr uint8_t kTimeSyncRetries = 3;
     static constexpr uint32_t kTimeSyncRetryDelayBaseMs = 100;
     static constexpr uint16_t kBackoffJitterMs = 50;
 };

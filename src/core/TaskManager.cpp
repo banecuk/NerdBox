@@ -155,7 +155,7 @@ void TaskManager::updatePcMetrics() {
     } else {
         consecutiveFailures_++;
         coreState_.nextSync_pcMetrics =
-            millis() + config_.getHardwareMonitorRefreshAfterFailureMs();
+            millis() + config_.getHardwareMonitorFailureRefreshMs();
         handlePcMetricsFailure();
     }
 }
