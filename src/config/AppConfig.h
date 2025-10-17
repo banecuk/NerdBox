@@ -51,4 +51,10 @@ namespace PcMetrics {
 constexpr uint8_t kCores = 18;
 }
 
+namespace Ui {
+constexpr uint32_t kTransitionTimeoutMs = 1000;
+constexpr uint32_t kTouchDebounceIntervalMs = 200;
+constexpr uint32_t kDisplayLockTimeoutMs = 200;
+};  // namespace UI
+
 }  // namespace Config

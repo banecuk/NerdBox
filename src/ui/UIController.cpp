@@ -66,7 +66,7 @@ void UIController::updateDisplay() {
     if (activeTransition_.isActive) {
         processTransitionPhase();
 
-        if (millis() - activeTransition_.startTime > 1000) {
+        if (millis() - activeTransition_.startTime > config_.getUiTransitionTimeoutMs()) {
             logger_.error("[UIController] Transition timeout, resetting");
             completeTransition();
         }
@@ -81,10 +81,10 @@ void UIController::updateDisplay() {
 }
 
 bool UIController::tryAcquireDisplayLock() {
-    const TickType_t timeout = pdMS_TO_TICKS(200);
+    const TickType_t timeout = pdMS_TO_TICKS(config_.getUiDisplayLockTimeoutMs());
     BaseType_t res = xSemaphoreTake(displayAccessMutex_, timeout);
     if (res != pdTRUE) {
-        logger_.error("[UIController] Display lock timeout after 200ms");
+        logger_.error("[UIController] Display lock timeout");
         return false;
     }
     return true;

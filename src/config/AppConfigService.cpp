@@ -92,3 +92,15 @@ uint8_t AppConfigService::getMaxScreenDrawTimes() const {
 uint8_t AppConfigService::getPcMetricsCores() const {
     return Config::PcMetrics::kCores;
 }
+
+uint32_t AppConfigService::getUiTransitionTimeoutMs() const {
+    return Config::Ui::kTransitionTimeoutMs;
+}
+
+uint32_t AppConfigService::getUiTouchDebounceIntervalMs() const {
+    return Config::Ui::kTouchDebounceIntervalMs;
+}
+
+uint32_t AppConfigService::getUiDisplayLockTimeoutMs() const {
+    return Config::Ui::kDisplayLockTimeoutMs;
+}

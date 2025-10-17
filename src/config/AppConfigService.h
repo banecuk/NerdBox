@@ -42,4 +42,9 @@ public:
 
     // PcMetrics getters
     uint8_t getPcMetricsCores() const override;
+
+    // UI getters
+    uint32_t getUiTransitionTimeoutMs() const override;
+    uint32_t getUiTouchDebounceIntervalMs() const override;
+    uint32_t getUiDisplayLockTimeoutMs() const override;
 };

@@ -2,10 +2,9 @@
 
 void UIController::processTouchInput() {
     static unsigned long lastTouchTime = 0;
-    constexpr unsigned long touchDebounceIntervalMs = 200;
 
     unsigned long currentTime = millis();
-    if (currentTime - lastTouchTime < touchDebounceIntervalMs) {
+    if (currentTime - lastTouchTime < config_.getUiTouchDebounceIntervalMs()) {
         logger_.debug("[UIController] Touch ignored due to debounce");
         return;
     }
