@@ -76,9 +76,6 @@ class Application {
     // All components are now owned via ApplicationComponents
     std::unique_ptr<ApplicationComponents> components_;
 
-    // TaskManager needs to be separate due to complex dependencies
-    TaskManager taskManager_;
-
     // Initialization State
     InitState currentInitState_;
 

@@ -7,6 +7,7 @@
 
 #include "config/AppConfig.h"
 #include "config/AppConfigService.h"
+#include "core/TaskManager.h"  // Add this include
 #include "core/state/SystemState.h"
 #include "network/HttpClient.h"
 #include "network/NetworkManager.h"
@@ -56,6 +57,7 @@ class ApplicationComponents {
 
     // Managers
     ApplicationMetrics systemMetrics;
+    TaskManager taskManager;
 
    private:
     void initializeComponents();

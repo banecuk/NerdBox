@@ -1,19 +1,14 @@
 #include "Application.h"
 
 #include "ApplicationComponents.h"
-#include "core/TaskManager.h"
 
 constexpr const char* Application::INIT_STATE_NAMES_[];
 
-// Updated constructor - now much simpler!
+// Updated constructor - now even simpler!
 Application::Application(std::unique_ptr<ApplicationComponents> components)
-    : components_(std::move(components)),
-      taskManager_(components_->logger, components_->uiController,
-                   components_->pcMetricsService, components_->systemState.pcMetrics,
-                   components_->systemState.core, components_->systemState.screen,
-                   components_->config),
-      currentInitState_(InitState::INITIAL) {
+    : components_(std::move(components)), currentInitState_(InitState::INITIAL) {
     // All complex initialization is now handled by ApplicationComponents
+    // including TaskManager!
 }
 
 bool Application::initialize() {
@@ -128,7 +123,7 @@ bool Application::handleStateTransition() {
                                        : (transitionTo(InitState::FAILED), false);
 
         case InitState::TASKS_INIT:
-            if (!taskManager_.createTasks()) {
+            if (!components_->taskManager.createTasks()) {  // Updated to use components_
                 components_->logger.error("Task creation failed", true);
                 transitionTo(InitState::FAILED);
                 return false;
