@@ -33,7 +33,7 @@ void SingleValueWidget::drawStatic() {
                             dimensions_.height, TFT_DARKGREY);
     }
 
-    staticDrawn_ = true;
+    isStaticDrawn_ = true;
 }
 
 void SingleValueWidget::draw(bool forceRedraw) {
@@ -149,7 +149,7 @@ void SingleValueWidget::setLabel(const String& label) {
         label_ = label;
         hasLabel_ = !label_.isEmpty();
         dimensionsDirty_ = true;
-        if (staticDrawn_) {
+        if (isStaticDrawn_) {
             drawStatic();  // Redraw static elements if label changed
             draw(true);    // Force redraw of value
         }
@@ -160,7 +160,7 @@ void SingleValueWidget::setLabelWidth(uint16_t width) {
     if (labelWidth_ != width) {
         labelWidth_ = width;
         dimensionsDirty_ = true;
-        if (staticDrawn_) {
+        if (isStaticDrawn_) {
             drawStatic();  // Redraw static elements if label width changed
             draw(true);    // Force redraw of value
         }

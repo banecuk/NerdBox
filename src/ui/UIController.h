@@ -54,7 +54,7 @@ class UiController {
     };
 
     struct ScreenTransition {
-        ScreenName nextScreen = ScreenName::UNSET;
+        ScreenName nextScreen = ScreenName::NONE;
         TransitionPhase phase = TransitionPhase::IDLE;
         bool isActive = false;
         unsigned long startTime = 0;

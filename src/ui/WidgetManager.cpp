@@ -14,7 +14,7 @@ WidgetManager::~WidgetManager() {
     cleanupWidgets();
 }
 
-void WidgetManager::addWidget(std::unique_ptr<WidgetIterface> widget) {
+void WidgetManager::addWidget(std::unique_ptr<WidgetInterface> widget) {
     if (!widget) {
         logger_.error("Null widget rejected");
         return;
@@ -90,7 +90,7 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
 
     for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
         auto& widget = *it;
-        WidgetIterface::Dimensions dims = widget->getDimensions();
+        WidgetInterface::Dimensions dims = widget->getDimensions();
 
         if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y &&
             y < (dims.y + dims.height)) {

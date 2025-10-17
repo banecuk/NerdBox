@@ -44,7 +44,7 @@ bool UiController::requestTransitionTo(ScreenName screenName) {
                    static_cast<int>(screenName),
                    static_cast<int>(screenState_.activeScreen));
 
-    if (screenName == ScreenName::UNSET) {
+    if (screenName == ScreenName::NONE) {
         logger_.error("[UiController] Invalid screen: UNSET");
         return false;
     }
@@ -148,7 +148,7 @@ void UiController::clearDisplay() {
 }
 
 void UiController::loadAndActivateScreen() {
-    if (activeTransition_.nextScreen == ScreenName::UNSET) {
+    if (activeTransition_.nextScreen == ScreenName::NONE) {
         logger_.error("[UiController] No screen to activate");
         completeTransition();
         return;
@@ -169,7 +169,7 @@ void UiController::loadAndActivateScreen() {
 }
 
 void UiController::completeTransition() {
-    activeTransition_.nextScreen = ScreenName::UNSET;
+    activeTransition_.nextScreen = ScreenName::NONE;
     activeTransition_.phase = TransitionPhase::IDLE;
     activeTransition_.isActive = false;
     activeTransition_.startTime = 0;

@@ -4,7 +4,7 @@
 #include "ui/screens/ScreenTypes.h"
 
 // Forward declaration
-class UIController;  
+class UIController;
 
 class SystemState {
    public:
@@ -19,7 +19,7 @@ class SystemState {
 
     struct ScreenState {
         bool isInitialized = false;
-        ScreenName activeScreen = ScreenName::UNSET;
+        ScreenName activeScreen = ScreenName::NONE;
     };
 
     // Non-static members

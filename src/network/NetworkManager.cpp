@@ -15,20 +15,20 @@ bool NetworkManager::connect() {
         logger_.warning("Retry connect...", true);
     }
 
-    connected_ = (WiFi.status() == WL_CONNECTED);
-    if (connected_) {
+    isConnected_ = (WiFi.status() == WL_CONNECTED);
+    if (isConnected_) {
         String ipAddress = WiFi.localIP().toString();
         logger_.info("WiFi connected - IP: " + ipAddress, true);
     } else {
         logger_.error("WiFi connection failed", true);
     }
-    return connected_;
+    return isConnected_;
 }
 
-bool NetworkManager::isConnected() const { return connected_; }
+bool NetworkManager::isConnected() const { return isConnected_; }
 
 String NetworkManager::get(const String& url) {
-    if (!connected_) return "";
+    if (!isConnected_) return "";
 
     HTTPClient http;
     http.begin(url);

@@ -11,13 +11,13 @@ void Widget::initialize(DisplayContext& context) {
     // if (!context.getLogger()) {
     //     Serial.println("Widget initialization failed - null logger");
     //     return;
-    // }    
+    // }
     lcd_ = &context.getDisplay();
     logger_ = &context.getLogger();
     lastUpdateTimeMs_ = millis();
     initialized_ = true;
     drawStatic();
-    staticDrawn_ = true;
+    isStaticDrawn_ = true;
 }
 
 void Widget::drawStatic() {
@@ -32,7 +32,7 @@ void Widget::cleanUp() {
                         dimensions_.y);
     }
     initialized_ = false;
-    staticDrawn_ = false;
+    isStaticDrawn_ = false;
     lcd_ = nullptr;
     logger_ = nullptr;
 }
@@ -46,4 +46,4 @@ bool Widget::needsUpdate() const {
     return (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
-WidgetIterface::Dimensions Widget::getDimensions() const { return dimensions_; }
+WidgetInterface::Dimensions Widget::getDimensions() const { return dimensions_; }
