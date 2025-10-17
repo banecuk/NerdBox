@@ -6,7 +6,7 @@
 #include "ui/screens/ScreenInterface.h"
 #include "ui/widgets/WidgetInterface.h"
 
-class Widget : public WidgetIterface {
+class Widget : public WidgetInterface {
    public:
     Widget(const Dimensions& dims, uint32_t updateIntervalMs);
 
@@ -24,5 +24,5 @@ class Widget : public WidgetIterface {
     uint32_t updateIntervalMs_;
     uint32_t lastUpdateTimeMs_ = 0;
     bool initialized_ = false;
-    bool staticDrawn_ = false;
+    bool isStaticDrawn_ = false;
 };

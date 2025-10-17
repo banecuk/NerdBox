@@ -3,7 +3,7 @@
 #include "ui/DisplayContext.h"
 #include "ui/screens/ScreenInterface.h"
 
-class WidgetIterface {
+class WidgetInterface {
    public:
     struct Dimensions {
         uint16_t x;       // X position (pixels)
@@ -12,7 +12,7 @@ class WidgetIterface {
         uint16_t height;  // Height (pixels)
     };
 
-    virtual ~WidgetIterface() = default;
+    virtual ~WidgetInterface() = default;
 
     // Core methods
     virtual void initialize(DisplayContext& context) = 0;

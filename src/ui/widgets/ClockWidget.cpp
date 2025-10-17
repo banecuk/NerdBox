@@ -50,7 +50,7 @@ void ClockWidget::drawStatic() {
     lcd_->drawString(":", colon1X_ - 6, colonY_);
     lcd_->drawString(":", colon2X_ - 6, colonY_);
 
-    staticDrawn_ = true;
+    isStaticDrawn_ = true;
 }
 
 void ClockWidget::draw(bool forceRedraw) {

@@ -7,12 +7,12 @@
 
 #include "config/AppConfig.h"
 #include "config/AppConfigService.h"
-#include "core/InitializationStateMachine.h"  // Add this include
+#include "core/InitializationStateMachine.h"
 #include "core/TaskManager.h"
 #include "core/state/SystemState.h"
 #include "network/HttpClient.h"
 #include "network/NetworkManager.h"
-#include "services/HttpServer.h"
+#include "services/WebServerService.h"
 #include "services/NtpService.h"
 #include "services/PcMetricsService.h"
 #include "ui/Colors.h"
@@ -53,7 +53,7 @@ class ApplicationComponents {
     // Services
     Logger logger;
     PcMetricsService pcMetricsService;
-    HttpServer httpServer;
+    WebServerService webServerService;
     WebServer webServer;
 
     // Managers

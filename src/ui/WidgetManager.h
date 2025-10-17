@@ -13,7 +13,7 @@ class WidgetManager {
     explicit WidgetManager(DisplayContext& context);
     ~WidgetManager();
 
-    void addWidget(std::unique_ptr<WidgetIterface> widget);
+    void addWidget(std::unique_ptr<WidgetInterface> widget);
     void initializeWidgets();
     void updateAndDrawWidgets(bool forceRedraw = false);
     bool handleTouch(uint16_t x, uint16_t y);
@@ -24,6 +24,6 @@ class WidgetManager {
     DisplayContext& context_;
     LoggerInterface& logger_;
     LGFX* lcd_;
-    std::vector<std::unique_ptr<WidgetIterface>> widgets_;
+    std::vector<std::unique_ptr<WidgetInterface>> widgets_;
     bool initialized_ = false;
 };

@@ -150,7 +150,7 @@ bool InitializationStateMachine::handleWatchdogInit() {
 
 bool InitializationStateMachine::handleFinalSetup() {
     if (components_.networkManager.isConnected()) {
-        components_.httpServer.begin();
+        components_.webServerService.begin();
         components_.logger.info("HTTP Server started", true);
     } else {
         components_.logger.warning("HTTP Server skipped: No network", true);

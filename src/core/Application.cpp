@@ -2,12 +2,10 @@
 
 #include "ApplicationComponents.h"
 
-// Updated constructor - now extremely simple!
 Application::Application(std::unique_ptr<ApplicationComponents> components)
     : components_(std::move(components)) {}
 
 bool Application::initialize() {
-    // Delegate all initialization to the state machine
     return components_->initStateMachine.initialize();
 }
 
@@ -20,6 +18,6 @@ void Application::run() {
         esp_task_wdt_reset();
     }
 
-    components_->httpServer.processRequests();
+    components_->webServerService.processRequests();
     vTaskDelay(components_->config.getTimingMainLoopMs());
 }

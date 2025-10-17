@@ -23,5 +23,5 @@ class NetworkManager {
     HttpClient& httpClient_;
     AppConfigInterface& config_;
 
-    bool connected_ = false;
+    bool isConnected_ = false;
 };
