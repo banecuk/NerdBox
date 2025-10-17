@@ -4,23 +4,23 @@
 #include <WiFi.h>
 
 #include "HttpClient.h"
-#include "config/AppConfig.h"
+#include "config/AppConfigInterface.h"
 #include "config/Environment.h"
 #include "utils/Logger.h"
-#include "config/AppConfigInterface.h"
 
 class NetworkManager {
    public:
-    NetworkManager(LoggerInterface &logger, HttpClient &httpClient, AppConfigInterface& config);
+    NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
+                   AppConfigInterface& config);
     bool connect();
     bool isConnected() const;
-    String get(const String &url);
+    String get(const String& url);
 
-    HttpClient &getHttpClient() { return httpClient_; }
+    HttpClient& getHttpClient() { return httpClient_; }
 
    private:
-    LoggerInterface &logger_;
-    HttpClient &httpClient_;
+    LoggerInterface& logger_;
+    HttpClient& httpClient_;
     AppConfigInterface& config_;
 
     bool connected_ = false;

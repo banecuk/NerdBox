@@ -1,14 +1,15 @@
 #pragma once
 
+#include "config/AppConfigInterface.h"
 #include "services/PcMetrics.h"
 #include "ui/DisplayContext.h"
 #include "ui/widgets/Widget.h"
-#include <config/AppConfigInterface.h>
 
 class ThreadsWidget : public Widget {
    public:
     ThreadsWidget(DisplayContext& context, const Dimensions& dims,
-                  uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config);
+                  uint32_t updateIntervalMs, PcMetrics& pcMetrics,
+                  AppConfigInterface& config);
 
     void drawStatic() override;
     void draw(bool forceRedraw = false) override;

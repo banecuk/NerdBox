@@ -14,6 +14,7 @@ constexpr const char* Application::INIT_STATE_NAMES_[];
 Application::Application()
     : webServer_(80),
       logger_(systemState_.core.isTimeSynced),
+      systemMetrics_(config_),
       uiController_(displayContext_, &displayManager_, systemMetrics_,
                     systemState_.pcMetrics, systemState_.screen, config_),
       displayContext_(display_, colors_, logger_),
