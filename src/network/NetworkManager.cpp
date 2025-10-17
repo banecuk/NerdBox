@@ -1,14 +1,14 @@
 #include "NetworkManager.h"
 
-NetworkManager::NetworkManager(LoggerInterface &logger, HttpClient &httpClient, AppConfigInterface& config)
+NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
+                               AppConfigInterface& config)
     : logger_(logger), httpClient_(httpClient), config_(config) {}
 
 bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     uint8_t attempts = 0;
-    while (WiFi.status() != WL_CONNECTED &&
-           attempts < config_.getInitNetworkRetries()) {
+    while (WiFi.status() != WL_CONNECTED && attempts < config_.getInitNetworkRetries()) {
         delay(config_.getInitNetworkRetryDelayMs());
         attempts++;
 
@@ -27,7 +27,7 @@ bool NetworkManager::connect() {
 
 bool NetworkManager::isConnected() const { return connected_; }
 
-String NetworkManager::get(const String &url) {
+String NetworkManager::get(const String& url) {
     if (!connected_) return "";
 
     HTTPClient http;
