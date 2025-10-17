@@ -12,4 +12,5 @@ ApplicationComponents::ApplicationComponents()
                    systemState.screen, config),
       httpServer(uiController, systemMetrics),
       taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics,
-                  systemState.core, systemState.screen, config) {}
+                  systemState.core, systemState.screen, config),
+      initStateMachine(*this, logger) {}

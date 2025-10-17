@@ -27,17 +27,7 @@ class ApplicationComponents;
 
 class Application {
    public:
-    enum class InitState {
-        INITIAL,
-        DISPLAY_INIT,
-        TASKS_INIT,
-        NETWORK_INIT,
-        TIME_INIT,
-        WATCHDOG_INIT,
-        FINAL_SETUP,
-        COMPLETE,
-        FAILED
-    };
+    // Remove InitState enum - now in InitializationStateMachine
 
     // Updated constructor to accept injected components
     explicit Application(std::unique_ptr<ApplicationComponents> components);
@@ -53,33 +43,9 @@ class Application {
     void run();
 
    private:
-    // Initialization Methods
-    bool initializeDisplay();
-    bool initializeNetwork(uint8_t maxRetries);
-    bool initializeTimeService(uint8_t maxRetries);
-    bool initializeWatchdog();
-    void completeInitialization();
-
-    // State Management
-    void transitionTo(InitState newState);
-    bool handleStateTransition();
-    bool isTerminalState() const;
-
-    // Logging Helpers
-    void logCompletionStatus(bool success) const;
-    String getStateName(InitState state) const;
-    void logRetryAttempt(const char* component, uint8_t attempt,
-                         uint8_t maxRetries) const;
-    uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
-    void handleInitializationFailure();
-
     // All components are now owned via ApplicationComponents
     std::unique_ptr<ApplicationComponents> components_;
 
-    // Initialization State
-    InitState currentInitState_;
-
-    static constexpr const char* INIT_STATE_NAMES_[] = {
-        "INITIAL",       "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT", "TIME_INIT",
-        "WATCHDOG_INIT", "FINAL_SETUP",  "COMPLETE",   "FAILED"};
+    // Remove all initialization state management methods
+    // They are now handled by InitializationStateMachine
 };
