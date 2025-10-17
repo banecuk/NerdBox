@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-#include "config/AppConfig.h"
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "services/PcMetricsService.h"

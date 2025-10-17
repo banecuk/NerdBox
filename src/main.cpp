@@ -1,7 +1,7 @@
-#include "config/AppConfig.h"
 #include "core/Application.h"
 
 Application app;
+static AppConfigService config;
 
 void waitForSerial(uint32_t timeoutMs) {
     uint32_t start = millis();
@@ -18,9 +18,10 @@ void setup() {
     static_assert(__cplusplus >= 201703L, "Not using C++17 or higher");
 
     // Initialize serial communication
-    Serial.begin(Config::Debug::kSerialBaudRate);
-    if (Config::Debug::kWaitForSerial) {
-        waitForSerial(Config::Debug::kSerialTimeoutMs);
+    Serial.begin(config.getDebugSerialBaudRate());
+
+    if (config.getDebugWaitForSerial()) {
+        waitForSerial(config.getDebugSerialTimeoutMs());
     }
 
     Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());

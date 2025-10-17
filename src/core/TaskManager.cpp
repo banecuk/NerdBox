@@ -2,10 +2,10 @@
 
 #include <esp_task_wdt.h>
 
-TaskManager::TaskManager(LoggerInterface &logger, UIController &uiController,
-                         PcMetricsService &pcMetricsService, PcMetrics &pcMetrics,
-                         SystemState::CoreState &coreState,
-                         SystemState::ScreenState &screenState,
+TaskManager::TaskManager(LoggerInterface& logger, UIController& uiController,
+                         PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
+                         SystemState::CoreState& coreState,
+                         SystemState::ScreenState& screenState,
                          AppConfigInterface& config)
     : logger_(logger),
       uiController_(uiController),
@@ -49,11 +49,12 @@ bool TaskManager::createTasks() {
     return true;
 }
 
-void TaskManager::updateScreenTask(void *parameter) {
-    auto *taskManager = static_cast<TaskManager *>(parameter);
+void TaskManager::updateScreenTask(void* parameter) {
+    auto* taskManager = static_cast<TaskManager*>(parameter);
     TickType_t lastWakeTime = xTaskGetTickCount();
 
-    const TickType_t frequency = pdMS_TO_TICKS(taskManager->config_.getTimingScreenTaskMs());
+    const TickType_t frequency =
+        pdMS_TO_TICKS(taskManager->config_.getTimingScreenTaskMs());
     unsigned long lastLogTime = 0;
     const unsigned long logIntervalMs = 20000;  // Log every 20 seconds
 
@@ -75,9 +76,10 @@ void TaskManager::updateScreenTask(void *parameter) {
     }
 }
 
-void TaskManager::backgroundTask(void *parameter) {
-    auto *taskManager = static_cast<TaskManager *>(parameter);
-    const TickType_t frequency = pdMS_TO_TICKS(taskManager->config_.getTimingBackgroundTaskMs());
+void TaskManager::backgroundTask(void* parameter) {
+    auto* taskManager = static_cast<TaskManager*>(parameter);
+    const TickType_t frequency =
+        pdMS_TO_TICKS(taskManager->config_.getTimingBackgroundTaskMs());
     unsigned long lastLogTime = 0;
     const unsigned long logIntervalMs = 20000;  // Log every 20 seconds
 
@@ -114,18 +116,18 @@ void TaskManager::updatePcMetrics() {
     bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
-        coreState_.nextSync_pcMetrics = millis() + Config::HardwareMonitor::kRefreshMs;
+        coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshMs();
     } else {
         consecutiveFailures_++;
         coreState_.nextSync_pcMetrics =
-            millis() + Config::HardwareMonitor::kRefreshAfterFailureMs;
+            millis() + config_.getHardwareMonitorRefreshAfterFailureMs();
         handleDownloadFailure();
         logger_.debug("HM update failed", true);
     }
 }
 
 void TaskManager::handleDownloadFailure() {
-    if (consecutiveFailures_ >= Config::HardwareMonitor::kMaxRetries) {
+    if (consecutiveFailures_ >= config_.getHardwareMonitorMaxRetries()) {
         logger_.warning("Multiple consecutive HM failures detected");
         consecutiveFailures_ = 0;
     }

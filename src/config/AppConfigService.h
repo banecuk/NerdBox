@@ -1,24 +1,23 @@
 #pragma once
 
 #include "AppConfigInterface.h"
-#include "config/AppConfig.h"
 
 class AppConfigService : public AppConfigInterface {
 public:
 
     // Debug getters
     
-    // uint32_t getDebugSerialBaudRate() const override {
-    //     return Config::Debug::kSerialBaudRate;
-    // }
+    uint32_t getDebugSerialBaudRate() const override {
+        return Config::Debug::kSerialBaudRate;
+    }
 
-    // uint32_t getDebugSerialTimeoutMs() const override {
-    //     return Config::Debug::kSerialTimeoutMs;
-    // }
+    uint32_t getDebugSerialTimeoutMs() const override {
+        return Config::Debug::kSerialTimeoutMs;
+    }
 
-    // bool getDebugWaitForSerial() const override {
-    //     return Config::Debug::kWaitForSerial;
-    // }
+    bool getDebugWaitForSerial() const override {
+        return Config::Debug::kWaitForSerial;
+    }
 
     // Init getters
 
@@ -86,27 +85,27 @@ public:
 
     // HardwareMonitor getters
 
-    // uint32_t getHardwareMonitorRefreshMs() const override {
-    //     return HardwareMonitor::kRefreshMs;
-    // }
+    uint32_t getHardwareMonitorRefreshMs() const override {
+        return Config::HardwareMonitor::kRefreshMs;
+    }
 
-    // uint32_t getHardwareMonitorRefreshAfterFailureMs() const override {
-    //     return HardwareMonitor::kRefreshAfterFailureMs;
-    // }
+    uint32_t getHardwareMonitorRefreshAfterFailureMs() const override {
+        return Config::HardwareMonitor::kRefreshAfterFailureMs;
+    }
 
-    // uint32_t getHardwareMonitorRetryDelayMs() const override {
-    //     return HardwareMonitor::kRetryDelayMs;
-    // }
+    uint32_t getHardwareMonitorRetryDelayMs() const override {
+        return Config::HardwareMonitor::kRetryDelayMs;
+    }
 
-    // uint32_t getHardwareMonitorMaxRetries() const override {
-    //     return HardwareMonitor::kMaxRetries;
-    // }
+    uint32_t getHardwareMonitorMaxRetries() const override {
+        return Config::HardwareMonitor::kMaxRetries;
+    }
 
     // Metrics getters
 
-    // uint8_t getMaxScreenDrawTimes() const override {
-    //     return Metrics::kMaxScreenDrawTimes;
-    // }
+    uint8_t getMaxScreenDrawTimes() const override {
+        return Config::Metrics::kMaxScreenDrawTimes;
+    }
 
     // PcMetrics getters
 

@@ -1,15 +1,15 @@
 #include "NetworkManager.h"
 
-NetworkManager::NetworkManager(LoggerInterface &logger, HttpClient &httpClient)
-    : logger_(logger), httpClient_(httpClient) {}
+NetworkManager::NetworkManager(LoggerInterface &logger, HttpClient &httpClient, AppConfigInterface& config)
+    : logger_(logger), httpClient_(httpClient), config_(config) {}
 
 bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     uint8_t attempts = 0;
     while (WiFi.status() != WL_CONNECTED &&
-           attempts < Config::Init::kDefaultNetworkRetries) {
-        delay(Config::Init::kNetworkRetryDelayMs);
+           attempts < config_.getDefaultNetworkRetries()) {
+        delay(config_.getNetworkRetryDelayMs());
         attempts++;
 
         logger_.warning("Retry connect...", true);

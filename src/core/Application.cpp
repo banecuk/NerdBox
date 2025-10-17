@@ -17,7 +17,7 @@ Application::Application()
       uiController_(displayContext_, &displayManager_, systemMetrics_,
                     systemState_.pcMetrics, systemState_.screen, config_),
       displayContext_(display_, colors_, logger_),
-      networkManager_(logger_, httpClient_),
+      networkManager_(logger_, httpClient_, config_),
       displayManager_(display_, logger_),
       pcMetricsService_(networkManager_, systemMetrics_, logger_, config_),
       taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,

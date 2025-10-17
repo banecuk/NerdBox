@@ -3,7 +3,6 @@
 #include "services/PcMetrics.h"
 #include "ui/DisplayContext.h"
 #include "ui/widgets/Widget.h"
-#include <config/AppConfig.h>
 #include <config/AppConfigInterface.h>
 
 class ThreadsWidget : public Widget {
@@ -22,7 +21,7 @@ class ThreadsWidget : public Widget {
     AppConfigInterface& config_;
 
     uint16_t barWidth_;
-    uint16_t previousBarHeights_[Config::PcMetrics::kCores] = {0};
+    std::vector<uint16_t> previousBarHeights_;
     unsigned long lastUpdateTimestamp_ = 0;
     void drawBars(bool forceRedraw);
 };

@@ -7,10 +7,11 @@
 #include "config/AppConfig.h"
 #include "config/Environment.h"
 #include "utils/Logger.h"
+#include "config/AppConfigInterface.h"
 
 class NetworkManager {
    public:
-    NetworkManager(LoggerInterface &logger, HttpClient &httpClient);
+    NetworkManager(LoggerInterface &logger, HttpClient &httpClient, AppConfigInterface& config);
     bool connect();
     bool isConnected() const;
     String get(const String &url);
@@ -19,7 +20,8 @@ class NetworkManager {
 
    private:
     LoggerInterface &logger_;
-    HttpClient &httpClient_;  // TODO rename to HttpClient or something more generic
+    HttpClient &httpClient_;
+    AppConfigInterface& config_;
 
     bool connected_ = false;
 };
