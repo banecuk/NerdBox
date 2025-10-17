@@ -4,9 +4,9 @@
 
 #include "ui/UiController.h"
 
-class HttpServer {
+class WebServerService {
    public:
-    HttpServer(UiController& uiController, ApplicationMetrics& systemMetrics);
+    WebServerService(UiController& uiController, ApplicationMetrics& systemMetrics);
     void begin();
     void processRequests();
 

@@ -10,7 +10,7 @@ ApplicationComponents::ApplicationComponents()
       pcMetricsService(networkManager, systemMetrics, logger, config),
       uiController(displayContext, &displayManager, systemMetrics, systemState.pcMetrics,
                    systemState.screen, config),
-      httpServer(uiController, systemMetrics),
+      webServerService(uiController, systemMetrics),
       taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics,
                   systemState.core, systemState.screen, config),
       initStateMachine(*this) {}

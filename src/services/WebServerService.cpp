@@ -1,9 +1,9 @@
-#include "HttpServer.h"
+#include "WebServerService.h"
 
-HttpServer::HttpServer(UiController& uiController, ApplicationMetrics& systemMetrics)
+WebServerService::WebServerService(UiController& uiController, ApplicationMetrics& systemMetrics)
     : server_(80), uiController_(uiController), systemMetrics_(systemMetrics) {}
 
-void HttpServer::begin() {
+void WebServerService::begin() {
     server_.on("/", [this]() { this->handleHome(); });
     server_.on("/system-info", [this]() { this->handleSystemInfo(); });
     server_.on("/app-info", [this]() { this->handleAppInfo(); });
@@ -15,15 +15,15 @@ void HttpServer::begin() {
     server_.begin();
 }
 
-void HttpServer::processRequests() { server_.handleClient(); }
+void WebServerService::processRequests() { server_.handleClient(); }
 
-void HttpServer::handleNotFound() { server_.send(404, "text/plain", "Not found"); }
+void WebServerService::handleNotFound() { server_.send(404, "text/plain", "Not found"); }
 
-void HttpServer::handleHome() {
+void WebServerService::handleHome() {
     server_.send(200, "text/html", wrapHtmlContent("Homepage", ""));
 }
 
-String HttpServer::getSystemInfo() {
+String WebServerService::getSystemInfo() {
     char buffer[300];
     size_t offset = 0;
 
@@ -57,7 +57,7 @@ String HttpServer::getSystemInfo() {
     return wrapHtmlContent("System Information", info);
 }
 
-String HttpServer::getAppInfo() {
+String WebServerService::getAppInfo() {
     char buffer[2048];
     size_t offset = 0;
 
@@ -95,11 +95,11 @@ String HttpServer::getAppInfo() {
     return wrapHtmlContent("App Information", info);
 }
 
-void HttpServer::handleSystemInfo() { server_.send(200, "text/html", getSystemInfo()); }
+void WebServerService::handleSystemInfo() { server_.send(200, "text/html", getSystemInfo()); }
 
-void HttpServer::handleAppInfo() { server_.send(200, "text/html", getAppInfo()); }
+void WebServerService::handleAppInfo() { server_.send(200, "text/html", getAppInfo()); }
 
-String HttpServer::wrapHtmlContent(const String& title, const String& content) {
+String WebServerService::wrapHtmlContent(const String& title, const String& content) {
     // Static HTML parts stored in flash
     static constexpr char kHtmlPrefix[] =
         "<!DOCTYPE html><html><head>"
