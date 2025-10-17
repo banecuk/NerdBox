@@ -13,4 +13,4 @@ ApplicationComponents::ApplicationComponents()
       httpServer(uiController, systemMetrics),
       taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics,
                   systemState.core, systemState.screen, config),
-      initStateMachine(*this, logger) {}
+      initStateMachine(*this) {}

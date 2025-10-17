@@ -3,12 +3,11 @@
 #include "ApplicationComponents.h"
 #include "ui/screens/ScreenTypes.h"
 
-InitializationStateMachine::InitializationStateMachine(ApplicationComponents& components,
-                                                       Logger& logger)
-    : components_(components), logger_(logger), currentState_(State::INITIAL) {}
+InitializationStateMachine::InitializationStateMachine(ApplicationComponents& components)
+    : components_(components), currentState_(State::INITIAL) {}
 
 bool InitializationStateMachine::initialize() {
-    logger_.info("Initialization state machine started", true);
+    components_.logger.info("Initialization state machine started", true);
 
     while (!isTerminalState()) {
         bool success = false;
@@ -44,13 +43,13 @@ bool InitializationStateMachine::initialize() {
         }
 
         if (!success) {
-            logger_.critical("Initialization failed in state: " +
-                             getStateName(currentState_));
+            components_.logger.critical("Initialization failed in state: " +
+                                        getStateName(currentState_));
             return false;
         }
     }
 
-    logger_.info("Initialization state machine completed successfully", true);
+    components_.logger.info("Initialization state machine completed successfully", true);
     return true;
 }
 
@@ -69,7 +68,7 @@ bool InitializationStateMachine::handleInitial() {
 }
 
 bool InitializationStateMachine::handleDisplayInit() {
-    logger_.info("Initializing display", true);
+    components_.logger.info("Initializing display", true);
     components_.displayManager.initialize();
     components_.systemState.screen.isInitialized = true;
     components_.uiController.initialize();
@@ -79,7 +78,7 @@ bool InitializationStateMachine::handleDisplayInit() {
 
 bool InitializationStateMachine::handleTasksInit() {
     if (!components_.taskManager.createTasks()) {
-        logger_.error("Task creation failed", true);
+        components_.logger.error("Task creation failed", true);
         transitionTo(State::FAILED);
         return false;
     }
@@ -88,21 +87,21 @@ bool InitializationStateMachine::handleTasksInit() {
 }
 
 bool InitializationStateMachine::handleNetworkInit() {
-    logger_.info("Connecting to WiFi", true);
+    components_.logger.info("Connecting to WiFi", true);
     if (!components_.networkManager.connect()) {
-        logger_.warning("Network init failed, continuing", true);
+        components_.logger.warning("Network init failed, continuing", true);
     }
     transitionTo(State::TIME_INIT);
     return true;
 }
 
 bool InitializationStateMachine::handleTimeInit() {
-    logger_.info("Syncing time", true);
+    components_.logger.info("Syncing time", true);
 
     for (uint8_t attempt = 1; attempt <= components_.config.getDefaultTimeSyncRetries();
          ++attempt) {
         if (components_.ntpService.syncTime()) {
-            logger_.info("Time synchronized successfully", true);
+            components_.logger.info("Time synchronized successfully", true);
             components_.systemState.core.isTimeSynced = true;
             transitionTo(State::WATCHDOG_INIT);
             return true;
@@ -114,14 +113,14 @@ bool InitializationStateMachine::handleTimeInit() {
                                     components_.config.getTimeSyncRetryDelayBaseMs()));
     }
 
-    logger_.warning("Time sync failed, using local time", true);
+    components_.logger.warning("Time sync failed, using local time", true);
     transitionTo(State::WATCHDOG_INIT);
     return true;
 }
 
 bool InitializationStateMachine::handleWatchdogInit() {
     if (!components_.config.getWatchdogEnableOnBoot()) {
-        logger_.info("Watchdog disabled in configuration", true);
+        components_.logger.info("Watchdog disabled in configuration", true);
         transitionTo(State::FINAL_SETUP);
         return true;
     }
@@ -129,22 +128,22 @@ bool InitializationStateMachine::handleWatchdogInit() {
     esp_err_t ret =
         esp_task_wdt_init(components_.config.getWatchdogTimeoutMs() / 1000, true);
     if (ret != ESP_OK) {
-        logger_.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)),
-                      true);
-        transitionTo(State::FINAL_SETUP);  // Continue without watchdog
+        components_.logger.error(
+            "Failed to initialize watchdog: " + String(esp_err_to_name(ret)), true);
+        transitionTo(State::FINAL_SETUP);
         return true;
     }
 
     ret = esp_task_wdt_add(nullptr);
     if (ret != ESP_OK) {
-        logger_.error(
+        components_.logger.error(
             "Failed to add main task to watchdog: " + String(esp_err_to_name(ret)), true);
-        transitionTo(State::FINAL_SETUP);  // Continue without watchdog
+        transitionTo(State::FINAL_SETUP);
         return true;
     }
 
-    logger_.infof("Watchdog initialized with %dms timeout",
-                  components_.config.getWatchdogTimeoutMs(), true);
+    components_.logger.infof("Watchdog initialized with %dms timeout",
+                             components_.config.getWatchdogTimeoutMs(), true);
     transitionTo(State::FINAL_SETUP);
     return true;
 }
@@ -152,12 +151,12 @@ bool InitializationStateMachine::handleWatchdogInit() {
 bool InitializationStateMachine::handleFinalSetup() {
     if (components_.networkManager.isConnected()) {
         components_.httpServer.begin();
-        logger_.info("HTTP Server started", true);
+        components_.logger.info("HTTP Server started", true);
     } else {
-        logger_.warning("HTTP Server skipped: No network", true);
+        components_.logger.warning("HTTP Server skipped: No network", true);
     }
 
-    logger_.debugf("Free heap post-init: %d", ESP.getFreeHeap());
+    components_.logger.debugf("Free heap post-init: %d", ESP.getFreeHeap());
     components_.uiController.requestScreen(ScreenName::MAIN);
     components_.systemState.core.isInitialized = true;
 
@@ -176,13 +175,15 @@ bool InitializationStateMachine::handleFailed() {
 }
 
 void InitializationStateMachine::transitionTo(State newState) {
-    logger_.debug(getStateName(currentState_) + " -> " + getStateName(newState));
+    components_.logger.debug(getStateName(currentState_) + " -> " +
+                             getStateName(newState));
     currentState_ = newState;
 }
 
 void InitializationStateMachine::logRetryAttempt(const char* component, uint8_t attempt,
                                                  uint8_t maxRetries) const {
-    // logger_.warningf("%s init attempt %d/%d failed", component, attempt, maxRetries);
+    // components_.logger.warningf("%s init attempt %d/%d failed", component, attempt,
+    // maxRetries);
 }
 
 uint16_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <esp_task_wdt.h>  // Add this include
+#include <esp_task_wdt.h>
 
 #include <functional>
 #include <vector>
@@ -26,7 +26,7 @@ class InitializationStateMachine {
 
     using StateHandler = std::function<bool()>;
 
-    InitializationStateMachine(ApplicationComponents& components, Logger& logger);
+    explicit InitializationStateMachine(ApplicationComponents& components);
     ~InitializationStateMachine() = default;
 
     // Delete copy/move operations
@@ -59,8 +59,7 @@ class InitializationStateMachine {
     uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
 
     // Components
-    ApplicationComponents& components_;
-    Logger& logger_;
+    ApplicationComponents& components_;  // Now we access logger via components_
 
     // State
     State currentState_;
