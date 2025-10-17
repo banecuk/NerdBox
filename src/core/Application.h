@@ -4,8 +4,10 @@
 #include <esp_task_wdt.h>
 
 #include <LovyanGFX.hpp>
+#include <memory>
 
 #include "config/AppConfig.h"
+#include "config/AppConfigService.h"
 #include "core/TaskManager.h"
 #include "core/state/SystemState.h"
 #include "network/HttpClient.h"
@@ -19,7 +21,9 @@
 #include "ui/screens/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
-#include <config/AppConfigService.h>
+
+// Forward declaration
+class ApplicationComponents;
 
 class Application {
    public:
@@ -35,7 +39,8 @@ class Application {
         FAILED
     };
 
-    Application();
+    // Updated constructor to accept injected components
+    explicit Application(std::unique_ptr<ApplicationComponents> components);
     ~Application() = default;
 
     // Delete copy/move operations
@@ -68,25 +73,11 @@ class Application {
     uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
     void handleInitializationFailure();
 
-    // Application Components
-    LGFX display_;
-    DisplayManager displayManager_;
-    WebServer webServer_;
+    // All components are now owned via ApplicationComponents
+    std::unique_ptr<ApplicationComponents> components_;
 
-    // Managers and Services
-    AppConfigService config_;
-    SystemState systemState_;
-    Logger logger_;
-    DisplayContext displayContext_;
-    UIController uiController_;
-    Colors colors_;
-    NetworkManager networkManager_;
-    HttpClient httpClient_;
-    NtpService ntpService_;
-    HttpServer httpServer_;
-    PcMetricsService pcMetricsService_;
+    // TaskManager needs to be separate due to complex dependencies
     TaskManager taskManager_;
-    ApplicationMetrics systemMetrics_;
 
     // Initialization State
     InitState currentInitState_;

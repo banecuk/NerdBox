@@ -45,7 +45,7 @@ void setup() {
 
     // Create application instance using factory
     app = ApplicationFactory::createApplication();
-    
+
     if (!app->initialize()) {
         ApplicationFactory::destroyApplication(app);
         app = nullptr;

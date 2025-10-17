@@ -1,33 +1,23 @@
 #include "Application.h"
 
+#include "ApplicationComponents.h"
 #include "core/TaskManager.h"
-#include "network/HttpClient.h"
-#include "network/NetworkManager.h"
-#include "services/HttpServer.h"
-#include "services/NtpService.h"
-#include "services/PcMetricsService.h"
-#include "ui/DisplayManager.h"
-#include "ui/UIController.h"
 
 constexpr const char* Application::INIT_STATE_NAMES_[];
 
-Application::Application()
-    : webServer_(80),
-      logger_(systemState_.core.isTimeSynced),
-      systemMetrics_(config_),
-      uiController_(displayContext_, &displayManager_, systemMetrics_,
-                    systemState_.pcMetrics, systemState_.screen, config_),
-      displayContext_(display_, colors_, logger_),
-      networkManager_(logger_, httpClient_, config_),
-      displayManager_(display_, logger_),
-      pcMetricsService_(networkManager_, systemMetrics_, logger_, config_),
-      taskManager_(logger_, uiController_, pcMetricsService_, systemState_.pcMetrics,
-                   systemState_.core, systemState_.screen, config_),
-      httpServer_(uiController_, systemMetrics_),
-      currentInitState_(InitState::INITIAL) {}
+// Updated constructor - now much simpler!
+Application::Application(std::unique_ptr<ApplicationComponents> components)
+    : components_(std::move(components)),
+      taskManager_(components_->logger, components_->uiController,
+                   components_->pcMetricsService, components_->systemState.pcMetrics,
+                   components_->systemState.core, components_->systemState.screen,
+                   components_->config),
+      currentInitState_(InitState::INITIAL) {
+    // All complex initialization is now handled by ApplicationComponents
+}
 
 bool Application::initialize() {
-    logger_.info("Application initialization started", true);
+    components_->logger.info("Application initialization started", true);
 
     while (!isTerminalState()) {
         if (!handleStateTransition()) {
@@ -36,90 +26,92 @@ bool Application::initialize() {
         }
     }
 
-    logger_.info("Application initialization completed successfully", true);
-    logger_.debugf("Free heap post-init: %d", ESP.getFreeHeap());
-    uiController_.requestScreen(ScreenName::MAIN);
-    systemState_.core.isInitialized = true;
+    components_->logger.info("Application initialization completed successfully", true);
+    components_->logger.debugf("Free heap post-init: %d", ESP.getFreeHeap());
+    components_->uiController.requestScreen(ScreenName::MAIN);
+    components_->systemState.core.isInitialized = true;
     return true;
 }
 
 void Application::run() {
-    if (!systemState_.core.isInitialized) {
+    if (!components_->systemState.core.isInitialized) {
         return;
     }
 
-    if (config_.getWatchdogEnableOnBoot()) {
+    if (components_->config.getWatchdogEnableOnBoot()) {
         esp_task_wdt_reset();
     }
 
-    httpServer_.processRequests();
-    vTaskDelay(config_.getTimingMainLoopMs());
+    components_->httpServer.processRequests();
+    vTaskDelay(components_->config.getTimingMainLoopMs());
 }
 
 // Initialization Methods -----------------------------------------------------
 
 bool Application::initializeDisplay() {
-    logger_.info("Initializing display", true);
-    displayManager_.initialize();
-    systemState_.screen.isInitialized = true;
-    uiController_.initialize();
+    components_->logger.info("Initializing display", true);
+    components_->displayManager.initialize();
+    components_->systemState.screen.isInitialized = true;
+    components_->uiController.initialize();
     return true;
 }
 
 bool Application::initializeNetwork(uint8_t maxRetries) {
-    logger_.info("Connecting to WiFi", true);
-    return networkManager_.connect();
+    components_->logger.info("Connecting to WiFi", true);
+    return components_->networkManager.connect();
 }
 
 bool Application::initializeTimeService(uint8_t maxRetries) {
-    logger_.info("Syncing time", true);
+    components_->logger.info("Syncing time", true);
 
     for (uint8_t attempt = 1; attempt <= maxRetries; ++attempt) {
-        if (ntpService_.syncTime()) {
-            logger_.info("Time synchronized successfully", true);
-            systemState_.core.isTimeSynced = true;
+        if (components_->ntpService.syncTime()) {
+            components_->logger.info("Time synchronized successfully", true);
+            components_->systemState.core.isTimeSynced = true;
             return true;
         }
 
         logRetryAttempt("Time sync", attempt, maxRetries);
-        delay(calculateBackoffDelay(attempt, config_.getTimeSyncRetryDelayBaseMs()));
+        delay(calculateBackoffDelay(attempt,
+                                    components_->config.getTimeSyncRetryDelayBaseMs()));
     }
 
-    logger_.warning("Time sync failed, using local time", true);
+    components_->logger.warning("Time sync failed, using local time", true);
     return false;
 }
 
 bool Application::initializeWatchdog() {
-    if (!config_.getWatchdogEnableOnBoot()) {
-        logger_.info("Watchdog disabled in configuration", true);
+    if (!components_->config.getWatchdogEnableOnBoot()) {
+        components_->logger.info("Watchdog disabled in configuration", true);
         return true;
     }
 
-    esp_err_t ret = esp_task_wdt_init(config_.getWatchdogTimeoutMs() / 1000, true);
+    esp_err_t ret =
+        esp_task_wdt_init(components_->config.getWatchdogTimeoutMs() / 1000, true);
     if (ret != ESP_OK) {
-        logger_.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)),
-                      true);
+        components_->logger.error(
+            "Failed to initialize watchdog: " + String(esp_err_to_name(ret)), true);
         return false;
     }
 
     ret = esp_task_wdt_add(nullptr);
     if (ret != ESP_OK) {
-        logger_.error(
+        components_->logger.error(
             "Failed to add main task to watchdog: " + String(esp_err_to_name(ret)), true);
         return false;
     }
 
-    logger_.infof("Watchdog initialized with %dms timeout",
-                  config_.getWatchdogTimeoutMs(), true);
+    components_->logger.infof("Watchdog initialized with %dms timeout",
+                              components_->config.getWatchdogTimeoutMs(), true);
     return true;
 }
 
 void Application::completeInitialization() {
-    if (networkManager_.isConnected()) {
-        httpServer_.begin();
-        logger_.info("HTTP Server started", true);
+    if (components_->networkManager.isConnected()) {
+        components_->httpServer.begin();
+        components_->logger.info("HTTP Server started", true);
     } else {
-        logger_.warning("HTTP Server skipped: No network", true);
+        components_->logger.warning("HTTP Server skipped: No network", true);
     }
 }
 
@@ -137,7 +129,7 @@ bool Application::handleStateTransition() {
 
         case InitState::TASKS_INIT:
             if (!taskManager_.createTasks()) {
-                logger_.error("Task creation failed", true);
+                components_->logger.error("Task creation failed", true);
                 transitionTo(InitState::FAILED);
                 return false;
             }
@@ -145,22 +137,22 @@ bool Application::handleStateTransition() {
             return true;
 
         case InitState::NETWORK_INIT:
-            if (!initializeNetwork(config_.getDefaultNetworkRetries())) {
-                logger_.warning("Network init failed, continuing", true);
+            if (!initializeNetwork(components_->config.getDefaultNetworkRetries())) {
+                components_->logger.warning("Network init failed, continuing", true);
             }
             transitionTo(InitState::TIME_INIT);
             return true;
 
         case InitState::TIME_INIT:
-            if (!initializeTimeService(config_.getDefaultTimeSyncRetries())) {
-                logger_.warning("Time sync failed, continuing", true);
+            if (!initializeTimeService(components_->config.getDefaultTimeSyncRetries())) {
+                components_->logger.warning("Time sync failed, continuing", true);
             }
             transitionTo(InitState::WATCHDOG_INIT);
             return true;
 
         case InitState::WATCHDOG_INIT:
             if (!initializeWatchdog()) {
-                logger_.warning("Watchdog init failed, continuing", true);
+                components_->logger.warning("Watchdog init failed, continuing", true);
             }
             transitionTo(InitState::FINAL_SETUP);
             return true;
@@ -171,14 +163,15 @@ bool Application::handleStateTransition() {
             return true;
 
         default:
-            logger_.error("Unknown initialization state", true);
+            components_->logger.error("Unknown initialization state", true);
             transitionTo(InitState::FAILED);
             return false;
     }
 }
 
 void Application::transitionTo(InitState newState) {
-    logger_.debug(getStateName(currentInitState_) + " -> " + getStateName(newState));
+    components_->logger.debug(getStateName(currentInitState_) + " -> " +
+                              getStateName(newState));
     currentInitState_ = newState;
 }
 
@@ -195,14 +188,16 @@ String Application::getStateName(InitState state) const {
 
 void Application::logRetryAttempt(const char* component, uint8_t attempt,
                                   uint8_t maxRetries) const {
-    // logger_.warningf("%s init attempt %d/%d failed", component, attempt, maxRetries);
+    // components_->logger.warningf("%s init attempt %d/%d failed", component, attempt,
+    // maxRetries);
 }
 
 uint16_t Application::calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const {
-    return baseDelay * (1 << (attempt - 1)) + (random(0, config_.getBackoffJitterMs()));
+    return baseDelay * (1 << (attempt - 1)) +
+           (random(0, components_->config.getBackoffJitterMs()));
 }
 
 void Application::handleInitializationFailure() {
-    logger_.critical("[FATAL] Application initialization failed in state: " +
-                     getStateName(currentInitState_));
+    components_->logger.critical("[FATAL] Application initialization failed in state: " +
+                                 getStateName(currentInitState_));
 }
