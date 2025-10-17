@@ -18,13 +18,13 @@ class MainScreen;
 class SettingsScreen;
 class EventHandler;
 
-class UIController {
+class UiController {
    public:
-    explicit UIController(DisplayContext& context, DisplayManager* displayManager,
+    explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                           SystemState::ScreenState& screenState,
                           AppConfigInterface& config);
-    ~UIController();
+    ~UiController();
 
     // Lifecycle methods
     void initialize();

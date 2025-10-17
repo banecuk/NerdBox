@@ -3,9 +3,9 @@
 #include <esp_system.h>
 
 #include "ui/DisplayManager.h"
-#include "ui/UIController.h"
+#include "ui/UiController.h"
 
-EventHandler::EventHandler(UIController* uiController, LoggerInterface& logger)
+EventHandler::EventHandler(UiController* uiController, LoggerInterface& logger)
     : uiController_(uiController), logger_(logger) {
     registerHandlers();
 }

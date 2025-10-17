@@ -4,12 +4,12 @@
 #include "utils/Logger.h"
 
 // Forward declarations
-class UIController;
+class UiController;
 class DisplayManager;
 
 class EventHandler {
    public:
-    EventHandler(UIController* uiController, LoggerInterface& logger);
+    EventHandler(UiController* uiController, LoggerInterface& logger);
 
     void registerHandlers();
     void resetDevice();
@@ -18,6 +18,6 @@ class EventHandler {
     void requestMainScreen();
 
    private:
-    UIController* uiController_;
+    UiController* uiController_;
     LoggerInterface& logger_;
 };

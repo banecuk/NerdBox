@@ -2,17 +2,17 @@
 
 #include <WebServer.h>
 
-#include "ui/UIController.h"
+#include "ui/UiController.h"
 
 class HttpServer {
    public:
-    HttpServer(UIController& uiController, ApplicationMetrics& systemMetrics);
+    HttpServer(UiController& uiController, ApplicationMetrics& systemMetrics);
     void begin();
     void processRequests();
 
    private:
     WebServer server_;
-    UIController& uiController_;
+    UiController& uiController_;
     ApplicationMetrics& systemMetrics_;
 
     void handleNotFound();

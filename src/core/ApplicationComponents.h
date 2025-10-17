@@ -17,7 +17,7 @@
 #include "services/PcMetricsService.h"
 #include "ui/Colors.h"
 #include "ui/DisplayManager.h"
-#include "ui/UIController.h"
+#include "ui/UiController.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
@@ -43,7 +43,7 @@ class ApplicationComponents {
     Colors colors;
     DisplayContext displayContext;
     DisplayManager displayManager;
-    UIController uiController;
+    UiController uiController;
 
     // Network Components
     HttpClient httpClient;

@@ -1,15 +1,16 @@
 #pragma once
 
+#include "config/AppConfigInterface.h"
 #include "core/events/EventBus.h"
-#include "ui/UIController.h"
+#include "ui/UiController.h"
 #include "ui/WidgetManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "utils/Logger.h"
-#include "config/AppConfigInterface.h"
 
 class BaseWidgetScreen : public ScreenInterface {
    public:
-    BaseWidgetScreen(LoggerInterface& logger, UIController* uiController, AppConfigInterface& config);
+    BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
+                     AppConfigInterface& config);
     virtual ~BaseWidgetScreen() override;
 
     void onEnter() override;
@@ -26,6 +27,6 @@ class BaseWidgetScreen : public ScreenInterface {
     AppConfigInterface& config_;
 
     LGFX* lcd_;
-    UIController* uiController_;
+    UiController* uiController_;
     WidgetManager widgetManager_;
 };

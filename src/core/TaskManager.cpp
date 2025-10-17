@@ -2,10 +2,8 @@
 
 #include <esp_task_wdt.h>
 
-TaskManager::TaskManager(LoggerInterface& logger, 
-                         UIController& uiController,
-                         PcMetricsService& pcMetricsService, 
-                         PcMetrics& pcMetrics,
+TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
+                         PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                          SystemState::CoreState& coreState,
                          SystemState::ScreenState& screenState,
                          AppConfigInterface& config)
@@ -20,24 +18,19 @@ TaskManager::TaskManager(LoggerInterface& logger,
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
 
-    bool success = createTask(updateScreenTask,
-                             SCREEN_TASK_NAME,
-                             config_.getTasksScreenStack(),
-                             config_.getTasksScreenPriority(),
-                             &screenTaskHandle_,
-                             ARDUINO_RUNNING_CORE);
+    bool success = createTask(
+        updateScreenTask, SCREEN_TASK_NAME, config_.getTasksScreenStack(),
+        config_.getTasksScreenPriority(), &screenTaskHandle_, ARDUINO_RUNNING_CORE);
 
     if (!success) {
         logger_.critical("Failed to create screen update task", true);
         return false;
     }
 
-    success = createTask(backgroundTask,
-                        BACKGROUND_TASK_NAME,
-                        config_.getTasksBackgroundStack(),
-                        config_.getTasksBackgroundPriority(),
-                        &backgroundTaskHandle_,
-                        0); // Core 0
+    success = createTask(backgroundTask, BACKGROUND_TASK_NAME,
+                         config_.getTasksBackgroundStack(),
+                         config_.getTasksBackgroundPriority(), &backgroundTaskHandle_,
+                         0);  // Core 0
 
     if (!success) {
         logger_.critical("Failed to create background task", true);
@@ -58,21 +51,18 @@ void TaskManager::cleanup() {
         vTaskDelete(screenTaskHandle_);
         screenTaskHandle_ = nullptr;
     }
-    
+
     if (backgroundTaskHandle_ != nullptr) {
         vTaskDelete(backgroundTaskHandle_);
         backgroundTaskHandle_ = nullptr;
     }
 }
 
-bool TaskManager::createTask(TaskFunction_t taskFunction, 
-                            const char* taskName, 
-                            uint32_t stackSize, 
-                            UBaseType_t priority, 
-                            TaskHandle_t* taskHandle,
-                            BaseType_t coreId) {
-    BaseType_t status = xTaskCreatePinnedToCore(
-        taskFunction, taskName, stackSize, this, priority, taskHandle, coreId);
+bool TaskManager::createTask(TaskFunction_t taskFunction, const char* taskName,
+                             uint32_t stackSize, UBaseType_t priority,
+                             TaskHandle_t* taskHandle, BaseType_t coreId) {
+    BaseType_t status = xTaskCreatePinnedToCore(taskFunction, taskName, stackSize, this,
+                                                priority, taskHandle, coreId);
 
     if (status != pdPASS) {
         // Use the formatted version for including error code
@@ -157,21 +147,22 @@ void TaskManager::logStackHighWaterMark(const char* taskName) {
 
 void TaskManager::updatePcMetrics() {
     bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
-    
+
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
         coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshMs();
         logger_.debug("PC metrics updated successfully", true);
     } else {
         consecutiveFailures_++;
-        coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshAfterFailureMs();
+        coreState_.nextSync_pcMetrics =
+            millis() + config_.getHardwareMonitorRefreshAfterFailureMs();
         handlePcMetricsFailure();
     }
 }
 
 void TaskManager::handlePcMetricsFailure() {
     logger_.debug("PC metrics update failed", true);
-    
+
     if (consecutiveFailures_ >= config_.getHardwareMonitorMaxRetries()) {
         logger_.warning("Multiple consecutive PC metrics failures detected", true);
         consecutiveFailures_ = 0;

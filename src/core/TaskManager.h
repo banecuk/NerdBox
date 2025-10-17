@@ -6,12 +6,12 @@
 #include "core/state/SystemState.h"
 #include "services/PcMetrics.h"
 #include "services/PcMetricsService.h"
-#include "ui/UIController.h"
+#include "ui/UiController.h"
 #include "utils/Logger.h"
 
 class TaskManager {
    public:
-    TaskManager(LoggerInterface& logger, UIController& uiController,
+    TaskManager(LoggerInterface& logger, UiController& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
                 AppConfigInterface& config);
@@ -31,7 +31,7 @@ class TaskManager {
 
     // Dependencies
     LoggerInterface& logger_;
-    UIController& uiController_;
+    UiController& uiController_;
     PcMetricsService& pcMetricsService_;
     PcMetrics& pcMetrics_;
     SystemState::CoreState& coreState_;

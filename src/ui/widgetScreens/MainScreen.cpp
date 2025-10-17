@@ -1,7 +1,7 @@
 #include "MainScreen.h"
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics,
-                       UIController* uiController, AppConfigInterface& config)
+                       UiController* uiController, AppConfigInterface& config)
     : BaseWidgetScreen(logger, uiController, config), pcMetrics_(pcMetrics) {}
 
 void MainScreen::createWidgets() {

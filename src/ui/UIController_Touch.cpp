@@ -1,11 +1,11 @@
-#include "UIController.h"
+#include "UiController.h"
 
-void UIController::processTouchInput() {
+void UiController::processTouchInput() {
     static unsigned long lastTouchTime = 0;
 
     unsigned long currentTime = millis();
     if (currentTime - lastTouchTime < config_.getUiTouchDebounceIntervalMs()) {
-        logger_.debug("[UIController] Touch ignored due to debounce");
+        logger_.debug("[UiController] Touch ignored due to debounce");
         return;
     }
 
@@ -15,7 +15,7 @@ void UIController::processTouchInput() {
         if (currentScreen_) {
             currentScreen_->handleTouch(x, y);
         } else {
-            logger_.warning("[UIController] No screen to handle touch");
+            logger_.warning("[UiController] No screen to handle touch");
         }
         lastTouchTime = currentTime;
     }
