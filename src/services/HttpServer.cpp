@@ -1,6 +1,6 @@
 #include "HttpServer.h"
 
-HttpServer::HttpServer(UIController &uiController, ApplicationMetrics &systemMetrics)
+HttpServer::HttpServer(UiController& uiController, ApplicationMetrics& systemMetrics)
     : server_(80), uiController_(uiController), systemMetrics_(systemMetrics) {}
 
 void HttpServer::begin() {
@@ -63,8 +63,8 @@ String HttpServer::getAppInfo() {
 
     // Write metrics in pre tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "Uptime: %s\n", systemMetrics_.getFormattedUptime().c_str());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Uptime: %s\n",
+                       systemMetrics_.getFormattedUptime().c_str());
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
                        ESP.getFreeHeap());
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
@@ -83,8 +83,7 @@ String HttpServer::getAppInfo() {
     size_t count = systemMetrics_.getScreenDrawCount();
     for (size_t i = 0; i < count && i < drawTimes.size(); ++i) {
         offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                           "<tr><td>%u</td><td>%u</td></tr>",
-                           i + 1, drawTimes[i]);
+                           "<tr><td>%u</td><td>%u</td></tr>", i + 1, drawTimes[i]);
     }
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</table>");
 
@@ -100,7 +99,7 @@ void HttpServer::handleSystemInfo() { server_.send(200, "text/html", getSystemIn
 
 void HttpServer::handleAppInfo() { server_.send(200, "text/html", getAppInfo()); }
 
-String HttpServer::wrapHtmlContent(const String &title, const String &content) {
+String HttpServer::wrapHtmlContent(const String& title, const String& content) {
     // Static HTML parts stored in flash
     static constexpr char kHtmlPrefix[] =
         "<!DOCTYPE html><html><head>"

@@ -1,117 +1,120 @@
 #pragma once
 
+#include "AppConfig.h"
 #include "AppConfigInterface.h"
-#include "config/AppConfig.h"
 
 class AppConfigService : public AppConfigInterface {
-public:
-
+   public:
     // Debug getters
-    
-    // uint32_t getDebugSerialBaudRate() const override {
-    //     return Config::Debug::kSerialBaudRate;
-    // }
-
-    // uint32_t getDebugSerialTimeoutMs() const override {
-    //     return Config::Debug::kSerialTimeoutMs;
-    // }
-
-    // bool getDebugWaitForSerial() const override {
-    //     return Config::Debug::kWaitForSerial;
-    // }
-
-    // Init getters
-
-    uint8_t getDefaultNetworkRetries() const override {
-        return Config::Init::kDefaultNetworkRetries;
+    uint32_t getDebugSerialBaudRate() const override {
+        return AppConfig::internal::DebugImpl::kSerialBaudRate;
     }
 
-    uint8_t getDefaultTimeSyncRetries() const override {
-        return Config::Init::kDefaultTimeSyncRetries;
+    uint32_t getDebugSerialTimeoutMs() const override {
+        return AppConfig::internal::DebugImpl::kSerialTimeoutMs;
     }
 
-    uint32_t getNetworkRetryDelayMs() const override {
-        return Config::Init::kNetworkRetryDelayMs;
+    bool getDebugWaitForSerial() const override {
+        return AppConfig::internal::DebugImpl::kWaitForSerial;
     }
 
-    uint32_t getTimeSyncRetryDelayBaseMs() const override {
-        return Config::Init::kTimeSyncRetryDelayBaseMs;
+    // Init getters - MATCHING NAMES
+    uint8_t getInitNetworkRetries() const override {
+        return AppConfig::internal::InitImpl::kDefaultNetworkRetries;
     }
 
-    uint16_t getBackoffJitterMs() const override {
-        return Config::Init::kBackoffJitterMs;
+    uint32_t getInitNetworkRetryDelayMs() const override {
+        return AppConfig::internal::InitImpl::kNetworkRetryDelayMs;
+    }
+
+    uint8_t getInitTimeSyncRetries() const override {
+        return AppConfig::internal::InitImpl::kDefaultTimeSyncRetries;
+    }
+
+    uint32_t getInitTimeSyncBaseDelayMs() const override {
+        return AppConfig::internal::InitImpl::kTimeSyncRetryDelayBaseMs;
+    }
+
+    uint16_t getInitBackoffJitterMs() const override {
+        return AppConfig::internal::InitImpl::kBackoffJitterMs;
     }
 
     // Watchdog getters
-
     unsigned long getWatchdogTimeoutMs() const override {
-        return Config::Watchdog::kTimeoutMs;
+        return AppConfig::internal::WatchdogImpl::kTimeoutMs;
     }
 
     bool getWatchdogEnableOnBoot() const override {
-        return Config::Watchdog::kEnableOnBoot;
+        return AppConfig::internal::WatchdogImpl::kEnableOnBoot;
     }
 
     // Timing getters
-
     uint32_t getTimingScreenTaskMs() const override {
-        return Config::Timing::kScreenTaskMs;
+        return AppConfig::internal::TimingImpl::kScreenTaskMs;
     }
 
     uint32_t getTimingBackgroundTaskMs() const override {
-        return Config::Timing::kBackgroundTaskMs;
+        return AppConfig::internal::TimingImpl::kBackgroundTaskMs;
     }
 
     uint32_t getTimingMainLoopMs() const override {
-        return Config::Timing::kMainLoopMs;
+        return AppConfig::internal::TimingImpl::kMainLoopMs;
     }
 
     // Tasks getters
-
     uint32_t getTasksScreenStack() const override {
-        return Config::Tasks::kScreenStack;
+        return AppConfig::internal::TasksImpl::kScreenStack;
     }
 
     uint32_t getTasksBackgroundStack() const override {
-        return Config::Tasks::kBackgroundStack;
+        return AppConfig::internal::TasksImpl::kBackgroundStack;
     }
 
     uint32_t getTasksScreenPriority() const override {
-        return Config::Tasks::kScreenPriority;
+        return AppConfig::internal::TasksImpl::kScreenPriority;
     }
 
     uint32_t getTasksBackgroundPriority() const override {
-        return Config::Tasks::kBackgroundPriority;
+        return AppConfig::internal::TasksImpl::kBackgroundPriority;
     }
 
-    // HardwareMonitor getters
+    // HardwareMonitor getters - MATCHING NAMES
+    uint32_t getHardwareMonitorRefreshMs() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kRefreshMs;
+    }
 
-    // uint32_t getHardwareMonitorRefreshMs() const override {
-    //     return HardwareMonitor::kRefreshMs;
-    // }
+    uint32_t getHardwareMonitorFailureRefreshMs() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kRefreshAfterFailureMs;
+    }
 
-    // uint32_t getHardwareMonitorRefreshAfterFailureMs() const override {
-    //     return HardwareMonitor::kRefreshAfterFailureMs;
-    // }
+    uint32_t getHardwareMonitorRetryDelayMs() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kRetryDelayMs;
+    }
 
-    // uint32_t getHardwareMonitorRetryDelayMs() const override {
-    //     return HardwareMonitor::kRetryDelayMs;
-    // }
+    uint32_t getHardwareMonitorMaxRetries() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kMaxRetries;
+    }
 
-    // uint32_t getHardwareMonitorMaxRetries() const override {
-    //     return HardwareMonitor::kMaxRetries;
-    // }
-
-    // Metrics getters
-
-    // uint8_t getMaxScreenDrawTimes() const override {
-    //     return Metrics::kMaxScreenDrawTimes;
-    // }
+    // Metrics getters - MATCHING NAMES
+    uint8_t getMetricsMaxScreenDrawTimes() const override {
+        return AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes;
+    }
 
     // PcMetrics getters
-
     uint8_t getPcMetricsCores() const override {
-        return Config::PcMetrics::kCores;
+        return AppConfig::internal::PcMetricsImpl::kCores;
     }
-    
+
+    // UI getters
+    uint32_t getUiTransitionTimeoutMs() const override {
+        return AppConfig::internal::UiImpl::kTransitionTimeoutMs;
+    }
+
+    uint32_t getUiTouchDebounceIntervalMs() const override {
+        return AppConfig::internal::UiImpl::kTouchDebounceIntervalMs;
+    }
+
+    uint32_t getUiDisplayLockTimeoutMs() const override {
+        return AppConfig::internal::UiImpl::kDisplayLockTimeoutMs;
+    }
 };

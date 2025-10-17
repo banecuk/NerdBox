@@ -1,13 +1,14 @@
 #pragma once
 
 #include <Arduino.h>
+
 #include <array>
 
-#include "config/AppConfig.h"
+#include "config/AppConfigInterface.h"
 
 class ApplicationMetrics {
-public:
-    ApplicationMetrics();
+   public:
+    ApplicationMetrics(AppConfigInterface& config);
 
     // JSON parse time methods
     void setPcMetricsJsonParseTime(uint32_t timeMs);
@@ -15,16 +16,19 @@ public:
 
     // Screen draw time methods
     void addScreenDrawTime(uint32_t timeMs);
-    const std::array<uint32_t, Config::Metrics::kMaxScreenDrawTimes>& getScreenDrawTimes() const;
+    const std::vector<uint32_t>& getScreenDrawTimes() const;
     float getAverageScreenDrawTime() const;
-    size_t getScreenDrawCount() const; 
+    size_t getScreenDrawCount() const;
 
     // Uptime method
     String getFormattedUptime() const;
 
-private:
-    uint32_t pcMetricsJsonParseTime_; // Latest JSON parse time for PC metrics
-    std::array<uint32_t, Config::Metrics::kMaxScreenDrawTimes> screenDrawTimes_; // Circular buffer for screen draw times
-    size_t screenDrawIndex_; // Current index in the circular buffer
-    size_t screenDrawCount_; // Number of valid entries in the buffer
+   private:
+    AppConfigInterface& config_;
+
+    uint32_t pcMetricsJsonParseTime_;        // Latest JSON parse time for PC metrics
+    std::vector<uint32_t> screenDrawTimes_;  // Circular buffer for screen draw times
+    size_t screenDrawCapacity_;              // capacity (from config)
+    size_t screenDrawIndex_;                 // Current index in the circular buffer
+    size_t screenDrawCount_;                 // Number of valid entries in the buffer
 };

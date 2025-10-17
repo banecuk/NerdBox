@@ -6,9 +6,10 @@
 #include "widgetScreens/MainScreen.h"
 #include "widgetScreens/SettingsScreen.h"
 
-UIController::UIController(DisplayContext& context, DisplayManager* displayManager,
+UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                           SystemState::ScreenState& screenState, AppConfigInterface& config)
+                           SystemState::ScreenState& screenState,
+                           AppConfigInterface& config)
     : context_(context),
       logger_(context.getLogger()),
       displayManager_(displayManager),
@@ -19,75 +20,82 @@ UIController::UIController(DisplayContext& context, DisplayManager* displayManag
       actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())) {
     if (!displayManager_) {
         throw std::invalid_argument(
-            "[UIController] DisplayManager pointer cannot be null");
+            "[UiController] DisplayManager pointer cannot be null");
     }
-    displayMutex_ = xSemaphoreCreateMutex();
-    if (!displayMutex_) {
-        throw std::runtime_error("[UIController] Failed to create display mutex");
-    }
-}
-
-UIController::~UIController() {
-    if (displayMutex_) {
-        vSemaphoreDelete(displayMutex_);
+    displayAccessMutex_ = xSemaphoreCreateMutex();
+    if (!displayAccessMutex_) {
+        throw std::runtime_error("[UiController] Failed to create display mutex");
     }
 }
 
-void UIController::initialize() {
-    logger_.info("[UIController] Initializing UI");
-    requestsScreenTransition(ScreenName::BOOT);
+UiController::~UiController() {
+    if (displayAccessMutex_) {
+        vSemaphoreDelete(displayAccessMutex_);
+    }
 }
 
-bool UIController::requestsScreenTransition(ScreenName screenName) {
-    logger_.debugf("[UIController] Scheduling transition to screen %d, current=%d",
+void UiController::initialize() {
+    logger_.info("[UiController] Initializing UI");
+    requestTransitionTo(ScreenName::BOOT);
+}
+
+bool UiController::requestTransitionTo(ScreenName screenName) {
+    logger_.debugf("[UiController] Scheduling transition to screen %d, current=%d",
                    static_cast<int>(screenName),
                    static_cast<int>(screenState_.activeScreen));
 
     if (screenName == ScreenName::UNSET) {
-        logger_.error("[UIController] Invalid screen: UNSET");
+        logger_.error("[UiController] Invalid screen: UNSET");
         return false;
     }
 
-    if (screenName == screenState_.activeScreen && !transition_.isActive) {
-        logger_.debug("[UIController] Screen already active");
+    if (screenName == screenState_.activeScreen && !activeTransition_.isActive) {
+        logger_.debug("[UiController] Screen already active");
         return false;
     }
 
-    transition_.nextScreen = screenName;
-    transition_.state = ScreenTransitionState::UNLOADING;
-    transition_.isActive = true;
-    transition_.startTime = millis();
-    // logger_.debugf("[UIController] Transition scheduled: nextScreen=%d, state=%d",
-    //                static_cast<int>(transition_.nextScreen),
-    //                static_cast<int>(transition_.state));
+    activeTransition_.nextScreen = screenName;
+    activeTransition_.phase = TransitionPhase::UNLOADING;
+    activeTransition_.isActive = true;
+    activeTransition_.startTime = millis();
     return true;
 }
 
-void UIController::updateDisplay() {
+void UiController::updateDisplay() {
     unsigned long startTime = millis();
-    if (transition_.isActive) {
-        // logger_.debug("[UIController] Processing screen transition");
-        handleScreenTransition();
+    if (activeTransition_.isActive) {
+        processTransitionPhase();
 
-        if (millis() - transition_.startTime > 1000) {
-            logger_.error("[UIController] Transition timeout, resetting");
-            resetTransitionState();
+        if (millis() - activeTransition_.startTime > config_.getUiTransitionTimeoutMs()) {
+            logger_.error("[UiController] Transition timeout, resetting");
+            completeTransition();
         }
     } else if (currentScreen_) {
         currentScreen_->draw();
         processTouchInput();
     } else {
-        logger_.warning("[UIController] No screen to draw");
-        requestsScreenTransition(ScreenName::BOOT);  // Fallback to boot screen
+        logger_.warning("[UiController] No screen to draw");
+        requestTransitionTo(ScreenName::BOOT);  // Fallback to boot screen
     }
     systemMetrics_.addScreenDrawTime(millis() - startTime);
 }
 
-void UIController::handleScreenTransition() {
-    // logger_.debugf("[UIController] Transition state=%d",
-    //                static_cast<int>(transition_.state));
+bool UiController::tryAcquireDisplayLock() {
+    const TickType_t timeout = pdMS_TO_TICKS(config_.getUiDisplayLockTimeoutMs());
+    BaseType_t res = xSemaphoreTake(displayAccessMutex_, timeout);
+    if (res != pdTRUE) {
+        logger_.error("[UiController] Display lock timeout");
+        return false;
+    }
+    return true;
+}
+
+void UiController::releaseDisplayLock() { xSemaphoreGive(displayAccessMutex_); }
+
+// Transition lifecycle methods
+void UiController::processTransitionPhase() {
     if (!tryAcquireDisplayLock()) {
-        logger_.error("[UIController] Failed to acquire display lock");
+        logger_.error("[UiController] Failed to acquire display lock");
         return;
     }
 
@@ -95,28 +103,28 @@ void UIController::handleScreenTransition() {
     logger_.debugf("[Heap] %d", ESP.getFreeHeap());
     logger_.debugf("[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
 
-    switch (transition_.state) {
-        case ScreenTransitionState::UNLOADING:
-            logger_.debug("[UIController] Unloading current screen");
+    switch (activeTransition_.phase) {
+        case TransitionPhase::UNLOADING:
+            logger_.debug("[UiController] Unloading current screen");
             unloadCurrentScreen();
-            transition_.state = ScreenTransitionState::CLEARING;
+            activeTransition_.phase = TransitionPhase::CLEARING;
             break;
 
-        case ScreenTransitionState::CLEARING:
-            logger_.debug("[UIController] Clearing display");
+        case TransitionPhase::CLEARING:
+            logger_.debug("[UiController] Clearing display");
             clearDisplay();
-            transition_.state = ScreenTransitionState::ACTIVATING;
+            activeTransition_.phase = TransitionPhase::ACTIVATING;
             break;
 
-        case ScreenTransitionState::ACTIVATING:
-            logger_.debug("[UIController] Activating new screen");
-            activateNextScreen();
-            resetTransitionState();
+        case TransitionPhase::ACTIVATING:
+            logger_.debug("[UiController] Activating new screen");
+            loadAndActivateScreen();
+            completeTransition();
             break;
 
-        case ScreenTransitionState::IDLE:
-            logger_.error("[UIController] Unexpected IDLE state in transition");
-            resetTransitionState();
+        case TransitionPhase::IDLE:
+            logger_.error("[UiController] Unexpected IDLE state in transition");
+            completeTransition();
             break;
     }
 
@@ -124,74 +132,45 @@ void UIController::handleScreenTransition() {
     releaseDisplayLock();
 }
 
-void UIController::unloadCurrentScreen() {
+void UiController::unloadCurrentScreen() {
     if (currentScreen_) {
-        // logger_.debug("[UIController] Unloading screen");
         currentScreen_->onExit();
         currentScreen_.reset();
     }
 }
 
-void UIController::clearDisplay() {
+void UiController::clearDisplay() {
     if (displayManager_ && displayManager_->getDisplay()) {
-        // logger_.debug("[UIController] Clearing display");
         displayManager_->getDisplay()->fillScreen(TFT_BLACK);
     } else {
-        logger_.error("[UIController] Invalid display driver");
+        logger_.error("[UiController] Invalid display driver");
     }
 }
 
-void UIController::activateNextScreen() {
-    if (transition_.nextScreen == ScreenName::UNSET) {
-        logger_.error("[UIController] No screen to activate");
-        resetTransitionState();
+void UiController::loadAndActivateScreen() {
+    if (activeTransition_.nextScreen == ScreenName::UNSET) {
+        logger_.error("[UiController] No screen to activate");
+        completeTransition();
         return;
     }
 
-    // logger_.debugf("[UIController] Loading screen %d",
-    //                static_cast<int>(transition_.nextScreen));
     std::unique_ptr<ScreenInterface> newScreen;
-    newScreen = ScreenFactory::createScreen(transition_.nextScreen, logger_,
+    newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, logger_,
                                             displayManager_, pcMetrics_, this, config_);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);
-        screenState_.activeScreen = transition_.nextScreen;
+        screenState_.activeScreen = activeTransition_.nextScreen;
         currentScreen_->onEnter();
-        // logger_.debug("[UIController] Screen activated");
     } else {
         logger_.error("[UIController] Failed to create screen");
-        requestsScreenTransition(ScreenName::BOOT);  // Fallback
+        requestTransitionTo(ScreenName::BOOT);  // Fallback
     }
 }
 
-void UIController::resetTransitionState() {
-    transition_.nextScreen = ScreenName::UNSET;
-    transition_.state = ScreenTransitionState::IDLE;
-    transition_.isActive = false;
-    transition_.startTime = 0;
-    // logger_.debug("[UIController] Transition state reset");
-}
-
-void UIController::processTouchInput() {
-    static unsigned long lastTouchTime = 0;
-    constexpr unsigned long kDebounceMs = 200;
-
-    unsigned long currentTime = millis();
-    if (currentTime - lastTouchTime < kDebounceMs) {
-        logger_.debug("[UIController] Touch ignored due to debounce");
-        return;
-    }
-
-    LGFX* lcd = displayManager_->getDisplay();
-    int32_t x = 0, y = 0;
-    if (lcd->getTouch(&x, &y)) {
-        // logger_.debugf("[UIController] Touch at (%d,%d)", x, y);
-        if (currentScreen_) {
-            currentScreen_->handleTouch(x, y);
-        } else {
-            logger_.warning("[UIController] No screen to handle touch");
-        }
-        lastTouchTime = currentTime;
-    }
+void UiController::completeTransition() {
+    activeTransition_.nextScreen = ScreenName::UNSET;
+    activeTransition_.phase = TransitionPhase::IDLE;
+    activeTransition_.isActive = false;
+    activeTransition_.startTime = 0;
 }

@@ -6,7 +6,8 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
       context_(context),
       pcMetrics_(pcMetrics),
       barWidth_(dims.width / config_.getPcMetricsCores()),
-      config_(config) {}
+      config_(config),
+      previousBarHeights_(config_.getPcMetricsCores(), 0) {}
 
 void ThreadsWidget::drawStatic() {
     if (!initialized_ || !lcd_) return;

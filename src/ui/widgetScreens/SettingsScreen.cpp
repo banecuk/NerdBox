@@ -1,6 +1,7 @@
 #include "SettingsScreen.h"
 
-SettingsScreen::SettingsScreen(LoggerInterface& logger, UIController* uiController, AppConfigInterface& config)
+SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiController,
+                               AppConfigInterface& config)
     : BaseWidgetScreen(logger, uiController, config) {}
 
 void SettingsScreen::createWidgets() {

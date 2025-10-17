@@ -1,7 +1,8 @@
-#include "config/AppConfig.h"
 #include "core/Application.h"
+#include "core/ApplicationFactory.h"
 
-Application app;
+static AppConfigService config;
+static Application* app = nullptr;
 
 void waitForSerial(uint32_t timeoutMs) {
     uint32_t start = millis();
@@ -18,9 +19,10 @@ void setup() {
     static_assert(__cplusplus >= 201703L, "Not using C++17 or higher");
 
     // Initialize serial communication
-    Serial.begin(Config::Debug::kSerialBaudRate);
-    if (Config::Debug::kWaitForSerial) {
-        waitForSerial(Config::Debug::kSerialTimeoutMs);
+    Serial.begin(config.getDebugSerialBaudRate());
+
+    if (config.getDebugWaitForSerial()) {
+        waitForSerial(config.getDebugSerialTimeoutMs());
     }
 
     Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());
@@ -41,7 +43,12 @@ void setup() {
         }
     }
 
-    if (!app.initialize()) {
+    // Create application instance using factory
+    app = ApplicationFactory::createApplication();
+
+    if (!app->initialize()) {
+        ApplicationFactory::destroyApplication(app);
+        app = nullptr;
         while (true) {
             Serial.println("Init failed!");
             delay(1000);
@@ -50,5 +57,10 @@ void setup() {
 }
 
 void loop() {
-    app.run();
+    if (app) {
+        app->run();
+    } else {
+        // Safety fallback
+        delay(1000);
+    }
 }
