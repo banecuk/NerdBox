@@ -9,6 +9,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
+#include "ui/TouchManager.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
@@ -78,6 +79,7 @@ class UiController {
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<EventHandler> actionHandler_;
+    std::unique_ptr<TouchManager> touchManager_;
     SemaphoreHandle_t displayAccessMutex_;
 
     ScreenTransition activeTransition_;

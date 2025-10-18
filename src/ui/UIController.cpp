@@ -16,7 +16,9 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
       pcMetrics_(pcMetrics),
       screenState_(screenState),
       config_(config),
-      actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())) {
+      actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())),
+      touchManager_(
+          std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)) {
     if (!displayManager_) {
         throw std::invalid_argument("[UiController] DisplayManager pointer cannot be null");
     }
@@ -55,6 +57,10 @@ bool UiController::requestTransitionTo(ScreenName screenName) {
     activeTransition_.phase = TransitionPhase::UNLOADING;
     activeTransition_.isActive = true;
     activeTransition_.startTime = millis();
+
+    // Reset touch debounce timer during transitions to prevent accidental touches
+    touchManager_->resetDebounce();
+
     return true;
 }
 
