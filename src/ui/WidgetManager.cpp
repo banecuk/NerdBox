@@ -92,8 +92,7 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
         auto& widget = *it;
         WidgetInterface::Dimensions dims = widget->getDimensions();
 
-        if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y &&
-            y < (dims.y + dims.height)) {
+        if (x >= dims.x && x < (dims.x + dims.width) && y >= dims.y && y < (dims.y + dims.height)) {
             // logger_.debugf("Widget found at (%d,%d)", x, y);
             if (widget->handleTouch(x, y)) {
                 logger_.debug("Widget handled touch");

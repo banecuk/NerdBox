@@ -36,7 +36,6 @@ void setup() {
         Serial.printf("WDT Status: %d\n", err);
         // Print panic details if available
         Serial.println("Panic details (if any):");
-        esp_reset_reason_t reason = esp_reset_reason();
         if (reason == ESP_RST_PANIC) {
             // You may need to include esp_debug_helpers.h for more details
             Serial.println("Panic occurred. Check backtrace in debugger.");

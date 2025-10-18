@@ -1,12 +1,13 @@
 #pragma once
 
 #include <Arduino.h>
-#include <stdarg.h>
 
 #include <queue>
 
+#include <stdarg.h>
+
 class LoggerInterface {
-   public:
+ public:
     enum class LogLevel {
         DEBUG,    // For detailed debugging information
         INFO,     // General information

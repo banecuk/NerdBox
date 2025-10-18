@@ -28,8 +28,7 @@ void Widget::drawStatic() {
 
 void Widget::cleanUp() {
     if (logger_) {
-        logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x,
-                        dimensions_.y);
+        logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x, dimensions_.y);
     }
     isInitialized_ = false;
     isStaticDrawn_ = false;
@@ -37,7 +36,9 @@ void Widget::cleanUp() {
     logger_ = nullptr;
 }
 
-void Widget::setUpdateInterval(uint32_t intervalMs) { updateIntervalMs_ = intervalMs; }
+void Widget::setUpdateInterval(uint32_t intervalMs) {
+    updateIntervalMs_ = intervalMs;
+}
 
 bool Widget::needsUpdate() const {
     if (updateIntervalMs_ == 0) {
@@ -46,4 +47,6 @@ bool Widget::needsUpdate() const {
     return (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
-WidgetInterface::Dimensions Widget::getDimensions() const { return dimensions_; }
+WidgetInterface::Dimensions Widget::getDimensions() const {
+    return dimensions_;
+}

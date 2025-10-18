@@ -8,12 +8,12 @@
 #include "ui/widgets/PcMetricsWidget.h"
 
 class MainScreen : public BaseWidgetScreen {
-   public:
+ public:
     MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                AppConfigInterface& config);
     ~MainScreen() override = default;
 
-   private:
+ private:
     void createWidgets() override;
     PcMetrics& pcMetrics_;
 };

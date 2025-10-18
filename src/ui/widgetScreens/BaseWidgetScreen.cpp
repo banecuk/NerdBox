@@ -8,18 +8,21 @@ BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiCont
       widgetManager_(uiController->getDisplayContext()),
       config_(config) {}
 
-BaseWidgetScreen::~BaseWidgetScreen() { logger_.debug("BaseWidgetScreen destructor"); }
+BaseWidgetScreen::~BaseWidgetScreen() {
+    logger_.debug("BaseWidgetScreen destructor");
+}
 
 void BaseWidgetScreen::onEnter() {
     createWidgets();
     widgetManager_.initializeWidgets();
 }
 
-void BaseWidgetScreen::onExit() { widgetManager_.cleanupWidgets(); }
+void BaseWidgetScreen::onExit() {
+    widgetManager_.cleanupWidgets();
+}
 
 void BaseWidgetScreen::draw() {
-    if (!lcd_ || uiController_->isTransitioning() ||
-        !uiController_->tryAcquireDisplayLock()) {
+    if (!lcd_ || uiController_->isTransitioning() || !uiController_->tryAcquireDisplayLock()) {
         return;
     }
     widgetManager_.updateAndDrawWidgets(false);

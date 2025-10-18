@@ -4,7 +4,7 @@
 #include "ui/screens/ScreenInterface.h"
 
 class WidgetInterface {
-   public:
+ public:
     struct Dimensions {
         uint16_t x;       // X position (pixels)
         uint16_t y;       // Y position (pixels)

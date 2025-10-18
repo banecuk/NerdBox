@@ -2,19 +2,20 @@
 
 #include <WebServer.h>
 
-#include <LovyanGFX.hpp>
 #include <memory>
+
+#include <LovyanGFX.hpp>
 
 #include "config/AppConfig.h"
 #include "config/AppConfigService.h"
 #include "core/InitializationStateMachine.h"
-#include "core/TaskManager.h"
 #include "core/state/SystemState.h"
+#include "core/TaskManager.h"
 #include "network/HttpClient.h"
 #include "network/NetworkManager.h"
-#include "services/WebServerService.h"
 #include "services/NtpService.h"
 #include "services/PcMetricsService.h"
+#include "services/WebServerService.h"
 #include "ui/Colors.h"
 #include "ui/DisplayManager.h"
 #include "ui/UiController.h"
@@ -22,7 +23,7 @@
 #include "utils/Logger.h"
 
 class ApplicationComponents {
-   public:
+ public:
     ApplicationComponents();
     ~ApplicationComponents() = default;
 
@@ -61,6 +62,6 @@ class ApplicationComponents {
     TaskManager taskManager;
     InitializationStateMachine initStateMachine;
 
-   private:
+ private:
     void initializeComponents();
 };

@@ -11,7 +11,7 @@
 class ApplicationComponents;
 
 class InitializationStateMachine {
-   public:
+ public:
     enum class State {
         INITIAL,
         DISPLAY_INIT,
@@ -40,7 +40,7 @@ class InitializationStateMachine {
     State getCurrentState() const { return currentState_; }
     String getStateName(State state) const;
 
-   private:
+ private:
     // State handlers
     bool handleInitial();
     bool handleDisplayInit();
@@ -54,8 +54,7 @@ class InitializationStateMachine {
 
     // Helper methods
     void transitionTo(State newState);
-    void logRetryAttempt(const char* component, uint8_t attempt,
-                         uint8_t maxRetries) const;
+    void logRetryAttempt(const char* component, uint8_t attempt, uint8_t maxRetries) const;
     uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
 
     // Components
@@ -64,7 +63,7 @@ class InitializationStateMachine {
     // State
     State currentState_;
 
-    static constexpr const char* STATE_NAMES_[] = {
-        "INITIAL",       "DISPLAY_INIT", "TASKS_INIT", "NETWORK_INIT", "TIME_INIT",
-        "WATCHDOG_INIT", "FINAL_SETUP",  "COMPLETE",   "FAILED"};
+    static constexpr const char* STATE_NAMES_[] = {"INITIAL",      "DISPLAY_INIT", "TASKS_INIT",
+                                                   "NETWORK_INIT", "TIME_INIT",    "WATCHDOG_INIT",
+                                                   "FINAL_SETUP",  "COMPLETE",     "FAILED"};
 };

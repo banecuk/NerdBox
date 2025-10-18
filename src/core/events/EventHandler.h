@@ -8,7 +8,7 @@ class UiController;
 class DisplayManager;
 
 class EventHandler {
-   public:
+ public:
     EventHandler(UiController* uiController, LoggerInterface& logger);
 
     void registerHandlers();
@@ -17,7 +17,7 @@ class EventHandler {
     void requestSettingsScreen();
     void requestMainScreen();
 
-   private:
+ private:
     UiController* uiController_;
     LoggerInterface& logger_;
 };

@@ -7,7 +7,7 @@
 #include "config/AppConfigInterface.h"
 
 class ApplicationMetrics {
-   public:
+ public:
     ApplicationMetrics(AppConfigInterface& config);
 
     // JSON parse time methods
@@ -23,7 +23,7 @@ class ApplicationMetrics {
     // Uptime method
     String getFormattedUptime() const;
 
-   private:
+ private:
     AppConfigInterface& config_;
 
     uint32_t pcMetricsJsonParseTime_;        // Latest JSON parse time for PC metrics

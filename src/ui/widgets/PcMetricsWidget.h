@@ -2,24 +2,25 @@
 
 #include <string>
 
-#include "SingleValueWidget.h"
 #include "services/PcMetrics.h"
+#include "SingleValueWidget.h"
 #include "ui/DisplayContext.h"
 #include "ui/widgets/ThreadsWidget.h"
 #include "ui/widgets/Widget.h"
+
 #include <config/AppConfigInterface.h>
 
 class PcMetricsWidget : public Widget {
-   public:
-    PcMetricsWidget(DisplayContext& context, const Dimensions& dims,
-                    uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config);
+ public:
+    PcMetricsWidget(DisplayContext& context, const Dimensions& dims, uint32_t updateIntervalMs,
+                    PcMetrics& pcMetrics, AppConfigInterface& config);
 
     void drawStatic() override;
     void draw(bool forceRedraw = false) override;
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
 
-   private:
+ private:
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
     AppConfigInterface& config_;

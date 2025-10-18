@@ -55,7 +55,9 @@ float ApplicationMetrics::getAverageScreenDrawTime() const {
     return static_cast<float>(sum) / static_cast<float>(screenDrawCount_);
 }
 
-size_t ApplicationMetrics::getScreenDrawCount() const { return screenDrawCount_; }
+size_t ApplicationMetrics::getScreenDrawCount() const {
+    return screenDrawCount_;
+}
 
 String ApplicationMetrics::getFormattedUptime() const {
     char buffer[20];
@@ -63,7 +65,6 @@ String ApplicationMetrics::getFormattedUptime() const {
     unsigned long seconds = uptimeMs / 1000;
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
-    snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60,
-             seconds % 60);
+    snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
     return String(buffer);
 }

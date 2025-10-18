@@ -59,5 +59,11 @@
         "iostream": "cpp"
     },
     "C_Cpp.clang_format_fallbackStyle": "Google",
-    "C_Cpp.default.cppStandard": "c++14"
+    "C_Cpp.default.cppStandard": "c++14",
+    
+    "C_Cpp.clang_format_style": "file",
+    "editor.formatOnSave": true,
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    }
 }

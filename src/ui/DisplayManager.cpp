@@ -1,6 +1,6 @@
 #include "DisplayManager.h"
 
-//#include <Preferences.h>
+// #include <Preferences.h>
 
 DisplayManager::DisplayManager(LGFX& display, LoggerInterface& logger)
     : display_(display), logger_(logger), brightness_(DEFAULT_BRIGHTNESS) {}
@@ -15,9 +15,13 @@ void DisplayManager::initialize() {
     display_.setBrightness(75);
 }
 
-void DisplayManager::postInitialization() { setBrightness(brightness_); }
+void DisplayManager::postInitialization() {
+    setBrightness(brightness_);
+}
 
-LGFX* DisplayManager::getDisplay() { return &display_; }
+LGFX* DisplayManager::getDisplay() {
+    return &display_;
+}
 
 void DisplayManager::setBrightness(uint8_t level) {
     brightness_ = level;
@@ -25,7 +29,9 @@ void DisplayManager::setBrightness(uint8_t level) {
     logger_.infof("Brightness set to %d", brightness_);
 }
 
-uint8_t DisplayManager::getBrightness() const { return brightness_; }
+uint8_t DisplayManager::getBrightness() const {
+    return brightness_;
+}
 
 void DisplayManager::cycleBrightness() {
     uint8_t brightness = 0;
@@ -45,4 +51,3 @@ void DisplayManager::cycleBrightness() {
     }
     setBrightness(brightness);
 }
-

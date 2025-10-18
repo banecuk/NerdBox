@@ -1,7 +1,8 @@
 #include "ThreadsWidget.h"
 
 ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
-                             uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config)
+                             uint32_t updateIntervalMs, PcMetrics& pcMetrics,
+                             AppConfigInterface& config)
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
@@ -10,11 +11,13 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
       previousBarHeights_(config_.getPcMetricsCores(), 0) {}
 
 void ThreadsWidget::drawStatic() {
-    if (!isInitialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_)
+        return;
 }
 
 void ThreadsWidget::draw(bool forceRedraw) {
-    if (!isInitialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_)
+        return;
 
     bool needsRedraw = forceRedraw || needsUpdate();
 
@@ -33,7 +36,8 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
             static_cast<uint16_t>(pcMetrics_.cpu_thread_load[i] * maxBarHeight / 100);
         ;
         newHeight = min(newHeight, maxBarHeight);
-        if (newHeight == 0) newHeight = 1;
+        if (newHeight == 0)
+            newHeight = 1;
 
         uint16_t x = dimensions_.x + i * barWidth_;
 
@@ -49,12 +53,12 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
             if (newHeight == 1) {
                 color = TFT_DARKGREY;
             } else {
-                color = context_.getColors().getColorFromPercent(
-                    pcMetrics_.cpu_thread_load[i], false);
+                color =
+                    context_.getColors().getColorFromPercent(pcMetrics_.cpu_thread_load[i], false);
             }
 
-            lcd_->fillRect(x, dimensions_.y + maxBarHeight - newHeight, barWidth_ - 1,
-                           newHeight, color);
+            lcd_->fillRect(x, dimensions_.y + maxBarHeight - newHeight, barWidth_ - 1, newHeight,
+                           color);
 
             previousBarHeights_[i] = newHeight;
         }

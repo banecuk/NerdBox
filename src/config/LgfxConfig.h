@@ -11,7 +11,7 @@ class LGFX : public lgfx::LGFX_Device {
     lgfx::Light_PWM _light_instance;
     lgfx::Touch_FT5x06 _touch_instance;
 
-   public:
+ public:
     LGFX(void) {
         {
             auto cfg = _bus_instance.config();

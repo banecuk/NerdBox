@@ -8,8 +8,8 @@ constexpr float GPU_MEMORY_CAPACITY_MB = 16368.0f;  // 16GB GPU
 }  // namespace
 
 PcMetricsService::PcMetricsService(NetworkManager& networkManager,
-                                   ApplicationMetrics& systemMetrics,
-                                   LoggerInterface& logger, AppConfigInterface& config)
+                                   ApplicationMetrics& systemMetrics, LoggerInterface& logger,
+                                   AppConfigInterface& config)
     : networkManager_(networkManager),
       systemMetrics_(systemMetrics),
       logger_(logger),
@@ -21,8 +21,7 @@ void PcMetricsService::initFilter() {
     JsonObject filter_Children_0 = filter_["Children"].add<JsonObject>();
     filter_Children_0["Text"] = true;
 
-    JsonObject filter_Children_0_Children_0 =
-        filter_Children_0["Children"].add<JsonObject>();
+    JsonObject filter_Children_0_Children_0 = filter_Children_0["Children"].add<JsonObject>();
     filter_Children_0_Children_0["Text"] = true;
 
     JsonObject filter_Children_0_Children_0_Children_0 =
@@ -139,8 +138,8 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
 
     // Motherboard data
     if (mbIndex >= 0) {
-        JsonArray mbChildren = childrenPC[mbIndex]["Children"][0]
-                                         ["Children"];  // Assume chip (e.g., Nuvoton)
+        JsonArray mbChildren =
+            childrenPC[mbIndex]["Children"][0]["Children"];  // Assume chip (e.g., Nuvoton)
         bool foundTemp = false, foundFans = false;
         for (JsonObject mbChild : mbChildren) {
             String text = mbChild["Text"] | "";
@@ -189,8 +188,7 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
                 JsonArray powers = cpuChild["Children"];
                 for (JsonObject power : powers) {
                     String powerText = power["Text"] | "";
-                    if (powerText.indexOf("CPU Package") >= 0 ||
-                        powerText.indexOf("CPU") >= 0) {
+                    if (powerText.indexOf("CPU Package") >= 0 || powerText.indexOf("CPU") >= 0) {
                         outData.cpu_power = parseValue(power["Value"], 0.0f);
                         foundPower = true;
                         break;
@@ -217,10 +215,8 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
                         JsonObject load = loads[i];
                         String loadText = load["Text"] | "";
                         int threadIndex = i - CPU_LOAD_OFFSET;
-                        if (threadIndex >= 0 &&
-                            threadIndex < config_.getPcMetricsCores()) {
-                            outData.cpu_thread_load[threadIndex] =
-                                parseValue(load["Value"], 0.0f);
+                        if (threadIndex >= 0 && threadIndex < config_.getPcMetricsCores()) {
+                            outData.cpu_thread_load[threadIndex] = parseValue(load["Value"], 0.0f);
                         } else {
                             logger_.warningf(
                                 "Invalid thread index %d for CPU thread load at JSON "
@@ -283,8 +279,7 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
                 JsonArray loads = gpuChild["Children"];
                 for (JsonObject load : loads) {
                     String loadText = load["Text"] | "";
-                    if (loadText.indexOf("D3D 3D") >= 0 ||
-                        loadText.indexOf("GPU Core") >= 0) {
+                    if (loadText.indexOf("D3D 3D") >= 0 || loadText.indexOf("GPU Core") >= 0) {
                         outData.gpu_3d = parseValue(load["Value"], 0.0f);
                     } else if (loadText.indexOf("D3D Compute") >= 0 ||
                                loadText.indexOf("Compute") >= 0) {

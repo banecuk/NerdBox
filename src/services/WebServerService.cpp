@@ -7,17 +7,19 @@ void WebServerService::begin() {
     server_.on("/", [this]() { this->handleHome(); });
     server_.on("/system-info", [this]() { this->handleSystemInfo(); });
     server_.on("/app-info", [this]() { this->handleAppInfo(); });
-    server_.on("/screen/main",
-               [this]() { uiController_.requestScreen(ScreenName::MAIN); });
-    server_.on("/screen/settings",
-               [this]() { uiController_.requestScreen(ScreenName::SETTINGS); });
+    server_.on("/screen/main", [this]() { uiController_.requestScreen(ScreenName::MAIN); });
+    server_.on("/screen/settings", [this]() { uiController_.requestScreen(ScreenName::SETTINGS); });
     server_.onNotFound([this]() { this->handleNotFound(); });
     server_.begin();
 }
 
-void WebServerService::processRequests() { server_.handleClient(); }
+void WebServerService::processRequests() {
+    server_.handleClient();
+}
 
-void WebServerService::handleNotFound() { server_.send(404, "text/plain", "Not found"); }
+void WebServerService::handleNotFound() {
+    server_.send(404, "text/plain", "Not found");
+}
 
 void WebServerService::handleHome() {
     server_.send(200, "text/html", wrapHtmlContent("Homepage", ""));
@@ -31,8 +33,8 @@ String WebServerService::getSystemInfo() {
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
 
     // CPU Frequency
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "CPU Frequency: %u MHz\n",
+                       ESP.getCpuFreqMHz());
 
     // PSRAM Size
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Size: %u bytes\n",
@@ -70,9 +72,9 @@ String WebServerService::getAppInfo() {
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
                        "Libre Hardware Monitor JSON Parse Time: %u ms\n",
                        systemMetrics_.getPcMetricsJsonParseTime());
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "Average Screen Draw Time: %u ms\n",
-                       static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
+    offset +=
+        snprintf(buffer + offset, sizeof(buffer) - offset, "Average Screen Draw Time: %u ms\n",
+                 static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
 
     // Write screen draw times as a table
@@ -95,9 +97,13 @@ String WebServerService::getAppInfo() {
     return wrapHtmlContent("App Information", info);
 }
 
-void WebServerService::handleSystemInfo() { server_.send(200, "text/html", getSystemInfo()); }
+void WebServerService::handleSystemInfo() {
+    server_.send(200, "text/html", getSystemInfo());
+}
 
-void WebServerService::handleAppInfo() { server_.send(200, "text/html", getAppInfo()); }
+void WebServerService::handleAppInfo() {
+    server_.send(200, "text/html", getAppInfo());
+}
 
 String WebServerService::wrapHtmlContent(const String& title, const String& content) {
     // Static HTML parts stored in flash

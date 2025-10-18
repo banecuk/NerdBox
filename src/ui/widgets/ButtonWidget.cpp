@@ -1,11 +1,10 @@
 #include "ButtonWidget.h"
 
-ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label, const Dimensions& dims,
-                           uint32_t updateIntervalMs, EventType action,
-                           ActionCallback callback,
-                           uint16_t bgColor, uint16_t textColor)
+ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label,
+                           const Dimensions& dims, uint32_t updateIntervalMs, EventType action,
+                           ActionCallback callback, uint16_t bgColor, uint16_t textColor)
     : Widget(dims, updateIntervalMs),
-      context_(context), 
+      context_(context),
       label_(label),
       action_(action),
       callback_(callback),
@@ -18,16 +17,17 @@ ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label, co
 // }
 
 void ButtonWidget::draw(bool forceRedraw /* = false */) {
-    if (!isInitialized_ || !callback_) return;
+    if (!isInitialized_ || !callback_)
+        return;
 
     if (bgColor_ == TFT_BLACK) {
         // Draw outlined button
-        lcd_->drawRoundRect(dimensions_.x, dimensions_.y, dimensions_.width,
-                           dimensions_.height, 5, TFT_DARKGRAY);
+        lcd_->drawRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, 5,
+                            TFT_DARKGRAY);
     } else {
         // Draw filled button
-        lcd_->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width,
-                           dimensions_.height, 5, bgColor_);
+        lcd_->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, 5,
+                            bgColor_);
     }
 
     lcd_->setTextColor(textColor_, bgColor_ == TFT_BLACK ? TFT_BLACK : bgColor_);
@@ -40,8 +40,9 @@ void ButtonWidget::draw(bool forceRedraw /* = false */) {
     lastUpdateTimeMs_ = millis();
 }
 
-void ButtonWidget::setCallback(ActionCallback callback) { callback_ = callback; }
-
+void ButtonWidget::setCallback(ActionCallback callback) {
+    callback_ = callback;
+}
 
 bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     if (!callback_) {
@@ -49,18 +50,19 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
         return false;
     }
 
-    if (!isInitialized_ || !lcd_ || !callback_) { 
+    if (!isInitialized_ || !lcd_ || !callback_) {
         logger_->debug("ButtonWidget::handleTouch - Rejected");
         return false;
     }
 
-    constexpr unsigned long debounceTime = 200; // ms
+    constexpr unsigned long debounceTime = 200;  // ms
     unsigned long now = millis();
-    
-    if (now - lastTouchTime_ < debounceTime) return false;
-    
+
+    if (now - lastTouchTime_ < debounceTime)
+        return false;
+
     lastTouchTime_ = now;
-    
+
     if (callback_) {
         callback_(action_);
         return true;
@@ -68,7 +70,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
 }
 
-void ButtonWidget::cleanUp() { 
+void ButtonWidget::cleanUp() {
     callback_ = nullptr;
     Widget::cleanUp();
 }

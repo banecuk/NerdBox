@@ -4,7 +4,7 @@
 #include "AppConfigInterface.h"
 
 class AppConfigService : public AppConfigInterface {
-   public:
+ public:
     // Debug getters
     uint32_t getDebugSerialBaudRate() const override {
         return AppConfig::internal::DebugImpl::kSerialBaudRate;

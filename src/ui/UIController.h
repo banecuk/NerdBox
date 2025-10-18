@@ -2,10 +2,10 @@
 
 #include <memory>
 
-#include "DisplayContext.h"
-#include "DisplayManager.h"
 #include "config/AppConfigInterface.h"
 #include "core/state/SystemState.h"
+#include "DisplayContext.h"
+#include "DisplayManager.h"
 #include "services/PcMetrics.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
@@ -19,11 +19,10 @@ class SettingsScreen;
 class EventHandler;
 
 class UiController {
-   public:
+ public:
     explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                          SystemState::ScreenState& screenState,
-                          AppConfigInterface& config);
+                          SystemState::ScreenState& screenState, AppConfigInterface& config);
     ~UiController();
 
     // Lifecycle methods
@@ -34,8 +33,7 @@ class UiController {
     // Screen transition methods
     bool requestTransitionTo(ScreenName screenName);
     void requestScreen(ScreenName screenName) {
-        logger_.debugf("[UIController] Requesting screen %d",
-                       static_cast<int>(screenName));
+        logger_.debugf("[UIController] Requesting screen %d", static_cast<int>(screenName));
         requestTransitionTo(screenName);
     }
 
@@ -45,7 +43,7 @@ class UiController {
     bool tryAcquireDisplayLock();
     void releaseDisplayLock();
 
-   private:
+ private:
     enum class TransitionPhase {
         IDLE,       // No transition in progress
         UNLOADING,  // Unloading current screen

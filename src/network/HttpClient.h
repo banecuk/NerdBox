@@ -4,7 +4,7 @@
 #include <WiFiClient.h>
 
 class HttpClient {
-   public:
+ public:
     HttpClient();
     ~HttpClient();
 
@@ -13,7 +13,7 @@ class HttpClient {
 
     int getLastHttpCode() const { return lastHttpCode_; }
 
-   private:
+ private:
     HTTPClient http_;
     int lastHttpCode_ = 0;
 };

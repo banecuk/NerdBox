@@ -4,8 +4,8 @@
 #include <ArduinoJson.h>
 
 class PcMetrics {
-   private:
-   public:
+ private:
+ public:
     bool is_available = false;
     unsigned long last_update_timestamp = 0;
 

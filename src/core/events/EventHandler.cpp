@@ -13,9 +13,8 @@ EventHandler::EventHandler(UiController* uiController, LoggerInterface& logger)
 void EventHandler::registerHandlers() {
     auto& eventBus = EventBus::getInstance();
 
-    eventBus.subscribe(EventType::NONE, [this]() {
-        logger_.info("EventHandler- EventType::NONE called");
-    });
+    eventBus.subscribe(EventType::NONE,
+                       [this]() { logger_.info("EventHandler- EventType::NONE called"); });
 
     eventBus.subscribe(EventType::RESET_DEVICE, [this]() { resetDevice(); });
 

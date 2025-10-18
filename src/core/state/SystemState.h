@@ -7,7 +7,7 @@
 class UIController;
 
 class SystemState {
-   public:
+ public:
     struct CoreState {
         bool isInitialized = false;
         bool isTimeSynced = false;
@@ -29,5 +29,5 @@ class SystemState {
 
     SystemState() : core(), screen() {}
 
-   private:
+ private:
 };

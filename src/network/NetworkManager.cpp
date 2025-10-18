@@ -25,10 +25,13 @@ bool NetworkManager::connect() {
     return isConnected_;
 }
 
-bool NetworkManager::isConnected() const { return isConnected_; }
+bool NetworkManager::isConnected() const {
+    return isConnected_;
+}
 
 String NetworkManager::get(const String& url) {
-    if (!isConnected_) return "";
+    if (!isConnected_)
+        return "";
 
     HTTPClient http;
     http.begin(url);

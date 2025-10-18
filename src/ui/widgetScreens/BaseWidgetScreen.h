@@ -2,13 +2,13 @@
 
 #include "config/AppConfigInterface.h"
 #include "core/events/EventBus.h"
+#include "ui/screens/ScreenInterface.h"
 #include "ui/UiController.h"
 #include "ui/WidgetManager.h"
-#include "ui/screens/ScreenInterface.h"
 #include "utils/Logger.h"
 
 class BaseWidgetScreen : public ScreenInterface {
-   public:
+ public:
     BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
                      AppConfigInterface& config);
     virtual ~BaseWidgetScreen() override;
@@ -18,9 +18,8 @@ class BaseWidgetScreen : public ScreenInterface {
     void draw() override;
     void handleTouch(uint16_t x, uint16_t y) override;
 
-   protected:
-    virtual void
-    createWidgets() = 0;  // Pure virtual to force derived classes to implement
+ protected:
+    virtual void createWidgets() = 0;  // Pure virtual to force derived classes to implement
     void handleAction(EventType action);
 
     LoggerInterface& logger_;

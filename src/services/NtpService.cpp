@@ -2,9 +2,9 @@
 
 #include <WiFi.h>
 
-const char *NtpService::DEFAULT_NTP_SERVER1 = "europe.pool.ntp.org";
-const char *NtpService::DEFAULT_NTP_SERVER2 = "time.google.com";
-const char *NtpService::DEFAULT_NTP_SERVER3 = "time.cloudflare.com";
+const char* NtpService::DEFAULT_NTP_SERVER1 = "europe.pool.ntp.org";
+const char* NtpService::DEFAULT_NTP_SERVER2 = "time.google.com";
+const char* NtpService::DEFAULT_NTP_SERVER3 = "time.cloudflare.com";
 const uint32_t NtpService::DEFAULT_GMT_OFFSET_SEC = 3600;
 const uint32_t NtpService::DEFAULT_DAYLIGHT_OFFSET_SEC = 3600;
 
@@ -16,7 +16,7 @@ NtpService::NtpService()
       gmtOffsetSec_(DEFAULT_GMT_OFFSET_SEC),
       daylightOffsetSec_(DEFAULT_DAYLIGHT_OFFSET_SEC) {}
 
-bool NtpService::syncTime(const char *timezone) {
+bool NtpService::syncTime(const char* timezone) {
     configTime(gmtOffsetSec_, daylightOffsetSec_, ntpServer1_, ntpServer2_, ntpServer3_);
     setenv("TZ", timezone, 1);
     tzset();
@@ -37,7 +37,9 @@ bool NtpService::syncTime(const char *timezone) {
     return true;
 }
 
-bool NtpService::isTimeSynced() const { return timeSynced_; }
+bool NtpService::isTimeSynced() const {
+    return timeSynced_;
+}
 
 struct tm NtpService::getTime() const {
     struct tm timeinfo;

@@ -3,7 +3,7 @@
 #include <cstdint>
 
 class AppConfigInterface {
-   public:
+ public:
     virtual ~AppConfigInterface() = default;
 
     // Debug getters

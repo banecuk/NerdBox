@@ -7,7 +7,7 @@
 #include "ui/widgets/WidgetInterface.h"
 
 class Widget : public WidgetInterface {
-   public:
+ public:
     Widget(const Dimensions& dims, uint32_t updateIntervalMs);
 
     void initialize(DisplayContext& context) override;
@@ -17,7 +17,7 @@ class Widget : public WidgetInterface {
     bool needsUpdate() const override;
     Dimensions getDimensions() const override;
 
-   protected:
+ protected:
     LGFX* lcd_ = nullptr;
     LoggerInterface* logger_ = nullptr;
     Dimensions dimensions_;

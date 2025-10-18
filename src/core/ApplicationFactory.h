@@ -4,7 +4,7 @@
 #include "ApplicationComponents.h"
 
 class ApplicationFactory {
-   public:
+ public:
     static Application* createApplication() {
         // Create and inject all components
         auto components = std::make_unique<ApplicationComponents>();
