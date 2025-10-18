@@ -36,7 +36,7 @@ ClockWidget::ClockWidget(DisplayContext& context, const Dimensions& dims,
 }
 
 void ClockWidget::drawStatic() {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 
     // Clear entire widget area
     lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
@@ -54,7 +54,7 @@ void ClockWidget::drawStatic() {
 }
 
 void ClockWidget::draw(bool forceRedraw) {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 
     struct tm timeinfo;
     getLocalTime(&timeinfo, 5);

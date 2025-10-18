@@ -10,11 +10,11 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const Dimensions& dims,
       previousBarHeights_(config_.getPcMetricsCores(), 0) {}
 
 void ThreadsWidget::drawStatic() {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 }
 
 void ThreadsWidget::draw(bool forceRedraw) {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 
     bool needsRedraw = forceRedraw || needsUpdate();
 
@@ -61,7 +61,7 @@ void ThreadsWidget::drawBars(bool forceRedraw) {
     }
 }
 bool ThreadsWidget::needsUpdate() const {
-    if (!initialized_ || !pcMetrics_.is_available ||
+    if (!isInitialized_ || !pcMetrics_.is_available ||
         !(pcMetrics_.last_update_timestamp > lastUpdateTimestamp_)) {
         return false;
     }

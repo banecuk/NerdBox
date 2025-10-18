@@ -18,7 +18,7 @@ ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label, co
 // }
 
 void ButtonWidget::draw(bool forceRedraw /* = false */) {
-    if (!initialized_ || !callback_) return;
+    if (!isInitialized_ || !callback_) return;
 
     if (bgColor_ == TFT_BLACK) {
         // Draw outlined button
@@ -49,7 +49,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
         return false;
     }
 
-    if (!initialized_ || !lcd_ || !callback_) { 
+    if (!isInitialized_ || !lcd_ || !callback_) { 
         logger_->debug("ButtonWidget::handleTouch - Rejected");
         return false;
     }

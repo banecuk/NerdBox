@@ -15,7 +15,7 @@ void Widget::initialize(DisplayContext& context) {
     lcd_ = &context.getDisplay();
     logger_ = &context.getLogger();
     lastUpdateTimeMs_ = millis();
-    initialized_ = true;
+    isInitialized_ = true;
     drawStatic();
     isStaticDrawn_ = true;
 }
@@ -31,7 +31,7 @@ void Widget::cleanUp() {
         logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x,
                         dimensions_.y);
     }
-    initialized_ = false;
+    isInitialized_ = false;
     isStaticDrawn_ = false;
     lcd_ = nullptr;
     logger_ = nullptr;

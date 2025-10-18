@@ -7,7 +7,7 @@ SingleValueWidget::SingleValueWidget(DisplayContext& context, const Dimensions& 
 }
 
 void SingleValueWidget::drawStatic() {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 
     if (dimensionsDirty_) {
         updateDimensions();
@@ -37,7 +37,7 @@ void SingleValueWidget::drawStatic() {
 }
 
 void SingleValueWidget::draw(bool forceRedraw) {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 
     if (forceRedraw || needsUpdate()) {
         if (dimensionsDirty_) {

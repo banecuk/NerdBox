@@ -32,7 +32,7 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const Dimensions& dims
 }
 
 void PcMetricsWidget::drawStatic() {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
     // lcd_->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
     //                TFT_RED);
 
@@ -58,7 +58,7 @@ void PcMetricsWidget::drawStatic() {
 }
 
 void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_) return;
 
     bool needsRedraw = forceRedraw || needsUpdate();
 
@@ -123,7 +123,7 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
 }
 
 bool PcMetricsWidget::needsUpdate() const {
-    if (!initialized_ || !pcMetrics_.is_available ||
+    if (!isInitialized_ || !pcMetrics_.is_available ||
         !(pcMetrics_.last_update_timestamp > lastUpdateTimestamp_)) {
         return false;
     }

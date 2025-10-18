@@ -23,6 +23,6 @@ class Widget : public WidgetInterface {
     Dimensions dimensions_;
     uint32_t updateIntervalMs_;
     uint32_t lastUpdateTimeMs_ = 0;
-    bool initialized_ = false;
+    bool isInitialized_ = false;
     bool isStaticDrawn_ = false;
 };

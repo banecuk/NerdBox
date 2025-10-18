@@ -25,5 +25,5 @@ class WidgetManager {
     LoggerInterface& logger_;
     LGFX* lcd_;
     std::vector<std::unique_ptr<WidgetInterface>> widgets_;
-    bool initialized_ = false;
+    bool isInitialized_ = false;
 };
