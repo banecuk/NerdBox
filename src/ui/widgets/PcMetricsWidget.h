@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "services/PcMetrics.h"
+#include "services/pcMetrics/PcMetrics.h"
 #include "SingleValueWidget.h"
 #include "ui/DisplayContext.h"
 #include "ui/widgets/ThreadsWidget.h"

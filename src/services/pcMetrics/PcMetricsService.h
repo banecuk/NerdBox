@@ -5,7 +5,7 @@
 #include "config/AppConfigInterface.h"
 #include "config/Environment.h"
 #include "network/NetworkManager.h"
-#include "services/PcMetrics.h"
+#include "services/pcMetrics/PcMetrics.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/LoggerInterface.h"
 
@@ -16,8 +16,21 @@ class PcMetricsService {
     bool fetchData(PcMetrics& outData);
 
  private:
+    struct HardwareIndices {
+        int motherboard;
+        int cpu;
+        int memory;
+        int gpu;
+    };
+
     void initFilter();
     bool parseData(const String& rawData, PcMetrics& outData);
+
+    HardwareIndices findHardwareIndices(JsonArray hardwareChildren);
+    bool parseMotherboard(JsonArray hardwareChildren, int index, PcMetrics& outData);
+    bool parseCpu(JsonArray hardwareChildren, int index, PcMetrics& outData);
+    bool parseMemory(JsonArray hardwareChildren, int index, PcMetrics& outData);
+    bool parseGpu(JsonArray hardwareChildren, int index, PcMetrics& outData);
 
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;

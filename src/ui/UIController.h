@@ -6,7 +6,7 @@
 #include "core/state/SystemState.h"
 #include "DisplayContext.h"
 #include "DisplayManager.h"
-#include "services/PcMetrics.h"
+#include "services/pcMetrics/PcMetrics.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"

@@ -14,7 +14,7 @@
 #include "network/HttpClient.h"
 #include "network/NetworkManager.h"
 #include "services/NtpService.h"
-#include "services/PcMetricsService.h"
+#include "services/pcMetrics/PcMetricsService.h"
 #include "services/WebServerService.h"
 #include "ui/Colors.h"
 #include "ui/DisplayManager.h"

@@ -2,7 +2,7 @@
 
 #include "BaseWidgetScreen.h"
 #include "config/AppConfigInterface.h"
-#include "services/PcMetrics.h"
+#include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/ButtonWidget.h"
 #include "ui/widgets/ClockWidget.h"
 #include "ui/widgets/PcMetricsWidget.h"

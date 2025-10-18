@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config/AppConfigInterface.h"
-#include "services/PcMetrics.h"
+#include "services/pcMetrics/PcMetrics.h"
 #include "ui/DisplayContext.h"
 #include "ui/widgets/Widget.h"
 
