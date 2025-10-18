@@ -7,7 +7,7 @@
 #include "utils/LoggerInterface.h"
 
 class DisplayManager {
-   public:
+ public:
     DisplayManager(LGFX& display, LoggerInterface& logger);
 
     // Initialize the display
@@ -28,7 +28,7 @@ class DisplayManager {
 
     void cycleBrightness();
 
-   private:
+ private:
     LGFX& display_;
     LoggerInterface& logger_;
 

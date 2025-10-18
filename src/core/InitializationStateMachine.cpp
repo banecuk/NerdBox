@@ -98,8 +98,7 @@ bool InitializationStateMachine::handleNetworkInit() {
 bool InitializationStateMachine::handleTimeInit() {
     components_.logger.info("Syncing time", true);
 
-    for (uint8_t attempt = 1; attempt <= components_.config.getInitTimeSyncRetries();
-         ++attempt) {
+    for (uint8_t attempt = 1; attempt <= components_.config.getInitTimeSyncRetries(); ++attempt) {
         if (components_.ntpService.syncTime()) {
             components_.logger.info("Time synchronized successfully", true);
             components_.systemState.core.isTimeSynced = true;
@@ -107,10 +106,8 @@ bool InitializationStateMachine::handleTimeInit() {
             return true;
         }
 
-        logRetryAttempt("Time sync", attempt,
-                        components_.config.getInitTimeSyncRetries());
-        delay(calculateBackoffDelay(attempt,
-                                    components_.config.getInitTimeSyncBaseDelayMs()));
+        logRetryAttempt("Time sync", attempt, components_.config.getInitTimeSyncRetries());
+        delay(calculateBackoffDelay(attempt, components_.config.getInitTimeSyncBaseDelayMs()));
     }
 
     components_.logger.warning("Time sync failed, using local time", true);
@@ -125,11 +122,10 @@ bool InitializationStateMachine::handleWatchdogInit() {
         return true;
     }
 
-    esp_err_t ret =
-        esp_task_wdt_init(components_.config.getWatchdogTimeoutMs() / 1000, true);
+    esp_err_t ret = esp_task_wdt_init(components_.config.getWatchdogTimeoutMs() / 1000, true);
     if (ret != ESP_OK) {
-        components_.logger.error(
-            "Failed to initialize watchdog: " + String(esp_err_to_name(ret)), true);
+        components_.logger.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)),
+                                 true);
         transitionTo(State::FINAL_SETUP);
         return true;
     }
@@ -175,8 +171,7 @@ bool InitializationStateMachine::handleFailed() {
 }
 
 void InitializationStateMachine::transitionTo(State newState) {
-    components_.logger.debug(getStateName(currentState_) + " -> " +
-                             getStateName(newState));
+    components_.logger.debug(getStateName(currentState_) + " -> " + getStateName(newState));
     currentState_ = newState;
 }
 

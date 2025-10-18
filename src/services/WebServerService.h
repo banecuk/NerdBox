@@ -5,12 +5,12 @@
 #include "ui/UiController.h"
 
 class WebServerService {
-   public:
+ public:
     WebServerService(UiController& uiController, ApplicationMetrics& systemMetrics);
     void begin();
     void processRequests();
 
-   private:
+ private:
     WebServer server_;
     UiController& uiController_;
     ApplicationMetrics& systemMetrics_;

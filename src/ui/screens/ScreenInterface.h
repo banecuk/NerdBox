@@ -5,7 +5,7 @@
 #include "config/LgfxConfig.h"
 
 class ScreenInterface {
-   public:
+ public:
     virtual ~ScreenInterface() = default;  // Virtual destructor for proper cleanup
 
     virtual void draw() = 0;   // Make draw pure virtual if every screen MUST implement it

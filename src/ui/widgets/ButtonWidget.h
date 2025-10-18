@@ -2,12 +2,12 @@
 
 #include <string>
 
-#include "Widget.h"
 #include "core/events/EventTypes.h"
 #include "ui/DisplayContext.h"
+#include "Widget.h"
 
 class ButtonWidget : public Widget {
-   public:
+ public:
     typedef std::function<void()> Callback;
 
     using ActionCallback = std::function<void(EventType)>;
@@ -25,7 +25,7 @@ class ButtonWidget : public Widget {
 
     void setCallback(ActionCallback callback);
 
-   private:
+ private:
     DisplayContext& context_;
     std::string label_;
     unsigned long lastTouchTime_;  // Track last touch time for debouncing

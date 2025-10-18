@@ -8,8 +8,7 @@
 
 UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                           SystemState::ScreenState& screenState,
-                           AppConfigInterface& config)
+                           SystemState::ScreenState& screenState, AppConfigInterface& config)
     : context_(context),
       logger_(context.getLogger()),
       displayManager_(displayManager),
@@ -19,8 +18,7 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
       config_(config),
       actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())) {
     if (!displayManager_) {
-        throw std::invalid_argument(
-            "[UiController] DisplayManager pointer cannot be null");
+        throw std::invalid_argument("[UiController] DisplayManager pointer cannot be null");
     }
     displayAccessMutex_ = xSemaphoreCreateMutex();
     if (!displayAccessMutex_) {
@@ -41,8 +39,7 @@ void UiController::initialize() {
 
 bool UiController::requestTransitionTo(ScreenName screenName) {
     logger_.debugf("[UiController] Scheduling transition to screen %d, current=%d",
-                   static_cast<int>(screenName),
-                   static_cast<int>(screenState_.activeScreen));
+                   static_cast<int>(screenName), static_cast<int>(screenState_.activeScreen));
 
     if (screenName == ScreenName::NONE) {
         logger_.error("[UiController] Invalid screen: UNSET");
@@ -90,7 +87,9 @@ bool UiController::tryAcquireDisplayLock() {
     return true;
 }
 
-void UiController::releaseDisplayLock() { xSemaphoreGive(displayAccessMutex_); }
+void UiController::releaseDisplayLock() {
+    xSemaphoreGive(displayAccessMutex_);
+}
 
 // Transition lifecycle methods
 void UiController::processTransitionPhase() {
@@ -155,8 +154,8 @@ void UiController::loadAndActivateScreen() {
     }
 
     std::unique_ptr<ScreenInterface> newScreen;
-    newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, logger_,
-                                            displayManager_, pcMetrics_, this, config_);
+    newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, logger_, displayManager_,
+                                            pcMetrics_, this, config_);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);

@@ -3,9 +3,8 @@
 #include "ui/widgets/Widget.h"
 
 class SingleValueWidget : public Widget {
-   public:
-    SingleValueWidget(DisplayContext& context, const Dimensions& dims,
-                      uint32_t updateIntervalMs);
+ public:
+    SingleValueWidget(DisplayContext& context, const Dimensions& dims, uint32_t updateIntervalMs);
 
     void drawStatic() override;
     void draw(bool forceRedraw = false) override;
@@ -14,13 +13,12 @@ class SingleValueWidget : public Widget {
     void setValue(int value);
     void setUnit(const String& unit);
     void setRange(int minValue, int maxValue);
-    void setColorThresholds(float greenThreshold, float yellowThreshold,
-                            float redThreshold);
+    void setColorThresholds(float greenThreshold, float yellowThreshold, float redThreshold);
 
     void setLabel(const String& label);
     void setLabelWidth(uint16_t width);
 
-   private:
+ private:
     int value_ = 0;
     int minValue_ = 0;
     int maxValue_ = 100;

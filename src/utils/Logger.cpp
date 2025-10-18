@@ -17,8 +17,7 @@ String Logger::getUptimeTimestamp(bool forScreen) {
     unsigned long hours = minutes / 60;
 
     if (forScreen)
-        snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60,
-                 seconds % 60);
+        snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
     else
         snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu.%03lu", hours, minutes % 60,
                  seconds % 60, ms % 1000);
@@ -79,7 +78,7 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
     if (forScreen) {
         timestamp = getTimestamp(forScreen);
         LogEntry entry{timestamp, level, message.substring(0, 200), true};  // Limit to 200 chars
-        screenQueue_.push(entry); 
+        screenQueue_.push(entry);
     }
 }
 
@@ -103,8 +102,7 @@ void Logger::critical(const String& message, bool forScreen) {
     logMessage(LogLevel::CRITICAL, message, forScreen);
 }
 
-void Logger::logFormatted(LogLevel level, const char* format, va_list args,
-                          bool forScreen) {
+void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool forScreen) {
     char buffer[256];  // Adjust size as needed
     vsnprintf(buffer, sizeof(buffer), format, args);
     logMessage(level, String(buffer), forScreen);
@@ -150,8 +148,8 @@ std::queue<String> Logger::getScreenMessages() {
 
     while (!screenQueue_.empty()) {
         LogEntry entry = screenQueue_.front();
-        String formatted = "[" + entry.timestamp + "] [" + levelToString(entry.level) +
-                           "] " + entry.message;
+        String formatted =
+            "[" + entry.timestamp + "] [" + levelToString(entry.level) + "] " + entry.message;
         result.push(formatted);
         screenQueue_.pop();
     }

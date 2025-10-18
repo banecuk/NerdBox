@@ -11,6 +11,6 @@ ApplicationComponents::ApplicationComponents()
       uiController(displayContext, &displayManager, systemMetrics, systemState.pcMetrics,
                    systemState.screen, config),
       webServerService(uiController, systemMetrics),
-      taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics,
-                  systemState.core, systemState.screen, config),
+      taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics, systemState.core,
+                  systemState.screen, config),
       initStateMachine(*this) {}

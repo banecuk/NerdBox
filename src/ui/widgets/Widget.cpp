@@ -15,7 +15,7 @@ void Widget::initialize(DisplayContext& context) {
     lcd_ = &context.getDisplay();
     logger_ = &context.getLogger();
     lastUpdateTimeMs_ = millis();
-    initialized_ = true;
+    isInitialized_ = true;
     drawStatic();
     isStaticDrawn_ = true;
 }
@@ -28,16 +28,17 @@ void Widget::drawStatic() {
 
 void Widget::cleanUp() {
     if (logger_) {
-        logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x,
-                        dimensions_.y);
+        logger_->debugf("Widget::cleanUp for widget at (%d, %d)", dimensions_.x, dimensions_.y);
     }
-    initialized_ = false;
+    isInitialized_ = false;
     isStaticDrawn_ = false;
     lcd_ = nullptr;
     logger_ = nullptr;
 }
 
-void Widget::setUpdateInterval(uint32_t intervalMs) { updateIntervalMs_ = intervalMs; }
+void Widget::setUpdateInterval(uint32_t intervalMs) {
+    updateIntervalMs_ = intervalMs;
+}
 
 bool Widget::needsUpdate() const {
     if (updateIntervalMs_ == 0) {
@@ -46,4 +47,6 @@ bool Widget::needsUpdate() const {
     return (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
-WidgetInterface::Dimensions Widget::getDimensions() const { return dimensions_; }
+WidgetInterface::Dimensions Widget::getDimensions() const {
+    return dimensions_;
+}

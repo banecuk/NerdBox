@@ -2,11 +2,18 @@
 
 #include <cstdlib>  // For strtod
 
-PcMetricsService::PcMetricsService(NetworkManager &networkManager,
-                                   ApplicationMetrics &systemMetrics,
-                                   LoggerInterface &logger,
+namespace {
+constexpr size_t CPU_LOAD_OFFSET = 2;               // Skip CPU total and core max
+constexpr float GPU_MEMORY_CAPACITY_MB = 16368.0f;  // 16GB GPU
+}  // namespace
+
+PcMetricsService::PcMetricsService(NetworkManager& networkManager,
+                                   ApplicationMetrics& systemMetrics, LoggerInterface& logger,
                                    AppConfigInterface& config)
-    : networkManager_(networkManager), systemMetrics_(systemMetrics), logger_(logger), config_(config) {
+    : networkManager_(networkManager),
+      systemMetrics_(systemMetrics),
+      logger_(logger),
+      config_(config) {
     initFilter();
 }
 
@@ -14,8 +21,7 @@ void PcMetricsService::initFilter() {
     JsonObject filter_Children_0 = filter_["Children"].add<JsonObject>();
     filter_Children_0["Text"] = true;
 
-    JsonObject filter_Children_0_Children_0 =
-        filter_Children_0["Children"].add<JsonObject>();
+    JsonObject filter_Children_0_Children_0 = filter_Children_0["Children"].add<JsonObject>();
     filter_Children_0_Children_0["Text"] = true;
 
     JsonObject filter_Children_0_Children_0_Children_0 =
@@ -34,7 +40,7 @@ void PcMetricsService::initFilter() {
     filter_Children_0_Children_0_Children_0_Children_0_Children_0["Children"] = true;
 }
 
-bool PcMetricsService::fetchData(PcMetrics &outData) {
+bool PcMetricsService::fetchData(PcMetrics& outData) {
     String rawData;
     if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData)) {
         return parseData(rawData, outData);
@@ -53,7 +59,7 @@ T parseValue(JsonVariant value, T defaultValue) {
     if (value.is<float>() || value.is<int>()) {
         float val = value.as<float>();
         if constexpr (std::is_integral_v<T>) {
-            int rounded = static_cast<int>(val + 0.5f); // Round to nearest integer
+            int rounded = static_cast<int>(val + 0.5f);  // Round to nearest integer
             return static_cast<T>(rounded);
         }
         return static_cast<T>(val);
@@ -68,19 +74,19 @@ T parseValue(JsonVariant value, T defaultValue) {
     str.replace(" MB", "");
     str.replace(" GB", "");
     str.trim();
-    char *endPtr;
+    char* endPtr;
     float result = strtod(str.c_str(), &endPtr);
     if (endPtr == str.c_str()) {
         return defaultValue;  // Conversion failed
     }
     if constexpr (std::is_integral_v<T>) {
-        int rounded = static_cast<int>(result + 0.5f); // Round to nearest integer
+        int rounded = static_cast<int>(result + 0.5f);  // Round to nearest integer
         return static_cast<T>(rounded);
     }
     return static_cast<T>(result);
 }
 
-bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
+bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     // Start timing
     unsigned long startTime = millis();
 
@@ -132,8 +138,8 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
 
     // Motherboard data
     if (mbIndex >= 0) {
-        JsonArray mbChildren = childrenPC[mbIndex]["Children"][0]
-                                         ["Children"];  // Assume chip (e.g., Nuvoton)
+        JsonArray mbChildren =
+            childrenPC[mbIndex]["Children"][0]["Children"];  // Assume chip (e.g., Nuvoton)
         bool foundTemp = false, foundFans = false;
         for (JsonObject mbChild : mbChildren) {
             String text = mbChild["Text"] | "";
@@ -182,8 +188,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                 JsonArray powers = cpuChild["Children"];
                 for (JsonObject power : powers) {
                     String powerText = power["Text"] | "";
-                    if (powerText.indexOf("CPU Package") >= 0 ||
-                        powerText.indexOf("CPU") >= 0) {
+                    if (powerText.indexOf("CPU Package") >= 0 || powerText.indexOf("CPU") >= 0) {
                         outData.cpu_power = parseValue(power["Value"], 0.0f);
                         foundPower = true;
                         break;
@@ -203,19 +208,27 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     foundLoad = false;
                 }
                 // Parse thread loads
-                if (loads.size() >= config_.getPcMetricsCores() + 2) {
-                    for (size_t i = 2; i < config_.getPcMetricsCores() + 2; ++i) { // skip CPU total and CPU core max
+                if (loads.size() >= config_.getPcMetricsCores() + CPU_LOAD_OFFSET) {
+                    for (size_t i = CPU_LOAD_OFFSET;
+                         i < config_.getPcMetricsCores() + CPU_LOAD_OFFSET;
+                         ++i) {  // skip CPU total and CPU core max
                         JsonObject load = loads[i];
                         String loadText = load["Text"] | "";
-                        int threadIndex = i - 2; // Map index 2 to thread 0, 3 to thread 1, etc.
-                         if (threadIndex >= 0 && threadIndex < config_.getPcMetricsCores()) {
+                        int threadIndex = i - CPU_LOAD_OFFSET;
+                        if (threadIndex >= 0 && threadIndex < config_.getPcMetricsCores()) {
                             outData.cpu_thread_load[threadIndex] = parseValue(load["Value"], 0.0f);
                         } else {
-                            logger_.warningf("Invalid thread index %d for CPU thread load at JSON index %d", threadIndex, i);
+                            logger_.warningf(
+                                "Invalid thread index %d for CPU thread load at JSON "
+                                "index %d",
+                                threadIndex, i);
                         }
                     }
                 } else {
-                    logger_.warningf("Insufficient entries in CPU Load section: expected at least 22, found %d", loads.size());
+                    logger_.warningf(
+                        "Insufficient entries in CPU Load section: expected at least 22, "
+                        "found %d",
+                        loads.size());
                     foundLoad = false;
                 }
             }
@@ -266,8 +279,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                 JsonArray loads = gpuChild["Children"];
                 for (JsonObject load : loads) {
                     String loadText = load["Text"] | "";
-                    if (loadText.indexOf("D3D 3D") >= 0 ||
-                        loadText.indexOf("GPU Core") >= 0) {
+                    if (loadText.indexOf("D3D 3D") >= 0 || loadText.indexOf("GPU Core") >= 0) {
                         outData.gpu_3d = parseValue(load["Value"], 0.0f);
                     } else if (loadText.indexOf("D3D Compute") >= 0 ||
                                loadText.indexOf("Compute") >= 0) {
@@ -282,8 +294,7 @@ bool PcMetricsService::parseData(const String &rawData, PcMetrics &outData) {
                     if (dataText.indexOf("GPU Memory Used") >= 0 ||
                         dataText.indexOf("Memory Used") >= 0) {
                         float memUsed = parseValue(datum["Value"], 0.0f);
-                        outData.gpu_mem =
-                            (memUsed / 16368.0) * 100.0;  // Convert MB to % of 16 GB
+                        outData.gpu_mem = (memUsed / GPU_MEMORY_CAPACITY_MB) * 100.0;
                         foundMem = true;
                         break;
                     }

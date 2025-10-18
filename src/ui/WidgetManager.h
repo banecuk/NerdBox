@@ -9,7 +9,7 @@
 #include "utils/LoggerInterface.h"
 
 class WidgetManager {
-   public:
+ public:
     explicit WidgetManager(DisplayContext& context);
     ~WidgetManager();
 
@@ -20,10 +20,10 @@ class WidgetManager {
     void cleanupWidgets();
     size_t getWidgetCount() const { return widgets_.size(); }
 
-   private:
+ private:
     DisplayContext& context_;
     LoggerInterface& logger_;
     LGFX* lcd_;
     std::vector<std::unique_ptr<WidgetInterface>> widgets_;
-    bool initialized_ = false;
+    bool isInitialized_ = false;
 };

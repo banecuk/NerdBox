@@ -4,7 +4,7 @@
 #include "utils/Logger.h"
 
 class BootScreen : public ScreenInterface {
-   public:
+ public:
     explicit BootScreen(LoggerInterface& logger, LGFX* lcd);
 
     void initialize();
@@ -12,7 +12,7 @@ class BootScreen : public ScreenInterface {
     void onExit() override;
     void draw() override;
 
-   private:
+ private:
     LoggerInterface& logger_;
     LGFX* lcd_;
 

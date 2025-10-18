@@ -5,7 +5,7 @@
 #include "LoggerInterface.h"
 
 class Logger : public LoggerInterface {
-   public:
+ public:
     Logger(const bool& isTimeSynced);
     ~Logger();
 
@@ -26,7 +26,7 @@ class Logger : public LoggerInterface {
     std::queue<String> getScreenMessages() override;
     void clearScreenMessages() override;
 
-   private:
+ private:
     const bool& isTimeSynced_;
     std::queue<LogEntry> screenQueue_;
 

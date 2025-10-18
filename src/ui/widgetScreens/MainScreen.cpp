@@ -1,7 +1,7 @@
 #include "MainScreen.h"
 
-MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics,
-                       UiController* uiController, AppConfigInterface& config)
+MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
+                       AppConfigInterface& config)
     : BaseWidgetScreen(logger, uiController, config), pcMetrics_(pcMetrics) {}
 
 void MainScreen::createWidgets() {
@@ -13,7 +13,6 @@ void MainScreen::createWidgets() {
                         TFT_LIGHTGREY, TFT_BLACK, 3)));
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "<", {0, 272, 48, 48}, 0,
-        EventType::SHOW_SETTINGS,
+        uiController_->getDisplayContext(), "<", {0, 272, 48, 48}, 0, EventType::SHOW_SETTINGS,
         [this](EventType action) { this->handleAction(action); }, TFT_BLACK, TFT_WHITE)));
 }

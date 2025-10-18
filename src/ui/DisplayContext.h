@@ -20,7 +20,7 @@
 #include "utils/LoggerInterface.h"
 
 class DisplayContext {
-   public:
+ public:
     DisplayContext(LGFX& display, Colors& colors, LoggerInterface& logger)
         : display_(display), colors_(colors), logger_(logger) {}
 
@@ -45,7 +45,7 @@ class DisplayContext {
      */
     LoggerInterface& getLogger() { return logger_; }
 
-   private:
+ private:
     LGFX& display_;
     Colors& colors_;
     LoggerInterface& logger_;

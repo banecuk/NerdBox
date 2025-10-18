@@ -2,9 +2,9 @@
 
 #include <time.h>
 
-ClockWidget::ClockWidget(DisplayContext& context, const Dimensions& dims,
-                         uint32_t updateIntervalMs, uint16_t textColor, uint16_t bgColor,
-                         uint8_t textSize, const std::string& format)
+ClockWidget::ClockWidget(DisplayContext& context, const Dimensions& dims, uint32_t updateIntervalMs,
+                         uint16_t textColor, uint16_t bgColor, uint8_t textSize,
+                         const std::string& format)
     : Widget(dims, updateIntervalMs),
       textColor_(textColor),
       bgColor_(bgColor),
@@ -36,11 +36,11 @@ ClockWidget::ClockWidget(DisplayContext& context, const Dimensions& dims,
 }
 
 void ClockWidget::drawStatic() {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_)
+        return;
 
     // Clear entire widget area
-    lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                   bgColor_);
+    lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, bgColor_);
 
     // Draw static colons
     lcd_->setTextColor(textColor_, bgColor_);
@@ -54,7 +54,8 @@ void ClockWidget::drawStatic() {
 }
 
 void ClockWidget::draw(bool forceRedraw) {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_)
+        return;
 
     struct tm timeinfo;
     getLocalTime(&timeinfo, 5);
@@ -97,4 +98,6 @@ void ClockWidget::drawTimePart(uint16_t x, uint16_t y, uint16_t width, const cha
     lcd_->drawString(text, x, y + dimensions_.height / 2 - (textSize_ * 8) / 2);
 }
 
-bool ClockWidget::handleTouch(uint16_t x, uint16_t y) { return false; }
+bool ClockWidget::handleTouch(uint16_t x, uint16_t y) {
+    return false;
+}

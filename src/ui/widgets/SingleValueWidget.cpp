@@ -7,7 +7,8 @@ SingleValueWidget::SingleValueWidget(DisplayContext& context, const Dimensions& 
 }
 
 void SingleValueWidget::drawStatic() {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_)
+        return;
 
     if (dimensionsDirty_) {
         updateDimensions();
@@ -37,7 +38,8 @@ void SingleValueWidget::drawStatic() {
 }
 
 void SingleValueWidget::draw(bool forceRedraw) {
-    if (!initialized_ || !lcd_) return;
+    if (!isInitialized_ || !lcd_)
+        return;
 
     if (forceRedraw || needsUpdate()) {
         if (dimensionsDirty_) {
@@ -80,7 +82,8 @@ void SingleValueWidget::updateDimensions() {
 }
 
 void SingleValueWidget::updateTextSize() {
-    if (!lcd_) return;
+    if (!lcd_)
+        return;
 
     String valueText = String(value_) + unit_;
     optimalTextSize_ = 1;
@@ -99,9 +102,10 @@ void SingleValueWidget::updateTextSize() {
 }
 
 uint16_t SingleValueWidget::getBackgroundColor() const {
-    if (maxValue_ <= minValue_) return TFT_BLACK;
+    if (maxValue_ <= minValue_)
+        return TFT_BLACK;
 
-    float normalizedValueFloat = 
+    float normalizedValueFloat =
         99.0f * static_cast<float>(value_ - minValue_) / (maxValue_ - minValue_);
     uint8_t normalizedValue = static_cast<uint8_t>(normalizedValueFloat);
 

@@ -5,17 +5,16 @@
 #include "ui/widgets/Widget.h"
 
 class ClockWidget : public Widget {
-   public:
-    ClockWidget(DisplayContext& context, const Dimensions& dims,
-                uint32_t updateIntervalMs = 1000, uint16_t textColor = TFT_LIGHTGREY,
-                uint16_t bgColor = TFT_BLACK, uint8_t textSize = 3,
-                const std::string& format = "%H:%M:%S");
+ public:
+    ClockWidget(DisplayContext& context, const Dimensions& dims, uint32_t updateIntervalMs = 1000,
+                uint16_t textColor = TFT_LIGHTGREY, uint16_t bgColor = TFT_BLACK,
+                uint8_t textSize = 3, const std::string& format = "%H:%M:%S");
 
     void drawStatic() override;
     void draw(bool forceRedraw = false) override;
     bool handleTouch(uint16_t x, uint16_t y) override;
 
-   private:
+ private:
     void drawTimePart(uint16_t x, uint16_t y, uint16_t width, const char* text);
     void updateIfNeeded(struct tm& timeinfo, bool forceRedraw);
 

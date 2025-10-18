@@ -10,7 +10,7 @@
 #include "utils/Logger.h"
 
 class TaskManager {
-   public:
+ public:
     TaskManager(LoggerInterface& logger, UiController& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
@@ -23,7 +23,7 @@ class TaskManager {
     static void updateScreenTask(void* parameter);
     static void backgroundTask(void* parameter);
 
-   private:
+ private:
     // Constants
     static constexpr const char* SCREEN_TASK_NAME = "ScreenUpdate";
     static constexpr const char* BACKGROUND_TASK_NAME = "BackgroundTask";

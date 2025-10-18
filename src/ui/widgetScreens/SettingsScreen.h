@@ -6,11 +6,10 @@
 #include "ui/widgets/ClockWidget.h"
 
 class SettingsScreen : public BaseWidgetScreen {
-   public:
-    SettingsScreen(LoggerInterface& logger, UiController* uiController,
-                   AppConfigInterface& config);
+ public:
+    SettingsScreen(LoggerInterface& logger, UiController* uiController, AppConfigInterface& config);
     ~SettingsScreen() override = default;
 
-   private:
+ private:
     void createWidgets() override;
 };

@@ -6,17 +6,16 @@
 #include "ui/widgets/Widget.h"
 
 class ThreadsWidget : public Widget {
-   public:
-    ThreadsWidget(DisplayContext& context, const Dimensions& dims,
-                  uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                  AppConfigInterface& config);
+ public:
+    ThreadsWidget(DisplayContext& context, const Dimensions& dims, uint32_t updateIntervalMs,
+                  PcMetrics& pcMetrics, AppConfigInterface& config);
 
     void drawStatic() override;
     void draw(bool forceRedraw = false) override;
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
 
-   private:
+ private:
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
     AppConfigInterface& config_;

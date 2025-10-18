@@ -3,10 +3,11 @@
 #include <functional>
 #include <map>
 #include <vector>
+
 #include "EventTypes.h"
 
 class EventBus {
-public:
+ public:
     // Singleton instance
     static EventBus& getInstance() {
         static EventBus instance;
@@ -30,7 +31,7 @@ public:
         }
     }
 
-private:
+ private:
     EventBus() = default;
     ~EventBus() = default;
     EventBus(const EventBus&) = delete;

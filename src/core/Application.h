@@ -1,15 +1,16 @@
 #pragma once
 
-#include <WebServer.h>
 #include <esp_task_wdt.h>
+#include <WebServer.h>
+
+#include <memory>
 
 #include <LovyanGFX.hpp>
-#include <memory>
 
 #include "config/AppConfig.h"
 #include "config/AppConfigService.h"
-#include "core/TaskManager.h"
 #include "core/state/SystemState.h"
+#include "core/TaskManager.h"
 #include "network/HttpClient.h"
 #include "network/NetworkManager.h"
 #include "services/NtpService.h"
@@ -17,8 +18,8 @@
 #include "services/WebServerService.h"
 #include "ui/Colors.h"
 #include "ui/DisplayManager.h"
-#include "ui/UIController.h"
 #include "ui/screens/ScreenTypes.h"
+#include "ui/UIController.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
@@ -26,8 +27,7 @@
 class ApplicationComponents;
 
 class Application {
-   public:
-
+ public:
     explicit Application(std::unique_ptr<ApplicationComponents> components);
     ~Application() = default;
 
@@ -40,6 +40,6 @@ class Application {
     bool initialize();
     void run();
 
-   private:
+ private:
     std::unique_ptr<ApplicationComponents> components_;
 };

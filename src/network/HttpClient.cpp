@@ -2,10 +2,12 @@
 
 HttpClient::HttpClient() {}
 
-HttpClient::~HttpClient() { http_.end(); }
+HttpClient::~HttpClient() {
+    http_.end();
+}
 
 bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetries,
-                              uint32_t retryDelayMs) {
+                          uint32_t retryDelayMs) {
     bool success = false;
     uint8_t retryCount = 0;
     lastHttpCode_ = 0;
