@@ -69,9 +69,9 @@ String WebServerService::getAppInfo() {
                        systemMetrics_.getFormattedUptime().c_str());
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
                        ESP.getFreeHeap());
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "Libre Hardware Monitor JSON Parse Time: %u ms\n",
-                       systemMetrics_.getPcMetricsJsonParseTime());
+    offset +=
+        snprintf(buffer + offset, sizeof(buffer) - offset, "NerdWinSense JSON Parse Time: %u ms\n",
+                 systemMetrics_.getPcMetricsJsonParseTime());
     offset +=
         snprintf(buffer + offset, sizeof(buffer) - offset, "Average Screen Draw Time: %u ms\n",
                  static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));

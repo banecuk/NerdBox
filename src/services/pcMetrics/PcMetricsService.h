@@ -16,26 +16,12 @@ class PcMetricsService {
     bool fetchData(PcMetrics& outData);
 
  private:
-    struct HardwareIndices {
-        int motherboard;
-        int cpu;
-        int memory;
-        int gpu;
-    };
-
-    void initFilter();
     bool parseData(const String& rawData, PcMetrics& outData);
-
-    HardwareIndices findHardwareIndices(JsonArray hardwareChildren);
-    bool parseMotherboard(JsonArray hardwareChildren, int index, PcMetrics& outData);
-    bool parseCpu(JsonArray hardwareChildren, int index, PcMetrics& outData);
-    bool parseMemory(JsonArray hardwareChildren, int index, PcMetrics& outData);
-    bool parseGpu(JsonArray hardwareChildren, int index, PcMetrics& outData);
+    void initFilter();
 
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;
     LoggerInterface& logger_;
     AppConfigInterface& config_;
-
-    JsonDocument filter_;
+    JsonDocument filter_;  // JSON filter for efficient parsing
 };
