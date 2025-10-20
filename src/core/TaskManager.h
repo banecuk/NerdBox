@@ -4,8 +4,8 @@
 
 #include "config/AppConfigInterface.h"
 #include "core/state/SystemState.h"
-#include "services/PcMetrics.h"
-#include "services/PcMetricsService.h"
+#include "services/pcMetrics/PcMetrics.h"
+#include "services/pcMetrics/PcMetricsService.h"
 #include "ui/UiController.h"
 #include "utils/Logger.h"
 
