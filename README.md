@@ -12,14 +12,14 @@ This project enables real-time monitoring of PC performance metrics, including C
 - Provides a user-friendly touchscreen interface on the WT32-SC01-PLUS.
 
 ## Data Source
-PC metrics are sourced from **Libre Hardware Monitor**, a fork of **Open Hardware Monitor**. Libre Hardware Monitor runs on the host PC and exposes sensor data through a JSON API (e.g., `http://192.168.1.11:8085/data.json`). Ensure Libre Hardware Monitor is installed and its web server is enabled for remote access.
+PC metrics are sourced from **NerdWinSense**, a hardware monitor that runs on the host PC and exposes sensor data through a JSON API (e.g., `http://192.168.1.11:8086/api/v1/system`). Ensure NerdWinSense is installed and its web server is accessible through the network.
 
 ## Requirements
 
 ### Hardware
 - WT32-SC01-PLUS (ESP32 with touchscreen display)
 - USB cable for programming and power
-- PC running Libre Hardware Monitor
+- PC running NerdWinSense
 
 ### Software
 - [PlatformIO](https://platformio.org/) for building and uploading firmware
@@ -36,7 +36,7 @@ Specified in `platformio.ini`:
 1. **Install Libre Hardware Monitor**:
    - Download from the [official repository](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
    - Install and run Libre Hardware Monitor on your PC.
-   - Enable the web server in settings to expose the JSON API (default: `http://localhost:8085/data.json`).
+   - Enable the web server in settings to expose the JSON API (default: `http://192.168.1.11:8086/api/v1/system`).
    - Note the PC's IP address (e.g., `192.168.1.11`) and verify accessibility from the ESP32's network.
 
 2. **Configure the ESP32**:
@@ -51,7 +51,7 @@ Specified in `platformio.ini`:
      ```
    - Edit `Environment.h` to set the API endpoint:
      ```cpp
-     #define LIBRE_HM_API "http://192.168.1.11:8085/data.json"
+     #define LIBRE_HM_API "http://192.168.1.11:8086/api/v1/system"
      ```
    - Edit `Environment.h` to set WiFi credentials:  
    - Connect the WT32-SC01-PLUS via USB.
@@ -107,7 +107,5 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ## Acknowledgments
 
-- **Libre Hardware Monitor**: For providing the JSON API for PC metrics.
-- **Open Hardware Monitor**: The original project forked by Libre Hardware Monitor.
 - **PlatformIO** and **Arduino** communities: For robust development tools and libraries.
 - **LovyanGFX**: For WT32-SC01-PLUS display support.
