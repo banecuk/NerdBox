@@ -16,12 +16,12 @@ String Logger::getUptimeTimestamp(bool forScreen) {
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
 
-    if (forScreen)
+    if (forScreen) {
         snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
-    else
+    } else {
         snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu.%03lu", hours, minutes % 60,
                  seconds % 60, ms % 1000);
-
+    }
     return String(buffer);
 }
 
@@ -34,12 +34,13 @@ String Logger::getTimestamp(bool forScreen) {
         if (!getLocalTime(&timeinfo)) {
             return getUptimeTimestamp(forScreen);
         } else {
-            if (forScreen)
+            if (forScreen) {
                 snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", timeinfo.tm_hour,
                          timeinfo.tm_min, timeinfo.tm_sec);
-            else
+            } else {
                 snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d.%03d", timeinfo.tm_hour,
                          timeinfo.tm_min, timeinfo.tm_sec, (int)(millis() % 1000));
+            }
             return String(buffer);
         }
     }
@@ -103,7 +104,7 @@ void Logger::critical(const String& message, bool forScreen) {
 }
 
 void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool forScreen) {
-    char buffer[256];  // Adjust size as needed
+    char buffer[256];  // Stack buffer for formatted messages
     vsnprintf(buffer, sizeof(buffer), format, args);
     logMessage(level, String(buffer), forScreen);
 }

@@ -17,8 +17,7 @@ void SingleValueWidget::drawStatic() {
     // Draw static elements (border and label if exists)
     if (hasLabel_ && labelWidth_ > 0) {
         // Draw label area (left part)
-        lcd_->fillRect(dimensions_.x, dimensions_.y, labelWidth_, dimensions_.height,
-                       TFT_BLACK);
+        lcd_->fillRect(dimensions_.x, dimensions_.y, labelWidth_, dimensions_.height, TFT_BLACK);
 
         // Draw label text
         lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
@@ -30,8 +29,8 @@ void SingleValueWidget::drawStatic() {
         lcd_->drawString(label_, labelX, labelY);
 
         // Draw separator line
-        lcd_->drawFastVLine(dimensions_.x + labelWidth_, dimensions_.y,
-                            dimensions_.height, TFT_DARKGREY);
+        lcd_->drawFastVLine(dimensions_.x + labelWidth_, dimensions_.y, dimensions_.height,
+                            TFT_DARKGREY);
     }
 
     isStaticDrawn_ = true;
@@ -57,11 +56,11 @@ void SingleValueWidget::drawValue() {
     uint16_t bgColor = getBackgroundColor();
 
     // Fill background
-    lcd_->fillRect(valueX_, dimensions_.y + 1, valueWidth_, dimensions_.height - 2,
-                   bgColor);
+    lcd_->fillRect(valueX_, dimensions_.y + 1, valueWidth_, dimensions_.height - 2, bgColor);
 
-    // Prepare value text
-    String valueText = String(value_) + unit_;
+    // Prepare value text - OPTIMIZED with stack buffer
+    char valueBuffer[16];  // Enough for "100%" + null
+    snprintf(valueBuffer, sizeof(valueBuffer), "%d%s", value_, unit_.c_str());
 
     // Set text properties
     lcd_->setTextColor(TFT_WHITE, bgColor);
@@ -71,7 +70,7 @@ void SingleValueWidget::drawValue() {
     // Draw the text centered in the value area
     int16_t centerX = valueX_ + valueWidth_ / 2;
     int16_t centerY = dimensions_.y + dimensions_.height / 2;
-    lcd_->drawString(valueText, centerX, centerY);
+    lcd_->drawString(valueBuffer, centerX, centerY);
 }
 
 void SingleValueWidget::updateDimensions() {
@@ -85,19 +84,20 @@ void SingleValueWidget::updateTextSize() {
     if (!lcd_)
         return;
 
-    String valueText = String(value_) + unit_;
+    char valueBuffer[16];
+    snprintf(valueBuffer, sizeof(valueBuffer), "%d%s", value_, unit_.c_str());
+
     optimalTextSize_ = 1;
     lcd_->setTextSize(optimalTextSize_);
-    int16_t textWidth = lcd_->textWidth(valueText);
+    int16_t textWidth = lcd_->textWidth(valueBuffer);
 
     // Increase text size if it fits
     while (optimalTextSize_ < 4 && textWidth < (valueWidth_ - 10) &&
            lcd_->fontHeight() < (dimensions_.height - 10)) {
         optimalTextSize_++;
         lcd_->setTextSize(optimalTextSize_);
-        textWidth = lcd_->textWidth(valueText);
+        textWidth = lcd_->textWidth(valueBuffer);
     }
-
     textSizeDirty_ = false;
 }
 

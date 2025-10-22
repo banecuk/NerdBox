@@ -26,7 +26,7 @@ void WebServerService::handleHome() {
 }
 
 String WebServerService::getSystemInfo() {
-    char buffer[300];
+    char buffer[512];  // Increased size for all system info
     size_t offset = 0;
 
     // Write opening tag
@@ -51,12 +51,7 @@ String WebServerService::getSystemInfo() {
     // Write closing tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
 
-    // Convert to String for compatibility
-    String info;
-    info.reserve(offset + 1);
-    info.concat(buffer, offset);
-
-    return wrapHtmlContent("System Information", info);
+    return wrapHtmlContent("System Information", String(buffer));
 }
 
 String WebServerService::getAppInfo() {
@@ -65,36 +60,44 @@ String WebServerService::getAppInfo() {
 
     // Write metrics in pre tag
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Uptime: %s\n",
-                       systemMetrics_.getFormattedUptime().c_str());
+
+    // Uptime
+    const String& uptime = systemMetrics_.getFormattedUptime();
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Uptime: %s\n", uptime.c_str());
+
+    // Free Heap
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
                        ESP.getFreeHeap());
+
+    // JSON Parse Time
     offset +=
         snprintf(buffer + offset, sizeof(buffer) - offset, "NerdWinSense JSON Parse Time: %u ms\n",
                  systemMetrics_.getPcMetricsJsonParseTime());
+
+    // Average Screen Draw Time
     offset +=
         snprintf(buffer + offset, sizeof(buffer) - offset, "Average Screen Draw Time: %u ms\n",
                  static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
+
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
 
     // Write screen draw times as a table
     offset += snprintf(buffer + offset, sizeof(buffer) - offset,
                        "<table class='draw-times'>"
                        "<tr><th>Draw</th><th>Draw time (ms)</th></tr>");
+
     const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
     size_t count = systemMetrics_.getScreenDrawCount();
+
     for (size_t i = 0; i < count && i < drawTimes.size(); ++i) {
-        offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                           "<tr><td>%u</td><td>%u</td></tr>", i + 1, drawTimes[i]);
+        offset +=
+            snprintf(buffer + offset, sizeof(buffer) - offset, "<tr><td>%u</td><td>%u</td></tr>",
+                     static_cast<unsigned int>(i + 1), drawTimes[i]);
     }
+
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</table>");
 
-    // Convert to String for compatibility
-    String info;
-    info.reserve(offset + 1);
-    info.concat(buffer, offset);
-
-    return wrapHtmlContent("App Information", info);
+    return wrapHtmlContent("App Information", String(buffer));
 }
 
 void WebServerService::handleSystemInfo() {

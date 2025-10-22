@@ -64,10 +64,8 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
         return;
 
     bool needsRedraw = forceRedraw || needsUpdate();
-
-    if (needsRedraw && pcMetrics_.is_available) {  // TODO clear the area if not available
-        // lcd_->fillRect(dimensions_.x, dimensions_.y, dimensions_.width,
-        //                dimensions_.height, TFT_BLACK);
+    if (needsRedraw && pcMetrics_.is_available) {
+        char buffer[32];  // Reusable buffer for strings
 
         // Update CPU load widget
         if (cpuLoadWidget_) {
@@ -91,26 +89,13 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
         lcd_->setTextSize(2);
         lcd_->setTextDatum(TL_DATUM);
 
-        // // Draw CPU Load
-        // String cpuLabel = "CPU: " + String(pcMetrics_.cpu_load) + "%  ";
-        // lcd_->drawString(cpuLabel.c_str(), dimensions_.x + 2, dimensions_.y + 0 + 2);
+        // Draw GPU mem - OPTIMIZED
+        snprintf(buffer, sizeof(buffer), "GPU RAM: %d%%  ", pcMetrics_.gpu_mem);
+        lcd_->drawString(buffer, dimensions_.x + 2, dimensions_.y + 0 + 2);
 
-        // // Draw GPU Load
-        // String gpu3D = "GPU 3D: " + String(pcMetrics_.gpu_3d) + "%  ";
-        // lcd_->drawString(gpu3D.c_str(), dimensions_.x + 2, dimensions_.y + 25 + 2);
-
-        // // Draw GPU Load
-        // String gpuCompute = "GPU Compute: " + String(pcMetrics_.gpu_compute) + "%  ";
-        // lcd_->drawString(gpuCompute.c_str(), dimensions_.x + 2, dimensions_.y + 50 +
-        // 2);
-
-        // Draw GPU mem
-        String gpuMem = "GPU RAM: " + String(pcMetrics_.gpu_mem) + "%  ";
-        lcd_->drawString(gpuMem.c_str(), dimensions_.x + 2, dimensions_.y + 0 + 2);
-
-        // Draw RAM Load
-        String ram = "RAM: " + String(pcMetrics_.mem_load) + "%  ";
-        lcd_->drawString(ram.c_str(), dimensions_.x + 2, dimensions_.y + 25 + 2);
+        // Draw RAM Load - OPTIMIZED
+        snprintf(buffer, sizeof(buffer), "RAM: %d%%  ", pcMetrics_.mem_load);
+        lcd_->drawString(buffer, dimensions_.x + 2, dimensions_.y + 25 + 2);
 
         // Draw ThreadsWidget
         if (threadsWidget_) {
@@ -119,7 +104,6 @@ void PcMetricsWidget::draw(bool forceRedraw /* = false */) {
 
         // last update of the data
         lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
-
         // last update of the widget
         lastUpdateTimeMs_ = millis();
     }
