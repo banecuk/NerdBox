@@ -7,33 +7,52 @@ PcMetricsService::PcMetricsService(NetworkManager& networkManager,
       systemMetrics_(systemMetrics),
       logger_(logger),
       config_(config) {
+    // Allocate JSON document on heap
+    filterDoc_ = std::make_unique<JsonDocument>();
     initFilter();
 }
 
 void PcMetricsService::initFilter() {
-    // Create a filter to only parse the fields we need for better performance
-    filter_["Metrics"]["Cpu"]["Load"] = true;
-    filter_["Metrics"]["Cpu"]["TemperatureCoreMax"] = true;
-    filter_["Metrics"]["Cpu"]["PackagePower"] = true;
-    filter_["Metrics"]["Cpu"]["CoreLoads"] = true;
+    // Create filter in the heap-allocated document
+    JsonObject filter = filterDoc_->to<JsonObject>();
+    JsonObject metrics = filter["Metrics"].to<JsonObject>();
 
-    filter_["Metrics"]["Ram"]["Load"] = true;
+    // CPU filters
+    JsonObject cpu = metrics["Cpu"].to<JsonObject>();
+    cpu["Load"] = true;
+    cpu["TemperatureCoreMax"] = true;
+    cpu["PackagePower"] = true;
+    cpu["CoreLoads"] = true;
 
-    filter_["Metrics"]["Gpu"]["Load"] = true;
-    filter_["Metrics"]["Gpu"]["Temperature"] = true;
-    filter_["Metrics"]["Gpu"]["PackagePower"] = true;
-    filter_["Metrics"]["Gpu"]["Fan"] = true;
-    filter_["Metrics"]["Gpu"]["D3d3d"] = true;
-    filter_["Metrics"]["Gpu"]["D3dCompute"] = true;
+    // RAM filters
+    JsonObject ram = metrics["Ram"].to<JsonObject>();
+    ram["Load"] = true;
 
-    filter_["Metrics"]["Motherboard"]["CpuFan"] = true;
-    filter_["Metrics"]["Motherboard"]["SystemFans"] = true;
+    // GPU filters
+    JsonObject gpu = metrics["Gpu"].to<JsonObject>();
+    gpu["Load"] = true;
+    gpu["Temperature"] = true;
+    gpu["PackagePower"] = true;
+    gpu["Fan"] = true;
+    gpu["D3d3d"] = true;
+    gpu["D3dCompute"] = true;
+    gpu["MemoryUsed"] = true;
+    gpu["MemoryTotal"] = true;
 
-    filter_["Metrics"]["Timestamp"] = true;
+    // Motherboard filters
+    JsonObject motherboard = metrics["Motherboard"].to<JsonObject>();
+    motherboard["CpuFan"] = true;
+    motherboard["SystemFans"] = true;
+
+    filter["Timestamp"] = true;
+
+    // Copy filter to stack-based filter for deserialization
+    filter_ = *filterDoc_;
 }
 
 bool PcMetricsService::fetchData(PcMetrics& outData) {
     String rawData;
+
     if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData)) {
         return parseData(rawData, outData);
     } else {
@@ -45,11 +64,17 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
 
 bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     unsigned long startTime = millis();
-    bool allComponentsValid = true;
 
-    JsonDocument doc;
+    // Use heap allocation for main JSON document
+    auto doc = std::make_unique<JsonDocument>();
+    if (!doc) {
+        logger_.error("Failed to allocate memory for JSON document");
+        outData.is_available = false;
+        return false;
+    }
+
     DeserializationError error =
-        deserializeJson(doc, rawData, DeserializationOption::Filter(filter_),
+        deserializeJson(*doc, rawData, DeserializationOption::Filter(filter_),
                         DeserializationOption::NestingLimit(12));
 
     if (error) {
@@ -58,73 +83,61 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
         return false;
     }
 
-    JsonObject metrics = doc["Metrics"];
+    JsonObject metrics = (*doc)["Metrics"];
     if (metrics.isNull()) {
         logger_.error("No Metrics object found in JSON");
-        allComponentsValid = false;
+        outData.is_available = false;
+        return false;
     }
 
-    // Parse CPU data
+    // Validate JSON structure before parsing
+    if (!validateJsonStructure(metrics)) {
+        logger_.error("JSON structure validation failed");
+        outData.is_available = false;
+        return false;
+    }
+
+    bool allComponentsValid = true;
+
+    // Parse individual components with error isolation
     JsonObject cpu = metrics["Cpu"];
     if (!cpu.isNull()) {
-        outData.cpu_load = static_cast<uint8_t>(cpu["Load"] | 0.0f);
-        outData.cpu_temperature = static_cast<uint8_t>(cpu["TemperatureCoreMax"] | 0);
-        outData.cpu_power = static_cast<uint16_t>(cpu["PackagePower"] | 0);
-
-        // Parse core loads
-        JsonArray coreLoads = cpu["CoreLoads"];
-        if (!coreLoads.isNull()) {
-            uint8_t coreCount = config_.getPcMetricsCores();
-            for (int i = 0; i < coreCount && i < coreLoads.size(); i++) {
-                outData.cpu_thread_load[i] = static_cast<uint8_t>(coreLoads[i] | 0);
-            }
+        if (!parseCpuData(cpu, outData)) {
+            allComponentsValid = false;
+            logger_.warning("CPU data parsing failed");
         }
     } else {
         allComponentsValid = false;
         logger_.warning("CPU data missing from metrics");
     }
 
-    // Parse RAM data
     JsonObject ram = metrics["Ram"];
     if (!ram.isNull()) {
-        outData.mem_load = static_cast<uint8_t>(ram["Load"] | 0.0f);
+        if (!parseRamData(ram, outData)) {
+            allComponentsValid = false;
+            logger_.warning("RAM data parsing failed");
+        }
     } else {
         allComponentsValid = false;
         logger_.warning("RAM data missing from metrics");
     }
 
-    // Parse GPU data
     JsonObject gpu = metrics["Gpu"];
     if (!gpu.isNull()) {
-        outData.gpu_temperature = static_cast<uint8_t>(gpu["Temperature"] | 0);
-        outData.gpu_3d = static_cast<uint8_t>(gpu["D3d3d"] | 0);
-        outData.gpu_compute = static_cast<uint8_t>(gpu["D3dCompute"] | 0);
-        outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"] | 0);
-
-        // Use GPU PackagePower if available, otherwise use CPU PackagePower
-        if (gpu["PackagePower"].is<float>()) {  // TODO check !!!
-            // GPU has its own power reading
+        if (!parseGpuData(gpu, outData)) {
+            allComponentsValid = false;
+            logger_.warning("GPU data parsing failed");
         }
-        // Note: GPU power isn't directly mapped in your PcMetrics struct
     } else {
         allComponentsValid = false;
         logger_.warning("GPU data missing from metrics");
     }
 
-    // Parse Motherboard/Fan data
     JsonObject motherboard = metrics["Motherboard"];
     if (!motherboard.isNull()) {
-        outData.cpu_fan = static_cast<uint16_t>(motherboard["CpuFan"] | 0);
-
-        JsonArray systemFans = motherboard["SystemFans"];
-        if (!systemFans.isNull()) {
-            // Map system fans to available slots
-            if (systemFans.size() > 0) {
-                outData.front_fan = static_cast<uint16_t>(systemFans[0] | 0);
-            }
-            if (systemFans.size() > 4) {
-                outData.back_fan = static_cast<uint16_t>(systemFans[4] | 0);
-            }
+        if (!parseMotherboardData(motherboard, outData)) {
+            allComponentsValid = false;
+            logger_.warning("Motherboard data parsing failed");
         }
     } else {
         allComponentsValid = false;
@@ -135,13 +148,128 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     outData.last_update_timestamp = millis();
     outData.is_available = allComponentsValid;
 
+    unsigned long parseTime = millis() - startTime;
+    systemMetrics_.setPcMetricsJsonParseTime(parseTime);
+
     if (allComponentsValid) {
-        unsigned long parseTime = millis() - startTime;
-        systemMetrics_.setPcMetricsJsonParseTime(parseTime);
         logger_.infof("PC metrics parsed successfully in %lu ms", parseTime);
     } else {
         logger_.warning("Some hardware components missing or failed to parse");
     }
 
+    // Memory is automatically freed when 'doc' goes out of scope
     return allComponentsValid;
+}
+
+bool PcMetricsService::validateJsonStructure(JsonObject metrics) {
+    if (metrics.isNull())
+        return false;
+
+    // Check for required top-level objects
+    if (!metrics["Cpu"].is<JsonObject>()) {
+        logger_.warning("Missing or invalid CPU object in JSON");
+        return false;
+    }
+
+    if (!metrics["Ram"].is<JsonObject>()) {
+        logger_.warning("Missing or invalid RAM object in JSON");
+        return false;
+    }
+
+    return true;
+}
+
+bool PcMetricsService::parseCpuData(JsonObject cpu, PcMetrics& outData) {
+    try {
+        outData.cpu_load = static_cast<uint8_t>(cpu["Load"] | 0.0f);
+        outData.cpu_temperature = static_cast<uint8_t>(cpu["TemperatureCoreMax"] | 0);
+        outData.cpu_power = static_cast<uint16_t>(cpu["PackagePower"] | 0);
+
+        // Parse core loads with bounds checking
+        JsonArray coreLoads = cpu["CoreLoads"];
+        if (!coreLoads.isNull()) {
+            uint8_t coreCount = config_.getPcMetricsCores();
+            uint8_t actualCores = min(coreCount, static_cast<uint8_t>(coreLoads.size()));
+
+            for (int i = 0; i < actualCores; i++) {
+                if (i < 20) {  // Check against array size in PcMetrics
+                    outData.cpu_thread_load[i] = static_cast<uint8_t>(coreLoads[i] | 0);
+                } else {
+                    break;  // Prevent array overflow
+                }
+            }
+
+            if (actualCores < coreCount) {
+                logger_.warningf("Expected %d cores but found %d", coreCount, actualCores);
+            }
+        }
+        return true;
+    } catch (const std::exception& e) {
+        logger_.errorf("CPU data parsing exception: %s", e.what());
+        return false;
+    }
+}
+
+bool PcMetricsService::parseRamData(JsonObject ram, PcMetrics& outData) {
+    try {
+        outData.mem_load = static_cast<uint8_t>(ram["Load"] | 0.0f);
+        return true;
+    } catch (const std::exception& e) {
+        logger_.errorf("RAM data parsing exception: %s", e.what());
+        return false;
+    }
+}
+
+bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
+    try {
+        outData.gpu_temperature = static_cast<uint8_t>(gpu["Temperature"] | 0);
+        outData.gpu_3d = static_cast<uint8_t>(gpu["D3d3d"] | 0);
+        outData.gpu_compute = static_cast<uint8_t>(gpu["D3dCompute"] | 0);
+        outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"] | 0);
+
+        // FIX: Parse GPU memory usage correctly
+        if (gpu["MemoryUsed"].is<float>()) {
+            float memUsedMB = gpu["MemoryUsed"].as<float>();
+            float memTotalMB = gpu["MemoryTotal"].as<float>();
+
+            if (memTotalMB > 0) {
+                outData.gpu_mem = static_cast<uint8_t>((memUsedMB / memTotalMB) * 100.0f);
+            } else {
+                outData.gpu_mem = 0;
+                logger_.warning("GPU memory total is 0, cannot calculate percentage");
+            }
+
+            logger_.debugf("GPU Memory: %.0f/%.0f MB (%d%%)", memUsedMB, memTotalMB,
+                           outData.gpu_mem);
+        } else {
+            logger_.warning("GPU MemoryUsed field missing or invalid");
+            outData.gpu_mem = 0;
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        logger_.errorf("GPU data parsing exception: %s", e.what());
+        return false;
+    }
+}
+
+bool PcMetricsService::parseMotherboardData(JsonObject motherboard, PcMetrics& outData) {
+    try {
+        outData.cpu_fan = static_cast<uint16_t>(motherboard["CpuFan"] | 0);
+
+        JsonArray systemFans = motherboard["SystemFans"];
+        if (!systemFans.isNull()) {
+            // Map system fans to available slots with bounds checking
+            if (systemFans.size() > 0) {
+                outData.front_fan = static_cast<uint16_t>(systemFans[0] | 0);
+            }
+            if (systemFans.size() > 4) {
+                outData.back_fan = static_cast<uint16_t>(systemFans[4] | 0);
+            }
+        }
+        return true;
+    } catch (const std::exception& e) {
+        logger_.errorf("Motherboard data parsing exception: %s", e.what());
+        return false;
+    }
 }
