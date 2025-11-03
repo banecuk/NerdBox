@@ -1,10 +1,10 @@
 #include "UIController.h"
 
 #include "core/events/EventHandler.h"
-#include "screens/BootScreen.h"
-#include "screens/ScreenFactory.h"
-#include "widgetScreens/MainScreen.h"
-#include "widgetScreens/SettingsScreen.h"
+#include "ui/screens/BootScreen.h"
+#include "ui/screens/ScreenFactory.h"
+#include "ui/widgetScreens/MainScreen.h"
+#include "ui/widgetScreens/SettingsScreen.h"
 
 UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
@@ -97,7 +97,6 @@ void UiController::releaseDisplayLock() {
     xSemaphoreGive(displayAccessMutex_);
 }
 
-// Transition lifecycle methods
 void UiController::processTransitionPhase() {
     if (!tryAcquireDisplayLock()) {
         logger_.error("[UiController] Failed to acquire display lock");
@@ -161,7 +160,8 @@ void UiController::loadAndActivateScreen() {
 
     std::unique_ptr<ScreenInterface> newScreen;
     newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, logger_, displayManager_,
-                                            pcMetrics_, this, config_);
+                                            pcMetrics_, this, config_,
+                                            systemMetrics_);  // Add systemMetrics_
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);
@@ -178,4 +178,30 @@ void UiController::completeTransition() {
     activeTransition_.phase = TransitionPhase::IDLE;
     activeTransition_.isActive = false;
     activeTransition_.startTime = 0;
+
+    // Set cooldown period to prevent rapid screen switching
+    lastScreenTransitionTime_ = millis();
+    logger_.debug("[UiController] Screen transition complete - cooldown active");
+}
+
+void UiController::processTouchInput() {
+    // Prevent touch processing during cooldown period after screen transitions
+    unsigned long currentTime = millis();
+    if (currentTime - lastScreenTransitionTime_ < SCREEN_TRANSITION_COOLDOWN_MS) {
+        return;
+    }
+
+    // Use TouchManager to read and validate touch
+    TouchManager::TouchPoint touch = touchManager_->readTouch();
+
+    if (!touch.valid) {
+        return;  // No valid touch detected
+    }
+
+    // Pass valid touch to current screen
+    if (currentScreen_) {
+        currentScreen_->handleTouch(touch.x, touch.y);
+    } else {
+        logger_.warning("[UiController] No screen to handle touch");
+    }
 }

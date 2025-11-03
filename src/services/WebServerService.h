@@ -2,7 +2,7 @@
 
 #include <WebServer.h>
 
-#include "ui/UiController.h"
+#include "ui/core/UiController.h"
 
 class WebServerService {
  public:

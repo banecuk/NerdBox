@@ -2,8 +2,8 @@
 
 #include "BaseWidgetScreen.h"
 #include "config/AppConfigInterface.h"
-#include "ui/widgets/ButtonWidget.h"
-#include "ui/widgets/ClockWidget.h"
+#include "ui/widgets/display/ClockWidget.h"
+#include "ui/widgets/interactive/ButtonWidget.h"
 
 class SettingsScreen : public BaseWidgetScreen {
  public:

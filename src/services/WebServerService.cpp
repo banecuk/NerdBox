@@ -79,6 +79,11 @@ String WebServerService::getAppInfo() {
         snprintf(buffer + offset, sizeof(buffer) - offset, "Average Screen Draw Time: %u ms\n",
                  static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
 
+    // Thread Widget FPS
+    float threadFps = systemMetrics_.getThreadWidgetFPS();
+    offset +=
+        snprintf(buffer + offset, sizeof(buffer) - offset, "Thread Widget FPS: %.1f\n", threadFps);
+
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
 
     // Write screen draw times as a table

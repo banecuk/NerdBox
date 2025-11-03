@@ -23,6 +23,11 @@ class ApplicationMetrics {
     // Uptime method
     String getFormattedUptime() const;
 
+    // Thread widget FPS methods - SIMPLE FRAME COUNTER APPROACH
+    void addThreadWidgetFrameTime(uint32_t timeMs);
+    float getThreadWidgetFPS() const;
+    size_t getThreadWidgetFrameCount() const;
+
  private:
     AppConfigInterface& config_;
 
@@ -31,4 +36,9 @@ class ApplicationMetrics {
     size_t screenDrawCapacity_;              // capacity (from config)
     size_t screenDrawIndex_;                 // Current index in the circular buffer
     size_t screenDrawCount_;                 // Number of valid entries in the buffer
+
+    // SIMPLE FPS COUNTER - Option 3
+    uint32_t threadWidgetFrameCount_ = 0;
+    uint32_t threadWidgetLastFpsTime_ = 0;
+    float threadWidgetCurrentFps_ = 0.0f;
 };

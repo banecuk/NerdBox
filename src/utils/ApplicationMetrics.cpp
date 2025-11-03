@@ -7,9 +7,8 @@ ApplicationMetrics::ApplicationMetrics(AppConfigInterface& config)
       screenDrawCount_(0),
       screenDrawTimes_(),
       config_(config) {
-    // Initialize vector with zeros sized from config
     if (screenDrawCapacity_ == 0) {
-        screenDrawCapacity_ = 1;  // avoid zero-size vector if config returns 0
+        screenDrawCapacity_ = 1;
     }
     screenDrawTimes_.assign(screenDrawCapacity_, 0);
 }
@@ -23,13 +22,10 @@ uint32_t ApplicationMetrics::getPcMetricsJsonParseTime() const {
 }
 
 void ApplicationMetrics::addScreenDrawTime(uint32_t timeMs) {
-    // Store the new time at the current index
     screenDrawTimes_[screenDrawIndex_] = timeMs;
 
-    // Advance the index (wrap around if at the end)
     screenDrawIndex_ = (screenDrawIndex_ + 1) % screenDrawCapacity_;
 
-    // Increment count until the buffer is full
     if (screenDrawCount_ < screenDrawCapacity_) {
         screenDrawCount_++;
     }
@@ -44,7 +40,6 @@ float ApplicationMetrics::getAverageScreenDrawTime() const {
         return 0.0f;
     }
 
-    // Sum only the valid entries (respecting circular buffer)
     uint64_t sum = 0;
     size_t start =
         (screenDrawIndex_ + screenDrawCapacity_ - screenDrawCount_) % screenDrawCapacity_;
@@ -67,4 +62,31 @@ String ApplicationMetrics::getFormattedUptime() const {
     unsigned long hours = minutes / 60;
     snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
     return String(buffer);
+}
+
+// SIMPLE FPS COUNTER - Option 3
+void ApplicationMetrics::addThreadWidgetFrameTime(uint32_t timeMs) {
+    // Just count that a frame was drawn (ignore the timeMs parameter)
+    threadWidgetFrameCount_++;
+
+    // Calculate FPS every second
+    uint32_t currentTime = millis();
+    if (currentTime - threadWidgetLastFpsTime_ >= 1000) {
+        uint32_t elapsed = currentTime - threadWidgetLastFpsTime_;
+        if (elapsed > 0) {
+            threadWidgetCurrentFps_ = (threadWidgetFrameCount_ * 1000.0f) / elapsed;
+        } else {
+            threadWidgetCurrentFps_ = 0.0f;
+        }
+        threadWidgetFrameCount_ = 0;
+        threadWidgetLastFpsTime_ = currentTime;
+    }
+}
+
+float ApplicationMetrics::getThreadWidgetFPS() const {
+    return threadWidgetCurrentFps_;
+}
+
+size_t ApplicationMetrics::getThreadWidgetFrameCount() const {
+    return threadWidgetFrameCount_;
 }

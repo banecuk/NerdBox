@@ -27,8 +27,7 @@ bool TaskManager::createTasks() {
     }
 
     success = createTask(backgroundTask, BACKGROUND_TASK_NAME, config_.getTasksBackgroundStack(),
-                         config_.getTasksBackgroundPriority(), &backgroundTaskHandle_,
-                         0);  // Core 0
+                         config_.getTasksBackgroundPriority(), &backgroundTaskHandle_, 0);
 
     if (!success) {
         logger_.critical("Failed to create background task", true);
@@ -62,7 +61,6 @@ bool TaskManager::createTask(TaskFunction_t taskFunction, const char* taskName, 
                                                 taskHandle, coreId);
 
     if (status != pdPASS) {
-        // Use the formatted version for including error code
         logger_.criticalf("Failed to create task: %s, error: %d", taskName, status);
         return false;
     }
@@ -138,21 +136,23 @@ void TaskManager::executeBackgroundTask() {
 
 void TaskManager::logStackHighWaterMark(const char* taskName) {
     UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(nullptr);
-    // Use the formatted version for including the number
     logger_.debugf("%s stack high water mark: %u", taskName, stackHighWaterMark);
 }
 
 void TaskManager::updatePcMetrics() {
     bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
-
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
         coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshMs();
-        logger_.debug("PC metrics updated successfully", true);
+        // logger_.debug("PC metrics updated successfully", true);
     } else {
         consecutiveFailures_++;
         coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorFailureRefreshMs();
         handlePcMetricsFailure();
+
+        if (pcMetricsService_.isDataStale()) {
+            logger_.warning("PC metrics data is stale", true);
+        }
     }
 }
 

@@ -41,7 +41,7 @@ struct WatchdogImpl {
 
 // Timing configuration
 struct TimingImpl {
-    static constexpr uint32_t kScreenTaskMs = 33;
+    static constexpr uint32_t kScreenTaskMs = 16;
     static constexpr uint32_t kBackgroundTaskMs = 20;
     static constexpr uint32_t kMainLoopMs = 10;
 };
@@ -57,9 +57,12 @@ struct TasksImpl {
 // HardwareMonitor configuration
 struct HardwareMonitorImpl {
     static constexpr uint32_t kRefreshMs = 500;
+    static constexpr uint32_t kThreadsRefreshMs = 16;
     static constexpr uint32_t kRefreshAfterFailureMs = 3000;
     static constexpr uint32_t kRetryDelayMs = 200;
     static constexpr uint32_t kMaxRetries = 2;
+    static constexpr float kThreadsUpwardSmoothing = 0.7f;
+    static constexpr float kThreadsDownwardSmoothing = 0.075f;
 };
 
 // Metrics configuration

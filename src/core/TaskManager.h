@@ -6,7 +6,7 @@
 #include "core/state/SystemState.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
-#include "ui/UiController.h"
+#include "ui/core/UiController.h"
 #include "utils/Logger.h"
 
 class TaskManager {

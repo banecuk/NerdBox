@@ -16,10 +16,10 @@
 #include "services/NtpService.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/WebServerService.h"
-#include "ui/Colors.h"
-#include "ui/DisplayManager.h"
+#include "ui/core/Colors.h"
+#include "ui/core/DisplayManager.h"
+#include "ui/core/UIController.h"
 #include "ui/screens/ScreenTypes.h"
-#include "ui/UIController.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 

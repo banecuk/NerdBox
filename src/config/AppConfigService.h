@@ -83,6 +83,9 @@ class AppConfigService : public AppConfigInterface {
         return AppConfig::internal::HardwareMonitorImpl::kRefreshMs;
     }
 
+    uint32_t getHardwareMonitorThreadsRefreshMs() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kThreadsRefreshMs;
+    }
     uint32_t getHardwareMonitorFailureRefreshMs() const override {
         return AppConfig::internal::HardwareMonitorImpl::kRefreshAfterFailureMs;
     }
@@ -93,6 +96,14 @@ class AppConfigService : public AppConfigInterface {
 
     uint32_t getHardwareMonitorMaxRetries() const override {
         return AppConfig::internal::HardwareMonitorImpl::kMaxRetries;
+    }
+
+    float getHardwareMonitorThreadsUpwardDecay() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kThreadsUpwardSmoothing;
+    }
+
+    float getHardwareMonitorThreadsDownwardDecay() const override {
+        return AppConfig::internal::HardwareMonitorImpl::kThreadsDownwardSmoothing;
     }
 
     // Metrics getters - MATCHING NAMES

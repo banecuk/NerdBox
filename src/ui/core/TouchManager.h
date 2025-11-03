@@ -6,10 +6,6 @@
 #include "config/LgfxConfig.h"
 #include "utils/LoggerInterface.h"
 
-/**
- * Manages touch input with debouncing and validation.
- * Centralizes all touch-related logic from UIController.
- */
 class TouchManager {
  public:
     struct TouchPoint {
@@ -30,25 +26,12 @@ class TouchManager {
     TouchManager(TouchManager&&) = delete;
     TouchManager& operator=(TouchManager&&) = delete;
 
-    /**
-     * Reads touch input from display with debouncing.
-     * @return TouchPoint with valid=true if touch detected and not debounced
-     */
     TouchPoint readTouch();
 
-    /**
-     * Check if a touch point is within valid display bounds.
-     */
     bool isValidCoordinate(int32_t x, int32_t y) const;
 
-    /**
-     * Manually reset the debounce timer (useful after screen transitions).
-     */
     void resetDebounce();
 
-    /**
-     * Get time since last touch (for debugging/diagnostics).
-     */
     unsigned long getTimeSinceLastTouch() const;
 
  private:

@@ -16,9 +16,9 @@
 #include "services/NtpService.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/WebServerService.h"
-#include "ui/Colors.h"
-#include "ui/DisplayManager.h"
-#include "ui/UiController.h"
+#include "ui/core/Colors.h"
+#include "ui/core/DisplayManager.h"
+#include "ui/core/UiController.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 

@@ -20,9 +20,12 @@ void PcMetricsService::initFilter() {
     // CPU filters
     JsonObject cpu = metrics["Cpu"].to<JsonObject>();
     cpu["Load"] = true;
-    cpu["TemperatureCoreMax"] = true;
-    cpu["PackagePower"] = true;
     cpu["CoreLoads"] = true;
+
+    // CPU extended filters
+    JsonObject cpuExtended = metrics["CpuExtended"].to<JsonObject>();
+    cpuExtended["TemperatureCoreMax"] = true;
+    cpuExtended["PackagePower"] = true;
 
     // RAM filters
     JsonObject ram = metrics["Ram"].to<JsonObject>();
@@ -37,7 +40,9 @@ void PcMetricsService::initFilter() {
     gpu["D3d3d"] = true;
     gpu["D3dCompute"] = true;
     gpu["MemoryUsed"] = true;
+    gpu["MemoryAvailable"] = true;
     gpu["MemoryTotal"] = true;
+    gpu["MemoryLoad"] = true;
 
     // Motherboard filters
     JsonObject motherboard = metrics["Motherboard"].to<JsonObject>();
@@ -52,9 +57,12 @@ void PcMetricsService::initFilter() {
 
 bool PcMetricsService::fetchData(PcMetrics& outData) {
     String rawData;
-
     if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData)) {
-        return parseData(rawData, outData);
+        bool success = parseData(rawData, outData);
+        if (success) {
+            lastSuccessfulFetchTime_ = millis();
+        }
+        return success;
     } else {
         outData.is_available = false;
         logger_.error("Failed to fetch data from PC metrics API");
@@ -111,6 +119,17 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
         logger_.warning("CPU data missing from metrics");
     }
 
+    JsonObject cpuExtended = metrics["CpuExtended"];
+    if (!cpuExtended.isNull()) {
+        if (!parseCpuExtendedData(cpuExtended, outData)) {
+            allComponentsValid = false;
+            logger_.warning("CPU extended data parsing failed");
+        }
+    } else {
+        allComponentsValid = false;
+        logger_.warning("CPU data missing from metrics");
+    }
+
     JsonObject ram = metrics["Ram"];
     if (!ram.isNull()) {
         if (!parseRamData(ram, outData)) {
@@ -152,7 +171,7 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     systemMetrics_.setPcMetricsJsonParseTime(parseTime);
 
     if (allComponentsValid) {
-        logger_.infof("PC metrics parsed successfully in %lu ms", parseTime);
+        // logger_.debugf("PC metrics parsed successfully in %lu ms", parseTime);
     } else {
         logger_.warning("Some hardware components missing or failed to parse");
     }
@@ -210,6 +229,17 @@ bool PcMetricsService::parseCpuData(JsonObject cpu, PcMetrics& outData) {
     }
 }
 
+bool PcMetricsService::parseCpuExtendedData(JsonObject cpuExtended, PcMetrics& outData) {
+    try {
+        outData.cpu_temperature = static_cast<uint8_t>(cpuExtended["TemperatureCoreMax"] | 0);
+        outData.cpu_power = static_cast<uint16_t>(cpuExtended["PackagePower"] | 0.0f);
+        return true;
+    } catch (const std::exception& e) {
+        logger_.errorf("CPU extended data parsing exception: %s", e.what());
+        return false;
+    }
+}
+
 bool PcMetricsService::parseRamData(JsonObject ram, PcMetrics& outData) {
     try {
         outData.mem_load = static_cast<uint8_t>(ram["Load"] | 0.0f);
@@ -222,30 +252,13 @@ bool PcMetricsService::parseRamData(JsonObject ram, PcMetrics& outData) {
 
 bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
     try {
+        outData.gpu_load = static_cast<uint8_t>(gpu["Load"] | 0);
         outData.gpu_temperature = static_cast<uint8_t>(gpu["Temperature"] | 0);
-        outData.gpu_3d = static_cast<uint8_t>(gpu["D3d3d"] | 0);
-        outData.gpu_compute = static_cast<uint8_t>(gpu["D3dCompute"] | 0);
+        outData.gpu_3d = static_cast<uint16_t>(gpu["D3d3d"] | 0);
+        outData.gpu_compute = static_cast<uint16_t>(gpu["D3dCompute"] | 0);
         outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"] | 0);
-
-        // FIX: Parse GPU memory usage correctly
-        if (gpu["MemoryUsed"].is<float>()) {
-            float memUsedMB = gpu["MemoryUsed"].as<float>();
-            float memTotalMB = gpu["MemoryTotal"].as<float>();
-
-            if (memTotalMB > 0) {
-                outData.gpu_mem = static_cast<uint8_t>((memUsedMB / memTotalMB) * 100.0f);
-            } else {
-                outData.gpu_mem = 0;
-                logger_.warning("GPU memory total is 0, cannot calculate percentage");
-            }
-
-            logger_.debugf("GPU Memory: %.0f/%.0f MB (%d%%)", memUsedMB, memTotalMB,
-                           outData.gpu_mem);
-        } else {
-            logger_.warning("GPU MemoryUsed field missing or invalid");
-            outData.gpu_mem = 0;
-        }
-
+        outData.gpu_power = static_cast<uint16_t>(gpu["PackagePower"] | 0);
+        outData.gpu_mem = static_cast<uint16_t>(gpu["MemoryLoad"] | 0.0f);
         return true;
     } catch (const std::exception& e) {
         logger_.errorf("GPU data parsing exception: %s", e.what());
@@ -259,12 +272,8 @@ bool PcMetricsService::parseMotherboardData(JsonObject motherboard, PcMetrics& o
 
         JsonArray systemFans = motherboard["SystemFans"];
         if (!systemFans.isNull()) {
-            // Map system fans to available slots with bounds checking
-            if (systemFans.size() > 0) {
-                outData.front_fan = static_cast<uint16_t>(systemFans[0] | 0);
-            }
-            if (systemFans.size() > 4) {
-                outData.back_fan = static_cast<uint16_t>(systemFans[4] | 0);
+            for (int i = 0; i < systemFans.size(); i++) {
+                outData.system_fans[i] = static_cast<uint16_t>(systemFans[i] | 0);
             }
         }
         return true;

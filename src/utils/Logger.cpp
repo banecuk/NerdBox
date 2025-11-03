@@ -9,44 +9,40 @@ Logger::~Logger() {
     // Cleanup if needed
 }
 
-String Logger::getUptimeTimestamp(bool forScreen) {
-    char buffer[20];
+void Logger::getUptimeTimestamp(char* buffer, size_t bufferSize, bool forScreen) {
     unsigned long ms = millis();
     unsigned long seconds = ms / 1000;
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
 
     if (forScreen) {
-        snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
+        snprintf(buffer, bufferSize, "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
     } else {
-        snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu.%03lu", hours, minutes % 60,
-                 seconds % 60, ms % 1000);
+        snprintf(buffer, bufferSize, "%02lu:%02lu:%02lu.%03lu", hours, minutes % 60, seconds % 60,
+                 ms % 1000);
     }
-    return String(buffer);
 }
 
-String Logger::getTimestamp(bool forScreen) {
-    char buffer[20];
+void Logger::getTimestamp(char* buffer, size_t bufferSize, bool forScreen) {
     if (!isTimeSynced_) {
-        return getUptimeTimestamp(forScreen);
+        getUptimeTimestamp(buffer, bufferSize, forScreen);
     } else {
         struct tm timeinfo;
         if (!getLocalTime(&timeinfo)) {
-            return getUptimeTimestamp(forScreen);
+            getUptimeTimestamp(buffer, bufferSize, forScreen);
         } else {
             if (forScreen) {
-                snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", timeinfo.tm_hour,
-                         timeinfo.tm_min, timeinfo.tm_sec);
+                snprintf(buffer, bufferSize, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min,
+                         timeinfo.tm_sec);
             } else {
-                snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d.%03d", timeinfo.tm_hour,
+                snprintf(buffer, bufferSize, "%02d:%02d:%02d.%03d", timeinfo.tm_hour,
                          timeinfo.tm_min, timeinfo.tm_sec, (int)(millis() % 1000));
             }
-            return String(buffer);
         }
     }
 }
 
-String Logger::levelToString(LogLevel level) {
+const char* Logger::levelToString(LogLevel level) {
     switch (level) {
         case LogLevel::DEBUG:
             return "DEBUG";
@@ -68,17 +64,27 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
         return;
     }
 
-    String timestamp = getTimestamp();
-    String levelStr = levelToString(level);
-    String logEntry = timestamp + " [" + levelStr + "] " + message;
+    // Use a single stack buffer for the entire log entry
+    char logBuffer[384];  // Timestamp(20) + Level(10) + Message(200) + formatting(4) + margin
+    char timestamp[24];
+
+    getTimestamp(timestamp, sizeof(timestamp), false);
+    const char* levelStr = levelToString(level);
+
+    // Build log entry in single buffer
+    snprintf(logBuffer, sizeof(logBuffer), "%s [%s] %s", timestamp, levelStr, message.c_str());
 
     // Always send to Serial
-    Serial.println(logEntry);
+    Serial.println(logBuffer);
 
     // If marked for screen, add to queue
     if (forScreen) {
-        timestamp = getTimestamp(forScreen);
-        LogEntry entry{timestamp, level, message.substring(0, 200), true};  // Limit to 200 chars
+        char screenTimestamp[24];
+        getTimestamp(screenTimestamp, sizeof(screenTimestamp), true);
+
+        // Limit message length for screen
+        String limitedMessage = message.substring(0, 200);
+        LogEntry entry{String(screenTimestamp), level, limitedMessage, true};
         screenQueue_.push(entry);
     }
 }
@@ -104,9 +110,32 @@ void Logger::critical(const String& message, bool forScreen) {
 }
 
 void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool forScreen) {
-    char buffer[256];  // Stack buffer for formatted messages
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    logMessage(level, String(buffer), forScreen);
+    char messageBuffer[256];  // Stack buffer for formatted messages
+    vsnprintf(messageBuffer, sizeof(messageBuffer), format, args);
+
+    if (level == LogLevel::DEBUG && !DEBUG_MODE) {
+        return;
+    }
+
+    // Build log entry directly in buffer
+    char logBuffer[384];
+    char timestamp[24];
+
+    getTimestamp(timestamp, sizeof(timestamp), false);
+    const char* levelStr = levelToString(level);
+
+    snprintf(logBuffer, sizeof(logBuffer), "%s [%s] %s", timestamp, levelStr, messageBuffer);
+
+    // Send to Serial
+    Serial.println(logBuffer);
+
+    // Screen queue still needs String for compatibility
+    if (forScreen) {
+        char screenTimestamp[24];
+        getTimestamp(screenTimestamp, sizeof(screenTimestamp), true);
+        LogEntry entry{String(screenTimestamp), level, String(messageBuffer), true};
+        screenQueue_.push(entry);
+    }
 }
 
 void Logger::debugf(const char* format, ...) {
@@ -149,9 +178,13 @@ std::queue<String> Logger::getScreenMessages() {
 
     while (!screenQueue_.empty()) {
         LogEntry entry = screenQueue_.front();
-        String formatted =
-            "[" + entry.timestamp + "] [" + levelToString(entry.level) + "] " + entry.message;
-        result.push(formatted);
+
+        char buffer[256];
+        const char* levelStr = levelToString(entry.level);
+        snprintf(buffer, sizeof(buffer), "[%s] [%s] %s", entry.timestamp.c_str(), levelStr,
+                 entry.message.c_str());
+
+        result.push(String(buffer));
         screenQueue_.pop();
     }
 

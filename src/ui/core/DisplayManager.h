@@ -2,7 +2,7 @@
 
 #include <LovyanGFX.hpp>
 
-#include "../config/LgfxConfig.h"
+#include "../../config/LgfxConfig.h"
 #include "Config.h"
 #include "utils/LoggerInterface.h"
 

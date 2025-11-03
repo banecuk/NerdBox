@@ -7,9 +7,9 @@
 #include "DisplayContext.h"
 #include "DisplayManager.h"
 #include "services/pcMetrics/PcMetrics.h"
+#include "ui/core/TouchManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
-#include "ui/TouchManager.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
@@ -83,4 +83,6 @@ class UiController {
     SemaphoreHandle_t displayAccessMutex_;
 
     ScreenTransition activeTransition_;
+    unsigned long lastScreenTransitionTime_ = 0;
+    static constexpr unsigned long SCREEN_TRANSITION_COOLDOWN_MS = 300;
 };
