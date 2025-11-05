@@ -254,8 +254,10 @@ bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
     try {
         outData.gpu_load = static_cast<uint8_t>(gpu["Load"] | 0);
         outData.gpu_temperature = static_cast<uint8_t>(gpu["Temperature"] | 0);
-        outData.gpu_3d = static_cast<uint16_t>(gpu["D3d3d"] | 0);
-        outData.gpu_compute = static_cast<uint16_t>(gpu["D3dCompute"] | 0);
+        outData.gpu_3d =
+            gpu["D3d3d"].isNull() ? 0 : static_cast<uint16_t>(gpu["D3d3d"].as<float>());
+        outData.gpu_compute =
+            gpu["D3dCompute"].isNull() ? 0 : static_cast<uint16_t>(gpu["D3dCompute"].as<float>());
         outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"] | 0);
         outData.gpu_power = static_cast<uint16_t>(gpu["PackagePower"] | 0);
         outData.gpu_mem = static_cast<uint16_t>(gpu["MemoryLoad"] | 0.0f);
