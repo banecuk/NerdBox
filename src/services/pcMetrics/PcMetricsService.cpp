@@ -49,6 +49,11 @@ void PcMetricsService::initFilter() {
     motherboard["CpuFan"] = true;
     motherboard["SystemFans"] = true;
 
+    // SIMPLE DISK FILTER - Remove disk filtering entirely for now
+    // We'll parse disks without filtering to avoid issues
+    JsonObject disks = metrics["Disks"].to<JsonObject>();
+    disks["Drives"] = true;  // Simple approach - include all disk data
+
     filter["Timestamp"] = true;
 
     // Copy filter to stack-based filter for deserialization
@@ -81,9 +86,8 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
         return false;
     }
 
-    DeserializationError error =
-        deserializeJson(*doc, rawData, DeserializationOption::Filter(filter_),
-                        DeserializationOption::NestingLimit(12));
+    // Try parsing WITHOUT filter first to see if disks are in the data
+    DeserializationError error = deserializeJson(*doc, rawData);
 
     if (error) {
         logger_.errorf("JSON parsing failed: %s", error.c_str());
@@ -98,12 +102,11 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
         return false;
     }
 
-    // Validate JSON structure before parsing
-    if (!validateJsonStructure(metrics)) {
-        logger_.error("JSON structure validation failed");
-        outData.is_available = false;
-        return false;
-    }
+    // Check if disks exist in the unfiltered JSON
+    JsonObject disks = metrics["Disks"];
+    // if (!disks.isNull()) {
+    //     logger_.debug("✅ Disks found in JSON (no filter)");
+    // }
 
     bool allComponentsValid = true;
 
@@ -112,55 +115,44 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     if (!cpu.isNull()) {
         if (!parseCpuData(cpu, outData)) {
             allComponentsValid = false;
-            logger_.warning("CPU data parsing failed");
         }
-    } else {
-        allComponentsValid = false;
-        logger_.warning("CPU data missing from metrics");
     }
 
     JsonObject cpuExtended = metrics["CpuExtended"];
     if (!cpuExtended.isNull()) {
         if (!parseCpuExtendedData(cpuExtended, outData)) {
             allComponentsValid = false;
-            logger_.warning("CPU extended data parsing failed");
         }
-    } else {
-        allComponentsValid = false;
-        logger_.warning("CPU data missing from metrics");
     }
 
     JsonObject ram = metrics["Ram"];
     if (!ram.isNull()) {
         if (!parseRamData(ram, outData)) {
             allComponentsValid = false;
-            logger_.warning("RAM data parsing failed");
         }
-    } else {
-        allComponentsValid = false;
-        logger_.warning("RAM data missing from metrics");
     }
 
     JsonObject gpu = metrics["Gpu"];
     if (!gpu.isNull()) {
         if (!parseGpuData(gpu, outData)) {
             allComponentsValid = false;
-            logger_.warning("GPU data parsing failed");
         }
-    } else {
-        allComponentsValid = false;
-        logger_.warning("GPU data missing from metrics");
     }
 
     JsonObject motherboard = metrics["Motherboard"];
     if (!motherboard.isNull()) {
         if (!parseMotherboardData(motherboard, outData)) {
             allComponentsValid = false;
-            logger_.warning("Motherboard data parsing failed");
+        }
+    }
+
+    JsonObject disksFiltered = metrics["Disks"];
+    if (!disksFiltered.isNull()) {
+        if (!parseDiskData(disksFiltered, outData)) {
+            allComponentsValid = false;
         }
     } else {
-        allComponentsValid = false;
-        logger_.warning("Motherboard data missing from metrics");
+        logger_.debug("No Disks in filtered JSON");
     }
 
     // Update metrics
@@ -170,13 +162,6 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     unsigned long parseTime = millis() - startTime;
     systemMetrics_.setPcMetricsJsonParseTime(parseTime);
 
-    if (allComponentsValid) {
-        // logger_.debugf("PC metrics parsed successfully in %lu ms", parseTime);
-    } else {
-        logger_.warning("Some hardware components missing or failed to parse");
-    }
-
-    // Memory is automatically freed when 'doc' goes out of scope
     return allComponentsValid;
 }
 
@@ -196,6 +181,41 @@ bool PcMetricsService::validateJsonStructure(JsonObject metrics) {
     }
 
     return true;
+}
+
+bool PcMetricsService::parseDiskData(JsonObject disks, PcMetrics& outData) {
+    try {
+        outData.diskDrives.clear();
+
+        JsonArray drives = disks["Drives"];
+        if (drives.isNull()) {
+            return true;
+        }
+
+        // logger_.debugf("Found %d disk drives", drives.size());
+
+        for (JsonObject drive : drives) {
+            DiskDrive diskDrive;
+
+            const char* driveName = drive["DriveName"];
+            if (driveName) {
+                strncpy(diskDrive.driveName, driveName, sizeof(diskDrive.driveName) - 1);
+                diskDrive.driveName[sizeof(diskDrive.driveName) - 1] = '\0';
+            } else {
+                continue;
+            }
+
+            diskDrive.freeSpacePercent = drive["FreeSpacePercent"] | 0.0f;
+            diskDrive.readKBPerSec = drive["ReadKBPerSec"] | 0.0f;
+            diskDrive.writeKBPerSec = drive["WriteKBPerSec"] | 0.0f;
+
+            outData.diskDrives.push_back(diskDrive);
+        }
+
+        return true;
+    } catch (const std::exception& e) {
+        return false;
+    }
 }
 
 bool PcMetricsService::parseCpuData(JsonObject cpu, PcMetrics& outData) {

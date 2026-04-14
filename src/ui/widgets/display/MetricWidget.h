@@ -27,6 +27,8 @@ class MetricWidget : public Widget {
     // Display configuration
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
     void setValueFormatter(std::function<String(int)> formatter);
+    void setReverseThresholds(bool reverse = true);
+    void setUseDimColors(bool useDim = false);
 
     void forceRefresh();
 
@@ -39,6 +41,7 @@ class MetricWidget : public Widget {
     float getUpperThreshold() const { return upperThreshold_; }
     uint8_t getTextSize() const { return textSize_; }
     void setTextSize(uint8_t size);
+    bool getUseDimColors() const { return useDimColors_; }
 
     // Builder pattern for fluent configuration
     class Builder {
@@ -72,6 +75,18 @@ class MetricWidget : public Widget {
             lowerThreshold_ = lower;
             upperThreshold_ = upper;
             hasColorThresholds_ = true;
+            return *this;
+        }
+
+        Builder& reverseThresholds(bool reverse = true) {
+            reverseThresholds_ = reverse;
+            hasReverseThresholds_ = true;
+            return *this;
+        }
+
+        Builder& useDimColors(bool useDim = true) {
+            useDimColors_ = useDim;
+            hasUseDimColors_ = true;
             return *this;
         }
 
@@ -120,6 +135,10 @@ class MetricWidget : public Widget {
                 widget->setRange(minValue_, maxValue_);
             if (hasColorThresholds_)
                 widget->setColorThresholds(lowerThreshold_, upperThreshold_);
+            if (hasReverseThresholds_)
+                widget->setReverseThresholds(reverseThresholds_);
+            if (hasUseDimColors_)
+                widget->setUseDimColors(useDimColors_);
             if (hasLabel_)
                 widget->setLabel(label_);
             if (hasLabelWidth_)
@@ -128,6 +147,8 @@ class MetricWidget : public Widget {
                 widget->setTextAlignment(textAlignment_);
             if (hasValueFormatter_)
                 widget->setValueFormatter(valueFormatter_);
+            if (hasTextSize_)
+                widget->setTextSize(textSize_);
 
             return widget;
         }
@@ -143,6 +164,8 @@ class MetricWidget : public Widget {
         int maxValue_ = 100;
         float lowerThreshold_ = 50.0f;
         float upperThreshold_ = 90.0f;
+        bool reverseThresholds_ = false;
+        bool useDimColors_ = false;
         char label_[32] = "";
         uint16_t labelWidth_ = 0;
         uint8_t textAlignment_ = MC_DATUM;
@@ -153,6 +176,8 @@ class MetricWidget : public Widget {
         bool hasUnit_ = false;
         bool hasRange_ = false;
         bool hasColorThresholds_ = false;
+        bool hasReverseThresholds_ = false;
+        bool hasUseDimColors_ = false;
         bool hasLabel_ = false;
         bool hasLabelWidth_ = false;
         bool hasTextAlignment_ = false;
@@ -171,6 +196,8 @@ class MetricWidget : public Widget {
     char unit_[8] = "%";  // Stack-allocated buffer
     float lowerThreshold_ = 50.0f;
     float upperThreshold_ = 90.0f;
+    bool reverseThresholds_ = false;
+    bool useDimColors_ = false;
     char label_[32] = "";  // Stack-allocated buffer
     uint16_t labelWidth_ = 0;
     uint8_t textAlignment_ = MC_DATUM;
@@ -195,11 +222,14 @@ class MetricWidget : public Widget {
     static constexpr uint16_t SEPARATOR_WIDTH = 1;
     static constexpr uint16_t BORDER_MARGIN = 1;
 
-    // Private methods
-    uint16_t getBackgroundColor() const;
-    void drawValue();
-    void drawPartialValue(int oldValue, uint16_t oldBgColor);
-    void updateDimensions();
-    const char* formatValue() const;
+    // Rendering methods
+    void renderValueArea();
+    void renderValueTextOnly();
+    void drawDebugPixel(int16_t startX, int16_t textY, int16_t width);
+
+    // Helper methods
+    uint16_t calculateBackgroundColor() const;
+    void updateDimensionCache();
+    const char* getFormattedValueText() const;
     void safeStringCopy(char* dest, const char* src, size_t destSize) const;
 };

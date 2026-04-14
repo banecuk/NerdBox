@@ -10,49 +10,50 @@ uint16_t Colors::getColorFromPercent(uint8_t value, bool dim) {
     if (value > 99) {
         value = 99;
     }
-    uint16_t result;
-    if (dim) {
-        result = COLOR_GRADIENT_DIM[value];
-    } else {
-        result = COLOR_GRADIENT[value];
-    }
-    return result;
+    return dim ? COLOR_GRADIENT_DIM[value] : COLOR_GRADIENT[value];
 }
 
 uint16_t Colors::generateColorFromPercent(uint8_t value) {
-    uint16_t blue = 0x09ea;
-    uint16_t green = 0x3ba2;  // 0x3363; //0x22c6;
-    uint16_t yellow = 0x9CC0;
-    uint16_t red = 0xF800;
+    // Define colors in RGB565 format
+    const uint16_t blue = 0x09EA;    // RGB(0, 62, 255)
+    const uint16_t green = 0x3BA2;   // RGB(7, 180, 2)
+    const uint16_t yellow = 0x9CC0;  // RGB(19, 248, 0) - actually more green-yellow
+    const uint16_t red = 0xF800;     // RGB(31, 0, 0)
+
     uint16_t C1, C2;
     uint8_t alpha;
 
     if (value < 25) {
+        // Blue to Green: 0-24% (25 values)
         C1 = blue;
         C2 = green;
-        alpha = value * 10;  // Approximate linear scaling (25 * 4 = 100)
+        alpha = (value * 255) / 24;  // Proper linear interpolation
     } else if (value < 60) {
+        // Green to Yellow: 25-59% (35 values)
         C1 = green;
         C2 = yellow;
-        alpha = (value - 25) * 7;  // Approximate linear scaling (35 * 2.85714)
+        alpha = ((value - 25) * 255) / 34;  // 59-25=34 range
     } else {
+        // Yellow to Red: 60-99% (40 values)
         C1 = yellow;
         C2 = red;
-        alpha = (value - 60) * 6.375;  // 255/40 = 6.375
+        alpha = ((value - 60) * 255) / 39;  // 99-60=39 range
     }
+
     return blendRgb565(C1, C2, alpha);
 }
 
 void Colors::generateGradient() {
     for (int i = 0; i < 100; i++) {
         COLOR_GRADIENT[i] = generateColorFromPercent(i);
-        COLOR_GRADIENT_DIM[i] = blendRgb565(COLOR_GRADIENT[i], 0x00, 48);
+        COLOR_GRADIENT_DIM[i] = darken(COLOR_GRADIENT[i], 128);
     }
 }
 
 uint16_t Colors::getColorFromPercent30plus(uint8_t value, bool dim) {
     if (value > 29) {
-        value = trunc((value - 30) * 1.42857 + 0.5);
+        // Map 30-100 to 0-99: (value-30) * 99/70
+        value = ((value - 30) * 99 + 35) / 70;  // +35 for proper rounding
     } else {
         value = 0;
     }
@@ -60,26 +61,54 @@ uint16_t Colors::getColorFromPercent30plus(uint8_t value, bool dim) {
     return gradient[value];
 }
 
-#define MAKE_RGB565(r, g, b) ((r << 11) | (g << 5) | (b))
+#define MAKE_RGB565(r, g, b) (((r) << 11) | ((g) << 5) | (b))
 
-uint16_t Colors::blendRgb565(uint16_t a, uint16_t b, uint8_t Alpha) {
-    const uint8_t invAlpha = 255 - Alpha;
+uint16_t Colors::blendRgb565(uint16_t a, uint16_t b, uint8_t alpha) {
+    const uint16_t invAlpha = 255 - alpha;
 
-    uint16_t A_r = a >> 11;
-    uint16_t A_g = (a >> 5) & 0x3f;
-    uint16_t A_b = a & 0x1f;
+    // Extract RGB components (5-6-5 format)
+    uint16_t A_r = (a >> 11) & 0x1F;
+    uint16_t A_g = (a >> 5) & 0x3F;
+    uint16_t A_b = a & 0x1F;
 
-    uint16_t B_r = b >> 11;
-    uint16_t B_g = (b >> 5) & 0x3f;
-    uint16_t B_b = b & 0x1f;
+    uint16_t B_r = (b >> 11) & 0x1F;
+    uint16_t B_g = (b >> 5) & 0x3F;
+    uint16_t B_b = b & 0x1F;
 
-    uint32_t C_r = (A_r * invAlpha + B_r * Alpha) / 255;
-    uint32_t C_g = (A_g * invAlpha + B_g * Alpha) / 255;
-    uint32_t C_b = (A_b * invAlpha + B_b * Alpha) / 255;
+    // Blend each component
+    uint16_t C_r = (A_r * invAlpha + B_r * alpha) / 255;
+    uint16_t C_g = (A_g * invAlpha + B_g * alpha) / 255;
+    uint16_t C_b = (A_b * invAlpha + B_b * alpha) / 255;
 
     return MAKE_RGB565(C_r, C_g, C_b);
 }
 
-uint16_t Colors::darken(uint16_t color, uint8_t alpha) {
-    return blendRgb565(color, 0x00, alpha);
+uint16_t Colors::darken(uint16_t color, uint8_t factor) {
+    // Convert RGB565 to RGB888 using integer math
+    uint16_t r5 = (color >> 11) & 0x1F;
+    uint16_t g6 = (color >> 5) & 0x3F;
+    uint16_t b5 = color & 0x1F;
+
+    uint16_t r = (r5 * 255 + 15) / 31;  // +15 for rounding
+    uint16_t g = (g6 * 255 + 31) / 63;  // +31 for rounding
+    uint16_t b = (b5 * 255 + 15) / 31;
+
+    // Simple luminance-based darkening (approximates HSL)
+    uint32_t luminance = (r * 299 + g * 587 + b * 114) / 1000;
+    uint32_t new_luminance = (luminance * (255 - factor)) / 255;
+
+    if (luminance == 0)
+        return color;  // avoid division by zero
+
+    // Scale RGB components proportionally to maintain hue
+    r = (r * new_luminance) / luminance;
+    g = (g * new_luminance) / luminance;
+    b = (b * new_luminance) / luminance;
+
+    // Convert back to RGB565
+    uint8_t r5_out = (r * 31) / 255;
+    uint8_t g6_out = (g * 63) / 255;
+    uint8_t b5_out = (b * 31) / 255;
+
+    return MAKE_RGB565(r5_out, g6_out, b5_out);
 }

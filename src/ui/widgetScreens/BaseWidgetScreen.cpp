@@ -25,7 +25,10 @@ void BaseWidgetScreen::draw() {
     if (!lcd_ || uiController_->isTransitioning() || !uiController_->tryAcquireDisplayLock()) {
         return;
     }
-    widgetManager_.updateAndDrawWidgets(false);
+
+    // Use optimized dirty widget updates instead of full redraw
+    widgetManager_.updateDirtyWidgets();
+
     uiController_->releaseDisplayLock();
 }
 

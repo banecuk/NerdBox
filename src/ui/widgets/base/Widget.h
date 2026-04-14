@@ -48,6 +48,13 @@ class Widget : public WidgetInterface {
     // Dimensions
     Dimensions getDimensions() const override { return dimensions_; }
 
+    // Call this when the widget's visual state changes
+    void notifyVisualChange() {
+        markDirty();
+        // In a more advanced system, you could callback to the WidgetManager
+        // to mark the specific region as dirty
+    }
+
  protected:
     // Protected accessors for derived classes
     LGFX* getLcd() const { return lcd_; }

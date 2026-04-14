@@ -3,6 +3,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
+struct DiskDrive {
+    char driveName[4];  // "C", "D", etc. + null terminator
+    float freeSpacePercent;
+    float readKBPerSec;
+    float writeKBPerSec;
+};
+
 class PcMetrics {
  private:
  public:
@@ -31,4 +38,6 @@ class PcMetrics {
 
     float eth_up = 0;
     float eth_dn = 0;
+
+    std::vector<DiskDrive> diskDrives;
 };

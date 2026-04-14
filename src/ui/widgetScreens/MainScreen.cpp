@@ -9,7 +9,7 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
 void MainScreen::createWidgets() {
     // Add PcMetricsWidget (without ThreadsWidget inside)
     auto pcMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 120}, 100,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 150}, 100,
         pcMetrics_, config_, systemMetrics_));
     pcMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(pcMetricsWidget));

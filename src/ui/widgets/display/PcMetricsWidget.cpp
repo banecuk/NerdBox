@@ -18,6 +18,7 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
     const u16_t guidelineY3 = 60;
     const u16_t guidelineY4 = 90;
     const u16_t guidelineY5 = 120;
+    const u16_t guidelineY6 = 150;
 
     const u16_t guidelineX4 = 0;
     const u16_t guidelineX5 = 480 - metricWidth * 5;
@@ -147,7 +148,7 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
                               updateIntervalMs)
             .unit("")
             .range(0, 1500)
-            .colorThresholds(800.0f, 1200.0f)
+            .colorThresholds(800.0f, 1400.0f)
             .label("FAN")
             .labelWidth(metricLabelWidth)
             .build();
@@ -172,7 +173,7 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
                                         updateIntervalMs)
                       .unit("")
                       .range(0, 1200)
-                      .colorThresholds(720.0f, 1000.0f)
+                      .colorThresholds(750.0f, 1000.0f)
                       .label("F1")
                       .labelWidth(14)
                       .build();
@@ -183,10 +184,132 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
                                         updateIntervalMs)
                       .unit("")
                       .range(0, 1200)
-                      .colorThresholds(820.0f, 1000.0f)
+                      .colorThresholds(880.0f, 1200.0f)
                       .label("F2")
                       .labelWidth(14)
                       .build();
+}
+
+void PcMetricsWidget::createDiskDriveWidgets() {
+    diskDriveWidgets_.clear();
+
+    const uint16_t startX = 0;        // Start from left edge
+    const uint16_t totalWidth = 480;  // Use full screen width
+    const uint16_t guidelineY4 = 120;
+    const uint16_t guidelineY5 = 150;
+    const uint16_t height = guidelineY5 - guidelineY4;
+
+    // Calculate how many widgets we can actually display
+    size_t maxWidgets = 10;  // Maximum allowed widgets
+    size_t driveCount = pcMetrics_.diskDrives.size();
+    size_t widgetCount = (driveCount > maxWidgets) ? maxWidgets : driveCount;
+
+    if (widgetCount == 0) {
+        return;  // No drives to display
+    }
+
+    // Calculate individual widget width with constraints
+    uint16_t widgetWidth = totalWidth / widgetCount;
+    const uint16_t maxWidgetWidth = 120;  // Maximum width per widget
+
+    // Apply width constraint
+    if (widgetWidth > maxWidgetWidth) {
+        widgetWidth = maxWidgetWidth;
+    }
+
+    // Calculate actual total width used (may be less than 480px if widgets are width-limited)
+    uint16_t totalUsedWidth = widgetWidth * widgetCount;
+
+    for (size_t i = 0; i < widgetCount; i++) {
+        const auto& drive = pcMetrics_.diskDrives[i];
+
+        uint16_t xPos = static_cast<uint16_t>(startX + (i * widgetWidth));
+
+        auto driveWidget = MetricWidget::Builder(
+                               WidgetInterface::Dimensions{xPos, guidelineY4, widgetWidth, height},
+                               updateIntervalMs_)
+                               .unit("%")
+                               .range(0, 100)
+                               .colorThresholds(0.0f, 95.0f)
+                               .reverseThresholds(true)
+                               .useDimColors(true)
+                               .label(drive.driveName)
+                               .labelWidth(14)
+                               .value(static_cast<int>(drive.freeSpacePercent + 0.5f))
+                               .build();
+
+        if (driveWidget) {
+            diskDriveWidgets_.push_back(std::move(driveWidget));
+        }
+    }
+
+    // Log the layout information
+    if (getLogger()) {
+        getLogger()->debugf(
+            "Disk drive layout: %d drives, %d displayed, widget width: %dpx, total used: %dpx",
+            driveCount, widgetCount, widgetWidth, totalUsedWidth);
+    }
+}
+
+void PcMetricsWidget::ensureDiskWidgetsCreated() {
+    // Only create disk widgets if we have disk data and widgets don't exist or count changed
+    if (!pcMetrics_.diskDrives.empty()) {
+        size_t currentDriveCount = pcMetrics_.diskDrives.size();
+        size_t displayedDriveCount = (currentDriveCount > 10) ? 10 : currentDriveCount;
+
+        bool needsCreation =
+            diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != displayedDriveCount);
+
+        if (needsCreation) {
+            createDiskDriveWidgets();
+
+            // FORCE IMMEDIATE DISPLAY of disk widgets
+            for (size_t i = 0; i < diskDriveWidgets_.size(); i++) {
+                const auto& drive = pcMetrics_.diskDrives[i];
+                if (diskDriveWidgets_[i]) {
+                    int freeSpacePercent = static_cast<int>(drive.freeSpacePercent + 0.5f);
+                    diskDriveWidgets_[i]->setValue(freeSpacePercent);
+
+                    // Ensure widget is properly initialized and displayed
+                    if (!diskDriveWidgets_[i]->isInitialized()) {
+                        diskDriveWidgets_[i]->initialize(context_);
+                    }
+
+                    diskDriveWidgets_[i]->drawStatic();    // Draw static elements
+                    diskDriveWidgets_[i]->forceRefresh();  // Force value redraw
+                    diskDriveWidgets_[i]->draw(true);      // Force immediate display
+                }
+            }
+
+            if (getLogger()) {
+                getLogger()->debugf("Created and displayed %d disk drive widgets immediately",
+                                    diskDriveWidgets_.size());
+            }
+        }
+    }
+}
+
+void PcMetricsWidget::updateDiskDriveWidgets() {
+    size_t updateCount = (pcMetrics_.diskDrives.size() > 10) ? 10 : pcMetrics_.diskDrives.size();
+
+    for (size_t i = 0; i < updateCount && i < diskDriveWidgets_.size(); i++) {
+        const auto& drive = pcMetrics_.diskDrives[i];
+        if (diskDriveWidgets_[i]) {
+            int freeSpacePercent = static_cast<int>(drive.freeSpacePercent + 0.5f);
+            int currentValue = diskDriveWidgets_[i]->getValue();
+
+            // Only update and draw if value changed
+            if (currentValue != freeSpacePercent) {
+                diskDriveWidgets_[i]->setValue(freeSpacePercent);
+                // Don't force redraw here - let the normal draw cycle handle it
+            }
+
+            // Always ensure the widget is drawn if it's initialized
+            if (diskDriveWidgets_[i]->isInitialized()) {
+                diskDriveWidgets_[i]->draw(false);
+            }
+        }
+    }
 }
 
 void PcMetricsWidget::drawStatic() {
@@ -200,6 +323,10 @@ void PcMetricsWidget::drawStatic() {
             if (widget) {
                 widget->initialize(context_);
                 widget->drawStatic();
+
+                // FORCE INITIAL VALUE DRAWING - even for value 0
+                widget->forceRefresh();  // Reset internal state
+                widget->draw(true);      // Force immediate redraw with current value
             }
         };
 
@@ -209,12 +336,12 @@ void PcMetricsWidget::drawStatic() {
         initAndDrawStatic(cpuPowerWidget_);
         initAndDrawStatic(cpuFanWidget_);
 
-        // GPU widgets
+        // GPU widgets - especially important for gpuComputeWidget_ with value 0
         initAndDrawStatic(gpuLoadWidget_);
         initAndDrawStatic(gpuPowerWidget_);
         initAndDrawStatic(gpuTemperatureWidget_);
         initAndDrawStatic(gpu3dWidget_);
-        initAndDrawStatic(gpuComputeWidget_);
+        initAndDrawStatic(gpuComputeWidget_);  // This one has value 0
         initAndDrawStatic(gpuFanWidget_);
         initAndDrawStatic(gpuMemoryWidget_);
 
@@ -224,6 +351,17 @@ void PcMetricsWidget::drawStatic() {
         // System fan widgets
         initAndDrawStatic(fanWidget1_);
         initAndDrawStatic(fanWidget2_);
+
+        // Disk drive widgets - force immediate display
+        ensureDiskWidgetsCreated();
+        for (auto& driveWidget : diskDriveWidgets_) {
+            if (driveWidget) {
+                driveWidget->initialize(context_);
+                driveWidget->drawStatic();
+                driveWidget->forceRefresh();  // Reset internal state
+                driveWidget->draw(true);      // Force immediate display
+            }
+        }
 
         isStaticDrawn_ = true;
         clearDirty();
@@ -254,25 +392,22 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
         if (!currentlyHasFreshData) {
             clearAllWidgets();
             drawNoDataMessage();
-            if (getLogger()) {
-                getLogger()->debug(
-                    "PcMetricsWidget: No fresh data available - showing 'No Data' message");
-            }
         } else {
             restoreStaticDisplay();
-            if (getLogger()) {
-                getLogger()->debug(
-                    "PcMetricsWidget: Fresh data available - drawing static elements");
-            }
         }
         wasFreshData_ = currentlyHasFreshData;
+    }
+
+    // Ensure disk widgets are created whenever we have data
+    if (currentlyHasFreshData) {
+        ensureDiskWidgetsCreated();
     }
 
     // Only update dynamic content if we have fresh data and need to redraw
     bool needsRedraw = forceRedraw || isDirty() || needsUpdate();
     if (currentlyHasFreshData && needsRedraw) {
         drawDynamicData();
-        clearDirty();
+        clearDirty();  // Clear parent dirty flag BEFORE drawing children
     }
 
     lastUpdateTimeMs_ = millis();
@@ -284,10 +419,12 @@ void PcMetricsWidget::drawDynamicData() {
         return;
     }
 
-    // Helper lambda
+    // Helper lambda - update and draw all widgets, even with value 0
     auto updateAndDraw = [](const std::unique_ptr<MetricWidget>& widget, float value) {
         if (widget) {
-            widget->setValue(value);
+            int intValue = static_cast<int>(value);
+            // Always update and draw, don't check for changes
+            widget->setValue(intValue);
             widget->draw(false);
         }
     };
@@ -298,12 +435,12 @@ void PcMetricsWidget::drawDynamicData() {
     updateAndDraw(cpuPowerWidget_, pcMetrics_.cpu_power);
     updateAndDraw(cpuFanWidget_, pcMetrics_.cpu_fan);
 
-    // GPU widgets
+    // GPU widgets - this will fix gpuComputeWidget_ with value 0
     updateAndDraw(gpuLoadWidget_, pcMetrics_.gpu_load);
     updateAndDraw(gpuTemperatureWidget_, pcMetrics_.gpu_temperature);
     updateAndDraw(gpuPowerWidget_, pcMetrics_.gpu_power);
     updateAndDraw(gpu3dWidget_, pcMetrics_.gpu_3d);
-    updateAndDraw(gpuComputeWidget_, pcMetrics_.gpu_compute);
+    updateAndDraw(gpuComputeWidget_, pcMetrics_.gpu_compute);  // This should now show value 0
     updateAndDraw(gpuMemoryWidget_, pcMetrics_.gpu_mem);
     updateAndDraw(gpuFanWidget_, pcMetrics_.gpu_fan);
 
@@ -319,6 +456,9 @@ void PcMetricsWidget::drawDynamicData() {
         fanWidget2_->setValue(pcMetrics_.system_fans[4]);
         fanWidget2_->draw(false);
     }
+
+    // Disk drive widgets
+    updateDiskDriveWidgets();
 
     lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
 }
@@ -359,6 +499,11 @@ void PcMetricsWidget::clearAllWidgets() {
     clearWidget(memoryLoadWidget_);
     clearWidget(fanWidget1_);
     clearWidget(fanWidget2_);
+
+    // ADD CLEARING DISK DRIVE WIDGETS
+    for (auto& driveWidget : diskDriveWidgets_) {
+        clearWidget(driveWidget);
+    }
 
     isStaticDrawn_ = false;
 }

@@ -22,7 +22,6 @@ class PcMetricsService {
 
     bool fetchData(PcMetrics& outData);
 
-    // New method to check if data is stale
     bool isDataStale() const {
         return (millis() - lastSuccessfulFetchTime_ > DATA_STALE_TIMEOUT_MS);
     }
@@ -39,6 +38,7 @@ class PcMetricsService {
     bool parseRamData(JsonObject ram, PcMetrics& outData);
     bool parseGpuData(JsonObject gpu, PcMetrics& outData);
     bool parseMotherboardData(JsonObject motherboard, PcMetrics& outData);
+    bool parseDiskData(JsonObject disks, PcMetrics& outData);
 
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;

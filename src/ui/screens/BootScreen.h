@@ -6,6 +6,7 @@
 class BootScreen : public ScreenInterface {
  public:
     explicit BootScreen(LoggerInterface& logger, LGFX* lcd);
+    ~BootScreen() override = default;
 
     void initialize();
     void onEnter() override;
@@ -15,6 +16,5 @@ class BootScreen : public ScreenInterface {
  private:
     LoggerInterface& logger_;
     LGFX* lcd_;
-
     int lineNumber_ = 0;
 };

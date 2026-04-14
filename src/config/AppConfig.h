@@ -48,7 +48,7 @@ struct TimingImpl {
 
 // Tasks configuration
 struct TasksImpl {
-    static constexpr uint32_t kScreenStack = 4096;
+    static constexpr uint32_t kScreenStack = 6144;
     static constexpr uint32_t kBackgroundStack = 8096;
     static constexpr uint32_t kScreenPriority = 2;
     static constexpr uint32_t kBackgroundPriority = 1;
@@ -61,7 +61,7 @@ struct HardwareMonitorImpl {
     static constexpr uint32_t kRefreshAfterFailureMs = 3000;
     static constexpr uint32_t kRetryDelayMs = 200;
     static constexpr uint32_t kMaxRetries = 2;
-    static constexpr float kThreadsUpwardSmoothing = 0.7f;
+    static constexpr float kThreadsUpwardSmoothing = 0.4f;
     static constexpr float kThreadsDownwardSmoothing = 0.075f;
 };
 

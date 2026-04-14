@@ -30,10 +30,15 @@ class Logger : public LoggerInterface {
     const bool& isTimeSynced_;
     std::queue<LogEntry> screenQueue_;
 
-    // FIXED: Use buffer-based methods to avoid string allocations
+    // Constants for memory management
+    static constexpr size_t MAX_SCREEN_QUEUE_SIZE = 50;  // Prevent memory exhaustion
+
+    // Buffer-based methods
     void getTimestamp(char* buffer, size_t bufferSize, bool forScreen = false);
     void getUptimeTimestamp(char* buffer, size_t bufferSize, bool forScreen);
-    const char* levelToString(LogLevel level);  // Returns const char* instead of String
+    const char* levelToString(LogLevel level);
+
+    // Optimized logging methods
     void logMessage(LogLevel level, const String& message, bool forScreen);
     void logFormatted(LogLevel level, const char* format, va_list args, bool forScreen);
 };

@@ -1,13 +1,14 @@
 #include "MetricWidget.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 
 MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                            uint8_t textSize)
-    : Widget(dims, updateIntervalMs), textSize_(textSize) {
-    updateDimensions();
-    formattedValue_[0] = '\0';  // Initialize buffer
+    : Widget(dims, updateIntervalMs), textSize_(textSize), useDimColors_(false) {
+    updateDimensionCache();
+    formattedValue_[0] = '\0';
 }
 
 void MetricWidget::drawStatic() {
@@ -18,7 +19,7 @@ void MetricWidget::drawStatic() {
     LGFX* lcd = getLcd();
 
     if (dimensionsDirty_) {
-        updateDimensions();
+        updateDimensionCache();
     }
 
     // Clear the entire widget area
@@ -49,121 +50,146 @@ void MetricWidget::onDraw(bool forceRedraw) {
     }
 
     bool valueChanged = (value_ != lastDrawnValue_);
-    bool needsRedraw = forceRedraw || valueChanged || isDirty() || valueAreaDirty_;
+    bool baseWidgetDirty = isDirty();
 
-    if (needsRedraw) {
-        if (valueChanged && lastDrawnValue_ != -1 && !forceRedraw) {
-            // Partial redraw - only update what changed
-            drawPartialValue(lastDrawnValue_, lastBgColor_);
-        } else {
-            // Full redraw
-            drawValue();
-        }
-        lastDrawnValue_ = value_;
-        clearDirty();
-        valueAreaDirty_ = false;
+    // Always draw on first render (lastDrawnValue_ == -1)
+    bool firstRender = (lastDrawnValue_ == -1);
+
+    // Only check other dirty flags if value changed or forced
+    if (!firstRender && !valueChanged && !forceRedraw && !baseWidgetDirty && !valueAreaDirty_) {
+        return;  // Nothing to do
     }
+
+    if (valueChanged && lastDrawnValue_ != -1 && !forceRedraw && !valueAreaDirty_) {
+        // Optimization: only redraw text if just the value changed
+        renderValueTextOnly();
+    } else {
+        // Full value area redraw (background + text)
+        renderValueArea();
+    }
+    lastDrawnValue_ = value_;
+    clearDirty();
+    valueAreaDirty_ = false;
 }
 
-void MetricWidget::drawValue() {
+void MetricWidget::renderValueArea() {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
 
-    lastBgColor_ = getBackgroundColor();
+    lastBgColor_ = calculateBackgroundColor();
 
-    // Calculate value area
-    int16_t valueAreaX, valueAreaY, valueAreaWidth, valueAreaHeight;
+    // Calculate value area bounds
+    int16_t areaX, areaY, areaWidth, areaHeight;
     if (hasLabel_) {
-        valueAreaX = valueX_;
-        valueAreaY = dimensions_.y + BORDER_MARGIN;
-        valueAreaWidth = valueWidth_;
-        valueAreaHeight = dimensions_.height - (2 * BORDER_MARGIN);
+        areaX = valueX_;
+        areaY = dimensions_.y + BORDER_MARGIN;
+        areaWidth = valueWidth_;
+        areaHeight = dimensions_.height - (2 * BORDER_MARGIN);
     } else {
-        valueAreaX = dimensions_.x + BORDER_MARGIN;
-        valueAreaY = dimensions_.y + BORDER_MARGIN;
-        valueAreaWidth = dimensions_.width - (2 * BORDER_MARGIN);
-        valueAreaHeight = dimensions_.height - (2 * BORDER_MARGIN);
+        areaX = dimensions_.x + BORDER_MARGIN;
+        areaY = dimensions_.y + BORDER_MARGIN;
+        areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
+        areaHeight = dimensions_.height - (2 * BORDER_MARGIN);
     }
 
-    // Clear value area
-    lcd->fillRect(valueAreaX, valueAreaY, valueAreaWidth, valueAreaHeight, lastBgColor_);
+    // Clear value area with background color
+    lcd->fillRect(areaX, areaY, areaWidth, areaHeight, lastBgColor_);
 
-    // Get formatted value
-    const char* displayText = formatValue();
+    // Get formatted value text
+    const char* displayText = getFormattedValueText();
+
+    if (displayText == nullptr || strlen(displayText) == 0) {
+        // Serial.printf("WARNING: MetricWidget displayText is empty for value: %d\n", value_);
+        displayText = "0";  // Fallback to show something
+    }
 
     lcd->setTextColor(TFT_WHITE, lastBgColor_);
     lcd->setTextDatum(textAlignment_);
     lcd->setTextSize(textSize_);
 
-    // Calculate text position
+    // Calculate text position based on alignment
     int16_t textX, textY;
     if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        textX = valueAreaX + TEXT_MARGIN;
+        textX = areaX + TEXT_MARGIN;
     } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
                textAlignment_ == BR_DATUM) {
-        textX = valueAreaX + valueAreaWidth - TEXT_MARGIN;
+        textX = areaX + areaWidth - TEXT_MARGIN;
     } else {
-        textX = valueAreaX + valueAreaWidth / 2;
+        textX = areaX + areaWidth / 2;
     }
     textY = dimensions_.y + dimensions_.height / 2;
 
     lcd->drawString(displayText, textX, textY);
 }
 
-void MetricWidget::drawPartialValue(int oldValue, uint16_t oldBgColor) {
+void MetricWidget::renderValueTextOnly() {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
 
-    uint16_t newBgColor = getBackgroundColor();
-    lastBgColor_ = newBgColor;
+    uint16_t newBgColor = calculateBackgroundColor();
 
-    // Only redraw if background color changed or value string changed
-    if (oldBgColor != newBgColor) {
-        // Background color changed, need full value area redraw
-        drawValue();
+    // If background color changed, need full redraw
+    if (lastBgColor_ != newBgColor) {
+        lastBgColor_ = newBgColor;
+        renderValueArea();
         return;
     }
 
-    // Same background color, just redraw the text
-    const char* displayText = formatValue();
+    // Background color unchanged, only redraw text
+    const char* displayText = getFormattedValueText();
 
     // Calculate value area for text positioning
-    int16_t valueAreaX, valueAreaWidth;
+    int16_t areaX, areaWidth;
     if (hasLabel_) {
-        valueAreaX = valueX_;
-        valueAreaWidth = valueWidth_;
+        areaX = valueX_;
+        areaWidth = valueWidth_;
     } else {
-        valueAreaX = dimensions_.x + BORDER_MARGIN;
-        valueAreaWidth = dimensions_.width - (2 * BORDER_MARGIN);
+        areaX = dimensions_.x + BORDER_MARGIN;
+        areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
     }
 
     lcd->setTextColor(TFT_WHITE, newBgColor);
     lcd->setTextDatum(textAlignment_);
     lcd->setTextSize(textSize_);
 
-    // Calculate text position
+    // Calculate text position based on alignment
     int16_t textX, textY;
     if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        textX = valueAreaX + TEXT_MARGIN;
+        textX = areaX + TEXT_MARGIN;
     } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
                textAlignment_ == BR_DATUM) {
-        textX = valueAreaX + valueAreaWidth - TEXT_MARGIN;
+        textX = areaX + areaWidth - TEXT_MARGIN;
     } else {
-        textX = valueAreaX + valueAreaWidth / 2;
+        textX = areaX + areaWidth / 2;
     }
     textY = dimensions_.y + dimensions_.height / 2;
 
-    // Clear only the text area (approximate - could be improved with text bounds)
-    int16_t textHeight = 8 * textSize_;                       // Approximate character height
-    int16_t textWidth = strlen(displayText) * 6 * textSize_;  // Approximate width
-    lcd->fillRect(textX - textWidth / 2, textY - textHeight / 2, textWidth, textHeight, newBgColor);
+    // Estimate text dimensions for clearing
+    int16_t textHeight = 8 * textSize_;
+    int16_t textWidth = strlen(displayText) * 6 * textSize_;
+
+    // Clear text area based on alignment
+    int16_t clearX, clearY;
+    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
+        clearX = textX;
+        clearY = textY - textHeight / 2;
+    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
+               textAlignment_ == BR_DATUM) {
+        clearX = textX - textWidth;
+        clearY = textY - textHeight / 2;
+    } else {
+        clearX = textX - textWidth / 2;
+        clearY = textY - textHeight / 2;
+    }
+
+    lcd->fillRect(clearX, clearY, textWidth, textHeight, newBgColor);
 
     lcd->drawString(displayText, textX, textY);
 }
 
-void MetricWidget::updateDimensions() {
+void MetricWidget::updateDimensionCache() {
     valueX_ =
         hasLabel_ ? dimensions_.x + labelWidth_ + SEPARATOR_WIDTH : dimensions_.x + BORDER_MARGIN;
     valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - SEPARATOR_WIDTH - BORDER_MARGIN
@@ -172,7 +198,7 @@ void MetricWidget::updateDimensions() {
     valueAreaDirty_ = true;
 }
 
-const char* MetricWidget::formatValue() const {
+const char* MetricWidget::getFormattedValueText() const {
     if (formatCacheDirty_) {
         if (valueFormatter_) {
             String result = valueFormatter_(value_);
@@ -187,27 +213,47 @@ const char* MetricWidget::formatValue() const {
     return formattedValue_;
 }
 
-uint16_t MetricWidget::getBackgroundColor() const {
+uint16_t MetricWidget::calculateBackgroundColor() const {
     if (maxValue_ <= minValue_) {
         return TFT_BLACK;
     }
 
     float normalizedPercent;
-    if (value_ <= lowerThreshold_) {
-        normalizedPercent = 0.0f;
-    } else if (value_ >= upperThreshold_) {
-        normalizedPercent = 100.0f;
-    } else {
-        float range = upperThreshold_ - lowerThreshold_;
-        if (range <= 0.0f) {
-            normalizedPercent = 0.0f;
+
+    if (reverseThresholds_) {
+        // REVERSE LOGIC: Warning color for LOW values
+        if (value_ >= upperThreshold_) {
+            normalizedPercent = 0.0f;  // Good (green) when value is HIGH
+        } else if (value_ <= lowerThreshold_) {
+            normalizedPercent = 100.0f;  // Bad (red) when value is LOW
         } else {
-            normalizedPercent = 100.0f * (value_ - lowerThreshold_) / range;
+            float range = upperThreshold_ - lowerThreshold_;
+            if (range <= 0.0f) {
+                normalizedPercent = 0.0f;
+            } else {
+                // Invert the calculation for reverse thresholds
+                normalizedPercent = 100.0f * (upperThreshold_ - value_) / range;
+            }
+        }
+    } else {
+        // NORMAL LOGIC: Warning color for HIGH values
+        if (value_ <= lowerThreshold_) {
+            normalizedPercent = 0.0f;
+        } else if (value_ >= upperThreshold_) {
+            normalizedPercent = 100.0f;
+        } else {
+            float range = upperThreshold_ - lowerThreshold_;
+            if (range <= 0.0f) {
+                normalizedPercent = 0.0f;
+            } else {
+                normalizedPercent = 100.0f * (value_ - lowerThreshold_) / range;
+            }
         }
     }
 
     uint8_t normalizedValue = static_cast<uint8_t>(normalizedPercent);
-    return getContext().getColors().getColorFromPercent(normalizedValue, true);
+
+    return getContext().getColors().getColorFromPercent(normalizedValue, useDimColors_);
 }
 
 bool MetricWidget::handleTouch(uint16_t x, uint16_t y) {
@@ -257,6 +303,20 @@ void MetricWidget::setColorThresholds(float lowerThreshold, float upperThreshold
     }
 }
 
+void MetricWidget::setReverseThresholds(bool reverse) {
+    if (reverseThresholds_ != reverse) {
+        reverseThresholds_ = reverse;
+        markDirty();
+    }
+}
+
+void MetricWidget::setUseDimColors(bool useDim) {
+    if (useDimColors_ != useDim) {
+        useDimColors_ = useDim;
+        markDirty();
+    }
+}
+
 void MetricWidget::setLabel(const char* label) {
     if (strcmp(label_, label) != 0) {
         safeStringCopy(label_, label, sizeof(label_));
@@ -300,8 +360,13 @@ void MetricWidget::setTextSize(uint8_t size) {
 }
 
 void MetricWidget::forceRefresh() {
-    lastDrawnValue_ = -1;
-    formatCacheDirty_ = true;
-    valueAreaDirty_ = true;
-    markDirty();
+    lastDrawnValue_ = -1;      // Force redraw by making last value different
+    formatCacheDirty_ = true;  // Force format recalculation
+    valueAreaDirty_ = true;    // Force area redraw
+    markDirty();               // Mark widget as dirty
+
+    // DEBUG: Force immediate draw if initialized
+    if (isInitialized_ && getLcd()) {
+        onDraw(true);
+    }
 }

@@ -52,6 +52,7 @@ class PcMetricsWidget : public Widget {
     bool wasFreshData_ = false;
     bool dataWasAvailable_ = false;
     bool isStaticDrawn_ = false;
+    void ensureDiskWidgetsCreated();
 
     std::unique_ptr<MetricWidget> cpuLoadWidget_;
     std::unique_ptr<MetricWidget> cpuTemperatureWidget_;
@@ -71,6 +72,9 @@ class PcMetricsWidget : public Widget {
 
     std::unique_ptr<MetricWidget> memoryLoadWidget_;
 
+    // ADD DISK DRIVE WIDGETS
+    std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
+
     void drawNoDataMessage();
     void drawDynamicData();
     void clearAllWidgets();
@@ -82,4 +86,8 @@ class PcMetricsWidget : public Widget {
         wasFreshData_ = false;
         dataWasAvailable_ = false;
     }
+
+    // ADD DISK DRIVE METHODS
+    void createDiskDriveWidgets();
+    void updateDiskDriveWidgets();
 };
