@@ -29,5 +29,6 @@ class FpsWidget : public Widget {
     bool lastVisible_ = false;
 
     void renderFps(int16_t fps);
+    void clearValueArea();
     void clearArea();
 };

@@ -287,7 +287,9 @@ bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
         outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"] | 0);
         outData.gpu_power = static_cast<uint16_t>(gpu["PackagePower"] | 0);
         outData.gpu_mem = static_cast<uint16_t>(gpu["MemoryLoad"] | 0.0f);
-        outData.gpu_fps = static_cast<int16_t>(gpu["FullscreenFps"] | -1);
+        outData.gpu_fps = gpu["FullscreenFps"].isNull()
+                              ? int16_t(-1)
+                              : static_cast<int16_t>(gpu["FullscreenFps"].as<float>());
         return true;
     } catch (const std::exception& e) {
         logger_.errorf("GPU data parsing exception: %s", e.what());

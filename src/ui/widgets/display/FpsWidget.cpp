@@ -19,7 +19,7 @@ void FpsWidget::drawStatic() {
 
     LGFX* lcd = getLcd();
 
-    // "FPS" label at the top of the square
+    // "FPS" label — always visible regardless of whether a value is available
     lcd->setTextSize(kLabelTextSize);
     lcd->setTextColor(kLabelColor, kBgColor);
     lcd->setTextDatum(TC_DATUM);
@@ -33,34 +33,30 @@ void FpsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool dataReady = pcMetrics_.is_available;
-    const int16_t fps = pcMetrics_.gpu_fps;
+    const int16_t fps = pcMetrics_.is_available ? pcMetrics_.gpu_fps : int16_t(-1);
+    const bool hasValue = (fps != -1);
 
-    // The widget is only meaningful when data is live and a fullscreen FPS is reported
-    const bool shouldShow = dataReady && (fps != -1);
-
-    if (shouldShow != lastVisible_) {
-        if (shouldShow) {
-            // Transitioning to visible: draw static chrome and current value
-            drawStatic();
+    if (hasValue != lastVisible_) {
+        if (hasValue) {
+            // Number just appeared — render it
             renderFps(fps);
         } else {
-            // Transitioning to hidden: wipe the area clean
-            clearArea();
+            // Number just disappeared — clear only the value area, keep the label
+            clearValueArea();
         }
-        lastVisible_ = shouldShow;
+        lastVisible_ = hasValue;
         lastDrawnFps_ = fps;
         lastUpdateTimeMs_ = millis();
         clearDirty();
         return;
     }
 
-    if (!shouldShow) {
+    if (!hasValue) {
         clearDirty();
         return;
     }
 
-    // Visible and was already visible — only repaint the number when it changes
+    // Value was and still is present — repaint only when it changes
     if (forceRedraw || fps != lastDrawnFps_) {
         renderFps(fps);
         lastDrawnFps_ = fps;
@@ -73,18 +69,26 @@ void FpsWidget::onDraw(bool forceRedraw) {
 void FpsWidget::renderFps(int16_t fps) {
     LGFX* lcd = getLcd();
 
-    // Clear the value area (below the "FPS" label)
-    const uint16_t valueAreaY = dimensions_.y + 16;
-    const uint16_t valueAreaH = dimensions_.height - 16;
-    lcd->fillRect(dimensions_.x, valueAreaY, dimensions_.width, valueAreaH, kBgColor);
+    clearValueArea();
 
     char buf[6];
     snprintf(buf, sizeof(buf), "%d", static_cast<int>(fps));
+
+    const uint16_t valueAreaY = dimensions_.y + 16;
+    const uint16_t valueAreaH = dimensions_.height - 16;
 
     lcd->setTextSize(kValueTextSize);
     lcd->setTextColor(kValueColor, kBgColor);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(buf, dimensions_.x + dimensions_.width / 2, valueAreaY + valueAreaH / 2);
+}
+
+void FpsWidget::clearValueArea() {
+    if (!getLcd())
+        return;
+    const uint16_t valueAreaY = dimensions_.y + 16;
+    getLcd()->fillRect(dimensions_.x, valueAreaY, dimensions_.width, dimensions_.height - 16,
+                       kBgColor);
 }
 
 void FpsWidget::clearArea() {
