@@ -9,7 +9,6 @@ PcMetricsService::PcMetricsService(NetworkManager& networkManager,
       config_(config) {
     // Allocate JSON document on heap
     filterDoc_ = std::make_unique<JsonDocument>();
-    initFilter();
 }
 
 void PcMetricsService::initFilter() {
@@ -61,6 +60,11 @@ void PcMetricsService::initFilter() {
 }
 
 bool PcMetricsService::fetchData(PcMetrics& outData) {
+    if (!filterInitialized_) {
+        initFilter();
+        filterInitialized_ = true;
+    }
+
     String rawData;
     if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData)) {
         bool success = parseData(rawData, outData);
