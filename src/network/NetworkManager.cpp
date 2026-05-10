@@ -6,23 +6,18 @@ NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
 
 bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    uint8_t attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < config_.getInitNetworkRetries()) {
-        delay(config_.getInitNetworkRetryDelayMs());
-        attempts++;
-        logger_.warning("Retry connect...", true);
-    }
-    isConnected_ = (WiFi.status() == WL_CONNECTED);
-    if (isConnected_) {
-        IPAddress ip = WiFi.localIP();
-        char ipBuffer[16];  // "255.255.255.255" + null
-        snprintf(ipBuffer, sizeof(ipBuffer), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 
-        char logBuffer[64];
-        snprintf(logBuffer, sizeof(logBuffer), "WiFi connected - IP: %s", ipBuffer);
-        logger_.info(logBuffer, true);
+    logger_.info("Connecting to WiFi...", true);
+
+    // waitForConnectResult blocks until connected, failed, or timeout
+    uint32_t timeoutMs = config_.getInitNetworkRetries() * config_.getInitNetworkRetryDelayMs();
+    wl_status_t status = static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
+
+    isConnected_ = (status == WL_CONNECTED);
+    if (isConnected_) {
+        logger_.info("WiFi connected - IP: " + WiFi.localIP().toString(), true);
     } else {
-        logger_.error("WiFi connection failed", true);
+        logger_.errorf("WiFi failed, status: %d", status);
     }
     return isConnected_;
 }

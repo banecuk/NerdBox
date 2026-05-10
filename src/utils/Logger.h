@@ -31,7 +31,7 @@ class Logger : public LoggerInterface {
     std::queue<LogEntry> screenQueue_;
 
     // Constants for memory management
-    static constexpr size_t MAX_SCREEN_QUEUE_SIZE = 50;  // Prevent memory exhaustion
+    static constexpr size_t MAX_SCREEN_QUEUE_SIZE = 25;  // Prevent memory exhaustion
 
     // Buffer-based methods
     void getTimestamp(char* buffer, size_t bufferSize, bool forScreen = false);
