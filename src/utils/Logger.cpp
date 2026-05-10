@@ -1,7 +1,7 @@
 #include "Logger.h"
 
 Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
-    Serial.begin(115200);
+    // Serial is initialized by main.cpp using the configured baud rate
 }
 
 Logger::~Logger() {

@@ -104,12 +104,11 @@ void UiController::processTransitionPhase() {
     }
 
     displayManager_->getDisplay()->startWrite();
-    logger_.debugf("[Heap] %d", ESP.getFreeHeap());
-    logger_.debugf("[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
-
     switch (activeTransition_.phase) {
         case TransitionPhase::UNLOADING:
             logger_.debug("[UiController] Unloading current screen");
+            logger_.debugf("[Heap] %d", ESP.getFreeHeap());
+            logger_.debugf("[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
             unloadCurrentScreen();
             activeTransition_.phase = TransitionPhase::CLEARING;
             break;

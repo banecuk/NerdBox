@@ -32,6 +32,7 @@ class ThreadsWidget : public Widget {
 
     uint16_t barWidth_;
     std::vector<uint16_t> previousBarHeights_;
+    std::vector<uint16_t> previousColors_;  // tracks last drawn color per bar for threshold change detection
     unsigned long lastDataUpdateTimestamp_ = 0;
 
     std::unique_ptr<ValueSmoother> valueSmoother_;

@@ -97,8 +97,10 @@ void TaskManager::executeScreenTask() {
     while (true) {
         if (screenState_.isInitialized) {
             uiController_.updateDisplay();
-            resetWatchdog();
         }
+
+        // Feed the watchdog every tick regardless of init state.
+        resetWatchdog();
 
         // Periodic stack monitoring
         if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {
@@ -119,10 +121,15 @@ void TaskManager::executeBackgroundTask() {
             if (screenState_.activeScreen == ScreenName::MAIN) {
                 if (millis() >= coreState_.nextSync_pcMetrics) {
                     updatePcMetrics();
-                    resetWatchdog();
                 }
             }
         }
+
+        // Feed the watchdog every tick, regardless of screen or fetch state.
+        // Previously this was inside the metrics fetch block, causing a WDT
+        // reboot after ~20 s whenever the settings screen was active or WiFi
+        // was down.
+        resetWatchdog();
 
         // Periodic stack monitoring
         if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {

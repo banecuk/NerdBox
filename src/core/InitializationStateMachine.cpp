@@ -139,7 +139,7 @@ bool InitializationStateMachine::handleWatchdogInit() {
     }
 
     components_.logger.infof("Watchdog initialized with %dms timeout",
-                             components_.config.getWatchdogTimeoutMs(), true);
+                             components_.config.getWatchdogTimeoutMs());
     transitionTo(State::FINAL_SETUP);
     return true;
 }

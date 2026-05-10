@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 struct DiskDrive {
     char driveName[4];  // "C", "D", etc. + null terminator
@@ -10,9 +12,27 @@ struct DiskDrive {
     float writeKBPerSec;
 };
 
-class PcMetrics {
- private:
+// RAII guard: locks diskDrivesMutex on construction, releases on destruction.
+// Usage:
+//   { PcMetricsDiskLock lock(metrics); use metrics.diskDrives; }
+class PcMetrics;
+class PcMetricsDiskLock {
  public:
+    explicit PcMetricsDiskLock(PcMetrics& m);
+    ~PcMetricsDiskLock();
+    PcMetricsDiskLock(const PcMetricsDiskLock&) = delete;
+    PcMetricsDiskLock& operator=(const PcMetricsDiskLock&) = delete;
+
+ private:
+    PcMetrics& m_;
+};
+
+class PcMetrics {
+ public:
+    // Mutex protecting diskDrives only. All scalar fields (cpu_load, etc.) are
+    // word-sized and accessed on Xtensa as naturally atomic — no lock needed.
+    SemaphoreHandle_t diskDrivesMutex = xSemaphoreCreateMutex();
+
     bool is_available = false;
     unsigned long last_update_timestamp = 0;
 
@@ -41,3 +61,13 @@ class PcMetrics {
 
     std::vector<DiskDrive> diskDrives;
 };
+
+// Inline RAII implementation — defined here so every TU that includes PcMetrics.h
+// can use PcMetricsDiskLock without a separate .cpp.
+inline PcMetricsDiskLock::PcMetricsDiskLock(PcMetrics& m) : m_(m) {
+    xSemaphoreTake(m_.diskDrivesMutex, portMAX_DELAY);
+}
+
+inline PcMetricsDiskLock::~PcMetricsDiskLock() {
+    xSemaphoreGive(m_.diskDrivesMutex);
+}

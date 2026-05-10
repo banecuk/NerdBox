@@ -2,6 +2,10 @@
 
 #include <cstdio>
 
+// ---------------------------------------------------------------------------
+// Constructor — delegates layout work to per-subsystem helpers
+// ---------------------------------------------------------------------------
+
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                  uint32_t updateIntervalMs, PcMetrics& pcMetrics,
                                  AppConfigInterface& config, ApplicationMetrics& systemMetrics)
@@ -10,197 +14,191 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics) {
-    const u8_t metricWidth = 86;
-    const u8_t metricLabelWidth = 26;
+    buildCpuWidgets();
+    buildGpuWidgets();
+    buildMemoryWidget();
+    buildFanWidgets();
+}
 
-    const u16_t guidelineY1 = 0;
-    const u16_t guidelineY2 = 30;
-    const u16_t guidelineY3 = 60;
-    const u16_t guidelineY4 = 90;
-    const u16_t guidelineY5 = 120;
-    const u16_t guidelineY6 = 150;
+// ---------------------------------------------------------------------------
+// Widget construction helpers
+// ---------------------------------------------------------------------------
 
-    const u16_t guidelineX4 = 0;
-    const u16_t guidelineX5 = 480 - metricWidth * 5;
-    const u16_t guidelineX6 = 480 - metricWidth * 4;
-    const u16_t guidelineX7 = 480 - metricWidth * 3;
-    const u16_t guidelineX8 = 480 - metricWidth * 2;
-    const u16_t guidelineX9 = 480 - metricWidth;
-
-    // CPU widgets using builder pattern
+void PcMetricsWidget::buildCpuWidgets() {
+    // Row 1: CPU load | CPU temperature
     cpuLoadWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX8, guidelineY1, metricWidth,
-                                                          guidelineY2 - guidelineY1},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol8, kRow1, kTileWidth, kRowH}, updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
             .label("CPU")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .textSize(2)
             .build();
 
     cpuTemperatureWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX9, guidelineY1, metricWidth,
-                                                          guidelineY2 - guidelineY1},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol9, kRow1, kTileWidth, kRowH}, updateIntervalMs_)
             .unit(" C")
             .range(0, 100)
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .build();
 
+    // Row 2: CPU power | CPU fan
     cpuPowerWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX8, guidelineY2, metricWidth,
-                                                          guidelineY3 - guidelineY2},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol8, kRow2, kTileWidth, kRowH}, updateIntervalMs_)
             .unit(" W")
             .range(0, 400)
             .colorThresholds(55.0f, 140.0f)
             .label("PWR")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .build();
 
     cpuFanWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX9, guidelineY2, metricWidth,
-                                                          guidelineY3 - guidelineY2},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol9, kRow2, kTileWidth, kRowH}, updateIntervalMs_)
             .unit("")
             .range(0, 1500)
             .colorThresholds(800.0f, 1200.0f)
             .label("FAN")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .build();
+}
 
-    // GPU widgets using builder pattern
+void PcMetricsWidget::buildGpuWidgets() {
+    // Row 3: RAM | GPU memory | GPU 3D | GPU load | GPU temperature
     gpuLoadWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX8, guidelineY3, metricWidth,
-                                                          guidelineY4 - guidelineY3},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol8, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
             .label("GPU")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .textSize(2)
             .build();
 
     gpuTemperatureWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX9, guidelineY3, metricWidth,
-                                                          guidelineY4 - guidelineY3},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol9, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
             .unit(" C")
             .range(0, 100)
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .build();
 
-    gpuPowerWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX8, guidelineY4, metricWidth,
-                                                          guidelineY5 - guidelineY4},
-                              updateIntervalMs)
-            .unit(" W")
-            .range(0, 400)
-            .colorThresholds(50.0f, 170.0f)
-            .label("PWR")
-            .labelWidth(metricLabelWidth)
-            .build();
-
+    // Row 3 (middle): GPU 3D workload
     gpu3dWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX7, guidelineY3, metricWidth,
-                                                          guidelineY4 - guidelineY3},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol7, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
             .label("3D")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .build();
 
-    gpuComputeWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX7, guidelineY4, metricWidth,
-                                                          guidelineY5 - guidelineY4},
-                              updateIntervalMs)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(10.0f, 90.0f)
-            .label("CMP")
-            .labelWidth(metricLabelWidth)
-            .build();
-
+    // Row 3–4 span: GPU memory (double height)
     gpuMemoryWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX6, guidelineY3, metricWidth,
-                                                          guidelineY5 - guidelineY3},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol6, kRow3, kTileWidth, kRowH * 2}, updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(30.0f, 90.0f)
             .label("MEM")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .textSize(2)
             .build();
 
+    // Row 4: GPU power | GPU fan | GPU compute
+    gpuPowerWidget_ =
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol8, kRow4, kTileWidth, kRowH}, updateIntervalMs_)
+            .unit(" W")
+            .range(0, 400)
+            .colorThresholds(50.0f, 170.0f)
+            .label("PWR")
+            .labelWidth(kLabelWidth)
+            .build();
+
     gpuFanWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX9, guidelineY4, metricWidth,
-                                                          guidelineY5 - guidelineY4},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol9, kRow4, kTileWidth, kRowH}, updateIntervalMs_)
             .unit("")
             .range(0, 1500)
             .colorThresholds(800.0f, 1400.0f)
             .label("FAN")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .build();
 
-    // Memory widget using builder pattern
+    gpuComputeWidget_ =
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol7, kRow4, kTileWidth, kRowH}, updateIntervalMs_)
+            .unit("%")
+            .range(0, 100)
+            .colorThresholds(10.0f, 90.0f)
+            .label("CMP")
+            .labelWidth(kLabelWidth)
+            .build();
+}
+
+void PcMetricsWidget::buildMemoryWidget() {
+    // Rows 3–4 span (double height), leftmost of the right-side tiles
     memoryLoadWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX5, guidelineY3, metricWidth,
-                                                          guidelineY5 - guidelineY3},
-                              updateIntervalMs)
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kCol5, kRow3, kTileWidth, kRowH * 2}, updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(60.0f, 90.0f)
             .label("RAM")
-            .labelWidth(metricLabelWidth)
+            .labelWidth(kLabelWidth)
             .textSize(2)
             .build();
+}
 
-    // System fan widgets using builder pattern
-    fanWidget1_ = MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX4, guidelineY3,
-                                                                    guidelineX5 - guidelineX4,
-                                                                    guidelineY4 - guidelineY3},
-                                        updateIntervalMs)
-                      .unit("")
-                      .range(0, 1200)
-                      .colorThresholds(750.0f, 1000.0f)
-                      .label("F1")
-                      .labelWidth(14)
-                      .build();
+void PcMetricsWidget::buildFanWidgets() {
+    // System fans occupy the left column (kColFan), rows 3 and 4.
+    // Width spans from kColFan to kCol5 (the start of the metric tiles).
+    const uint16_t fanWidth = kCol5 - kColFan;
 
-    fanWidget2_ = MetricWidget::Builder(WidgetInterface::Dimensions{guidelineX4, guidelineY4,
-                                                                    guidelineX5 - guidelineX4,
-                                                                    guidelineY5 - guidelineY4},
-                                        updateIntervalMs)
-                      .unit("")
-                      .range(0, 1200)
-                      .colorThresholds(880.0f, 1200.0f)
-                      .label("F2")
-                      .labelWidth(14)
-                      .build();
+    fanWidget1_ =
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kColFan, kRow3, fanWidth, kRowH}, updateIntervalMs_)
+            .unit("")
+            .range(0, 1200)
+            .colorThresholds(750.0f, 1000.0f)
+            .label("F1")
+            .labelWidth(kFanLabelWidth)
+            .build();
+
+    fanWidget2_ =
+        MetricWidget::Builder(
+            WidgetInterface::Dimensions{kColFan, kRow4, fanWidth, kRowH}, updateIntervalMs_)
+            .unit("")
+            .range(0, 1200)
+            .colorThresholds(880.0f, 1200.0f)
+            .label("F2")
+            .labelWidth(kFanLabelWidth)
+            .build();
 }
 
 void PcMetricsWidget::createDiskDriveWidgets() {
     diskDriveWidgets_.clear();
 
-    const uint16_t startX = 0;        // Start from left edge
-    const uint16_t totalWidth = 480;  // Use full screen width
+    const uint16_t startX = 0;
+    const uint16_t totalWidth = kScreenWidth;  // use full screen width
     const uint16_t guidelineY4 = 120;
     const uint16_t guidelineY5 = 150;
     const uint16_t height = guidelineY5 - guidelineY4;
 
-    // Calculate how many widgets we can actually display
-    size_t maxWidgets = 10;  // Maximum allowed widgets
+    PcMetricsDiskLock lock(pcMetrics_);  // protect diskDrives for the snapshot below
+
+    size_t maxWidgets = kMaxDiskWidgets;
     size_t driveCount = pcMetrics_.diskDrives.size();
     size_t widgetCount = (driveCount > maxWidgets) ? maxWidgets : driveCount;
 
@@ -234,7 +232,7 @@ void PcMetricsWidget::createDiskDriveWidgets() {
                                .reverseThresholds(true)
                                .useDimColors(true)
                                .label(drive.driveName)
-                               .labelWidth(14)
+                               .labelWidth(kFanLabelWidth)
                                .value(static_cast<int>(drive.freeSpacePercent + 0.5f))
                                .build();
 
@@ -252,10 +250,15 @@ void PcMetricsWidget::createDiskDriveWidgets() {
 }
 
 void PcMetricsWidget::ensureDiskWidgetsCreated() {
-    // Only create disk widgets if we have disk data and widgets don't exist or count changed
-    if (!pcMetrics_.diskDrives.empty()) {
-        size_t currentDriveCount = pcMetrics_.diskDrives.size();
-        size_t displayedDriveCount = (currentDriveCount > 10) ? 10 : currentDriveCount;
+    // Snapshot the drive count under lock, then release before the heavier work below.
+    size_t currentDriveCount;
+    {
+        PcMetricsDiskLock lock(pcMetrics_);
+        currentDriveCount = pcMetrics_.diskDrives.size();
+    }
+
+    if (currentDriveCount > 0) {
+        size_t displayedDriveCount = (currentDriveCount > kMaxDiskWidgets) ? kMaxDiskWidgets : currentDriveCount;
 
         bool needsCreation =
             diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != displayedDriveCount);
@@ -263,21 +266,25 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
         if (needsCreation) {
             createDiskDriveWidgets();
 
-            // FORCE IMMEDIATE DISPLAY of disk widgets
-            for (size_t i = 0; i < diskDriveWidgets_.size(); i++) {
-                const auto& drive = pcMetrics_.diskDrives[i];
-                if (diskDriveWidgets_[i]) {
-                    int freeSpacePercent = static_cast<int>(drive.freeSpacePercent + 0.5f);
-                    diskDriveWidgets_[i]->setValue(freeSpacePercent);
+            // FORCE IMMEDIATE DISPLAY of disk widgets — snapshot values under lock first
+            std::vector<int> freeSpaceValues;
+            {
+                PcMetricsDiskLock lock(pcMetrics_);
+                for (size_t i = 0; i < diskDriveWidgets_.size(); i++) {
+                    const auto& drive = pcMetrics_.diskDrives[i];
+                    freeSpaceValues.push_back(static_cast<int>(drive.freeSpacePercent + 0.5f));
+                }
+            }
 
-                    // Ensure widget is properly initialized and displayed
+            for (size_t i = 0; i < diskDriveWidgets_.size(); i++) {
+                if (diskDriveWidgets_[i]) {
+                    diskDriveWidgets_[i]->setValue(freeSpaceValues[i]);
                     if (!diskDriveWidgets_[i]->isInitialized()) {
                         diskDriveWidgets_[i]->initialize(context_);
                     }
-
-                    diskDriveWidgets_[i]->drawStatic();    // Draw static elements
-                    diskDriveWidgets_[i]->forceRefresh();  // Force value redraw
-                    diskDriveWidgets_[i]->draw(true);      // Force immediate display
+                    diskDriveWidgets_[i]->drawStatic();
+                    diskDriveWidgets_[i]->forceRefresh();
+                    diskDriveWidgets_[i]->draw(true);
                 }
             }
 
@@ -290,7 +297,8 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
 }
 
 void PcMetricsWidget::updateDiskDriveWidgets() {
-    size_t updateCount = (pcMetrics_.diskDrives.size() > 10) ? 10 : pcMetrics_.diskDrives.size();
+    PcMetricsDiskLock lock(pcMetrics_);  // protect diskDrives for the duration of the update
+    size_t updateCount = (pcMetrics_.diskDrives.size() > kMaxDiskWidgets) ? kMaxDiskWidgets : pcMetrics_.diskDrives.size();
 
     for (size_t i = 0; i < updateCount && i < diskDriveWidgets_.size(); i++) {
         const auto& drive = pcMetrics_.diskDrives[i];
@@ -449,11 +457,11 @@ void PcMetricsWidget::drawDynamicData() {
 
     // System fan widgets
     if (fanWidget1_) {
-        fanWidget1_->setValue(pcMetrics_.system_fans[0]);
+        fanWidget1_->setValue(pcMetrics_.system_fans[kSystemFan1Index]);
         fanWidget1_->draw(false);
     }
     if (fanWidget2_) {
-        fanWidget2_->setValue(pcMetrics_.system_fans[4]);
+        fanWidget2_->setValue(pcMetrics_.system_fans[kSystemFan2Index]);
         fanWidget2_->draw(false);
     }
 

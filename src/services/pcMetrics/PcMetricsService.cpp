@@ -9,6 +9,7 @@ PcMetricsService::PcMetricsService(NetworkManager& networkManager,
       config_(config) {
     // Allocate JSON document on heap
     filterDoc_ = std::make_unique<JsonDocument>();
+    doc_ = std::make_unique<JsonDocument>();
 }
 
 void PcMetricsService::initFilter() {
@@ -82,16 +83,15 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
 bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     unsigned long startTime = millis();
 
-    // Use heap allocation for main JSON document
-    auto doc = std::make_unique<JsonDocument>();
-    if (!doc) {
-        logger_.error("Failed to allocate memory for JSON document");
+    // Reuse the persistent doc_ to avoid heap fragmentation on every fetch
+    if (!doc_) {
+        logger_.error("JSON document not allocated");
         outData.is_available = false;
         return false;
     }
+    doc_->clear();
 
-    // Try parsing WITHOUT filter first to see if disks are in the data
-    DeserializationError error = deserializeJson(*doc, rawData);
+    DeserializationError error = deserializeJson(*doc_, rawData, DeserializationOption::Filter(filter_));
 
     if (error) {
         logger_.errorf("JSON parsing failed: %s", error.c_str());
@@ -99,7 +99,7 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
         return false;
     }
 
-    JsonObject metrics = (*doc)["Metrics"];
+    JsonObject metrics = (*doc_)["Metrics"];
     if (metrics.isNull()) {
         logger_.error("No Metrics object found in JSON");
         outData.is_available = false;
@@ -189,6 +189,7 @@ bool PcMetricsService::validateJsonStructure(JsonObject metrics) {
 
 bool PcMetricsService::parseDiskData(JsonObject disks, PcMetrics& outData) {
     try {
+        PcMetricsDiskLock lock(outData);  // protect diskDrives for the duration of this write
         outData.diskDrives.clear();
 
         JsonArray drives = disks["Drives"];
@@ -225,17 +226,17 @@ bool PcMetricsService::parseDiskData(JsonObject disks, PcMetrics& outData) {
 bool PcMetricsService::parseCpuData(JsonObject cpu, PcMetrics& outData) {
     try {
         outData.cpu_load = static_cast<uint8_t>(cpu["Load"] | 0.0f);
-        outData.cpu_temperature = static_cast<uint8_t>(cpu["TemperatureCoreMax"] | 0);
-        outData.cpu_power = static_cast<uint16_t>(cpu["PackagePower"] | 0);
+        // Note: cpu_temperature and cpu_power come from CpuExtended, not Cpu
 
         // Parse core loads with bounds checking
         JsonArray coreLoads = cpu["CoreLoads"];
         if (!coreLoads.isNull()) {
             uint8_t coreCount = config_.getPcMetricsCores();
             uint8_t actualCores = min(coreCount, static_cast<uint8_t>(coreLoads.size()));
+            const int maxThreads = sizeof(outData.cpu_thread_load) / sizeof(outData.cpu_thread_load[0]);
 
             for (int i = 0; i < actualCores; i++) {
-                if (i < 20) {  // Check against array size in PcMetrics
+                if (i < maxThreads) {  // Check against array size in PcMetrics
                     outData.cpu_thread_load[i] = static_cast<uint8_t>(coreLoads[i] | 0);
                 } else {
                     break;  // Prevent array overflow
@@ -298,7 +299,8 @@ bool PcMetricsService::parseMotherboardData(JsonObject motherboard, PcMetrics& o
 
         JsonArray systemFans = motherboard["SystemFans"];
         if (!systemFans.isNull()) {
-            for (int i = 0; i < systemFans.size(); i++) {
+            const int maxFans = sizeof(outData.system_fans) / sizeof(outData.system_fans[0]);
+            for (int i = 0; i < systemFans.size() && i < maxFans; i++) {
                 outData.system_fans[i] = static_cast<uint16_t>(systemFans[i] | 0);
             }
         }
