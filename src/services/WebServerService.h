@@ -6,12 +6,13 @@
 
 class WebServerService {
  public:
-    WebServerService(UiController& uiController, ApplicationMetrics& systemMetrics);
+    WebServerService(WebServer& server, UiController& uiController,
+                     ApplicationMetrics& systemMetrics);
     void begin();
     void processRequests();
 
  private:
-    WebServer server_;
+    WebServer& server_;
     UiController& uiController_;
     ApplicationMetrics& systemMetrics_;
 

@@ -1,7 +1,8 @@
 #include "WebServerService.h"
 
-WebServerService::WebServerService(UiController& uiController, ApplicationMetrics& systemMetrics)
-    : server_(80), uiController_(uiController), systemMetrics_(systemMetrics) {}
+WebServerService::WebServerService(WebServer& server, UiController& uiController,
+                                   ApplicationMetrics& systemMetrics)
+    : server_(server), uiController_(uiController), systemMetrics_(systemMetrics) {}
 
 void WebServerService::begin() {
     server_.on("/", [this]() { this->handleHome(); });
