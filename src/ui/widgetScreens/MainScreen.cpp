@@ -24,6 +24,12 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
         WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)));
 
+    // FPS widget — square, bottom-right corner, directly above the clock
+    // Visible only when data is available and FullscreenFps != -1
+    widgetManager_.addWidget(std::unique_ptr<FpsWidget>(
+        new FpsWidget(uiController_->getDisplayContext(),
+                      WidgetInterface::Dimensions{400, 200, 72, 72}, 250, pcMetrics_)));
+
     // Settings button
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{0, 272, 48, 48}, 0,

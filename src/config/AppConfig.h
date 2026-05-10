@@ -56,13 +56,13 @@ struct TasksImpl {
 
 // HardwareMonitor configuration
 struct HardwareMonitorImpl {
-    static constexpr uint32_t kRefreshMs = 500;
+    static constexpr uint32_t kRefreshMs = 250;
     static constexpr uint32_t kThreadsRefreshMs = 16;
     static constexpr uint32_t kRefreshAfterFailureMs = 3000;
     static constexpr uint32_t kRetryDelayMs = 200;
     static constexpr uint32_t kMaxRetries = 2;
     static constexpr float kThreadsUpwardSmoothing = 0.4f;
-    static constexpr float kThreadsDownwardSmoothing = 0.075f;
+    static constexpr float kThreadsDownwardSmoothing = 0.025f;
 };
 
 // Metrics configuration

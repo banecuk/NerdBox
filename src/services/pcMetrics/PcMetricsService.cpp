@@ -43,6 +43,7 @@ void PcMetricsService::initFilter() {
     gpu["MemoryAvailable"] = true;
     gpu["MemoryTotal"] = true;
     gpu["MemoryLoad"] = true;
+    gpu["FullscreenFps"] = true;
 
     // Motherboard filters
     JsonObject motherboard = metrics["Motherboard"].to<JsonObject>();
@@ -286,6 +287,7 @@ bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
         outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"] | 0);
         outData.gpu_power = static_cast<uint16_t>(gpu["PackagePower"] | 0);
         outData.gpu_mem = static_cast<uint16_t>(gpu["MemoryLoad"] | 0.0f);
+        outData.gpu_fps = static_cast<int16_t>(gpu["FullscreenFps"] | -1);
         return true;
     } catch (const std::exception& e) {
         logger_.errorf("GPU data parsing exception: %s", e.what());

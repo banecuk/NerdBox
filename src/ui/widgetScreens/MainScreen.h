@@ -4,6 +4,7 @@
 #include "config/AppConfigInterface.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/display/ClockWidget.h"
+#include "ui/widgets/display/FpsWidget.h"
 #include "ui/widgets/display/PcMetricsWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 

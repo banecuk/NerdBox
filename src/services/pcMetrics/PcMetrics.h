@@ -55,6 +55,7 @@ class PcMetrics {
     uint16_t gpu_compute = 0;
     uint16_t gpu_decode = 0;
     uint16_t gpu_mem = 0;
+    int16_t gpu_fps = -1;  // Fullscreen FPS; -1 means not available
 
     float eth_up = 0;
     float eth_dn = 0;
