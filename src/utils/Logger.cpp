@@ -1,5 +1,7 @@
 #include "Logger.h"
 
+#include <cstring>
+
 Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
     // Serial is initialized by main.cpp using the configured baud rate
 }
@@ -100,8 +102,12 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
         strncpy(screenBuffer + prefixLen, messageStr, sizeof(screenBuffer) - prefixLen - 1);
         screenBuffer[sizeof(screenBuffer) - 1] = '\0';
 
-        // Store as String only at the end (minimize String operations)
-        LogEntry entry{String(screenTimestamp), level, String(screenBuffer), true};
+        // Store in queue — no heap allocation, copy into fixed char arrays
+        LogEntry entry{};
+        strncpy(entry.timestamp, screenTimestamp, sizeof(entry.timestamp) - 1);
+        entry.level = level;
+        strncpy(entry.message, screenBuffer, sizeof(entry.message) - 1);
+        entry.forScreen = true;
         screenQueue_.push(entry);
 
         // Limit queue size to prevent memory exhaustion
@@ -167,8 +173,12 @@ void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool
         snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] %s", screenTimestamp, shortLevelStr,
                  messageBuffer);
 
-        // Store in queue
-        LogEntry entry{String(screenTimestamp), level, String(screenBuffer), true};
+        // Store in queue — no heap allocation
+        LogEntry entry{};
+        strncpy(entry.timestamp, screenTimestamp, sizeof(entry.timestamp) - 1);
+        entry.level = level;
+        strncpy(entry.message, screenBuffer, sizeof(entry.message) - 1);
+        entry.forScreen = true;
         screenQueue_.push(entry);
 
         // Limit queue size
@@ -216,18 +226,10 @@ void Logger::criticalf(const char* format, ...) {
 std::queue<String> Logger::getScreenMessages() {
     std::queue<String> result;
 
-    // Efficiently transfer messages without type mismatch
     while (!screenQueue_.empty()) {
-        LogEntry entry = screenQueue_.front();
+        const LogEntry& entry = screenQueue_.front();
+        result.push(String(entry.message));
         screenQueue_.pop();
-
-        // Convert LogEntry to simple String for screen display
-        char buffer[200];
-        const char* levelStr = levelToString(entry.level);
-        snprintf(buffer, sizeof(buffer), "[%s] [%s] %s", entry.timestamp.c_str(), levelStr,
-                 entry.message.c_str());
-
-        result.push(String(buffer));
     }
 
     return result;

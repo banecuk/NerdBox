@@ -5,6 +5,7 @@
 #include <array>
 
 #include "config/AppConfigInterface.h"
+#include "config/AppConfig.h"
 
 class ApplicationMetrics {
  public:
@@ -16,28 +17,31 @@ class ApplicationMetrics {
 
     // Screen draw time methods
     void addScreenDrawTime(uint32_t timeMs);
-    const std::vector<uint32_t>& getScreenDrawTimes() const;
+    const std::array<uint32_t, AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes>&
+    getScreenDrawTimes() const;
     float getAverageScreenDrawTime() const;
     size_t getScreenDrawCount() const;
 
     // Uptime method
     String getFormattedUptime() const;
 
-    // Thread widget FPS methods - SIMPLE FRAME COUNTER APPROACH
+    // Thread widget FPS methods
     void addThreadWidgetFrameTime(uint32_t timeMs);
     float getThreadWidgetFPS() const;
     size_t getThreadWidgetFrameCount() const;
 
  private:
+    static constexpr size_t kDrawTimesCapacity =
+        AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes;
+
     AppConfigInterface& config_;
 
-    uint32_t pcMetricsJsonParseTime_;        // Latest JSON parse time for PC metrics
-    std::vector<uint32_t> screenDrawTimes_;  // Circular buffer for screen draw times
-    size_t screenDrawCapacity_;              // capacity (from config)
-    size_t screenDrawIndex_;                 // Current index in the circular buffer
-    size_t screenDrawCount_;                 // Number of valid entries in the buffer
+    uint32_t pcMetricsJsonParseTime_ = 0;
+    std::array<uint32_t, kDrawTimesCapacity> screenDrawTimes_{};
+    size_t screenDrawIndex_ = 0;
+    size_t screenDrawCount_ = 0;
 
-    // SIMPLE FPS COUNTER - Option 3
+    // FPS counter
     uint32_t threadWidgetFrameCount_ = 0;
     uint32_t threadWidgetLastFpsTime_ = 0;
     float threadWidgetCurrentFps_ = 0.0f;
