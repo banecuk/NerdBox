@@ -51,6 +51,8 @@ class PcMetricsService {
     JsonDocument filter_;  // Filter stays on stack (small size)
     bool filterInitialized_ = false;
 
+    String rawData_;  // Reused across fetches — avoids a heap alloc + free every 300–500 ms
+
     // New members for tracking data freshness
     unsigned long lastSuccessfulFetchTime_ = 0;
     static constexpr unsigned long DATA_STALE_TIMEOUT_MS = 5000;  // 5 seconds

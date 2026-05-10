@@ -67,9 +67,9 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
         filterInitialized_ = true;
     }
 
-    String rawData;
-    if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData)) {
-        bool success = parseData(rawData, outData);
+    rawData_ = "";  // clear without freeing the buffer
+    if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData_)) {
+        bool success = parseData(rawData_, outData);
         if (success) {
             lastSuccessfulFetchTime_ = millis();
         }

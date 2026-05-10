@@ -9,7 +9,7 @@ ApplicationComponents::ApplicationComponents()
       displayManager(display, logger),
       pcMetricsService(networkManager, systemMetrics, logger, config),
       uiController(displayContext, &displayManager, systemMetrics, systemState.pcMetrics,
-                   systemState.screen, config),
+                   systemState.screen, config, networkManager),
       webServerService(webServer, uiController, systemMetrics),
       taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics, systemState.core,
                   systemState.screen, config),

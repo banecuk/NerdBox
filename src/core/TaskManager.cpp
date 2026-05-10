@@ -65,7 +65,7 @@ bool TaskManager::createTask(TaskFunction_t taskFunction, const char* taskName, 
         return false;
     }
 
-    logger_.info("Task created successfully: " + String(taskName), true);
+    logger_.infof("Task created successfully: %s", taskName);
     return true;
 }
 

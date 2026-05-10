@@ -124,16 +124,15 @@ bool InitializationStateMachine::handleWatchdogInit() {
 
     esp_err_t ret = esp_task_wdt_init(components_.config.getWatchdogTimeoutMs() / 1000, true);
     if (ret != ESP_OK) {
-        components_.logger.error("Failed to initialize watchdog: " + String(esp_err_to_name(ret)),
-                                 true);
+        components_.logger.errorf("Failed to initialize watchdog: %s", esp_err_to_name(ret));
         transitionTo(State::FINAL_SETUP);
         return true;
     }
 
     ret = esp_task_wdt_add(nullptr);
     if (ret != ESP_OK) {
-        components_.logger.error(
-            "Failed to add main task to watchdog: " + String(esp_err_to_name(ret)), true);
+        components_.logger.errorf("Failed to add main task to watchdog: %s",
+                                  esp_err_to_name(ret));
         transitionTo(State::FINAL_SETUP);
         return true;
     }

@@ -1,8 +1,10 @@
 #include "SettingsScreen.h"
 
+#include "ui/widgets/display/IpAddressWidget.h"
+
 SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiController,
-                               AppConfigInterface& config)
-    : BaseWidgetScreen(logger, uiController, config) {}
+                               AppConfigInterface& config, NetworkManager& networkManager)
+    : BaseWidgetScreen(logger, uiController, config), networkManager_(networkManager) {}
 
 void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
@@ -23,4 +25,8 @@ void SettingsScreen::createWidgets() {
         new ButtonWidget(uiController_->getDisplayContext(), "Brightness",
                          WidgetInterface::Dimensions{0, 0, 100, 48}, 0, EventType::CYCLE_BRIGHTNESS,
                          [this](EventType action) { this->handleAction(action); })));
+
+    // IP address — middle of the screen, left-aligned
+    widgetManager_.addWidget(std::unique_ptr<IpAddressWidget>(new IpAddressWidget(
+        WidgetInterface::Dimensions{12, 100, 260, 40}, networkManager_)));
 }

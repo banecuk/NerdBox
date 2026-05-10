@@ -8,7 +8,8 @@
 
 UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                           SystemState::ScreenState& screenState, AppConfigInterface& config)
+                           SystemState::ScreenState& screenState, AppConfigInterface& config,
+                           NetworkManager& networkManager)
     : context_(context),
       logger_(context.getLogger()),
       displayManager_(displayManager),
@@ -16,6 +17,7 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
       pcMetrics_(pcMetrics),
       screenState_(screenState),
       config_(config),
+      networkManager_(networkManager),
       actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())),
       touchManager_(
           std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)) {
@@ -160,7 +162,7 @@ void UiController::loadAndActivateScreen() {
     std::unique_ptr<ScreenInterface> newScreen;
     newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, logger_, displayManager_,
                                             pcMetrics_, this, config_,
-                                            systemMetrics_);  // Add systemMetrics_
+                                            systemMetrics_, networkManager_);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);

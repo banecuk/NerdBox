@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/AppConfigInterface.h"
+#include "network/NetworkManager.h"
 #include "ScreenInterface.h"
 #include "ui/core/UiController.h"
 #include "ui/screens/ScreenTypes.h"
@@ -16,5 +17,5 @@ class ScreenFactory {
     static std::unique_ptr<ScreenInterface>
     createScreen(ScreenName name, LoggerInterface& logger, DisplayManager* display,
                  PcMetrics& metrics, UiController* controller, AppConfigInterface& config,
-                 ApplicationMetrics& systemMetrics);
+                 ApplicationMetrics& systemMetrics, NetworkManager& networkManager);
 };
