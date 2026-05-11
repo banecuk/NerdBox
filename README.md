@@ -28,12 +28,14 @@ Real-time PC performance monitoring on a **WT32-SC01-PLUS** (ESP32-S3) touchscre
 | Category | What is shown |
 |---|---|
 | CPU | Total load %, per-thread load bars (up to 24 threads), power (W), temperature (°C) |
-| GPU | 3D load %, Compute load %, VRAM usage %, temperature (°C), power (W), fan RPM |
+| GPU | 3D load %, Compute load %, VRAM usage %, temperature (°C), power (W), fan RPM, fullscreen FPS |
 | RAM | Memory load % |
 | Motherboard | CPU fan RPM, up to 10 system fan RPMs |
 | Disk | Per-drive free space %, read KB/s, write KB/s |
 | Network | Ethernet upload / download throughput |
 | Clock | Real-time HH:MM:SS from NTP, falls back to uptime |
+| FPS Widget | GPU fullscreen FPS counter — shown only when a game is running (bottom-right, above clock) |
+| IP Widget | Device WiFi IP address on the Settings screen |
 | Web UI | `/`, `/app-info`, `/system-info`, `/screen/main`, `/screen/settings` endpoints |
 
 ---
@@ -145,11 +147,11 @@ All tunable values live in `src/config/AppConfig.h` inside the `AppConfig::inter
 | `TasksImpl` | `kScreenStack` | `6144` | FreeRTOS screen task stack size (bytes) |
 | `TasksImpl` | `kBackgroundStack` | `8096` | FreeRTOS background task stack size (bytes) |
 | `HardwareMonitorImpl` | `kRefreshMs` | `500` | Polling interval when data is healthy |
-| `HardwareMonitorImpl` | `kThreadsRefreshMs` | `16` | Per-thread load refresh interval |
+| `HardwareMonitorImpl` | `kThreadsRefreshMs` | `16` | Per-thread widget redraw interval (animation speed, not data freshness) |
 | `HardwareMonitorImpl` | `kRefreshAfterFailureMs` | `3000` | Back-off interval after a failed fetch |
 | `HardwareMonitorImpl` | `kMaxRetries` | `2` | Consecutive failures before a warning is logged |
-| `HardwareMonitorImpl` | `kThreadsUpwardSmoothing` | `0.4` | EMA alpha for rising thread load |
-| `HardwareMonitorImpl` | `kThreadsDownwardSmoothing` | `0.075` | EMA alpha for falling thread load |
+| `HardwareMonitorImpl` | `kThreadsUpwardSmoothing` | `0.4` | EMA alpha for rising thread load bars — increase to react faster |
+| `HardwareMonitorImpl` | `kThreadsDownwardSmoothing` | `0.075` | EMA alpha for falling thread load bars — **decrease** to decay slower |
 | `PcMetricsImpl` | `kCores` | `18` | Total logical CPU threads to read. **Must match your CPU.** |
 | `UiImpl` | `kTransitionTimeoutMs` | `1000` | Maximum time allowed for a screen transition |
 | `UiImpl` | `kTouchDebounceIntervalMs` | `200` | Minimum ms between registered touch events |
@@ -159,6 +161,13 @@ All tunable values live in `src/config/AppConfig.h` inside the `AppConfig::inter
 ### Adjusting for your CPU
 
 `kCores` must equal the number of logical processors reported by NerdWinSense. For a 12-core/24-thread CPU set it to `24`. Mismatches cause `Insufficient CPU load entries` warnings and missing thread bars.
+
+### kThreadsRefreshMs vs kRefreshMs
+
+These two constants are **independent**:
+
+- `kRefreshMs` — how often the background task performs an HTTP fetch and writes new data into `PcMetrics`. Reducing this makes data arrive more frequently.
+- `kThreadsRefreshMs` — how often the `ThreadsWidget` redraws. The EMA smoother only advances when new data actually arrives, so setting this lower than `kRefreshMs` adds animation smoothness without wasted work.
 
 ---
 
@@ -191,7 +200,7 @@ The firmware is split into five layers. Dependencies only flow downward.
 | `EventBus` | `core/events/EventBus.h` | Singleton publish/subscribe for UI actions |
 | `PcMetricsService` | `services/pcMetrics/PcMetricsService.h` | Fetches and parses NerdWinSense JSON; tracks data freshness |
 | `NtpService` | `services/NtpService.h` | NTP time sync; provides timestamp to Logger |
-| `WebServerService` | `services/WebServerService.h` | HTTP server for `/`, `/app-info`, `/system-info`, screen control |
+| `WebServerService` | `services/WebServerService.h` | HTTP server for diagnostics and screen control |
 | `UiController` | `ui/core/UiController.h` | Screen lifecycle, transition state machine, touch routing |
 | `WidgetManager` | `ui/widgets/layout/WidgetManager.h` | Owns and updates all widgets on the active screen |
 
@@ -231,96 +240,47 @@ requestScreen(name)
     IDLE (draw loop resumes)
 ```
 
-### Metrics parsing pipeline
-
-```
-HTTP GET /api/v1/system
-       │
-       ▼ (filtered deserializeJson — only needed fields retained)
-  JsonDocument
-       │
-       ├── CpuParser          →  cpu_load, cpu_thread_load[], cpu_power
-       ├── CpuExtendedParser  →  cpu_temperature
-       ├── MemoryParser       →  mem_load
-       ├── GpuParser          →  gpu_3d, gpu_compute, gpu_mem, gpu_temperature, gpu_power, gpu_fan
-       ├── MotherboardParser  →  cpu_fan, system_fans[]
-       └── DiskParser         →  diskDrives[] (name, freeSpacePercent, readKBPerSec, writeKBPerSec)
-```
-
 ---
 
 ## Adding a new widget
 
-1. Create `src/ui/widgets/MyWidget.h` and `.cpp` extending `Widget`.
-2. Implement the three required methods:
+1. Create `src/ui/widgets/display/MyWidget.h` and `.cpp` extending `Widget`.
+2. Implement:
 
 ```cpp
 class MyWidget : public Widget {
 public:
-    MyWidget(DisplayContext& ctx, const Dimensions& dims, uint32_t updateIntervalMs);
-    void drawStatic() override;           // called once on screen enter
-    void draw(bool forceRedraw) override; // called every frame if needsUpdate()
+    MyWidget(DisplayContext& ctx, const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
+    void drawStatic() override;       // called once on screen enter and on forceRedraw
     bool handleTouch(uint16_t x, uint16_t y) override;
+protected:
+    void onDraw(bool forceRedraw) override;   // called when needsUpdate() or isDirty()
 };
 ```
 
-3. Add it to a screen's `createWidgets()`:
+3. Register in a screen's `createWidgets()`:
 
 ```cpp
-void MainScreen::createWidgets() {
-    widgetManager_.addWidget(std::make_unique<MyWidget>(
-        uiController_->getDisplayContext(),
-        Dimensions{x, y, width, height},
-        updateIntervalMs
-    ));
-}
+widgetManager_.addWidget(std::make_unique<MyWidget>(
+    uiController_->getDisplayContext(),
+    WidgetInterface::Dimensions{x, y, width, height},
+    updateIntervalMs
+));
 ```
 
-`WidgetManager` owns the widget's lifetime. `initialize()` is called automatically by `initializeWidgets()` — do not call it manually.
-
-### Widget coordinate system
-
-The display is landscape (480 × 320 px after `setRotation(1)`). Origin is top-left. Widgets are positioned in absolute pixel coordinates — there is no layout engine.
+**Widget memory rules:**
+- Never store `String` members. Use `char[]` arrays sized to the maximum expected content.
+- Never call `new` or construct `String` objects inside `onDraw`. All drawing must be allocation-free.
+- Cache the last drawn value and skip the draw call if nothing changed.
 
 ---
 
 ## Adding a new screen
 
-1. Add an entry to `ScreenName` in `src/ui/screens/ScreenTypes.h`:
-
-```cpp
-enum class ScreenName : uint8_t {
-    NONE, BOOT, MAIN, SETTINGS,
-    MY_SCREEN   // add here
-};
-```
-
-2. Create `src/ui/widgetScreens/MyScreen.h/.cpp` extending `BaseWidgetScreen`:
-
-```cpp
-class MyScreen : public BaseWidgetScreen {
-public:
-    MyScreen(LoggerInterface& logger, UiController* ctrl, AppConfigInterface& cfg)
-        : BaseWidgetScreen(logger, ctrl, cfg) {}
-private:
-    void createWidgets() override;
-};
-```
-
-3. Register it in `ScreenFactory::createScreen()`:
-
-```cpp
-case ScreenName::MY_SCREEN:
-    return std::make_unique<MyScreen>(logger, controller, config);
-```
-
-4. Navigate to it via the `EventBus` or directly:
-
-```cpp
-uiController_.requestScreen(ScreenName::MY_SCREEN);
-// or
-EventBus::getInstance().publish(EventType::SHOW_MY_SCREEN);
-```
+1. Add an entry to `ScreenName` in `src/ui/screens/ScreenTypes.h`.
+2. Create `src/ui/widgetScreens/MyScreen.h/.cpp` extending `BaseWidgetScreen`.
+3. Register in `ScreenFactory::createScreen()`. If the screen needs additional dependencies (like `NetworkManager` for `SettingsScreen`), add them to `ScreenFactory::createScreen()`'s signature and thread them through `UIController`.
+4. Navigate to it with `uiController_.requestScreen(ScreenName::MY_SCREEN)`.
 
 ---
 
@@ -340,7 +300,11 @@ Your CPU has a different number of logical threads than `kCores`. Count the thre
 
 ### GPU memory percentage looks wrong
 
-`GPU_VRAM_MB` in `Environment.h` is hard-coded to your GPU's total capacity. Update it to your card's actual VRAM (e.g. `8192.0f` for 8 GB).
+`GPU_VRAM_MB` in `Environment.h` is hard-coded to your GPU's total capacity. Update it to your card's actual VRAM (e.g. `16384.0f` for 16 GB).
+
+### FPS widget shows nothing even when a game is running
+
+The NerdWinSense API reports `FullscreenFps` as a **float** (e.g. `155.40016`). Ensure `parseGpuData` uses `.as<float>()` before casting to `int16_t` — the `| fallback` operator with an integer fallback silently fails on float-typed JSON nodes.
 
 ### Data shown as stale after 5 seconds
 
@@ -359,7 +323,7 @@ Your CPU has a different number of logical threads than `kCores`. Count the thre
 
 ### Web UI not accessible
 
-The web server starts only after WiFi connects. Check serial for `HTTP Server started`. The device IP is printed on successful connection.
+The web server starts only after WiFi connects. Check serial for `HTTP Server started`. The device IP is printed on connection and is also shown on the Settings screen.
 
 ---
 
@@ -370,6 +334,7 @@ The web server starts only after WiFi connects. Check serial for `HTTP Server st
 - **GPU VRAM**: percentage is computed from a hardcoded capacity constant in `Environment.h`.
 - **No OTA**: firmware updates require a USB connection.
 - **AirVisual API**: the `AIR_VISUAL_API` constant is defined in `Environment.h` but the feature is not yet implemented.
+- **No PcMetrics mutex**: `PcMetrics` scalar fields are word-sized and atomically readable on Xtensa, but `diskDrives` is a `std::vector` — concurrent access from the background and screen tasks is not protected.
 
 ---
 
@@ -395,4 +360,3 @@ MIT — see [`LICENSE`](LICENSE) for details.
 - [NerdWinSense](https://github.com/) — companion app providing the sensor data API
 - [LovyanGFX](https://github.com/lovyan03/LovyanGFX) — display and touch driver
 - [ArduinoJson](https://arduinojson.org/) — fast filtered JSON parsing
-- [PlatformIO](https://platformio.org/) — build system
