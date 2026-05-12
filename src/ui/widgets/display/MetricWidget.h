@@ -1,13 +1,23 @@
 #pragma once
 
 #include <cstring>
-#include <functional>
 #include <memory>
 
 #include "ui/widgets/base/Widget.h"
 
 class MetricWidget : public Widget {
  public:
+    // Format modes for integer-to-string conversion.
+    // Replaces the heap-allocating std::function<String(int)> formatter.
+    enum class ValueFormat : uint8_t {
+        kDefault,   // "<value><unit>" (uses unit_ field, same as no formatter)
+        kPercent,   // "<value>%"
+        kRpm,       // "<value> RPM"
+        kWatts,     // "<value>W"
+        kCelsius,   // "<value>°C"
+        kMB,        // "<value> MB"
+    };
+
     MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                  uint8_t textSize = 1);
 
@@ -26,7 +36,7 @@ class MetricWidget : public Widget {
 
     // Display configuration
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
-    void setValueFormatter(std::function<String(int)> formatter);
+    void setValueFormat(ValueFormat format);
     void setReverseThresholds(bool reverse = true);
     void setUseDimColors(bool useDim = false);
 
@@ -117,9 +127,9 @@ class MetricWidget : public Widget {
             return *this;
         }
 
-        Builder& valueFormatter(std::function<String(int)> formatter) {
-            valueFormatter_ = formatter;
-            hasValueFormatter_ = true;
+        Builder& valueFormat(ValueFormat format) {
+            valueFormat_ = format;
+            hasValueFormat_ = true;
             return *this;
         }
 
@@ -145,8 +155,8 @@ class MetricWidget : public Widget {
                 widget->setLabelWidth(labelWidth_);
             if (hasTextAlignment_)
                 widget->setTextAlignment(textAlignment_);
-            if (hasValueFormatter_)
-                widget->setValueFormatter(valueFormatter_);
+            if (hasValueFormat_)
+                widget->setValueFormat(valueFormat_);
             if (hasTextSize_)
                 widget->setTextSize(textSize_);
 
@@ -170,7 +180,7 @@ class MetricWidget : public Widget {
         uint16_t labelWidth_ = 0;
         uint8_t textAlignment_ = MC_DATUM;
         uint8_t textSize_ = 1;
-        std::function<String(int)> valueFormatter_ = nullptr;
+        ValueFormat valueFormat_ = ValueFormat::kDefault;
 
         bool hasValue_ = false;
         bool hasUnit_ = false;
@@ -182,7 +192,7 @@ class MetricWidget : public Widget {
         bool hasLabelWidth_ = false;
         bool hasTextAlignment_ = false;
         bool hasTextSize_ = false;
-        bool hasValueFormatter_ = false;
+        bool hasValueFormat_ = false;
     };
 
  protected:
@@ -201,7 +211,7 @@ class MetricWidget : public Widget {
     char label_[32] = "";  // Stack-allocated buffer
     uint16_t labelWidth_ = 0;
     uint8_t textAlignment_ = MC_DATUM;
-    std::function<String(int)> valueFormatter_ = nullptr;
+    ValueFormat valueFormat_ = ValueFormat::kDefault;
     uint8_t textSize_ = 1;
 
     // State

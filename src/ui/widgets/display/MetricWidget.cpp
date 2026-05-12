@@ -200,13 +200,30 @@ void MetricWidget::updateDimensionCache() {
 
 const char* MetricWidget::getFormattedValueText() const {
     if (formatCacheDirty_) {
-        if (valueFormatter_) {
-            String result = valueFormatter_(value_);
-            safeStringCopy(formattedValue_, result.c_str(), sizeof(formattedValue_));
-        } else if (unit_[0] == '\0') {
-            snprintf(formattedValue_, sizeof(formattedValue_), "%d", value_);
-        } else {
-            snprintf(formattedValue_, sizeof(formattedValue_), "%d%s", value_, unit_);
+        switch (valueFormat_) {
+            case ValueFormat::kPercent:
+                snprintf(formattedValue_, sizeof(formattedValue_), "%d%%", value_);
+                break;
+            case ValueFormat::kRpm:
+                snprintf(formattedValue_, sizeof(formattedValue_), "%d RPM", value_);
+                break;
+            case ValueFormat::kWatts:
+                snprintf(formattedValue_, sizeof(formattedValue_), "%dW", value_);
+                break;
+            case ValueFormat::kCelsius:
+                snprintf(formattedValue_, sizeof(formattedValue_), "%d\xC2\xB0""C", value_);
+                break;
+            case ValueFormat::kMB:
+                snprintf(formattedValue_, sizeof(formattedValue_), "%d MB", value_);
+                break;
+            case ValueFormat::kDefault:
+            default:
+                if (unit_[0] == '\0') {
+                    snprintf(formattedValue_, sizeof(formattedValue_), "%d", value_);
+                } else {
+                    snprintf(formattedValue_, sizeof(formattedValue_), "%d%s", value_, unit_);
+                }
+                break;
         }
         formatCacheDirty_ = false;
     }
@@ -346,10 +363,12 @@ void MetricWidget::setTextAlignment(uint8_t alignment) {
     }
 }
 
-void MetricWidget::setValueFormatter(std::function<String(int)> formatter) {
-    valueFormatter_ = formatter;
-    formatCacheDirty_ = true;
-    markDirty();
+void MetricWidget::setValueFormat(ValueFormat format) {
+    if (valueFormat_ != format) {
+        valueFormat_ = format;
+        formatCacheDirty_ = true;
+        markDirty();
+    }
 }
 
 void MetricWidget::setTextSize(uint8_t size) {

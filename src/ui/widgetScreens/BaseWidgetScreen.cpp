@@ -3,7 +3,6 @@
 BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
                                    AppConfigInterface& config)
     : logger_(logger),
-      lcd_(uiController->getDisplayManager()->getDisplay()),
       uiController_(uiController),
       widgetManager_(uiController->getDisplayContext()),
       config_(config) {}
@@ -22,7 +21,8 @@ void BaseWidgetScreen::onExit() {
 }
 
 void BaseWidgetScreen::draw() {
-    if (!lcd_ || uiController_->isTransitioning() || !uiController_->tryAcquireDisplayLock()) {
+    if (!uiController_ || uiController_->isTransitioning() ||
+        !uiController_->tryAcquireDisplayLock()) {
         return;
     }
 
@@ -33,8 +33,8 @@ void BaseWidgetScreen::draw() {
 }
 
 void BaseWidgetScreen::handleTouch(uint16_t x, uint16_t y) {
-    if (!lcd_) {
-        logger_.debug("LCD not initialized, can't handle touch");
+    if (!uiController_) {
+        logger_.debug("UIController not initialized, can't handle touch");
         return;
     }
     widgetManager_.handleTouch(x, y);

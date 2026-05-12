@@ -190,8 +190,8 @@ bool PcMetricsService::validateJsonStructure(JsonObject metrics) {
 
 bool PcMetricsService::parseDiskData(JsonObject disks, PcMetrics& outData) {
     try {
-        PcMetricsDiskLock lock(outData);  // protect diskDrives for the duration of this write
-        outData.diskDrives.clear();
+        PcMetricsDiskLock lock(outData);  // protect disk_drives for the duration of this write
+        outData.disk_drives.clear();
 
         JsonArray drives = disks["Drives"];
         if (drives.isNull()) {
@@ -215,7 +215,7 @@ bool PcMetricsService::parseDiskData(JsonObject disks, PcMetrics& outData) {
             diskDrive.readKBPerSec = drive["ReadKBPerSec"] | 0.0f;
             diskDrive.writeKBPerSec = drive["WriteKBPerSec"] | 0.0f;
 
-            outData.diskDrives.push_back(diskDrive);
+            outData.disk_drives.push_back(diskDrive);
         }
 
         return true;

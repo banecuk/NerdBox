@@ -8,9 +8,9 @@ ApplicationComponents::ApplicationComponents()
       networkManager(logger, httpClient, config),
       displayManager(display, logger),
       pcMetricsService(networkManager, systemMetrics, logger, config),
-      uiController(displayContext, &displayManager, systemMetrics, systemState.pcMetrics,
+      uiController(displayContext, &displayManager, systemMetrics, pcMetrics,
                    systemState.screen, config, networkManager),
       webServerService(webServer, uiController, systemMetrics),
-      taskManager(logger, uiController, pcMetricsService, systemState.pcMetrics, systemState.core,
+      taskManager(logger, uiController, pcMetricsService, pcMetrics, systemState.core,
                   systemState.screen, config),
       initStateMachine(*this) {}

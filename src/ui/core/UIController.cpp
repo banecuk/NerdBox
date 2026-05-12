@@ -160,9 +160,9 @@ void UiController::loadAndActivateScreen() {
     }
 
     std::unique_ptr<ScreenInterface> newScreen;
-    newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, logger_, displayManager_,
-                                            pcMetrics_, this, config_,
-                                            systemMetrics_, networkManager_);
+    ScreenCreationContext ctx{logger_, displayManager_, pcMetrics_, this,
+                              config_, systemMetrics_, networkManager_};
+    newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, ctx);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);

@@ -12,9 +12,9 @@ struct DiskDrive {
     float writeKBPerSec;
 };
 
-// RAII guard: locks diskDrivesMutex on construction, releases on destruction.
+// RAII guard: locks disk_drivesMutex on construction, releases on destruction.
 // Usage:
-//   { PcMetricsDiskLock lock(metrics); use metrics.diskDrives; }
+//   { PcMetricsDiskLock lock(metrics); use metrics.disk_drives; }
 class PcMetrics;
 class PcMetricsDiskLock {
  public:
@@ -29,9 +29,9 @@ class PcMetricsDiskLock {
 
 class PcMetrics {
  public:
-    // Mutex protecting diskDrives only. All scalar fields (cpu_load, etc.) are
+    // Mutex protecting disk_drives only. All scalar fields (cpu_load, etc.) are
     // word-sized and accessed on Xtensa as naturally atomic — no lock needed.
-    SemaphoreHandle_t diskDrivesMutex = xSemaphoreCreateMutex();
+    SemaphoreHandle_t disk_drivesMutex = xSemaphoreCreateMutex();
 
     bool is_available = false;
     unsigned long last_update_timestamp = 0;
@@ -60,15 +60,15 @@ class PcMetrics {
     float eth_up = 0;
     float eth_dn = 0;
 
-    std::vector<DiskDrive> diskDrives;
+    std::vector<DiskDrive> disk_drives;
 };
 
 // Inline RAII implementation — defined here so every TU that includes PcMetrics.h
 // can use PcMetricsDiskLock without a separate .cpp.
 inline PcMetricsDiskLock::PcMetricsDiskLock(PcMetrics& m) : m_(m) {
-    xSemaphoreTake(m_.diskDrivesMutex, portMAX_DELAY);
+    xSemaphoreTake(m_.disk_drivesMutex, portMAX_DELAY);
 }
 
 inline PcMetricsDiskLock::~PcMetricsDiskLock() {
-    xSemaphoreGive(m_.diskDrivesMutex);
+    xSemaphoreGive(m_.disk_drivesMutex);
 }

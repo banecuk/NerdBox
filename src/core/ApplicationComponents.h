@@ -14,6 +14,7 @@
 #include "network/HttpClient.h"
 #include "network/NetworkManager.h"
 #include "services/NtpService.h"
+#include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/WebServerService.h"
 #include "ui/core/Colors.h"
@@ -36,6 +37,11 @@ class ApplicationComponents {
     // Core configuration and state
     AppConfigService config;
     SystemState systemState;
+
+    // PC metrics data (standalone; not nested in SystemState to avoid
+    // dragging the heavy PcMetrics type — which includes a std::vector and a
+    // FreeRTOS semaphore — into every translation unit that needs SystemState).
+    PcMetrics pcMetrics;
 
     // Hardware
     LGFX display;

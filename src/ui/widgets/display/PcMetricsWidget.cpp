@@ -197,15 +197,15 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
     {
         PcMetricsDiskLock lock(pcMetrics_);
         const size_t driveCount =
-            pcMetrics_.diskDrives.size() < kMaxDiskWidgets ? pcMetrics_.diskDrives.size()
+            pcMetrics_.disk_drives.size() < kMaxDiskWidgets ? pcMetrics_.disk_drives.size()
                                                            : kMaxDiskWidgets;
         snapshot.reserve(driveCount);
         for (size_t i = 0; i < driveCount; ++i) {
             DriveSnapshot s;
-            strncpy(s.name, pcMetrics_.diskDrives[i].driveName, sizeof(s.name) - 1);
+            strncpy(s.name, pcMetrics_.disk_drives[i].driveName, sizeof(s.name) - 1);
             s.name[sizeof(s.name) - 1] = '\0';
             s.freeSpacePercent =
-                static_cast<int>(pcMetrics_.diskDrives[i].freeSpacePercent + 0.5f);
+                static_cast<int>(pcMetrics_.disk_drives[i].freeSpacePercent + 0.5f);
             snapshot.push_back(s);
         }
     }  // mutex released here — all remaining work is lock-free
@@ -263,11 +263,11 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
 }
 
 void PcMetricsWidget::updateDiskDriveWidgets() {
-    PcMetricsDiskLock lock(pcMetrics_);  // protect diskDrives for the duration of the update
-    size_t updateCount = (pcMetrics_.diskDrives.size() > kMaxDiskWidgets) ? kMaxDiskWidgets : pcMetrics_.diskDrives.size();
+    PcMetricsDiskLock lock(pcMetrics_);  // protect disk_drives for the duration of the update
+    size_t updateCount = (pcMetrics_.disk_drives.size() > kMaxDiskWidgets) ? kMaxDiskWidgets : pcMetrics_.disk_drives.size();
 
     for (size_t i = 0; i < updateCount && i < diskDriveWidgets_.size(); i++) {
-        const auto& drive = pcMetrics_.diskDrives[i];
+        const auto& drive = pcMetrics_.disk_drives[i];
         if (diskDriveWidgets_[i]) {
             int freeSpacePercent = static_cast<int>(drive.freeSpacePercent + 0.5f);
             int currentValue = diskDriveWidgets_[i]->getValue();

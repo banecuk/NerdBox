@@ -1,6 +1,5 @@
 #pragma once
 
-#include "services/pcMetrics/PcMetrics.h"
 #include "ui/screens/ScreenTypes.h"
 
 // Forward declaration
@@ -25,7 +24,6 @@ class SystemState {
     // Non-static members
     CoreState core;
     ScreenState screen;
-    PcMetrics pcMetrics;
 
     SystemState() : core(), screen() {}
 

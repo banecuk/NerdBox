@@ -40,14 +40,12 @@ size_t ApplicationMetrics::getScreenDrawCount() const {
     return screenDrawCount_;
 }
 
-String ApplicationMetrics::getFormattedUptime() const {
-    char buffer[20];
+void ApplicationMetrics::getFormattedUptime(char* buf, size_t size) const {
     unsigned long uptimeMs = millis();
     unsigned long seconds = uptimeMs / 1000;
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
-    snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
-    return String(buffer);
+    snprintf(buf, size, "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
 }
 
 void ApplicationMetrics::addThreadWidgetFrameTime(uint32_t timeMs) {

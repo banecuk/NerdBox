@@ -63,8 +63,9 @@ String WebServerService::getAppInfo() {
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
 
     // Uptime
-    const String& uptime = systemMetrics_.getFormattedUptime();
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Uptime: %s\n", uptime.c_str());
+    char uptime[20];
+    systemMetrics_.getFormattedUptime(uptime, sizeof(uptime));
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Uptime: %s\n", uptime);
 
     // Free Heap
     offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",

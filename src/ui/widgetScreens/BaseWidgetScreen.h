@@ -25,7 +25,6 @@ class BaseWidgetScreen : public ScreenInterface {
     LoggerInterface& logger_;
     AppConfigInterface& config_;
 
-    LGFX* lcd_;
     UiController* uiController_;
     WidgetManager widgetManager_;
 };

@@ -5,10 +5,15 @@
 #include <array>
 
 #include "config/AppConfigInterface.h"
-#include "config/AppConfig.h"
 
 class ApplicationMetrics {
  public:
+    // Capacity of the circular screen-draw-time buffer.
+    // Defined here (not pulled from AppConfig) so utils/ remains independent
+    // of config/AppConfig.h.  AppConfigService still exposes the same value
+    // via getMetricsMaxScreenDrawTimes() for runtime queries.
+    static constexpr size_t kDrawTimesCapacity = 30;
+
     ApplicationMetrics(AppConfigInterface& config);
 
     // JSON parse time methods
@@ -17,13 +22,12 @@ class ApplicationMetrics {
 
     // Screen draw time methods
     void addScreenDrawTime(uint32_t timeMs);
-    const std::array<uint32_t, AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes>&
-    getScreenDrawTimes() const;
+    const std::array<uint32_t, kDrawTimesCapacity>& getScreenDrawTimes() const;
     float getAverageScreenDrawTime() const;
     size_t getScreenDrawCount() const;
 
-    // Uptime method
-    String getFormattedUptime() const;
+    // Uptime method — writes directly into caller's buffer; zero heap allocation.
+    void getFormattedUptime(char* buf, size_t size) const;
 
     // Thread widget FPS methods
     void addThreadWidgetFrameTime(uint32_t timeMs);
@@ -31,9 +35,6 @@ class ApplicationMetrics {
     size_t getThreadWidgetFrameCount() const;
 
  private:
-    static constexpr size_t kDrawTimesCapacity =
-        AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes;
-
     AppConfigInterface& config_;
 
     uint32_t pcMetricsJsonParseTime_ = 0;
