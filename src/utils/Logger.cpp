@@ -2,6 +2,13 @@
 
 #include <cstring>
 
+// DEBUG_MODE is defined by the build environment (-DDEBUG_MODE=1 or =0).
+// Default to 0 (off) so IntelliSense and any translation unit that omits the
+// flag both compile cleanly without emitting debug output.
+#ifndef DEBUG_MODE
+#define DEBUG_MODE 0
+#endif
+
 Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
     // Serial is initialized by main.cpp using the configured baud rate
 }

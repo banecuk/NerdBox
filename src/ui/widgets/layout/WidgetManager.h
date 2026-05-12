@@ -104,6 +104,7 @@ class WidgetManager {
     std::vector<DirtyRegion> dirtyRegions_;
     bool allDirty_ = false;
     UpdateStats lastUpdateStats_;
+    uint32_t lastStatsLogTime_ = 0;  // replaces the static local in updateWidgetStats
 
     // Helper methods
     void clearDirtyRegions();

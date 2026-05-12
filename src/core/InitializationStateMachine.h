@@ -38,7 +38,7 @@ class InitializationStateMachine {
     bool initialize();
     bool isTerminalState() const;
     State getCurrentState() const { return currentState_; }
-    String getStateName(State state) const;
+    const char* getStateName(State state) const;
 
  private:
     // State handlers

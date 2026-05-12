@@ -43,8 +43,8 @@ bool InitializationStateMachine::initialize() {
         }
 
         if (!success) {
-            components_.logger.critical("Initialization failed in state: " +
-                                        getStateName(currentState_));
+            components_.logger.criticalf("Initialization failed in state: %s",
+                                         getStateName(currentState_));
             return false;
         }
     }
@@ -57,7 +57,7 @@ bool InitializationStateMachine::isTerminalState() const {
     return currentState_ == State::COMPLETE || currentState_ == State::FAILED;
 }
 
-String InitializationStateMachine::getStateName(State state) const {
+const char* InitializationStateMachine::getStateName(State state) const {
     return STATE_NAMES_[static_cast<int>(state)];
 }
 
@@ -170,7 +170,7 @@ bool InitializationStateMachine::handleFailed() {
 }
 
 void InitializationStateMachine::transitionTo(State newState) {
-    components_.logger.debug(getStateName(currentState_) + " -> " + getStateName(newState));
+    components_.logger.debugf("%s -> %s", getStateName(currentState_), getStateName(newState));
     currentState_ = newState;
 }
 

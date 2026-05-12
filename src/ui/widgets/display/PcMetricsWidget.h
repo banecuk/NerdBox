@@ -151,7 +151,6 @@ class PcMetricsWidget : public Widget {
     void markDataStale() { wasFreshData_ = false; dataWasAvailable_ = false; }
     void showStaleIndicator();
 
-    void createDiskDriveWidgets();
     void ensureDiskWidgetsCreated();
     void updateDiskDriveWidgets();
 };

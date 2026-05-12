@@ -201,13 +201,12 @@ void WidgetManager::updateWidgetStats(size_t dirtyCount, size_t updatedCount, si
     lastUpdateStats_.skippedWidgets = skippedCount;
 
     // Log performance improvements occasionally
-    static uint32_t lastLogTime = 0;
     uint32_t currentTime = millis();
-    if (currentTime - lastLogTime > 10000) {  // Every 10 seconds
+    if (currentTime - lastStatsLogTime_ > 10000) {  // Every 10 seconds
         float efficiency = (float)skippedCount / (float)widgetCache_.size() * 100.0f;
         logger_.debugf("WidgetManager: %zu/%zu widgets updated (%.1f%% skipped)", updatedCount,
                        widgetCache_.size(), efficiency);
-        lastLogTime = currentTime;
+        lastStatsLogTime_ = currentTime;
     }
 }
 

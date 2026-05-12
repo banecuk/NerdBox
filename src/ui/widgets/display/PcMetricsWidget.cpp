@@ -187,112 +187,78 @@ void PcMetricsWidget::buildFanWidgets() {
             .build();
 }
 
-void PcMetricsWidget::createDiskDriveWidgets() {
+void PcMetricsWidget::ensureDiskWidgetsCreated() {
+    // Snapshot everything we need under one lock, then do all widget work lock-free.
+    struct DriveSnapshot {
+        char name[4];
+        int freeSpacePercent;
+    };
+    std::vector<DriveSnapshot> snapshot;
+    {
+        PcMetricsDiskLock lock(pcMetrics_);
+        const size_t driveCount =
+            pcMetrics_.diskDrives.size() < kMaxDiskWidgets ? pcMetrics_.diskDrives.size()
+                                                           : kMaxDiskWidgets;
+        snapshot.reserve(driveCount);
+        for (size_t i = 0; i < driveCount; ++i) {
+            DriveSnapshot s;
+            strncpy(s.name, pcMetrics_.diskDrives[i].driveName, sizeof(s.name) - 1);
+            s.name[sizeof(s.name) - 1] = '\0';
+            s.freeSpacePercent =
+                static_cast<int>(pcMetrics_.diskDrives[i].freeSpacePercent + 0.5f);
+            snapshot.push_back(s);
+        }
+    }  // mutex released here — all remaining work is lock-free
+
+    if (snapshot.empty())
+        return;
+
+    const bool needsCreation =
+        diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshot.size());
+
+    if (!needsCreation)
+        return;
+
+    // Rebuild widgets from the snapshot
     diskDriveWidgets_.clear();
 
-    const uint16_t startX = 0;
-    const uint16_t totalWidth = kScreenWidth;  // use full screen width
     const uint16_t guidelineY4 = 120;
     const uint16_t guidelineY5 = 150;
     const uint16_t height = guidelineY5 - guidelineY4;
-
-    PcMetricsDiskLock lock(pcMetrics_);  // protect diskDrives for the snapshot below
-
-    size_t maxWidgets = kMaxDiskWidgets;
-    size_t driveCount = pcMetrics_.diskDrives.size();
-    size_t widgetCount = (driveCount > maxWidgets) ? maxWidgets : driveCount;
-
-    if (widgetCount == 0) {
-        return;  // No drives to display
-    }
-
-    // Calculate individual widget width with constraints
-    uint16_t widgetWidth = totalWidth / widgetCount;
-    const uint16_t maxWidgetWidth = 120;  // Maximum width per widget
-
-    // Apply width constraint
-    if (widgetWidth > maxWidgetWidth) {
+    const uint16_t maxWidgetWidth = 120;
+    uint16_t widgetWidth =
+        static_cast<uint16_t>(kScreenWidth / snapshot.size());
+    if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
-    }
 
-    // Calculate actual total width used (may be less than 480px if widgets are width-limited)
-    uint16_t totalUsedWidth = widgetWidth * widgetCount;
+    for (size_t i = 0; i < snapshot.size(); ++i) {
+        uint16_t xPos = static_cast<uint16_t>(i * widgetWidth);
 
-    for (size_t i = 0; i < widgetCount; i++) {
-        const auto& drive = pcMetrics_.diskDrives[i];
+        auto w = MetricWidget::Builder(
+                     WidgetInterface::Dimensions{xPos, guidelineY4, widgetWidth, height},
+                     updateIntervalMs_)
+                     .unit("%")
+                     .range(0, 100)
+                     .colorThresholds(0.0f, 95.0f)
+                     .reverseThresholds(true)
+                     .useDimColors(true)
+                     .label(snapshot[i].name)
+                     .labelWidth(kFanLabelWidth)
+                     .value(snapshot[i].freeSpacePercent)
+                     .build();
 
-        uint16_t xPos = static_cast<uint16_t>(startX + (i * widgetWidth));
-
-        auto driveWidget = MetricWidget::Builder(
-                               WidgetInterface::Dimensions{xPos, guidelineY4, widgetWidth, height},
-                               updateIntervalMs_)
-                               .unit("%")
-                               .range(0, 100)
-                               .colorThresholds(0.0f, 95.0f)
-                               .reverseThresholds(true)
-                               .useDimColors(true)
-                               .label(drive.driveName)
-                               .labelWidth(kFanLabelWidth)
-                               .value(static_cast<int>(drive.freeSpacePercent + 0.5f))
-                               .build();
-
-        if (driveWidget) {
-            diskDriveWidgets_.push_back(std::move(driveWidget));
+        if (w) {
+            if (!w->isInitialized())
+                w->initialize(context_);
+            w->drawStatic();
+            w->forceRefresh();
+            w->draw(true);
+            diskDriveWidgets_.push_back(std::move(w));
         }
     }
 
-    // Log the layout information
     if (getLogger()) {
-        getLogger()->debugf(
-            "Disk drive layout: %d drives, %d displayed, widget width: %dpx, total used: %dpx",
-            driveCount, widgetCount, widgetWidth, totalUsedWidth);
-    }
-}
-
-void PcMetricsWidget::ensureDiskWidgetsCreated() {
-    // Snapshot the drive count under lock, then release before the heavier work below.
-    size_t currentDriveCount;
-    {
-        PcMetricsDiskLock lock(pcMetrics_);
-        currentDriveCount = pcMetrics_.diskDrives.size();
-    }
-
-    if (currentDriveCount > 0) {
-        size_t displayedDriveCount = (currentDriveCount > kMaxDiskWidgets) ? kMaxDiskWidgets : currentDriveCount;
-
-        bool needsCreation =
-            diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != displayedDriveCount);
-
-        if (needsCreation) {
-            createDiskDriveWidgets();
-
-            // FORCE IMMEDIATE DISPLAY of disk widgets — snapshot values under lock first
-            std::vector<int> freeSpaceValues;
-            {
-                PcMetricsDiskLock lock(pcMetrics_);
-                for (size_t i = 0; i < diskDriveWidgets_.size(); i++) {
-                    const auto& drive = pcMetrics_.diskDrives[i];
-                    freeSpaceValues.push_back(static_cast<int>(drive.freeSpacePercent + 0.5f));
-                }
-            }
-
-            for (size_t i = 0; i < diskDriveWidgets_.size(); i++) {
-                if (diskDriveWidgets_[i]) {
-                    diskDriveWidgets_[i]->setValue(freeSpaceValues[i]);
-                    if (!diskDriveWidgets_[i]->isInitialized()) {
-                        diskDriveWidgets_[i]->initialize(context_);
-                    }
-                    diskDriveWidgets_[i]->drawStatic();
-                    diskDriveWidgets_[i]->forceRefresh();
-                    diskDriveWidgets_[i]->draw(true);
-                }
-            }
-
-            if (getLogger()) {
-                getLogger()->debugf("Created and displayed %d disk drive widgets immediately",
-                                    diskDriveWidgets_.size());
-            }
-        }
+        getLogger()->debugf("Created %d disk drive widgets", diskDriveWidgets_.size());
     }
 }
 
