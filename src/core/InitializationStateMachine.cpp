@@ -151,6 +151,10 @@ bool InitializationStateMachine::handleFinalSetup() {
         components_.logger.warning("HTTP Server skipped: No network", true);
     }
 
+    // Apply the brightness level that was persisted in NVS before this boot.
+    // Called here (after full init) so the logger and NVS are both ready.
+    components_.displayManager.postInitialization();
+
     components_.logger.debugf("Free heap post-init: %d", ESP.getFreeHeap());
     components_.uiController.requestScreen(ScreenName::MAIN);
     components_.systemState.core.isInitialized = true;

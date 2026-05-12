@@ -80,6 +80,12 @@ struct UiImpl {
     static constexpr uint32_t kTransitionTimeoutMs = 1000;
     static constexpr uint32_t kTouchDebounceIntervalMs = 200;
     static constexpr uint32_t kDisplayLockTimeoutMs = 200;
+
+    // NVS (Preferences) keys for persisted display settings.
+    // Namespace must be <= 15 chars; key must be <= 15 chars.
+    static constexpr const char* kNvsNamespace  = "nerdbox_ui";
+    static constexpr const char* kNvsBrightnessKey = "brightness";
+    static constexpr uint8_t kDefaultBrightness = 75;
 };
 }  // namespace internal
 
