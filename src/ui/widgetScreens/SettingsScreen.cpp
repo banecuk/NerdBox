@@ -13,9 +13,9 @@ void SettingsScreen::createWidgets() {
     // ── Top bar ────────────────────────────────────────────────────────────
     // Brightness selector — spans from left edge to just before Reset button.
     // Three tappable level segments with a visible active-level indicator.
-    widgetManager_.addWidget(std::unique_ptr<BrightnessWidget>(new BrightnessWidget(
-        WidgetInterface::Dimensions{0, 0, 480 - 100 - 4, 48},
-        *uiController_->getDisplayManager())));
+    widgetManager_.addWidget(std::unique_ptr<BrightnessWidget>(
+        new BrightnessWidget(WidgetInterface::Dimensions{0, 0, 480 - 100 - 4, 48},
+                             *uiController_->getDisplayManager())));
 
     // Reset — top-right
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
@@ -25,17 +25,17 @@ void SettingsScreen::createWidgets() {
 
     // ── Info widgets ────────────────────────────────────────────────────────
     // IP address — left column, y=100
-    widgetManager_.addWidget(std::unique_ptr<IpAddressWidget>(new IpAddressWidget(
-        WidgetInterface::Dimensions{12, 100, 220, 40}, networkManager_)));
+    widgetManager_.addWidget(std::unique_ptr<IpAddressWidget>(
+        new IpAddressWidget(WidgetInterface::Dimensions{12, 100, 220, 40}, networkManager_)));
 
     // Uptime — right of IP, same row
-    widgetManager_.addWidget(std::unique_ptr<UptimeWidget>(new UptimeWidget(
-        WidgetInterface::Dimensions{260, 100, 200, 40}, systemMetrics_)));
+    widgetManager_.addWidget(std::unique_ptr<UptimeWidget>(
+        new UptimeWidget(WidgetInterface::Dimensions{260, 100, 200, 40}, systemMetrics_)));
 
     // ── Bottom bar ─────────────────────────────────────────────────────────
     // Clock — bottom-right
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_YELLOW, TFT_BLACK, 3)));
+        WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_YELLOW, TFT_BLACK)));
 
     // Back button — bottom-left
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(

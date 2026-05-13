@@ -22,7 +22,7 @@ void MainScreen::createWidgets() {
 
     // Clock widget
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK, 3)));
+        WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
 
     // FPS widget — square, bottom-right corner, directly above the clock
     // Visible only when data is available and FullscreenFps != -1
