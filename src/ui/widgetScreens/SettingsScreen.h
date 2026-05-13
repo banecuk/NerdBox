@@ -6,6 +6,7 @@
 #include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/display/IpAddressWidget.h"
 #include "ui/widgets/display/UptimeWidget.h"
+#include "ui/widgets/interactive/BrightnessWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 #include "utils/ApplicationMetrics.h"
 

@@ -11,11 +11,11 @@ SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiControll
 
 void SettingsScreen::createWidgets() {
     // ── Top bar ────────────────────────────────────────────────────────────
-    // Brightness toggle — top-left
-    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "Brightness",
-        WidgetInterface::Dimensions{0, 0, 100, 48}, 0, EventType::CYCLE_BRIGHTNESS,
-        [this](EventType action) { this->handleAction(action); })));
+    // Brightness selector — spans from left edge to just before Reset button.
+    // Three tappable level segments with a visible active-level indicator.
+    widgetManager_.addWidget(std::unique_ptr<BrightnessWidget>(new BrightnessWidget(
+        WidgetInterface::Dimensions{0, 0, 480 - 100 - 4, 48},
+        *uiController_->getDisplayManager())));
 
     // Reset — top-right
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(

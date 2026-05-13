@@ -38,14 +38,19 @@ uint8_t DisplayManager::getBrightness() const {
 }
 
 void DisplayManager::cycleBrightness() {
-    uint8_t next;
-    switch (brightness_) {
-        case 20:  next = 75;  break;
-        case 75:  next = 255; break;
-        case 255: next = 20;  break;
-        default:  next = 75;  break;
+    using Cfg = AppConfig::internal::UiImpl;
+    const uint8_t* levels = Cfg::kBrightnessLevels;
+    const uint8_t  count  = Cfg::kBrightnessLevelCount;
+
+    // Find the current level in the array, advance to next (wrapping).
+    uint8_t nextIndex = 0;
+    for (uint8_t i = 0; i < count; ++i) {
+        if (levels[i] == brightness_) {
+            nextIndex = (i + 1) % count;
+            break;
+        }
     }
-    setBrightness(next);  // persists via setBrightness()
+    setBrightness(levels[nextIndex]);
 }
 
 // ---------------------------------------------------------------------------
