@@ -22,161 +22,149 @@ void WebServerService::handleNotFound() {
     server_.send(404, "text/plain", "Not found");
 }
 
+// ---------------------------------------------------------------------------
+// Chunked streaming helpers
+// ---------------------------------------------------------------------------
+
+// HTML is split into two static flash-resident blocks so the title can be
+// injected in the middle without building a temporary String.
+static constexpr char kHtmlHead1[] =
+    "<!DOCTYPE html><html><head>"
+    "<meta charset='UTF-8'>"
+    "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+    "<title>";
+
+static constexpr char kHtmlHead2[] =
+    " - NerdBox</title>"
+    "<style>"
+    "body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; "
+    "line-height: 1.6; color: #333; }"
+    "header { background: #2c3e50; color: white; padding: 1rem 0; margin-bottom: "
+    "1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }"
+    ".header-content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
+    "nav { margin-top: 1rem; }"
+    "nav ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1rem; }"
+    "nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; "
+    "border-radius: 4px; transition: background-color 0.3s; }"
+    "nav a:hover { background-color: #34495e; }"
+    "h1 { margin: 0; }"
+    ".content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
+    "footer { background: #f8f9fa; margin-top: 2rem; padding: 1.5rem 0; border-top: "
+    "1px solid #ddd; color: #666; text-align: center; }"
+    "pre { background: #f8f9fa; padding: 1.5rem; border-radius: 5px; overflow-x: "
+    "auto; border: 1px solid #ddd; }"
+    "</style></head>"
+    "<body>"
+    "<header>"
+    "<div class='header-content'>"
+    "<span>NerdBox</span>"
+    "<h1>";
+
+static constexpr char kHtmlHead3[] =
+    "</h1>"
+    "<nav><ul>"
+    "<li><a href='/'>Home</a></li>"
+    "<li><a href='/app-info'>App Info</a></li>"
+    "<li><a href='/system-info'>System Info</a></li>"
+    "</ul></nav>"
+    "</div></header>"
+    "<div class='content'>";
+
+static constexpr char kHtmlFoot[] =
+    "</div>"
+    "<footer>NerdBox 2025<br /><small>WT32-SC01-PLUS</small></footer>"
+    "</body></html>";
+
+void WebServerService::sendHtmlBegin(const char* title) {
+    // Tell the client we will stream the body — no Content-Length needed.
+    server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server_.send(200, "text/html", "");      // open the response
+    server_.sendContent(kHtmlHead1);
+    server_.sendContent(title);
+    server_.sendContent(kHtmlHead2);
+    server_.sendContent(title);              // repeated in <h1>
+    server_.sendContent(kHtmlHead3);
+}
+
+void WebServerService::sendHtmlEnd() {
+    server_.sendContent(kHtmlFoot);
+    server_.sendContent("");                 // flush / end chunked transfer
+}
+
+// ---------------------------------------------------------------------------
+// Route handlers
+// ---------------------------------------------------------------------------
+
 void WebServerService::handleHome() {
-    server_.send(200, "text/html", wrapHtmlContent("Homepage", ""));
+    sendHtmlBegin("Homepage");
+    sendHtmlEnd();
 }
 
-String WebServerService::getSystemInfo() {
-    char buffer[512];  // Increased size for all system info
-    size_t offset = 0;
-
-    // Write opening tag
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
-
-    // CPU Frequency
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "CPU Frequency: %u MHz\n",
-                       ESP.getCpuFreqMHz());
-
-    // PSRAM Size
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Size: %u bytes\n",
-                       ESP.getPsramSize());
-
-    // PSRAM Free
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "PSRAM Free: %u bytes\n",
-                       ESP.getFreePsram());
-
-    // SDK Version
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "SDK Version: %s\n",
-                       ESP.getSdkVersion());
-
-    // Write closing tag
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
-
-    return wrapHtmlContent("System Information", String(buffer));
-}
-
-String WebServerService::getAppInfo() {
-    char buffer[2048];
-    size_t offset = 0;
-
-    // Write metrics in pre tag
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "<pre>");
-
-    // Uptime
-    char uptime[20];
-    systemMetrics_.getFormattedUptime(uptime, sizeof(uptime));
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Uptime: %s\n", uptime);
-
-    // Free Heap
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "Free Heap: %u bytes\n",
-                       ESP.getFreeHeap());
-
-    // JSON Parse Time
-    offset +=
-        snprintf(buffer + offset, sizeof(buffer) - offset, "NerdWinSense JSON Parse Time: %u ms\n",
-                 systemMetrics_.getPcMetricsJsonParseTime());
-
-    // Average Screen Draw Time
-    offset +=
-        snprintf(buffer + offset, sizeof(buffer) - offset, "Average Screen Draw Time: %u ms\n",
-                 static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
-
-    // Thread Widget FPS
-    float threadFps = systemMetrics_.getThreadWidgetFPS();
-    offset +=
-        snprintf(buffer + offset, sizeof(buffer) - offset, "Thread Widget FPS: %.1f\n", threadFps);
-
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</pre>");
-
-    // Write screen draw times as a table
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset,
-                       "<table class='draw-times'>"
-                       "<tr><th>Draw</th><th>Draw time (ms)</th></tr>");
-
-    const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
-    size_t count = systemMetrics_.getScreenDrawCount();
-
-    for (size_t i = 0; i < count && i < drawTimes.size(); ++i) {
-        offset +=
-            snprintf(buffer + offset, sizeof(buffer) - offset, "<tr><td>%u</td><td>%u</td></tr>",
-                     static_cast<unsigned int>(i + 1), drawTimes[i]);
-    }
-
-    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "</table>");
-
-    return wrapHtmlContent("App Information", String(buffer));
+void WebServerService::sendSystemInfoBody() {
+    char buf[128];
+    server_.sendContent("<pre>");
+    snprintf(buf, sizeof(buf), "CPU Frequency: %u MHz\n", ESP.getCpuFreqMHz());
+    server_.sendContent(buf);
+    snprintf(buf, sizeof(buf), "PSRAM Size: %u bytes\n", ESP.getPsramSize());
+    server_.sendContent(buf);
+    snprintf(buf, sizeof(buf), "PSRAM Free: %u bytes\n", ESP.getFreePsram());
+    server_.sendContent(buf);
+    snprintf(buf, sizeof(buf), "SDK Version: %s\n", ESP.getSdkVersion());
+    server_.sendContent(buf);
+    server_.sendContent("</pre>");
 }
 
 void WebServerService::handleSystemInfo() {
-    server_.send(200, "text/html", getSystemInfo());
+    sendHtmlBegin("System Information");
+    sendSystemInfoBody();
+    sendHtmlEnd();
+}
+
+void WebServerService::sendAppInfoBody() {
+    char buf[128];
+
+    server_.sendContent("<pre>");
+
+    char uptime[20];
+    systemMetrics_.getFormattedUptime(uptime, sizeof(uptime));
+    snprintf(buf, sizeof(buf), "Uptime: %s\n", uptime);
+    server_.sendContent(buf);
+
+    snprintf(buf, sizeof(buf), "Free Heap: %u bytes\n", ESP.getFreeHeap());
+    server_.sendContent(buf);
+
+    snprintf(buf, sizeof(buf), "NerdWinSense JSON Parse Time: %u ms\n",
+             systemMetrics_.getPcMetricsJsonParseTime());
+    server_.sendContent(buf);
+
+    snprintf(buf, sizeof(buf), "Average Screen Draw Time: %u ms\n",
+             static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
+    server_.sendContent(buf);
+
+    snprintf(buf, sizeof(buf), "Thread Widget FPS: %.1f\n", systemMetrics_.getThreadWidgetFPS());
+    server_.sendContent(buf);
+
+    server_.sendContent("</pre>");
+
+    // Draw-times table — streamed row by row, no giant String.
+    server_.sendContent(
+        "<table class='draw-times'>"
+        "<tr><th>Draw</th><th>Draw time (ms)</th></tr>");
+
+    const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
+    const size_t count    = systemMetrics_.getScreenDrawCount();
+
+    for (size_t i = 0; i < count && i < drawTimes.size(); ++i) {
+        snprintf(buf, sizeof(buf), "<tr><td>%u</td><td>%u</td></tr>",
+                 static_cast<unsigned int>(i + 1), drawTimes[i]);
+        server_.sendContent(buf);
+    }
+
+    server_.sendContent("</table>");
 }
 
 void WebServerService::handleAppInfo() {
-    server_.send(200, "text/html", getAppInfo());
-}
-
-String WebServerService::wrapHtmlContent(const String& title, const String& content) {
-    // Static HTML parts stored in flash
-    static constexpr char kHtmlPrefix[] =
-        "<!DOCTYPE html><html><head>"
-        "<meta charset='UTF-8'>"
-        "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-        "<title>";
-    static constexpr char kTitleSuffix[] =
-        " - NerdBox</title>"
-        "<style>"
-        "body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; "
-        "line-height: 1.6; color: #333; }"
-        "header { background: #2c3e50; color: white; padding: 1rem 0; margin-bottom: "
-        "1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }"
-        ".header-content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
-        "nav { margin-top: 1rem; }"
-        "nav ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 1rem; }"
-        "nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; "
-        "border-radius: 4px; transition: background-color 0.3s; }"
-        "nav a:hover { background-color: #34495e; }"
-        "h1 { margin: 0; }"
-        ".content { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }"
-        "footer { background: #f8f9fa; margin-top: 2rem; padding: 1.5rem 0; border-top: "
-        "1px solid #ddd; color: #666; text-align: center; }"
-        "pre { background: #f8f9fa; padding: 1.5rem; border-radius: 5px; overflow-x: "
-        "auto; border: 1px solid #ddd; }"
-        "</style></head>"
-        "<body>"
-        "<header>"
-        "<div class='header-content'>"
-        "<span>NerdBox</span>"
-        "<h1>";
-    static constexpr char kHeaderSuffix[] =
-        "</h1>"
-        "<nav>"
-        "<ul>"
-        "<li><a href='/'>Home</a></li>"
-        "<li><a href='/app-info'>App Info</a></li>"
-        "<li><a href='/system-info'>System Info</a></li>"
-        "</ul>"
-        "</nav>"
-        "</div>"
-        "</header>"
-        "<div class='content'>";
-    static constexpr char kHtmlSuffix[] =
-        "</div>"
-        "<footer>NerdBox 2025<br /><small>WT32-SC01-PLUS</small></footer>"
-        "</body></html>";
-
-    // Estimate required size to minimize reallocations
-    size_t estimatedSize = sizeof(kHtmlPrefix) + title.length() + sizeof(kTitleSuffix) +
-                           sizeof(kHeaderSuffix) + content.length() + sizeof(kHtmlSuffix);
-    String html;
-    html.reserve(estimatedSize);
-
-    // Append static and dynamic parts
-    html.concat(kHtmlPrefix, sizeof(kHtmlPrefix) - 1);
-    html.concat(title.c_str(), title.length());
-    html.concat(kTitleSuffix, sizeof(kTitleSuffix) - 1);
-    html.concat(kHeaderSuffix, sizeof(kHeaderSuffix) - 1);
-    html.concat(content.c_str(), content.length());
-    html.concat(kHtmlSuffix, sizeof(kHtmlSuffix) - 1);
-
-    return html;
+    sendHtmlBegin("App Information");
+    sendAppInfoBody();
+    sendHtmlEnd();
 }

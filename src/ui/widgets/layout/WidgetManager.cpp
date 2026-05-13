@@ -48,6 +48,16 @@ void WidgetManager::initializeWidgets() {
 // Only update widgets that are actually dirty — no region tracking needed.
 // Widget-level dirty flags (isDirty / isDirty() / needsUpdate()) are more
 // accurate and cheaper than maintaining a separate region list.
+//
+// Two-tier dirty model:
+//   entry.isDirty  — "chrome dirty": widget was just added, screen just entered,
+//                    or layout changed. Triggers drawStatic() to repaint borders,
+//                    labels, and background.  Cleared here after drawStatic().
+//   widget->isDirty() — "value dirty": only the dynamic content changed (a new
+//                    sensor reading, clock tick, etc.).  Never triggers drawStatic().
+//
+// This separation is what prevents the flash seen when a periodic value update
+// causes a full background clear followed by a text repaint.
 void WidgetManager::updateDirtyWidgets() {
     if (!lcd_ || !isInitialized_) {
         return;
@@ -65,24 +75,28 @@ void WidgetManager::updateDirtyWidgets() {
             continue;
         }
 
-        bool isWidgetDirty = allDirty_ || entry.isDirty || entry.widget->isDirty() ||
-                             entry.widget->needsUpdate();
+        const bool chromeDirty = allDirty_ || entry.isDirty;
+        const bool valueDirty  = entry.widget->isDirty() || entry.widget->needsUpdate();
 
-        if (isWidgetDirty) {
-            dirtyCount++;
-
-            if (entry.widget->isDirty() || entry.isDirty) {
-                entry.widget->drawStatic();
-                entry.isDirty = false;
-                entry.widget->clearDirty();
-            }
-
-            entry.widget->draw(false);
-            entry.lastUpdateTime = millis();
-            updatedCount++;
-        } else {
+        if (!chromeDirty && !valueDirty) {
             skippedCount++;
+            continue;
         }
+
+        dirtyCount++;
+
+        // Repaint static chrome (background, borders, labels) only when the
+        // manager-level flag says so.  A plain value update must not trigger
+        // this — that is what caused the flash.
+        if (chromeDirty) {
+            entry.widget->drawStatic();
+            entry.isDirty = false;
+            entry.widget->clearDirty();
+        }
+
+        entry.widget->draw(chromeDirty);   // pass forceRedraw when chrome was just cleared
+        entry.lastUpdateTime = millis();
+        updatedCount++;
     }
 
     lcd_->endWrite();

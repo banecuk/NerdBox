@@ -22,21 +22,6 @@ class PcMetricsWidget : public Widget {
     unsigned long getStaleTimeout() const;
     bool isDataStale() const;
 
-    void updateData(const PcMetrics& newMetrics) {
-        if (newMetrics.is_available) {
-            if (!dataWasAvailable_) {
-                markDataFresh();
-                drawStatic();
-                dataWasAvailable_ = true;
-            } else {
-                pcMetrics_ = newMetrics;
-                markDirty();
-            }
-        } else {
-            markDataStale();
-        }
-    }
-
  protected:
     void onDraw(bool forceRedraw) override;
 
@@ -98,7 +83,6 @@ class PcMetricsWidget : public Widget {
     unsigned long lastUpdateTimestamp_ = 0;
     unsigned long staleTimeoutMs_      = 5000;
     bool wasFreshData_     = false;
-    bool dataWasAvailable_ = false;
     bool isStaticDrawn_    = false;
 
     // -----------------------------------------------------------------------
@@ -148,7 +132,7 @@ class PcMetricsWidget : public Widget {
 
     bool hasFreshData() const;
     void markDataFresh() { wasFreshData_ = true; }
-    void markDataStale() { wasFreshData_ = false; dataWasAvailable_ = false; }
+    void markDataStale() { wasFreshData_ = false; }
     void showStaleIndicator();
 
     void ensureDiskWidgetsCreated();

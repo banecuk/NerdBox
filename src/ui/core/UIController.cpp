@@ -1,6 +1,6 @@
 #include "UIController.h"
 
-#include "core/events/EventHandler.h"
+#include "core/events/UiEventHandler.h"
 #include "ui/screens/BootScreen.h"
 #include "ui/screens/ScreenFactory.h"
 #include "ui/widgetScreens/MainScreen.h"
@@ -18,7 +18,7 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
       screenState_(screenState),
       config_(config),
       networkManager_(networkManager),
-      actionHandler_(std::make_unique<EventHandler>(this, context.getLogger())),
+      actionHandler_(std::make_unique<UiEventHandler>(this, context.getLogger())),
       touchManager_(
           std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)) {
     if (!displayManager_) {

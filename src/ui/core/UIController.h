@@ -18,7 +18,7 @@
 class BootScreen;
 class MainScreen;
 class SettingsScreen;
-class EventHandler;
+class UiEventHandler;
 
 class UiController {
  public:
@@ -81,7 +81,7 @@ class UiController {
     NetworkManager& networkManager_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
-    std::unique_ptr<EventHandler> actionHandler_;
+    std::unique_ptr<UiEventHandler> actionHandler_;
     std::unique_ptr<TouchManager> touchManager_;
     SemaphoreHandle_t displayAccessMutex_;
 

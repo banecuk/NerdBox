@@ -21,8 +21,10 @@ class WebServerService {
     void handleSystemInfo();
     void handleAppInfo();
 
-    String getSystemInfo();
-    String getAppInfo();
-
-    String wrapHtmlContent(const String& title, const String& content);
+    // Streams the HTML wrapper and body content directly to the client in
+    // chunks — no large String assembled on the heap.
+    void sendHtmlBegin(const char* title);
+    void sendHtmlEnd();
+    void sendSystemInfoBody();
+    void sendAppInfoBody();
 };
