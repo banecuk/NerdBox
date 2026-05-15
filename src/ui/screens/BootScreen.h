@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ScreenInterface.h"
+#include "config/LgfxConfig.h"
 #include "utils/Logger.h"
 
 class BootScreen : public ScreenInterface {
@@ -16,5 +17,7 @@ class BootScreen : public ScreenInterface {
  private:
     LoggerInterface& logger_;
     LGFX* lcd_;
-    int lineNumber_ = 0;
+
+    uint16_t lineY_      = 28;   // y pixel of the next log line
+    uint16_t lineHeight_ = 16;   // measured from NotoSansDisplay12 in onEnter()
 };

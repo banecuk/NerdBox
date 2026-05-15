@@ -18,8 +18,7 @@ class MetricWidget : public Widget {
         kMB,        // "<value> MB"
     };
 
-    MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                 uint8_t textSize = 1);
+    MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
 
     void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
@@ -38,6 +37,11 @@ class MetricWidget : public Widget {
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
     void setValueFormat(ValueFormat format);
     void setReverseThresholds(bool reverse = true);
+
+    // Called by PcMetricsWidget's batch update: assumes NotoSans18 (metric font)
+    // is already loaded by the caller.  Skips loadFont/unloadFont overhead.
+    // Only valid when the background colour hasn't changed (value-only update).
+    void drawValueWithLoadedFont();
     void setUseDimColors(bool useDim = false);
 
     void forceRefresh();
@@ -49,8 +53,6 @@ class MetricWidget : public Widget {
     const char* getUnit() const { return unit_; }
     float getLowerThreshold() const { return lowerThreshold_; }
     float getUpperThreshold() const { return upperThreshold_; }
-    uint8_t getTextSize() const { return textSize_; }
-    void setTextSize(uint8_t size);
     bool getUseDimColors() const { return useDimColors_; }
 
     // Builder pattern for fluent configuration
@@ -121,12 +123,6 @@ class MetricWidget : public Widget {
             return *this;
         }
 
-        Builder& textSize(uint8_t size) {
-            textSize_ = size;
-            hasTextSize_ = true;
-            return *this;
-        }
-
         Builder& valueFormat(ValueFormat format) {
             valueFormat_ = format;
             hasValueFormat_ = true;
@@ -134,7 +130,7 @@ class MetricWidget : public Widget {
         }
 
         std::unique_ptr<MetricWidget> build() {
-            auto widget = std::make_unique<MetricWidget>(dims_, updateIntervalMs_, textSize_);
+            auto widget = std::make_unique<MetricWidget>(dims_, updateIntervalMs_);
 
             // Apply configurations
             if (hasValue_)
@@ -157,8 +153,6 @@ class MetricWidget : public Widget {
                 widget->setTextAlignment(textAlignment_);
             if (hasValueFormat_)
                 widget->setValueFormat(valueFormat_);
-            if (hasTextSize_)
-                widget->setTextSize(textSize_);
 
             return widget;
         }
@@ -179,7 +173,6 @@ class MetricWidget : public Widget {
         char label_[32] = "";
         uint16_t labelWidth_ = 0;
         uint8_t textAlignment_ = MC_DATUM;
-        uint8_t textSize_ = 1;
         ValueFormat valueFormat_ = ValueFormat::kDefault;
 
         bool hasValue_ = false;
@@ -191,7 +184,6 @@ class MetricWidget : public Widget {
         bool hasLabel_ = false;
         bool hasLabelWidth_ = false;
         bool hasTextAlignment_ = false;
-        bool hasTextSize_ = false;
         bool hasValueFormat_ = false;
     };
 
@@ -212,7 +204,6 @@ class MetricWidget : public Widget {
     uint16_t labelWidth_ = 0;
     uint8_t textAlignment_ = MC_DATUM;
     ValueFormat valueFormat_ = ValueFormat::kDefault;
-    uint8_t textSize_ = 1;
 
     // State
     bool hasLabel_ = false;

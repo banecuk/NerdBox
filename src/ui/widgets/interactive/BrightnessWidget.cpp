@@ -1,5 +1,7 @@
 #include "BrightnessWidget.h"
 
+#include "core/resources/FontRegistry.h"
+
 BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,
                                    DisplayManager& displayManager)
     : Widget(dims, 0),
@@ -46,10 +48,11 @@ void BrightnessWidget::drawStatic() {
     lcd->fillRect(dimensions_.x, dimensions_.y,
                   dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    lcd->setTextSize(1);
+    Fonts::loadLabel(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
     lcd->setTextDatum(TL_DATUM);
     lcd->drawString("BRIGHTNESS", dimensions_.x, dimensions_.y + 2);
+    Fonts::unload(lcd);
 
     isStaticDrawn_  = true;
     lastDrawnLevel_ = 0;  // force full segment redraw on next onDraw()
@@ -88,12 +91,13 @@ void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
 
     lcd->fillRoundRect(seg.x, segY, seg.width, segH, kRadius, bgColor);
 
-    lcd->setTextSize(1);
+    Fonts::loadLabel(lcd);
     lcd->setTextColor(textColor, bgColor);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(seg.label,
                     static_cast<int32_t>(seg.x + seg.width / 2),
                     static_cast<int32_t>(segY  + segH / 2));
+    Fonts::unload(lcd);
 }
 
 bool BrightnessWidget::handleTouch(uint16_t x, uint16_t y) {

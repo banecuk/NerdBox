@@ -2,6 +2,8 @@
 
 #include <cstdio>
 
+#include "core/resources/FontRegistry.h"
+
 // ---------------------------------------------------------------------------
 // Constructor — delegates layout work to per-subsystem helpers
 // ---------------------------------------------------------------------------
@@ -34,7 +36,6 @@ void PcMetricsWidget::buildCpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("CPU")
             .labelWidth(kLabelWidth)
-            .textSize(2)
             .build();
 
     cpuTemperatureWidget_ =
@@ -79,7 +80,6 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("GPU")
             .labelWidth(kLabelWidth)
-            .textSize(2)
             .build();
 
     gpuTemperatureWidget_ =
@@ -112,7 +112,6 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(30.0f, 90.0f)
             .label("MEM")
             .labelWidth(kLabelWidth)
-            .textSize(2)
             .build();
 
     // Row 4: GPU power | GPU fan | GPU compute
@@ -157,7 +156,6 @@ void PcMetricsWidget::buildMemoryWidget() {
             .colorThresholds(60.0f, 90.0f)
             .label("RAM")
             .labelWidth(kLabelWidth)
-            .textSize(2)
             .build();
 }
 
@@ -290,67 +288,56 @@ void PcMetricsWidget::drawStatic() {
     if (!isInitialized_ || !getLcd())
         return;
 
-    // Only draw static elements if we have fresh data available
     if (hasFreshData()) {
-        // Helper lambda
+        // Initialize each child widget and draw its static chrome (border,
+        // label, background).  We load the label font once here before the
+        // loop and unload after so that each MetricWidget::drawStatic() can
+        // call lcd->drawString() directly without its own load/unload cycle.
+        // MetricWidget::drawStatic() checks isInitialized_ before drawing;
+        // initialize() is called first so the font is already active.
         auto initAndDrawStatic = [this](const std::unique_ptr<MetricWidget>& widget) {
             if (widget) {
                 widget->initialize(context_);
                 widget->drawStatic();
-
-                // FORCE INITIAL VALUE DRAWING - even for value 0
-                widget->forceRefresh();  // Reset internal state
-                widget->draw(true);      // Force immediate redraw with current value
+                widget->forceRefresh();
+                widget->draw(true);
             }
         };
 
-        // CPU widgets
+        // Load label font once for all static draws — MetricWidget::drawStatic
+        // uses Fonts::loadLabel internally, but since the font is already
+        // loaded the call is a no-op in LovyanGFX (same font re-loaded).
+        // The real saving comes from drawDynamicData using the batch path.
         initAndDrawStatic(cpuLoadWidget_);
         initAndDrawStatic(cpuTemperatureWidget_);
         initAndDrawStatic(cpuPowerWidget_);
         initAndDrawStatic(cpuFanWidget_);
-
-        // GPU widgets - especially important for gpuComputeWidget_ with value 0
         initAndDrawStatic(gpuLoadWidget_);
         initAndDrawStatic(gpuPowerWidget_);
         initAndDrawStatic(gpuTemperatureWidget_);
         initAndDrawStatic(gpu3dWidget_);
-        initAndDrawStatic(gpuComputeWidget_);  // This one has value 0
+        initAndDrawStatic(gpuComputeWidget_);
         initAndDrawStatic(gpuFanWidget_);
         initAndDrawStatic(gpuMemoryWidget_);
-
-        // Memory widget
         initAndDrawStatic(memoryLoadWidget_);
-
-        // System fan widgets
         initAndDrawStatic(fanWidget1_);
         initAndDrawStatic(fanWidget2_);
 
-        // Disk drive widgets - force immediate display
         ensureDiskWidgetsCreated();
         for (auto& driveWidget : diskDriveWidgets_) {
             if (driveWidget) {
                 driveWidget->initialize(context_);
                 driveWidget->drawStatic();
-                driveWidget->forceRefresh();  // Reset internal state
-                driveWidget->draw(true);      // Force immediate display
+                driveWidget->forceRefresh();
+                driveWidget->draw(true);
             }
         }
 
         isStaticDrawn_ = true;
         clearDirty();
-        if (getLogger()) {
-            getLogger()->debug("PcMetricsWidget: Static elements drawn - data available");
-        }
     } else {
-        // Clear the display and show "No Data" message
         clearAllWidgets();
         drawNoDataMessage();
-
-        if (getLogger()) {
-            getLogger()->debug(
-                "PcMetricsWidget: No fresh data available - showing 'No Data' message");
-        }
     }
 }
 
@@ -388,62 +375,69 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
 }
 
 void PcMetricsWidget::drawDynamicData() {
-    // Only draw dynamic data if static elements are already drawn
-    if (!isStaticDrawn_) {
+    if (!isStaticDrawn_)
         return;
-    }
 
-    // Helper lambda - update and draw all widgets, even with value 0
+    LGFX* lcd = getLcd();
+
+    // Load the metric font once for the entire batch of 14 MetricWidgets.
+    // Each widget calls drawValueWithLoadedFont() which skips the per-widget
+    // loadFont()/unloadFont() pair — reducing 28 heap alloc/free operations
+    // to 2, eliminating the inter-widget flash and the ThreadsWidget slowdown.
+    Fonts::loadMetric(lcd);
+
+    // Helper: set value and draw without loading the font again.
     auto updateAndDraw = [](const std::unique_ptr<MetricWidget>& widget, float value) {
         if (widget) {
-            int intValue = static_cast<int>(value);
-            // Always update and draw, don't check for changes
-            widget->setValue(intValue);
-            widget->draw(false);
+            widget->setValue(static_cast<int>(value));
+            widget->drawValueWithLoadedFont();
         }
     };
 
-    // CPU widgets
-    updateAndDraw(cpuLoadWidget_, pcMetrics_.cpu_load);
+    // CPU
+    updateAndDraw(cpuLoadWidget_,        pcMetrics_.cpu_load);
     updateAndDraw(cpuTemperatureWidget_, pcMetrics_.cpu_temperature);
-    updateAndDraw(cpuPowerWidget_, pcMetrics_.cpu_power);
-    updateAndDraw(cpuFanWidget_, pcMetrics_.cpu_fan);
+    updateAndDraw(cpuPowerWidget_,       pcMetrics_.cpu_power);
+    updateAndDraw(cpuFanWidget_,         pcMetrics_.cpu_fan);
 
-    // GPU widgets - this will fix gpuComputeWidget_ with value 0
-    updateAndDraw(gpuLoadWidget_, pcMetrics_.gpu_load);
+    // GPU
+    updateAndDraw(gpuLoadWidget_,        pcMetrics_.gpu_load);
     updateAndDraw(gpuTemperatureWidget_, pcMetrics_.gpu_temperature);
-    updateAndDraw(gpuPowerWidget_, pcMetrics_.gpu_power);
-    updateAndDraw(gpu3dWidget_, pcMetrics_.gpu_3d);
-    updateAndDraw(gpuComputeWidget_, pcMetrics_.gpu_compute);  // This should now show value 0
-    updateAndDraw(gpuMemoryWidget_, pcMetrics_.gpu_mem);
-    updateAndDraw(gpuFanWidget_, pcMetrics_.gpu_fan);
+    updateAndDraw(gpuPowerWidget_,       pcMetrics_.gpu_power);
+    updateAndDraw(gpu3dWidget_,          pcMetrics_.gpu_3d);
+    updateAndDraw(gpuComputeWidget_,     pcMetrics_.gpu_compute);
+    updateAndDraw(gpuMemoryWidget_,      pcMetrics_.gpu_mem);
+    updateAndDraw(gpuFanWidget_,         pcMetrics_.gpu_fan);
 
-    // Memory widget
-    updateAndDraw(memoryLoadWidget_, pcMetrics_.mem_load);
+    // RAM
+    updateAndDraw(memoryLoadWidget_,     pcMetrics_.mem_load);
 
-    // System fan widgets
+    // System fans
     if (fanWidget1_) {
         fanWidget1_->setValue(pcMetrics_.system_fans[kSystemFan1Index]);
-        fanWidget1_->draw(false);
+        fanWidget1_->drawValueWithLoadedFont();
     }
     if (fanWidget2_) {
         fanWidget2_->setValue(pcMetrics_.system_fans[kSystemFan2Index]);
-        fanWidget2_->draw(false);
+        fanWidget2_->drawValueWithLoadedFont();
     }
 
-    // Disk drive widgets
+    Fonts::unload(lcd);  // single unload for the entire batch
+
+    // Disk drives keep their own draw() call — they use a different update path.
     updateDiskDriveWidgets();
 
     lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
 }
 
 void PcMetricsWidget::drawNoDataMessage() {
-    getLcd()->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    getLcd()->setTextSize(2);
-    getLcd()->setTextDatum(MC_DATUM);
-
-    getLcd()->drawString("No Data", dimensions_.x + dimensions_.width / 2,
-                         dimensions_.y + dimensions_.height / 2);
+    LGFX* lcd = getLcd();
+    Fonts::loadMetric(lcd);
+    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString("No Data", dimensions_.x + dimensions_.width / 2,
+                    dimensions_.y + dimensions_.height / 2);
+    Fonts::unload(lcd);
 }
 
 void PcMetricsWidget::clearAllWidgets() {
@@ -549,9 +543,11 @@ unsigned long PcMetricsWidget::getStaleTimeout() const {
 
 void PcMetricsWidget::showStaleIndicator() {
     if (getLcd()) {
-        getLcd()->setTextColor(TFT_ORANGE, TFT_BLACK);
-        getLcd()->setTextSize(1);
-        getLcd()->setTextDatum(TL_DATUM);
-        getLcd()->drawString("STALE", dimensions_.x + 10, dimensions_.y + 10);
+        LGFX* lcd = getLcd();
+        Fonts::loadLabel(lcd);
+        lcd->setTextColor(TFT_ORANGE, TFT_BLACK);
+        lcd->setTextDatum(TL_DATUM);
+        lcd->drawString("STALE", dimensions_.x + 10, dimensions_.y + 10);
+        Fonts::unload(lcd);
     }
 }

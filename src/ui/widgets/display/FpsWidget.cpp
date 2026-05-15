@@ -1,9 +1,8 @@
 #include "FpsWidget.h"
 
-// Text layout constants
-static constexpr uint8_t kLabelTextSize = 1;  // small "FPS" label
-static constexpr uint8_t kValueTextSize = 4;  // large FPS number
-static constexpr uint16_t kBgColor = TFT_BLACK;
+#include "core/resources/FontRegistry.h"
+
+static constexpr uint16_t kBgColor    = TFT_BLACK;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kValueColor = TFT_GREEN;
 
@@ -19,11 +18,12 @@ void FpsWidget::drawStatic() {
 
     LGFX* lcd = getLcd();
 
-    // "FPS" label — always visible regardless of whether a value is available
-    lcd->setTextSize(kLabelTextSize);
+    // "FPS" label
+    Fonts::loadLabel(lcd);
     lcd->setTextColor(kLabelColor, kBgColor);
     lcd->setTextDatum(TC_DATUM);
     lcd->drawString("FPS", dimensions_.x + dimensions_.width / 2, dimensions_.y + 4);
+    Fonts::unload(lcd);
 
     isStaticDrawn_ = true;
     clearDirty();
@@ -77,10 +77,13 @@ void FpsWidget::renderFps(int16_t fps) {
     const uint16_t valueAreaY = dimensions_.y + 16;
     const uint16_t valueAreaH = dimensions_.height - 16;
 
-    lcd->setTextSize(kValueTextSize);
+    // NotoSansMono24 fills the 56 px value area well and keeps digits
+    // fixed-width so the number doesn't shift left/right as it changes.
+    Fonts::loadMono(lcd);
     lcd->setTextColor(kValueColor, kBgColor);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(buf, dimensions_.x + dimensions_.width / 2, valueAreaY + valueAreaH / 2);
+    Fonts::unload(lcd);
 }
 
 void FpsWidget::clearValueArea() {

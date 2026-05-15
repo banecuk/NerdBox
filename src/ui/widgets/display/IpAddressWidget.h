@@ -2,11 +2,10 @@
 
 #include <string>
 
+#include "core/resources/FontRegistry.h"
 #include "network/NetworkManager.h"
 #include "ui/widgets/base/Widget.h"
 
-// Displays the device's WiFi IP address on the settings screen.
-// Shows "Not connected" when WiFi is down, the IP address when connected.
 class IpAddressWidget : public Widget {
  public:
     IpAddressWidget(const WidgetInterface::Dimensions& dims, NetworkManager& networkManager,
@@ -23,7 +22,11 @@ class IpAddressWidget : public Widget {
     uint16_t textColor_;
     uint16_t bgColor_;
     bool lastConnected_ = false;
-    char lastIp_[16] = {};  // max "255.255.255.255" + null
+    char lastIp_[16] = {};
 
+    uint16_t valueY_ = 0;  // computed from font metrics in computeLayout()
+    bool     layoutReady_ = false;
+
+    void computeLayout();
     void renderContent(bool connected, const char* ip);
 };

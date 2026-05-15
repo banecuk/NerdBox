@@ -2,6 +2,7 @@
 
 #include <esp_system.h>
 
+#include "core/resources/FontRegistry.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/core/UiController.h"
 
@@ -27,10 +28,11 @@ void UiEventHandler::resetDevice() {
 
     if (uiController_->getDisplayManager()->getDisplay()) {
         LGFX* display = uiController_->getDisplayManager()->getDisplay();
+        Fonts::loadMetric(display);
         display->setTextColor(TFT_WHITE, TFT_BLACK);
-        display->setTextSize(3);
         display->setTextDatum(TL_DATUM);
         display->drawString("RESETING DEVICE", 0, 0);
+        Fonts::unload(display);
     }
 
     ESP.restart();

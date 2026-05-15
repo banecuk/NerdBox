@@ -1,5 +1,7 @@
 #include "ButtonWidget.h"
 
+#include "core/resources/FontRegistry.h"
+
 ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label,
                            const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                            EventType action, ActionCallback callback, uint16_t bgColor,
@@ -76,7 +78,8 @@ void ButtonWidget::onDraw(bool forceRedraw) {
 
     getLcd()->setTextColor(textColor, bgColor);
     getLcd()->setTextDatum(MC_DATUM);
-    getLcd()->setTextSize(1);
+    Fonts::loadLabel(getLcd());
     getLcd()->drawString(label_.c_str(), dimensions_.x + dimensions_.width / 2,
                          dimensions_.y + dimensions_.height / 2);
+    Fonts::unload(getLcd());
 }

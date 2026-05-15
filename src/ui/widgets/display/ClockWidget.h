@@ -1,8 +1,7 @@
 #pragma once
 #include <string>
 
-#include "config/LgfxConfig.h"
-#include "core/resources/NotoSansMono24.h"
+#include "core/resources/FontRegistry.h"
 #include "ui/widgets/base/Widget.h"
 
 class ClockWidget : public Widget {

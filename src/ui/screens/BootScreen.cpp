@@ -1,36 +1,50 @@
 #include "BootScreen.h"
 
-BootScreen::BootScreen(LoggerInterface& logger, LGFX* lcd) : logger_(logger), lcd_(lcd) {
-    if (lcd == nullptr) {
-        // Handle null pointer case (e.g., log an error or throw an exception)
-    }
-}
+#include "core/resources/FontRegistry.h"
 
-void BootScreen::initialize() {
-    // Initialization code if needed
-}
+BootScreen::BootScreen(LoggerInterface& logger, LGFX* lcd) : logger_(logger), lcd_(lcd) {}
+
+void BootScreen::initialize() {}
 
 void BootScreen::onEnter() {
-    lcd_->setTextSize(3);
+    if (!lcd_) return;
 
-    lcd_->setTextColor(TFT_DARKGRAY);
+    lcd_->fillScreen(TFT_BLACK);
+
+    // Title — NotoSans18, shadow offset by 1px for depth
+    Fonts::loadMetric(lcd_);
+    lcd_->setTextDatum(TL_DATUM);
+    lcd_->setTextColor(TFT_DARKGRAY, TFT_BLACK);
     lcd_->drawString("NerdBox", 1, 1);
-    lcd_->setTextColor(TFT_DARKCYAN);
+    lcd_->setTextColor(TFT_DARKCYAN, TFT_BLACK);
     lcd_->drawString("NerdBox", 0, 0);
-    lcd_->setTextSize(1);
-    lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
-    lineNumber_ = 2;
+    Fonts::unload(lcd_);
+
+    // Measure label font height once so log lines are spaced correctly.
+    Fonts::loadLabel(lcd_);
+    lineHeight_ = static_cast<uint16_t>(lcd_->fontHeight()) + 2;
+    Fonts::unload(lcd_);
+
+    // First log line starts below the title (NotoSans18 cap height ~22px + margin).
+    lineY_ = 28;
 }
 
 void BootScreen::onExit() {}
 
 void BootScreen::draw() {
+    if (!lcd_) return;
+
     std::queue<String> screenMessages = logger_.getScreenMessages();
     while (!screenMessages.empty()) {
-        String msg = screenMessages.front();
-        lcd_->setCursor(0, lineNumber_ * 18);
-        lcd_->println(msg);
+        const String& msg = screenMessages.front();
+
+        Fonts::loadLabel(lcd_);
+        lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
+        lcd_->setTextDatum(TL_DATUM);
+        lcd_->drawString(msg.c_str(), 0, lineY_);
+        Fonts::unload(lcd_);
+
+        lineY_ += lineHeight_;
         screenMessages.pop();
-        lineNumber_++;
     }
 }
