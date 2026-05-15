@@ -402,10 +402,14 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
         wasFreshData_ = currentlyHasFreshData;
     }
 
-    // Ensure disk widgets are created whenever we have data
-    if (currentlyHasFreshData) {
+    // Only rebuild fan/disk widgets when a new fetch has actually landed.
+    // Comparing against pcMetrics_.last_update_timestamp avoids the mutex
+    // acquire, snapshot allocation, and size comparison on every draw frame.
+    if (currentlyHasFreshData &&
+        pcMetrics_.last_update_timestamp != lastEnsureCheckTimestamp_) {
         ensureSystemFanWidgetsCreated();
         ensureDiskWidgetsCreated();
+        lastEnsureCheckTimestamp_ = pcMetrics_.last_update_timestamp;
     }
 
     // Only update dynamic content if we have fresh data and need to redraw
@@ -519,6 +523,7 @@ void PcMetricsWidget::clearAllWidgets() {
         clearWidget(driveWidget);
     }
 
+    lastEnsureCheckTimestamp_ = 0;  // force both ensures to run after next fetch
     isStaticDrawn_ = false;
 }
 

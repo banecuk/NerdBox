@@ -29,6 +29,11 @@ class WidgetManager {
     void markAllDirty();
     void updateDirtyWidgets();
 
+    // Cheap pre-lock check: returns true if updateDirtyWidgets() would find
+    // any work to do.  Call this before acquiring the display lock so the
+    // semaphore take/give is skipped entirely on idle frames.
+    bool hasAnyDirtyWidgets() const;
+
     void markAllWidgetsDirty();
     void markAllWidgetsStale();
 

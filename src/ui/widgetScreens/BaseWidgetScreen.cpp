@@ -21,8 +21,18 @@ void BaseWidgetScreen::onExit() {
 }
 
 void BaseWidgetScreen::draw() {
-    if (!uiController_ || uiController_->isTransitioning() ||
-        !uiController_->tryAcquireDisplayLock()) {
+    if (!uiController_ || uiController_->isTransitioning()) {
+        return;
+    }
+
+    // Skip the semaphore entirely when nothing needs painting.
+    // This runs lock-free on every idle frame (~60 fps); the mutex is only
+    // taken when at least one widget is actually dirty or due for an update.
+    if (!widgetManager_.hasAnyDirtyWidgets()) {
+        return;
+    }
+
+    if (!uiController_->tryAcquireDisplayLock()) {
         return;
     }
 

@@ -82,6 +82,7 @@ class PcMetricsWidget : public Widget {
     // State
     // -----------------------------------------------------------------------
     unsigned long lastUpdateTimestamp_ = 0;
+    unsigned long lastEnsureCheckTimestamp_ = 0;  // last pcMetrics_ timestamp seen by the ensure calls
     unsigned long staleTimeoutMs_      = 5000;
     bool wasFreshData_     = false;
     bool isStaticDrawn_    = false;

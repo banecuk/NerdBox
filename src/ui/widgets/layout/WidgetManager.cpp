@@ -45,6 +45,24 @@ void WidgetManager::initializeWidgets() {
     isInitialized_ = true;
 }
 
+bool WidgetManager::hasAnyDirtyWidgets() const {
+    if (!isInitialized_) {
+        return false;
+    }
+    if (allDirty_) {
+        return true;
+    }
+    for (const auto& entry : widgetCache_) {
+        if (!entry.widget->isValid() || !entry.widget->isVisible()) {
+            continue;
+        }
+        if (entry.isDirty || entry.widget->isDirty() || entry.widget->needsUpdate()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Only update widgets that are actually dirty — no region tracking needed.
 // Widget-level dirty flags (isDirty / isDirty() / needsUpdate()) are more
 // accurate and cheaper than maintaining a separate region list.
