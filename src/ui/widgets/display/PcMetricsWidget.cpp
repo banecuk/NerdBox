@@ -19,7 +19,8 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
     buildCpuWidgets();
     buildGpuWidgets();
     buildMemoryWidget();
-    buildFanWidgets();
+    // System fan widgets are built lazily in ensureSystemFanWidgetsCreated()
+    // once the first data fetch reveals how many fans are actually connected.
 }
 
 // ---------------------------------------------------------------------------
@@ -159,30 +160,68 @@ void PcMetricsWidget::buildMemoryWidget() {
             .build();
 }
 
-void PcMetricsWidget::buildFanWidgets() {
-    // System fans occupy the left column (kColFan), rows 3 and 4.
-    // Width spans from kColFan to kCol5 (the start of the metric tiles).
+void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
+    const uint8_t fanCount = pcMetrics_.system_fan_count;
+
+    // Nothing to do if the count hasn't changed since last call.
+    if (fanCount == lastSystemFanCount_) {
+        return;
+    }
+
+    // Clear old tiles from the display before rebuilding.
+    LGFX* lcd = getLcd();
+    if (lcd) {
+        for (auto& w : systemFanWidgets_) {
+            if (w) {
+                auto d = w->getDimensions();
+                lcd->fillRect(d.x, d.y, d.width, d.height, TFT_BLACK);
+            }
+        }
+    }
+    systemFanWidgets_.clear();
+
+    lastSystemFanCount_ = fanCount;
+
+    if (fanCount == 0) {
+        return;
+    }
+
+    // System fans stack vertically in the left column starting at kRow3.
+    // Each tile is one row tall; fans beyond the available rows are silently
+    // capped by kMaxSystemFanWidgets.
     const uint16_t fanWidth = kCol5 - kColFan;
+    const uint8_t  slots    = min(static_cast<uint8_t>(fanCount),
+                                  static_cast<uint8_t>(kMaxSystemFanWidgets));
 
-    fanWidget1_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kColFan, kRow3, fanWidth, kRowH}, updateIntervalMs_)
-            .unit("")
-            .range(0, 1200)
-            .colorThresholds(750.0f, 1000.0f)
-            .label("F1")
-            .labelWidth(kFanLabelWidth)
-            .build();
+    // Pre-build label strings: "F1" … "F<n>"
+    char label[4];
+    for (uint8_t i = 0; i < slots; ++i) {
+        snprintf(label, sizeof(label), "F%u", static_cast<unsigned>(i + 1));
 
-    fanWidget2_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kColFan, kRow4, fanWidth, kRowH}, updateIntervalMs_)
-            .unit("")
-            .range(0, 1200)
-            .colorThresholds(880.0f, 1200.0f)
-            .label("F2")
-            .labelWidth(kFanLabelWidth)
-            .build();
+        auto w = MetricWidget::Builder(
+                     WidgetInterface::Dimensions{kColFan,
+                                                static_cast<uint16_t>(kRow3 + i * kRowH),
+                                                fanWidth, kRowH},
+                     updateIntervalMs_)
+                     .unit("")
+                     .range(0, 1500)
+                     .colorThresholds(750.0f, 1200.0f)
+                     .label(label)
+                     .labelWidth(kFanLabelWidth)
+                     .build();
+
+        if (w) {
+            w->initialize(context_);
+            w->drawStatic();
+            w->forceRefresh();
+            w->draw(true);
+            systemFanWidgets_.push_back(std::move(w));
+        }
+    }
+
+    if (getLogger()) {
+        getLogger()->debugf("System fan widgets: %u tile(s) for %u fan(s)", slots, fanCount);
+    }
 }
 
 void PcMetricsWidget::ensureDiskWidgetsCreated() {
@@ -320,8 +359,12 @@ void PcMetricsWidget::drawStatic() {
         initAndDrawStatic(gpuFanWidget_);
         initAndDrawStatic(gpuMemoryWidget_);
         initAndDrawStatic(memoryLoadWidget_);
-        initAndDrawStatic(fanWidget1_);
-        initAndDrawStatic(fanWidget2_);
+
+        // System fans — created/rebuilt based on live fan count.
+        ensureSystemFanWidgetsCreated();
+        for (auto& fw : systemFanWidgets_) {
+            initAndDrawStatic(fw);
+        }
 
         ensureDiskWidgetsCreated();
         for (auto& driveWidget : diskDriveWidgets_) {
@@ -361,6 +404,7 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
 
     // Ensure disk widgets are created whenever we have data
     if (currentlyHasFreshData) {
+        ensureSystemFanWidgetsCreated();
         ensureDiskWidgetsCreated();
     }
 
@@ -413,13 +457,11 @@ void PcMetricsWidget::drawDynamicData() {
     updateAndDraw(memoryLoadWidget_,     pcMetrics_.mem_load);
 
     // System fans
-    if (fanWidget1_) {
-        fanWidget1_->setValue(pcMetrics_.system_fans[kSystemFan1Index]);
-        fanWidget1_->drawValueWithLoadedFont();
-    }
-    if (fanWidget2_) {
-        fanWidget2_->setValue(pcMetrics_.system_fans[kSystemFan2Index]);
-        fanWidget2_->drawValueWithLoadedFont();
+    for (uint8_t i = 0; i < pcMetrics_.system_fan_count && i < systemFanWidgets_.size(); ++i) {
+        if (systemFanWidgets_[i]) {
+            systemFanWidgets_[i]->setValue(pcMetrics_.system_fans[i]);
+            systemFanWidgets_[i]->drawValueWithLoadedFont();
+        }
     }
 
     Fonts::unload(lcd);  // single unload for the entire batch
@@ -465,8 +507,12 @@ void PcMetricsWidget::clearAllWidgets() {
     clearWidget(gpuMemoryWidget_);
     clearWidget(gpuFanWidget_);
     clearWidget(memoryLoadWidget_);
-    clearWidget(fanWidget1_);
-    clearWidget(fanWidget2_);
+
+    for (auto& fw : systemFanWidgets_) {
+        clearWidget(fw);
+    }
+    systemFanWidgets_.clear();
+    lastSystemFanCount_ = 0xFF;  // force rebuild on next data arrive
 
     // ADD CLEARING DISK DRIVE WIDGETS
     for (auto& driveWidget : diskDriveWidgets_) {

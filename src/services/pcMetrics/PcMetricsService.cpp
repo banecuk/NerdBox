@@ -302,10 +302,14 @@ bool PcMetricsService::parseMotherboardData(JsonObject motherboard, PcMetrics& o
         outData.cpu_fan = static_cast<uint16_t>(motherboard["CpuFan"] | 0);
 
         JsonArray systemFans = motherboard["SystemFans"];
+        outData.system_fan_count = 0;
+
         if (!systemFans.isNull()) {
-            const int maxFans = sizeof(outData.system_fans) / sizeof(outData.system_fans[0]);
-            for (int i = 0; i < systemFans.size() && i < maxFans; i++) {
-                outData.system_fans[i] = static_cast<uint16_t>(systemFans[i] | 0);
+            for (int i = 0; i < systemFans.size() && outData.system_fan_count < PcMetrics::kMaxSystemFans; i++) {
+                uint16_t rpm = static_cast<uint16_t>(systemFans[i] | 0);
+                if (rpm > 0) {
+                    outData.system_fans[outData.system_fan_count++] = rpm;
+                }
             }
         }
         return true;

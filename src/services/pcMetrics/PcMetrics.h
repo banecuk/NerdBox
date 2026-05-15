@@ -49,7 +49,14 @@ class PcMetrics {
 
     uint16_t cpu_fan = 0;
     uint16_t gpu_fan = 0;
-    uint16_t system_fans[10] = {};
+
+    // Compacted system fan RPMs — only non-zero (connected) headers are stored.
+    // system_fan_count tells callers how many entries are valid.
+    // Libre Hardware Monitor reports disconnected headers as 0; those are
+    // filtered out in parseMotherboardData so indices here always map to real fans.
+    static constexpr uint8_t kMaxSystemFans = 10;
+    uint16_t system_fans[kMaxSystemFans] = {};
+    uint8_t  system_fan_count = 0;
 
     uint8_t gpu_3d = 0;
     uint16_t gpu_compute = 0;

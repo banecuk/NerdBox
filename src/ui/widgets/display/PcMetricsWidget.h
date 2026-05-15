@@ -65,9 +65,10 @@ class PcMetricsWidget : public Widget {
     // Maximum number of disk-drive tiles that can be displayed simultaneously
     static constexpr size_t kMaxDiskWidgets = 10;
 
-    // Fan indices into PcMetrics::system_fans[]
-    static constexpr uint8_t kSystemFan1Index = 0;
-    static constexpr uint8_t kSystemFan2Index = 1;
+    // Maximum number of system-fan tiles that can be displayed simultaneously.
+    // Matches PcMetrics::kMaxSystemFans so the widget can always represent every
+    // connected fan without further bounds checks.
+    static constexpr uint8_t kMaxSystemFanWidgets = PcMetrics::kMaxSystemFans;
 
     // -----------------------------------------------------------------------
     // Dependencies
@@ -84,6 +85,7 @@ class PcMetricsWidget : public Widget {
     unsigned long staleTimeoutMs_      = 5000;
     bool wasFreshData_     = false;
     bool isStaticDrawn_    = false;
+    uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 
     // -----------------------------------------------------------------------
     // Child widgets — grouped by subsystem for readability
@@ -107,9 +109,9 @@ class PcMetricsWidget : public Widget {
     // RAM
     std::unique_ptr<MetricWidget> memoryLoadWidget_;
 
-    // System fans
-    std::unique_ptr<MetricWidget> fanWidget1_;
-    std::unique_ptr<MetricWidget> fanWidget2_;
+    // System fans — built dynamically in ensureSystemFanWidgetsCreated() once
+    // the compacted fan count arrives from the first data fetch.
+    std::vector<std::unique_ptr<MetricWidget>> systemFanWidgets_;
 
     // Disk drives (created dynamically when data first arrives)
     std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
@@ -120,7 +122,6 @@ class PcMetricsWidget : public Widget {
     void buildCpuWidgets();
     void buildGpuWidgets();
     void buildMemoryWidget();
-    void buildFanWidgets();
 
     // -----------------------------------------------------------------------
     // Runtime helpers
@@ -134,6 +135,11 @@ class PcMetricsWidget : public Widget {
     void markDataFresh() { wasFreshData_ = true; }
     void markDataStale() { wasFreshData_ = false; }
     void showStaleIndicator();
+
+    // Creates/recreates system-fan tiles whenever the live fan count changes.
+    // Called from onDraw() after each data fetch so the layout always reflects
+    // the actual number of spinning fans reported by Libre Hardware Monitor.
+    void ensureSystemFanWidgetsCreated();
 
     void ensureDiskWidgetsCreated();
     void updateDiskDriveWidgets();
