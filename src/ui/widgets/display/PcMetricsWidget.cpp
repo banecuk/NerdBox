@@ -209,6 +209,7 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
                      .colorThresholds(750.0f, 1200.0f)
                      .label(label)
                      .labelWidth(kFanLabelWidth)
+                     .smallFont()  // 4-digit RPM values don't fit NotoSans18 in the narrow fan tile
                      .build();
 
         if (w) {

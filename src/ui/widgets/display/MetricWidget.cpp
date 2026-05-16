@@ -108,7 +108,7 @@ void MetricWidget::renderValueArea() {
 
     lcd->setTextColor(TFT_WHITE, lastBgColor_);
     lcd->setTextDatum(textAlignment_);
-    Fonts::loadMetric(lcd);
+    loadValueFont();
 
     // Calculate text position based on alignment
     int16_t textX, textY;
@@ -123,13 +123,12 @@ void MetricWidget::renderValueArea() {
     textY = dimensions_.y + dimensions_.height / 2;
 
     lcd->drawString(displayText, textX, textY);
-    Fonts::unload(lcd);
+    unloadValueFont();
 }
 
 void MetricWidget::renderValueTextOnly() {
     LGFX* lcd = getLcd();
-    if (!lcd)
-        return;
+    if (!lcd) return;
 
     uint16_t newBgColor = calculateBackgroundColor();
 
@@ -143,10 +142,10 @@ void MetricWidget::renderValueTextOnly() {
 
     int16_t areaX, areaWidth;
     if (hasLabel_) {
-        areaX = valueX_;
+        areaX    = valueX_;
         areaWidth = valueWidth_;
     } else {
-        areaX = dimensions_.x + BORDER_MARGIN;
+        areaX    = dimensions_.x + BORDER_MARGIN;
         areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
     }
 
@@ -165,36 +164,43 @@ void MetricWidget::renderValueTextOnly() {
     // glyph's bounding box in a single pass — no separate fillRect erase step,
     // no blank frame, no flash.  This is the same technique used by ClockWidget
     // and UptimeWidget.
-    Fonts::loadMetric(lcd);
+    loadValueFont();
     lcd->setTextColor(TFT_WHITE, newBgColor);
     lcd->setTextDatum(textAlignment_);
     lcd->drawString(displayText, textX, textY);
-    Fonts::unload(lcd);
+    unloadValueFont();
 }
 
 void MetricWidget::drawValueWithLoadedFont() {
     // Fast path: font is already loaded by PcMetricsWidget's batch caller.
     // We never call loadFont/unloadFont here — that's the caller's job.
-    LGFX* lcd = getLcd();
-    if (!lcd || !isStaticDrawn_)
+    //
+    // Exception: small-font widgets use NotoSansDisplay15, not the batch font
+    // (NotoSans18).  Fall back to renderValueTextOnly() which handles its own
+    // load/unload so the batch font on the stack is left undisturbed.
+    if (useSmallFont_) {
+        renderValueTextOnly();
         return;
+    }
+    LGFX* lcd = getLcd();
+    if (!lcd || !isStaticDrawn_) return;
 
     const uint16_t newBgColor = calculateBackgroundColor();
     const char* displayText = getFormattedValueText();
-    if (!displayText || displayText[0] == '\0')
-        displayText = "0";
+    if (!displayText || displayText[0] == '\0') displayText = "0";
 
     int16_t areaX, areaWidth;
     if (hasLabel_) {
-        areaX = valueX_;
+        areaX    = valueX_;
         areaWidth = valueWidth_;
     } else {
-        areaX = dimensions_.x + BORDER_MARGIN;
+        areaX    = dimensions_.x + BORDER_MARGIN;
         areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
     }
 
     int16_t textX, textY;
-    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
+    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM ||
+        textAlignment_ == BL_DATUM) {
         textX = areaX + TEXT_MARGIN;
     } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
                textAlignment_ == BR_DATUM) {
@@ -224,6 +230,22 @@ void MetricWidget::drawValueWithLoadedFont() {
     clearDirty();
 }
 
+
+void MetricWidget::loadValueFont() const {
+    LGFX* lcd = getLcd();
+    if (!lcd) return;
+    if (useSmallFont_) {
+        Fonts::loadValue(lcd);
+    } else {
+        Fonts::loadMetric(lcd);
+    }
+}
+
+void MetricWidget::unloadValueFont() const {
+    LGFX* lcd = getLcd();
+    if (lcd) Fonts::unload(lcd);
+}
+
 void MetricWidget::updateDimensionCache() {
     valueX_ =
         hasLabel_ ? dimensions_.x + labelWidth_ + SEPARATOR_WIDTH : dimensions_.x + BORDER_MARGIN;
@@ -246,10 +268,7 @@ const char* MetricWidget::getFormattedValueText() const {
                 snprintf(formattedValue_, sizeof(formattedValue_), "%dW", value_);
                 break;
             case ValueFormat::kCelsius:
-                snprintf(formattedValue_, sizeof(formattedValue_),
-                         "%d\xC2\xB0"
-                         "C",
-                         value_);
+                snprintf(formattedValue_, sizeof(formattedValue_), "%d\xC2\xB0""C", value_);
                 break;
             case ValueFormat::kMB:
                 snprintf(formattedValue_, sizeof(formattedValue_), "%d MB", value_);
@@ -371,6 +390,15 @@ void MetricWidget::setUseDimColors(bool useDim) {
         markDirty();
     }
 }
+
+void MetricWidget::setUseSmallFont(bool small) {
+    if (useSmallFont_ != small) {
+        useSmallFont_ = small;
+        valueAreaDirty_ = true;
+        markDirty();
+    }
+}
+
 
 void MetricWidget::setLabel(const char* label) {
     if (strcmp(label_, label) != 0) {

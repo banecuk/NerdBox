@@ -37,6 +37,7 @@ class MetricWidget : public Widget {
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
     void setValueFormat(ValueFormat format);
     void setReverseThresholds(bool reverse = true);
+    void setUseSmallFont(bool small = true);  // Use 15pt instead of 18pt — for narrow tiles
 
     // Called by PcMetricsWidget's batch update: assumes NotoSans18 (metric font)
     // is already loaded by the caller.  Skips loadFont/unloadFont overhead.
@@ -54,6 +55,7 @@ class MetricWidget : public Widget {
     float getLowerThreshold() const { return lowerThreshold_; }
     float getUpperThreshold() const { return upperThreshold_; }
     bool getUseDimColors() const { return useDimColors_; }
+    bool isSmallFont() const { return useSmallFont_; }
 
     // Builder pattern for fluent configuration
     class Builder {
@@ -93,6 +95,12 @@ class MetricWidget : public Widget {
         Builder& reverseThresholds(bool reverse = true) {
             reverseThresholds_ = reverse;
             hasReverseThresholds_ = true;
+            return *this;
+        }
+
+        Builder& smallFont(bool small = true) {
+            useSmallFont_ = small;
+            hasUseSmallFont_ = true;
             return *this;
         }
 
@@ -145,6 +153,8 @@ class MetricWidget : public Widget {
                 widget->setReverseThresholds(reverseThresholds_);
             if (hasUseDimColors_)
                 widget->setUseDimColors(useDimColors_);
+            if (hasUseSmallFont_)
+                widget->setUseSmallFont(useSmallFont_);
             if (hasLabel_)
                 widget->setLabel(label_);
             if (hasLabelWidth_)
@@ -170,6 +180,7 @@ class MetricWidget : public Widget {
         float upperThreshold_ = 90.0f;
         bool reverseThresholds_ = false;
         bool useDimColors_ = false;
+        bool useSmallFont_ = false;
         char label_[32] = "";
         uint16_t labelWidth_ = 0;
         uint8_t textAlignment_ = MC_DATUM;
@@ -181,6 +192,7 @@ class MetricWidget : public Widget {
         bool hasColorThresholds_ = false;
         bool hasReverseThresholds_ = false;
         bool hasUseDimColors_ = false;
+        bool hasUseSmallFont_ = false;
         bool hasLabel_ = false;
         bool hasLabelWidth_ = false;
         bool hasTextAlignment_ = false;
@@ -200,6 +212,7 @@ class MetricWidget : public Widget {
     float upperThreshold_ = 90.0f;
     bool reverseThresholds_ = false;
     bool useDimColors_ = false;
+    bool useSmallFont_ = false;  // Use NotoSansDisplay15 instead of NotoSans18
     char label_[32] = "";  // Stack-allocated buffer
     uint16_t labelWidth_ = 0;
     uint8_t textAlignment_ = MC_DATUM;
@@ -222,6 +235,12 @@ class MetricWidget : public Widget {
     static constexpr uint16_t TEXT_MARGIN = 10;
     static constexpr uint16_t SEPARATOR_WIDTH = 1;
     static constexpr uint16_t BORDER_MARGIN = 1;
+
+    // Load/unload the correct value font based on useSmallFont_.
+    // All three render paths (renderValueArea, renderValueTextOnly,
+    // drawValueWithLoadedFont) must use the same font to stay consistent.
+    void loadValueFont()   const;
+    void unloadValueFont() const;
 
     // Rendering methods
     void renderValueArea();
