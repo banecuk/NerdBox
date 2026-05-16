@@ -13,21 +13,21 @@ bool NetworkManager::connect() {
     uint32_t timeoutMs = config_.getInitNetworkRetries() * config_.getInitNetworkRetryDelayMs();
     wl_status_t status = static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
 
-    isConnected_ = (status == WL_CONNECTED);
-    if (isConnected_) {
+    bool connected = (status == WL_CONNECTED);
+    if (connected) {
         logger_.info("WiFi connected - IP: " + WiFi.localIP().toString(), true);
     } else {
         logger_.errorf("WiFi failed, status: %d", status);
     }
-    return isConnected_;
+    return connected;
 }
 
 bool NetworkManager::isConnected() const {
-    return isConnected_;
+    return WiFi.status() == WL_CONNECTED;
 }
 
 String NetworkManager::get(const String& url) {
-    if (!isConnected_)
+    if (!isConnected())
         return "";
     HTTPClient http;
     http.begin(url);

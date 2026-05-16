@@ -3,6 +3,7 @@
 
 #include "config/AppConfigInterface.h"
 #include "MetricWidget.h"
+#include "services/pcMetrics/DataFreshnessGuard.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
@@ -18,9 +19,8 @@ class PcMetricsWidget : public Widget {
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
 
-    void setStaleTimeout(unsigned long timeoutMs);
-    unsigned long getStaleTimeout() const;
-    bool isDataStale() const;
+    void setStaleTimeout(unsigned long timeoutMs) { freshnessGuard_.setTimeout(timeoutMs); }
+    unsigned long getStaleTimeout() const { return freshnessGuard_.getTimeout(); }
 
  protected:
     void onDraw(bool forceRedraw) override;
@@ -83,8 +83,8 @@ class PcMetricsWidget : public Widget {
     // -----------------------------------------------------------------------
     unsigned long lastUpdateTimestamp_ = 0;
     unsigned long lastEnsureCheckTimestamp_ = 0;  // last pcMetrics_ timestamp seen by the ensure calls
-    unsigned long staleTimeoutMs_      = 5000;
-    bool wasFreshData_     = false;
+    DataFreshnessGuard freshnessGuard_;
+    bool wasFreshData_ = false;
     bool isStaticDrawn_    = false;
     uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 
@@ -132,9 +132,7 @@ class PcMetricsWidget : public Widget {
     void clearAllWidgets();
     void restoreStaticDisplay();
 
-    bool hasFreshData() const;
-    void markDataFresh() { wasFreshData_ = true; }
-    void markDataStale() { wasFreshData_ = false; }
+    bool hasFreshData() const { return freshnessGuard_.isFresh(); }
     void showStaleIndicator();
 
     // Creates/recreates system-fan tiles whenever the live fan count changes.

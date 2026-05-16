@@ -15,7 +15,8 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
       context_(context),
       pcMetrics_(pcMetrics),
       config_(config),
-      systemMetrics_(systemMetrics) {
+      systemMetrics_(systemMetrics),
+      freshnessGuard_(pcMetrics) {
     buildCpuWidgets();
     buildGpuWidgets();
     buildMemoryWidget();
@@ -398,6 +399,11 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
             drawNoDataMessage();
         } else {
             restoreStaticDisplay();
+            // Static chrome is now drawn; immediately render the first frame of
+            // dynamic data so values appear without waiting for needsUpdate() to
+            // fire on the next cycle.
+            drawDynamicData();
+            clearDirty();
         }
         wasFreshData_ = currentlyHasFreshData;
     }
@@ -535,61 +541,25 @@ void PcMetricsWidget::restoreStaticDisplay() {
     drawStatic();
 }
 
-bool PcMetricsWidget::hasFreshData() const {
-    // Data is fresh if it's available and not stale
-    return pcMetrics_.is_available && !isDataStale();
-}
-
-bool PcMetricsWidget::isDataStale() const {
-    // If data is not available at all, it's definitely stale
-    if (!pcMetrics_.is_available) {
-        return true;
-    }
-
-    unsigned long currentTime = millis();
-    unsigned long timeSinceLastUpdate = currentTime - pcMetrics_.last_update_timestamp;
-
-    bool stale = (timeSinceLastUpdate > staleTimeoutMs_);
-
-    return stale;
-}
-
 bool PcMetricsWidget::needsUpdate() const {
     if (!isInitialized_) {
         return false;
     }
-
-    // Check if state changed
-    bool currentlyHasFreshData = hasFreshData();
-    bool stateChanged = (wasFreshData_ != currentlyHasFreshData);
-
-    if (stateChanged) {
+    // Signal a redraw whenever the freshness state has changed (data arrived
+    // or went stale) so onDraw() can handle the transition — even if static
+    // chrome hasn't been drawn yet.
+    if (hasFreshData() != wasFreshData_) {
         return true;
     }
-
-    // Only update dynamic content if we have fresh data and static elements are drawn
-    if (currentlyHasFreshData && isStaticDrawn_) {
-        return (pcMetrics_.last_update_timestamp > lastUpdateTimestamp_) ||
-               (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
-    }
-
-    return false;
+    // Pure timestamp/interval query for steady-state refreshes.
+    // onDraw() owns all wasFreshData_ transitions; we only ask whether new
+    // data has landed or the periodic interval has elapsed.
+    return (pcMetrics_.last_update_timestamp > lastUpdateTimestamp_) ||
+           (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
-}
-
-void PcMetricsWidget::setStaleTimeout(unsigned long timeoutMs) {
-    staleTimeoutMs_ = timeoutMs;
-    markDirty();
-    if (getLogger()) {
-        getLogger()->debugf("PcMetricsWidget: Stale timeout set to %lu ms", timeoutMs);
-    }
-}
-
-unsigned long PcMetricsWidget::getStaleTimeout() const {
-    return staleTimeoutMs_;
 }
 
 void PcMetricsWidget::showStaleIndicator() {

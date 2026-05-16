@@ -14,7 +14,7 @@ class NetworkManager {
     bool connect();
     bool isConnected() const;
     String get(const String& url);
-    String getLocalIp() const { return isConnected_ ? WiFi.localIP().toString() : ""; }
+    String getLocalIp() const { return isConnected() ? WiFi.localIP().toString() : ""; }
 
     HttpClient& getHttpClient() { return httpClient_; }
 
@@ -22,6 +22,4 @@ class NetworkManager {
     LoggerInterface& logger_;
     HttpClient& httpClient_;
     AppConfigInterface& config_;
-
-    bool isConnected_ = false;
 };
