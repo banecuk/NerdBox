@@ -5,14 +5,15 @@
 TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
                          PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                          SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                         AppConfigInterface& config)
+                         AppConfigInterface& config, NetworkManager& networkManager)
     : logger_(logger),
       uiController_(uiController),
       pcMetricsService_(pcMetricsService),
       pcMetrics_(pcMetrics),
       coreState_(coreState),
       screenState_(screenState),
-      config_(config) {}
+      config_(config),
+      networkManager_(networkManager) {}
 
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
@@ -117,7 +118,7 @@ void TaskManager::executeBackgroundTask() {
     unsigned long lastStackLogTime = 0;
 
     while (true) {
-        if (coreState_.isInitialized && WiFi.status() == WL_CONNECTED) {
+        if (coreState_.isInitialized && networkManager_.isConnected()) {
             if (screenState_.activeScreen == ScreenName::MAIN) {
                 if (millis() >= coreState_.nextSync_pcMetrics) {
                     updatePcMetrics();

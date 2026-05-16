@@ -494,41 +494,14 @@ void PcMetricsWidget::drawNoDataMessage() {
 }
 
 void PcMetricsWidget::clearAllWidgets() {
-    // Clear the entire widget area
+    // One fillRect over the entire widget area covers every child tile.
+    // No per-child fills needed — they are all within dimensions_.
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        TFT_BLACK);
 
-    // Clear all child widget areas
-    auto clearWidget = [this](const std::unique_ptr<MetricWidget>& widget) {
-        if (widget) {
-            auto dims = widget->getDimensions();
-            getLcd()->fillRect(dims.x, dims.y, dims.width, dims.height, TFT_BLACK);
-        }
-    };
-
-    clearWidget(cpuLoadWidget_);
-    clearWidget(cpuTemperatureWidget_);
-    clearWidget(cpuPowerWidget_);
-    clearWidget(cpuFanWidget_);
-    clearWidget(gpuLoadWidget_);
-    clearWidget(gpuTemperatureWidget_);
-    clearWidget(gpuPowerWidget_);
-    clearWidget(gpu3dWidget_);
-    clearWidget(gpuComputeWidget_);
-    clearWidget(gpuMemoryWidget_);
-    clearWidget(gpuFanWidget_);
-    clearWidget(memoryLoadWidget_);
-
-    for (auto& fw : systemFanWidgets_) {
-        clearWidget(fw);
-    }
     systemFanWidgets_.clear();
     lastSystemFanCount_ = 0xFF;  // force rebuild on next data arrive
-
-    // ADD CLEARING DISK DRIVE WIDGETS
-    for (auto& driveWidget : diskDriveWidgets_) {
-        clearWidget(driveWidget);
-    }
+    diskDriveWidgets_.clear();
 
     lastEnsureCheckTimestamp_ = 0;  // force both ensures to run after next fetch
     isStaticDrawn_ = false;

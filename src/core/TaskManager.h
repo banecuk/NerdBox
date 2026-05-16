@@ -4,6 +4,7 @@
 
 #include "config/AppConfigInterface.h"
 #include "core/state/SystemState.h"
+#include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "ui/core/UiController.h"
@@ -14,7 +15,7 @@ class TaskManager {
     TaskManager(LoggerInterface& logger, UiController& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                AppConfigInterface& config);
+                AppConfigInterface& config, NetworkManager& networkManager);
 
     bool createTasks();  // Public method name matches your existing code
     void cleanup();
@@ -37,6 +38,7 @@ class TaskManager {
     SystemState::CoreState& coreState_;
     SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;
+    NetworkManager& networkManager_;
 
     // Task management
     TaskHandle_t screenTaskHandle_ = nullptr;
