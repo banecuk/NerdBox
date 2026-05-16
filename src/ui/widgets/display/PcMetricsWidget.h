@@ -142,4 +142,10 @@ class PcMetricsWidget : public Widget {
 
     void ensureDiskWidgetsCreated();
     void updateDiskDriveWidgets();
+
+    // Runs the standard initialize → drawStatic → forceRefresh → draw(true)
+    // sequence that every MetricWidget needs on first paint.  Used by
+    // drawStatic(), ensureSystemFanWidgetsCreated(), and ensureDiskWidgetsCreated()
+    // so the four-step sequence lives in exactly one place.
+    void initAndDrawWidget(MetricWidget& widget);
 };

@@ -213,10 +213,7 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
                      .build();
 
         if (w) {
-            w->initialize(context_);
-            w->drawStatic();
-            w->forceRefresh();
-            w->draw(true);
+            initAndDrawWidget(*w);
             systemFanWidgets_.push_back(std::move(w));
         }
     }
@@ -287,11 +284,8 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
                      .build();
 
         if (w) {
-            if (!w->isInitialized())
-                w->initialize(context_);
-            w->drawStatic();
-            w->forceRefresh();
-            w->draw(true);
+            if (!w->isInitialized()) w->initialize(context_);
+            initAndDrawWidget(*w);
             diskDriveWidgets_.push_back(std::move(w));
         }
     }
@@ -325,57 +319,40 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
     }
 }
 
+void PcMetricsWidget::initAndDrawWidget(MetricWidget& widget) {
+    widget.initialize(context_);
+    widget.drawStatic();
+    widget.forceRefresh();
+    widget.draw(true);
+}
+
 void PcMetricsWidget::drawStatic() {
     if (!isInitialized_ || !getLcd())
         return;
 
     if (hasFreshData()) {
-        // Initialize each child widget and draw its static chrome (border,
-        // label, background).  We load the label font once here before the
-        // loop and unload after so that each MetricWidget::drawStatic() can
-        // call lcd->drawString() directly without its own load/unload cycle.
-        // MetricWidget::drawStatic() checks isInitialized_ before drawing;
-        // initialize() is called first so the font is already active.
-        auto initAndDrawStatic = [this](const std::unique_ptr<MetricWidget>& widget) {
-            if (widget) {
-                widget->initialize(context_);
-                widget->drawStatic();
-                widget->forceRefresh();
-                widget->draw(true);
-            }
-        };
-
-        // Load label font once for all static draws — MetricWidget::drawStatic
-        // uses Fonts::loadLabel internally, but since the font is already
-        // loaded the call is a no-op in LovyanGFX (same font re-loaded).
-        // The real saving comes from drawDynamicData using the batch path.
-        initAndDrawStatic(cpuLoadWidget_);
-        initAndDrawStatic(cpuTemperatureWidget_);
-        initAndDrawStatic(cpuPowerWidget_);
-        initAndDrawStatic(cpuFanWidget_);
-        initAndDrawStatic(gpuLoadWidget_);
-        initAndDrawStatic(gpuPowerWidget_);
-        initAndDrawStatic(gpuTemperatureWidget_);
-        initAndDrawStatic(gpu3dWidget_);
-        initAndDrawStatic(gpuComputeWidget_);
-        initAndDrawStatic(gpuFanWidget_);
-        initAndDrawStatic(gpuMemoryWidget_);
-        initAndDrawStatic(memoryLoadWidget_);
+        initAndDrawWidget(*cpuLoadWidget_);
+        initAndDrawWidget(*cpuTemperatureWidget_);
+        initAndDrawWidget(*cpuPowerWidget_);
+        initAndDrawWidget(*cpuFanWidget_);
+        initAndDrawWidget(*gpuLoadWidget_);
+        initAndDrawWidget(*gpuPowerWidget_);
+        initAndDrawWidget(*gpuTemperatureWidget_);
+        initAndDrawWidget(*gpu3dWidget_);
+        initAndDrawWidget(*gpuComputeWidget_);
+        initAndDrawWidget(*gpuFanWidget_);
+        initAndDrawWidget(*gpuMemoryWidget_);
+        initAndDrawWidget(*memoryLoadWidget_);
 
         // System fans — created/rebuilt based on live fan count.
         ensureSystemFanWidgetsCreated();
         for (auto& fw : systemFanWidgets_) {
-            initAndDrawStatic(fw);
+            if (fw) initAndDrawWidget(*fw);
         }
 
         ensureDiskWidgetsCreated();
-        for (auto& driveWidget : diskDriveWidgets_) {
-            if (driveWidget) {
-                driveWidget->initialize(context_);
-                driveWidget->drawStatic();
-                driveWidget->forceRefresh();
-                driveWidget->draw(true);
-            }
+        for (auto& dw : diskDriveWidgets_) {
+            if (dw) initAndDrawWidget(*dw);
         }
 
         isStaticDrawn_ = true;
