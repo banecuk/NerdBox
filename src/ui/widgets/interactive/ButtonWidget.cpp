@@ -2,49 +2,166 @@
 
 #include "core/resources/FontRegistry.h"
 
+// ---------------------------------------------------------------------------
+// Constructors
+// ---------------------------------------------------------------------------
+
 ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label,
                            const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                           EventType action, ActionCallback callback, uint16_t bgColor,
-                           uint16_t textColor)
+                           EventType action, ActionCallback callback,
+                           uint16_t bgColor, uint16_t textColor)
     : Widget(dims, updateIntervalMs),
       context_(context),
       label_(label),
+      icon_(ButtonIcon::NONE),
       action_(action),
       callback_(callback),
       lastTouchTime_(0),
       bgColor_(bgColor),
-      textColor_(textColor),
-      isPressed_(false),
-      pressStartTime_(0) {}
+      textColor_(textColor) {}
+
+ButtonWidget::ButtonWidget(DisplayContext& context, ButtonIcon icon, const std::string& label,
+                           const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                           EventType action, ActionCallback callback,
+                           uint16_t bgColor, uint16_t textColor)
+    : Widget(dims, updateIntervalMs),
+      context_(context),
+      label_(label),
+      icon_(icon),
+      action_(action),
+      callback_(callback),
+      lastTouchTime_(0),
+      bgColor_(bgColor),
+      textColor_(textColor) {}
+
+// ---------------------------------------------------------------------------
+// drawStatic — background fill + border; called once on init / force repaint
+// ---------------------------------------------------------------------------
+
+void ButtonWidget::drawStatic() {
+    if (!isInitialized_ || !getLcd()) return;
+    LGFX* lcd = getLcd();
+
+    // Fill background
+    lcd->fillRoundRect(dimensions_.x, dimensions_.y,
+                       dimensions_.width, dimensions_.height,
+                       kBorderRadius, bgColor_);
+
+    // 1 px border — barely visible
+    lcd->drawRoundRect(dimensions_.x, dimensions_.y,
+                       dimensions_.width, dimensions_.height,
+                       kBorderRadius, kBorderColor);
+
+    isStaticDrawn_ = true;
+    clearDirty();
+}
+
+// ---------------------------------------------------------------------------
+// onDraw
+// ---------------------------------------------------------------------------
+
+void ButtonWidget::onDraw(bool forceRedraw) {
+    if (!getLcd()) return;
+
+    const unsigned long now = millis();
+
+    // Auto-release press feedback
+    if (isPressed_ && (now - pressStartTime_ >= PRESS_FEEDBACK_MS)) {
+        isPressed_ = false;
+        markDirty();
+    }
+
+    if (!forceRedraw && !isDirty()) return;
+
+    const uint16_t bg = isPressed_ ? TFT_DARKGRAY : bgColor_;
+    const uint16_t fg = isPressed_ ? TFT_BLACK    : textColor_;
+
+    // Redraw background + border at pressed/unpressed colour
+    getLcd()->fillRoundRect(dimensions_.x, dimensions_.y,
+                            dimensions_.width, dimensions_.height,
+                            kBorderRadius, bg);
+    getLcd()->drawRoundRect(dimensions_.x, dimensions_.y,
+                            dimensions_.width, dimensions_.height,
+                            kBorderRadius, kBorderColor);
+
+    drawContent(bg, fg);
+    clearDirty();
+}
+
+// ---------------------------------------------------------------------------
+// drawContent — icon and/or label, centred in the button
+// ---------------------------------------------------------------------------
+
+void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
+    LGFX* lcd = getLcd();
+    if (!lcd) return;
+
+    const int16_t cx = dimensions_.x + dimensions_.width  / 2;
+    const int16_t cy = dimensions_.y + dimensions_.height / 2;
+
+    const bool hasIcon  = (icon_ != ButtonIcon::NONE);
+    const bool hasLabel = !label_.empty();
+
+    if (hasIcon && !hasLabel) {
+        // Icon only — centred
+        if (icon_ == ButtonIcon::SETTINGS) {
+            const int16_t ix = cx - kGearBitmapSize / 2;
+            const int16_t iy = cy - kGearBitmapSize / 2;
+            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear);
+        }
+
+    } else if (!hasIcon && hasLabel) {
+        // Label only — centred (original behaviour)
+        lcd->setTextColor(fg, bg);
+        lcd->setTextDatum(MC_DATUM);
+        Fonts::loadLabel(lcd);
+        lcd->drawString(label_.c_str(), cx, cy);
+        Fonts::unload(lcd);
+
+    } else if (hasIcon && hasLabel) {
+        // Icon left + gap + label right, combined block centred in button
+        Fonts::loadLabel(lcd);
+        const int16_t labelW = static_cast<int16_t>(lcd->textWidth(label_.c_str()));
+        Fonts::unload(lcd);
+
+        const uint8_t  iconDiam  = dimensions_.height - 12;  // diameter of icon bounding box
+        const int16_t  totalW    = iconDiam + kIconPad + labelW;
+        const int16_t  startX    = cx - totalW / 2;
+        const int16_t  iconCx    = startX + iconDiam / 2;
+        const int16_t  labelX    = startX + iconDiam + kIconPad + labelW / 2;
+
+        if (icon_ == ButtonIcon::SETTINGS) {
+            const int16_t ix = iconCx - kGearBitmapSize / 2;
+            const int16_t iy = cy     - kGearBitmapSize / 2;
+            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear);
+        }
+
+        lcd->setTextColor(fg, bg);
+        lcd->setTextDatum(MC_DATUM);
+        Fonts::loadLabel(lcd);
+        lcd->drawString(label_.c_str(), labelX, cy);
+        Fonts::unload(lcd);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Touch handling
+// ---------------------------------------------------------------------------
 
 bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!getDimensions().contains(x, y)) {
-        return false;
-    }
+    if (!getDimensions().contains(x, y)) return false;
 
-    if (!callback_ || !isInitialized() || !getLcd()) {
-        if (getLogger()) {
-            getLogger()->debug(
-                "ButtonWidget::handleTouch - Rejected (no callback or not initialized)");
-        }
-        return false;
-    }
+    if (!callback_ || !isInitialized() || !getLcd()) return false;
 
-    // Debouncing
-    unsigned long now = millis();
-    if (now - lastTouchTime_ < DEBOUNCE_TIME_MS) {
-        return false;
-    }
+    const unsigned long now = millis();
+    if (now - lastTouchTime_ < DEBOUNCE_TIME_MS) return false;
     lastTouchTime_ = now;
 
-    // Visual feedback - mark as pressed
-    isPressed_ = true;
+    isPressed_      = true;
     pressStartTime_ = now;
-    markDirty();  // Force immediate redraw
+    markDirty();
 
-    // Execute callback
     callback_(action_);
-
     return true;
 }
 
@@ -56,30 +173,4 @@ void ButtonWidget::cleanUp() {
 void ButtonWidget::setCallback(ActionCallback callback) {
     callback_ = callback;
     markDirty();
-}
-
-void ButtonWidget::onDraw(bool forceRedraw) {
-    if (!getLcd())
-        return;
-
-    // Auto-release press state after feedback duration
-    unsigned long now = millis();
-    if (isPressed_ && (now - pressStartTime_ >= PRESS_FEEDBACK_MS)) {
-        isPressed_ = false;
-        markDirty();  // Trigger redraw to show unpressed state
-    }
-
-    uint16_t bgColor = isPressed_ ? TFT_DARKGRAY : bgColor_;
-    uint16_t textColor = isPressed_ ? TFT_BLACK : textColor_;
-
-    // Draw button with pressed state
-    getLcd()->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, 5,
-                            bgColor);
-
-    getLcd()->setTextColor(textColor, bgColor);
-    getLcd()->setTextDatum(MC_DATUM);
-    Fonts::loadLabel(getLcd());
-    getLcd()->drawString(label_.c_str(), dimensions_.x + dimensions_.width / 2,
-                         dimensions_.y + dimensions_.height / 2);
-    Fonts::unload(getLcd());
 }

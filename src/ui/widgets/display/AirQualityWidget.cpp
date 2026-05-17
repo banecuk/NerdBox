@@ -140,7 +140,7 @@ void AirQualityWidget::drawIcon(const char* code) {
     const uint16_t* data = iconForCode(code);
     if (data) {
         lcd->pushImage(dimensions_.x, dimensions_.y,
-                       kIconW, kIconW, data, static_cast<uint16_t>(0x0000));
+                       kIconW, kIconW, data);
     }
 }
 
@@ -265,18 +265,24 @@ void AirQualityWidget::drawNoData() {
 
 const uint16_t* AirQualityWidget::iconForCode(const char* code) const {
     if (!code || code[0] == '\0') return nullptr;
-    if (strncmp(code, "01d", 3) == 0) return icon_01d;
-    if (strncmp(code, "01n", 3) == 0) return icon_01n;
-    if (strncmp(code, "02d", 3) == 0) return icon_02d;
-    if (strncmp(code, "02n", 3) == 0) return icon_02n;
-    if (strncmp(code, "03d", 3) == 0) return icon_03d;
-    if (strncmp(code, "04d", 3) == 0) return icon_04d;
-    if (strncmp(code, "09d", 3) == 0) return icon_09d;
-    if (strncmp(code, "10d", 3) == 0) return icon_10d;
-    if (strncmp(code, "10n", 3) == 0) return icon_10n;
-    if (strncmp(code, "11d", 3) == 0) return icon_11d;
-    if (strncmp(code, "13d", 3) == 0) return icon_13d;
-    if (strncmp(code, "50d", 3) == 0) return icon_50d;
+    if (strcmp(code, "01d") == 0) return icon_01d;
+    if (strcmp(code, "01n") == 0) return icon_01n;
+    if (strcmp(code, "02d") == 0) return icon_02d;
+    if (strcmp(code, "02n") == 0) return icon_02n;
+    if (strcmp(code, "03d") == 0) return icon_03d;
+    if (strcmp(code, "03n") == 0) return icon_03d;  // reuse day icon for night variant
+    if (strcmp(code, "04d") == 0) return icon_04d;
+    if (strcmp(code, "04n") == 0) return icon_04d;  // reuse day icon for night variant
+    if (strcmp(code, "09d") == 0) return icon_09d;
+    if (strcmp(code, "09n") == 0) return icon_09d;  // reuse day icon for night variant
+    if (strcmp(code, "10d") == 0) return icon_10d;
+    if (strcmp(code, "10n") == 0) return icon_10n;
+    if (strcmp(code, "11d") == 0) return icon_11d;
+    if (strcmp(code, "11n") == 0) return icon_11d;  // reuse day icon for night variant
+    if (strcmp(code, "13d") == 0) return icon_13d;
+    if (strcmp(code, "13n") == 0) return icon_13d;  // reuse day icon for night variant
+    if (strcmp(code, "50d") == 0) return icon_50d;
+    if (strcmp(code, "50n") == 0) return icon_50d;  // reuse day icon for night variant
     return nullptr;
 }
 

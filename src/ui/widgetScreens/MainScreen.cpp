@@ -43,9 +43,10 @@ void MainScreen::createWidgets() {
         new FpsWidget(uiController_->getDisplayContext(),
                       WidgetInterface::Dimensions{400, 200, 72, 72}, 250, pcMetrics_)));
 
-    // Settings button
+    // Settings button — gear icon, no label
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{0, 272, 48, 48}, 0,
+        uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",
+        WidgetInterface::Dimensions{0, 272, 48, 48}, 0,
         EventType::SHOW_SETTINGS, [this](EventType action) { this->handleAction(action); },
         TFT_BLACK, TFT_WHITE)));
 }
