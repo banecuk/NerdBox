@@ -46,5 +46,5 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",
         WidgetInterface::Dimensions{0, 272, 48, 48}, 0, EventType::SHOW_SETTINGS,
-        [this](EventType action) { this->handleAction(action); }, TFT_DARKGRAY, TFT_WHITE)));
+        [this](EventType action) { this->handleAction(action); }, TFT_BLACK, TFT_WHITE)));
 }
