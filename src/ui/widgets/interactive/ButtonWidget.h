@@ -4,7 +4,7 @@
 #include <string>
 
 #include "core/events/EventTypes.h"
-#include "core/resources/gear_icon_48.h"
+#include "core/resources/gear_icon_40.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
 
@@ -41,7 +41,7 @@ class ButtonWidget : public Widget {
  private:
     void drawContent(uint16_t bg, uint16_t fg);
 
-    static constexpr uint8_t kGearBitmapSize = 48;  // gear_icon_48.h pixel dimensions
+    static constexpr uint8_t kGearBitmapSize = 40;  // gear_icon_40.h pixel dimensions
 
     DisplayContext& context_;
     std::string label_;

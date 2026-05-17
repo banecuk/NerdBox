@@ -2,8 +2,7 @@
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        AppConfigInterface& config, ApplicationMetrics& systemMetrics,
-                       const AirQualityData& airQualityData,
-                       const NetworkStatus& netStatus)
+                       const AirQualityData& airQualityData, const NetworkStatus& netStatus)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
       systemMetrics_(systemMetrics),
@@ -25,14 +24,14 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::move(threadsWidget));
 
     // Air quality bar
-    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(new AirQualityWidget(
-        WidgetInterface::Dimensions{0, 150, 480, 44}, 5000, airQualityData_)));
+    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
+        new AirQualityWidget(WidgetInterface::Dimensions{0, 150, 480, 44}, 5000, airQualityData_)));
 
     // Network widget — compact, right-aligned next to clock
     // Clock: {328, 288, 150, 24}  →  network widget ends at x=328
     // Width 148 px → x = 328 - 148 = 180
-    widgetManager_.addWidget(std::unique_ptr<NetworkWidget>(new NetworkWidget(
-        WidgetInterface::Dimensions{180, 288, 148, 24}, 1000, netStatus_)));
+    widgetManager_.addWidget(std::unique_ptr<NetworkWidget>(
+        new NetworkWidget(WidgetInterface::Dimensions{180, 288, 148, 24}, 1000, netStatus_)));
 
     // Clock
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
@@ -46,7 +45,6 @@ void MainScreen::createWidgets() {
     // Settings button — gear icon, no label
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",
-        WidgetInterface::Dimensions{0, 272, 48, 48}, 0,
-        EventType::SHOW_SETTINGS, [this](EventType action) { this->handleAction(action); },
-        TFT_BLACK, TFT_WHITE)));
+        WidgetInterface::Dimensions{0, 272, 48, 48}, 0, EventType::SHOW_SETTINGS,
+        [this](EventType action) { this->handleAction(action); }, TFT_DARKGRAY, TFT_WHITE)));
 }
