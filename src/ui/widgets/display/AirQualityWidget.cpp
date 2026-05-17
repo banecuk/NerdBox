@@ -14,7 +14,7 @@ AirQualityWidget::AirQualityWidget(const WidgetInterface::Dimensions& dims,
       airData_(airData) {}
 
 // ---------------------------------------------------------------------------
-// drawStatic — background + chrome, called once on first paint
+// drawStatic
 // ---------------------------------------------------------------------------
 
 void AirQualityWidget::drawStatic() {
@@ -22,19 +22,17 @@ void AirQualityWidget::drawStatic() {
 
     LGFX* lcd = getLcd();
 
-    // Full background
     lcd->fillRect(dimensions_.x, dimensions_.y,
                   dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    // Top separator line
     lcd->drawFastHLine(dimensions_.x, dimensions_.y,
-                       dimensions_.width, 0x2104 /* dark grey */);
+                       dimensions_.width, 0x2104);
 
-    // Separator between icon area and first tile
+    // Separator after icon
     lcd->drawFastVLine(dimensions_.x + kIconW,
                        dimensions_.y + 2, dimensions_.height - 4, 0x2104);
 
-    // Separators between the 5 tiles
+    // Tile separators
     for (uint8_t i = 1; i < kTileCount; ++i) {
         const int16_t sx = dimensions_.x + kIconW + i * kTileW;
         lcd->drawFastVLine(sx, dimensions_.y + 2, dimensions_.height - 4, 0x2104);
@@ -42,7 +40,6 @@ void AirQualityWidget::drawStatic() {
 
     isStaticDrawn_ = true;
 
-    // Force full repaint next onDraw
     lastAvail_    = false;
     lastTemp_     = -128;
     lastHeatIdx_  = -128;
@@ -72,7 +69,6 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
 
     const bool iconChanged = (strncmp(airData_.icon_code, lastIcon_,
                                       sizeof(lastIcon_)) != 0);
-
     const bool changed =
         forceRedraw                              ||
         !lastAvail_                              ||
@@ -86,42 +82,40 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
 
     if (!changed) return;
 
-    // If recovering from no-data, redraw the static chrome first
     if (!lastAvail_) drawStatic();
 
-    LGFX* lcd = getLcd();
     char buf[20];
 
-    // --- Weather icon (far left, 36×36) ---
+    // Icon
     if (forceRedraw || !lastAvail_ || iconChanged) {
         drawIcon(airData_.icon_code);
     }
 
-    // --- Tile 0: Temperature (main) + heat index (sub) ---
+    // Tile 0 — Temperature + optional heat index sub-label
     snprintf(buf, sizeof(buf), "%d\xc2\xb0""C", static_cast<int>(airData_.temperature));
     if (airData_.heat_index != airData_.temperature) {
         char sub[12];
         snprintf(sub, sizeof(sub), "hi:%d\xc2\xb0""C", static_cast<int>(airData_.heat_index));
         drawTile(0, nullptr, buf, TFT_WHITE, sub);
     } else {
-        drawTile(0, nullptr, buf, TFT_WHITE, nullptr);
+        drawTile(0, nullptr, buf, TFT_WHITE);
     }
 
-    // --- Tile 1: Humidity ---
+    // Tile 1 — Humidity
     snprintf(buf, sizeof(buf), "%d%%", static_cast<int>(airData_.humidity));
-    drawTile(1, nullptr, buf, 0x867F /* sky blue */);
+    drawTile(1, nullptr, buf, 0x867F);
 
-    // --- Tile 2: Pressure ---
+    // Tile 2 — Pressure
     snprintf(buf, sizeof(buf), "%dhPa", static_cast<int>(airData_.pressure));
     drawTile(2, nullptr, buf, TFT_LIGHTGREY);
 
-    // --- Tile 3: Wind speed ---
+    // Tile 3 — Wind speed
     snprintf(buf, sizeof(buf), "%u.%um/s",
              airData_.wind_speed_x10 / 10,
              airData_.wind_speed_x10 % 10);
     drawTile(3, nullptr, buf, TFT_LIGHTGREY);
 
-    // --- Tile 4: AQI — "AQI" as dim inline prefix ---
+    // Tile 4 — AQI with inline prefix
     snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.aqi_us));
     drawTile(4, "AQI ", buf, aqiColor(airData_.aqi_us));
 
@@ -138,27 +132,27 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
 }
 
 // ---------------------------------------------------------------------------
-// drawIcon — pushImage for the 36×36 PROGMEM sprite
+// drawIcon
 // ---------------------------------------------------------------------------
 
 void AirQualityWidget::drawIcon(const char* code) {
     LGFX* lcd = getLcd();
     if (!lcd) return;
 
-    const int16_t ix = dimensions_.x;
-    const int16_t iy = dimensions_.y;
-
-    lcd->fillRect(ix, iy, kIconW, dimensions_.height, TFT_BLACK);
+    lcd->fillRect(dimensions_.x, dimensions_.y, kIconW, dimensions_.height, TFT_BLACK);
 
     const uint16_t* data = iconForCode(code);
     if (data) {
-        // pushImage with transparent colour 0x0000 (black background in icons)
-        lcd->pushImage(ix, iy, kIconW, kIconW, data, static_cast<uint16_t>(0x0000));
+        lcd->pushImage(dimensions_.x, dimensions_.y,
+                       kIconW, kIconW, data, static_cast<uint16_t>(0x0000));
     }
 }
 
 // ---------------------------------------------------------------------------
-// drawTile — clear tile interior then draw prefix + value (+ optional sub)
+// drawTile
+// All values use loadMetric() — NotoSans 18 pt.
+// prefix uses loadLabel() — NotoSansDisplay 12 pt.
+// sub uses loadLabel() — rendered at bottom of tile.
 // ---------------------------------------------------------------------------
 
 void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
@@ -167,77 +161,73 @@ void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
     LGFX* lcd = getLcd();
     if (!lcd) return;
 
-    const int16_t tx = dimensions_.x + kIconW + tileIndex * kTileW;
-    const int16_t ty = dimensions_.y;
-    const int16_t cx = tx + kTileW / 2;
-    const int16_t h  = dimensions_.height;
+    const int16_t tx  = dimensions_.x + kIconW + tileIndex * kTileW;
+    const int16_t ty  = dimensions_.y;
+    const int16_t cx  = tx + kTileW / 2;
+    const int16_t h   = dimensions_.height;
 
-    // Clear
     lcd->fillRect(tx + 1, ty + 1, kTileW - 2, h - 2, TFT_BLACK);
 
     if (sub != nullptr) {
-        // Two rows: value in upper ~60%, sub label in lower ~40%
-        const int16_t valueY = ty + h * 2 / 5;
-        const int16_t subY   = ty + h - 4;
-
-        // Main value
-        Fonts::loadValue(lcd);
-        lcd->setTextDatum(MC_DATUM);
+        // Two rows: metric value in upper ~58%, sub-label at bottom
+        const int16_t valueY = ty + h * 11 / 20;  // ~55% down
+        const int16_t subY   = ty + h - 3;
 
         if (prefix != nullptr) {
-            // Measure prefix width to left-align the combined string
             Fonts::loadLabel(lcd);
             const int16_t prefW = static_cast<int16_t>(lcd->textWidth(prefix));
             Fonts::unload(lcd);
+            Fonts::loadMetric(lcd);
+            const int16_t valW = static_cast<int16_t>(lcd->textWidth(value));
+            Fonts::unload(lcd);
+
+            const int16_t startX = cx - (prefW + valW) / 2;
 
             Fonts::loadLabel(lcd);
-            lcd->setTextColor(0x4208 /* dim grey */, TFT_BLACK);
+            lcd->setTextColor(0x4208, TFT_BLACK);
             lcd->setTextDatum(ML_DATUM);
-            lcd->drawString(prefix, cx - kTileW / 2 + 4, valueY);
+            lcd->drawString(prefix, startX, valueY);
             Fonts::unload(lcd);
 
-            Fonts::loadValue(lcd);
+            Fonts::loadMetric(lcd);
             lcd->setTextColor(valueColor, TFT_BLACK);
             lcd->setTextDatum(ML_DATUM);
-            lcd->drawString(value, cx - kTileW / 2 + 4 + prefW, valueY);
+            lcd->drawString(value, startX + prefW, valueY);
             Fonts::unload(lcd);
         } else {
-            Fonts::loadValue(lcd);
+            Fonts::loadMetric(lcd);
             lcd->setTextColor(valueColor, TFT_BLACK);
             lcd->setTextDatum(MC_DATUM);
             lcd->drawString(value, cx, valueY);
             Fonts::unload(lcd);
         }
 
-        // Sub label (heat index)
         Fonts::loadLabel(lcd);
-        lcd->setTextColor(0x4208 /* dim grey */, TFT_BLACK);
+        lcd->setTextColor(0x4208, TFT_BLACK);
         lcd->setTextDatum(BC_DATUM);
         lcd->drawString(sub, cx, subY);
         Fonts::unload(lcd);
 
     } else if (prefix != nullptr) {
-        // Inline prefix + value, vertically centred
+        // Inline prefix (dim, 12 pt) + value (18 pt), vertically centred
         const int16_t midY = ty + h / 2;
 
         Fonts::loadLabel(lcd);
         const int16_t prefW = static_cast<int16_t>(lcd->textWidth(prefix));
         Fonts::unload(lcd);
-
-        Fonts::loadValue(lcd);
+        Fonts::loadMetric(lcd);
         const int16_t valW = static_cast<int16_t>(lcd->textWidth(value));
         Fonts::unload(lcd);
 
-        const int16_t totalW  = prefW + valW;
-        const int16_t startX  = cx - totalW / 2;
+        const int16_t startX = cx - (prefW + valW) / 2;
 
         Fonts::loadLabel(lcd);
-        lcd->setTextColor(0x4208 /* dim grey */, TFT_BLACK);
+        lcd->setTextColor(0x4208, TFT_BLACK);
         lcd->setTextDatum(ML_DATUM);
         lcd->drawString(prefix, startX, midY);
         Fonts::unload(lcd);
 
-        Fonts::loadValue(lcd);
+        Fonts::loadMetric(lcd);
         lcd->setTextColor(valueColor, TFT_BLACK);
         lcd->setTextDatum(ML_DATUM);
         lcd->drawString(value, startX + prefW, midY);
@@ -245,7 +235,7 @@ void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
 
     } else {
         // Value only — centred
-        Fonts::loadValue(lcd);
+        Fonts::loadMetric(lcd);
         lcd->setTextColor(valueColor, TFT_BLACK);
         lcd->setTextDatum(MC_DATUM);
         lcd->drawString(value, cx, ty + h / 2);
@@ -274,13 +264,11 @@ void AirQualityWidget::drawNoData() {
 }
 
 // ---------------------------------------------------------------------------
-// iconForCode — maps a 3-char AirVisual icon code to its PROGMEM array
+// iconForCode
 // ---------------------------------------------------------------------------
 
 const uint16_t* AirQualityWidget::iconForCode(const char* code) const {
     if (!code || code[0] == '\0') return nullptr;
-
-    // Map: code string → PROGMEM array
     if (strncmp(code, "01d", 3) == 0) return icon_01d;
     if (strncmp(code, "01n", 3) == 0) return icon_01n;
     if (strncmp(code, "02d", 3) == 0) return icon_02d;
@@ -293,8 +281,7 @@ const uint16_t* AirQualityWidget::iconForCode(const char* code) const {
     if (strncmp(code, "11d", 3) == 0) return icon_11d;
     if (strncmp(code, "13d", 3) == 0) return icon_13d;
     if (strncmp(code, "50d", 3) == 0) return icon_50d;
-
-    return nullptr;  // Unknown code — leave icon area empty
+    return nullptr;
 }
 
 // ---------------------------------------------------------------------------
@@ -302,11 +289,11 @@ const uint16_t* AirQualityWidget::iconForCode(const char* code) const {
 // ---------------------------------------------------------------------------
 
 uint16_t AirQualityWidget::aqiColor(uint8_t aqi) const {
-    if (aqi <= 50)  return 0x07E0;  // Green   — Good
-    if (aqi <= 100) return 0xFFE0;  // Yellow  — Moderate
-    if (aqi <= 150) return 0xFD20;  // Orange  — USG
-    if (aqi <= 200) return 0xF800;  // Red     — Unhealthy
-    return 0xF81F;                  // Magenta — Very Unhealthy/Hazardous
+    if (aqi <= 50)  return 0x07E0;
+    if (aqi <= 100) return 0xFFE0;
+    if (aqi <= 150) return 0xFD20;
+    if (aqi <= 200) return 0xF800;
+    return 0xF81F;
 }
 
 bool AirQualityWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {

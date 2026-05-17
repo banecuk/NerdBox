@@ -24,7 +24,7 @@ void MainScreen::createWidgets() {
 
     // Air quality widget — full-width bar just below PcMetrics (y=150, height=36)
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(new AirQualityWidget(
-        WidgetInterface::Dimensions{0, 150, 480, 36},
+        WidgetInterface::Dimensions{0, 150, 480, 44},
         5000,  // check every 5 s; skips redraw when data hasn't changed
         airQualityData_)));
 
