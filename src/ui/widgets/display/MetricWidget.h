@@ -38,6 +38,8 @@ class MetricWidget : public Widget {
     void setValueFormat(ValueFormat format);
     void setReverseThresholds(bool reverse = true);
     void setUseSmallFont(bool small = true);  // Use 15pt instead of 18pt — for narrow tiles
+    void setLabelColor(uint16_t color);
+    void setUseGpuColors(bool use = true);
 
     // Called by PcMetricsWidget's batch update: assumes NotoSans18 (metric font)
     // is already loaded by the caller.  Skips loadFont/unloadFont overhead.
@@ -110,6 +112,18 @@ class MetricWidget : public Widget {
             return *this;
         }
 
+        Builder& labelColor(uint16_t color) {
+            labelColor_ = color;
+            hasLabelColor_ = true;
+            return *this;
+        }
+
+        Builder& useGpuColors(bool use = true) {
+            useGpuColors_ = use;
+            hasUseGpuColors_ = true;
+            return *this;
+        }
+
         Builder& label(const char* label) {
             if (label) {
                 strncpy(label_, label, sizeof(label_) - 1);
@@ -155,6 +169,10 @@ class MetricWidget : public Widget {
                 widget->setUseDimColors(useDimColors_);
             if (hasUseSmallFont_)
                 widget->setUseSmallFont(useSmallFont_);
+            if (hasUseGpuColors_)
+                widget->setUseGpuColors(useGpuColors_);
+            if (hasLabelColor_)
+                widget->setLabelColor(labelColor_);
             if (hasLabel_)
                 widget->setLabel(label_);
             if (hasLabelWidth_)
@@ -181,6 +199,8 @@ class MetricWidget : public Widget {
         bool reverseThresholds_ = false;
         bool useDimColors_ = false;
         bool useSmallFont_ = false;
+        bool useGpuColors_ = false;
+        uint16_t labelColor_ = TFT_WHITE;
         char label_[32] = "";
         uint16_t labelWidth_ = 0;
         uint8_t textAlignment_ = MC_DATUM;
@@ -193,6 +213,8 @@ class MetricWidget : public Widget {
         bool hasReverseThresholds_ = false;
         bool hasUseDimColors_ = false;
         bool hasUseSmallFont_ = false;
+        bool hasUseGpuColors_ = false;
+        bool hasLabelColor_ = false;
         bool hasLabel_ = false;
         bool hasLabelWidth_ = false;
         bool hasTextAlignment_ = false;
@@ -213,6 +235,8 @@ class MetricWidget : public Widget {
     bool reverseThresholds_ = false;
     bool useDimColors_ = false;
     bool useSmallFont_ = false;  // Use NotoSansDisplay15 instead of NotoSans18
+    bool useGpuColors_ = false;
+    uint16_t labelColor_ = TFT_WHITE;
     char label_[32] = "";  // Stack-allocated buffer
     uint16_t labelWidth_ = 0;
     uint8_t textAlignment_ = MC_DATUM;

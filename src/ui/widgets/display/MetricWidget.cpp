@@ -33,7 +33,7 @@ void MetricWidget::drawStatic() {
         int16_t labelY = dimensions_.y + (dimensions_.height / 2);
 
         // Draw label text
-        lcd->setTextColor(TFT_WHITE, TFT_BLACK);
+        lcd->setTextColor(labelColor_, TFT_BLACK);
         lcd->setTextDatum(MC_DATUM);
         Fonts::loadLabel(lcd);
         lcd->drawString(label_, labelX, labelY);
@@ -327,6 +327,9 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
 
     uint8_t normalizedValue = static_cast<uint8_t>(normalizedPercent);
 
+    if (useGpuColors_) {
+        return getContext().getColors().getColorFromPercentGpu(normalizedValue);
+    }
     return getContext().getColors().getColorFromPercent(normalizedValue, useDimColors_);
 }
 
@@ -395,6 +398,20 @@ void MetricWidget::setUseSmallFont(bool small) {
     if (useSmallFont_ != small) {
         useSmallFont_ = small;
         valueAreaDirty_ = true;
+        markDirty();
+    }
+}
+
+void MetricWidget::setLabelColor(uint16_t color) {
+    if (labelColor_ != color) {
+        labelColor_ = color;
+        markDirty();
+    }
+}
+
+void MetricWidget::setUseGpuColors(bool use) {
+    if (useGpuColors_ != use) {
+        useGpuColors_ = use;
         markDirty();
     }
 }

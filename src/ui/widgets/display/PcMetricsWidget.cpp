@@ -82,6 +82,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("GPU")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 
     gpuTemperatureWidget_ =
@@ -92,6 +94,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 
     // Row 3 (middle): GPU 3D workload
@@ -103,6 +107,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("3D")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 
     // Row 3–4 span: GPU memory (double height)
@@ -114,6 +120,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(30.0f, 90.0f)
             .label("MEM")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 
     // Row 4: GPU power | GPU fan | GPU compute
@@ -125,6 +133,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(50.0f, 170.0f)
             .label("PWR")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 
     gpuFanWidget_ =
@@ -135,6 +145,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(800.0f, 1400.0f)
             .label("FAN")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 
     gpuComputeWidget_ =
@@ -145,6 +157,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("CMP")
             .labelWidth(kLabelWidth)
+            .labelColor(0xFD20)
+            .useGpuColors()
             .build();
 }
 

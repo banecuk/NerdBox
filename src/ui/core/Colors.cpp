@@ -50,6 +50,33 @@ void Colors::generateGradient() {
     }
 }
 
+uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
+    if (value > 99) value = 99;
+
+    // GPU gradient: dark purple → dark teal → amber → red
+    // All stops chosen to be dark enough for white text to be legible.
+    const uint16_t purple = 0x300A;  // RGB( 24,  0,  84) — deep indigo
+    const uint16_t teal   = 0x0451;  // RGB(  0, 136, 136) — dark teal
+    const uint16_t amber  = 0xA340;  // RGB( 160, 104,   0) — dark amber
+    const uint16_t red    = 0x7800;  // RGB( 120,   0,   0) — dark red
+
+    uint16_t C1, C2;
+    uint8_t alpha;
+
+    if (value < 25) {
+        C1 = purple; C2 = teal;
+        alpha = (value * 255) / 24;
+    } else if (value < 60) {
+        C1 = teal; C2 = amber;
+        alpha = ((value - 25) * 255) / 34;
+    } else {
+        C1 = amber; C2 = red;
+        alpha = ((value - 60) * 255) / 39;
+    }
+
+    return blendRgb565(C1, C2, alpha);
+}
+
 uint16_t Colors::getColorFromPercent30plus(uint8_t value, bool dim) {
     if (value > 29) {
         // Map 30-100 to 0-99: (value-30) * 99/70
