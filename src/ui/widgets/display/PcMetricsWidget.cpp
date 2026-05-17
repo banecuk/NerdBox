@@ -82,7 +82,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("GPU")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 
@@ -94,7 +94,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 
@@ -107,7 +107,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("3D")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 
@@ -120,7 +120,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(30.0f, 90.0f)
             .label("MEM")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 
@@ -133,7 +133,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(50.0f, 170.0f)
             .label("PWR")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 
@@ -145,7 +145,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(800.0f, 1400.0f)
             .label("FAN")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 
@@ -157,7 +157,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("CMP")
             .labelWidth(kLabelWidth)
-            .labelColor(0xFD20)
+            .labelColor(0x9486)
             .useGpuColors()
             .build();
 }
@@ -287,7 +287,7 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
         auto w = MetricWidget::Builder(
                      WidgetInterface::Dimensions{xPos, guidelineY4, widgetWidth, height},
                      updateIntervalMs_)
-                     .unit("%")
+                     .unit("")
                      .range(0, 100)
                      .colorThresholds(0.0f, 95.0f)
                      .reverseThresholds(true)

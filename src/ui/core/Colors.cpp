@@ -53,25 +53,26 @@ void Colors::generateGradient() {
 uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
     if (value > 99) value = 99;
 
-    // GPU gradient: dark purple → dark teal → amber → red
-    // All stops chosen to be dark enough for white text to be legible.
-    const uint16_t purple = 0x300A;  // RGB( 24,  0,  84) — deep indigo
-    const uint16_t teal   = 0x0451;  // RGB(  0, 136, 136) — dark teal
-    const uint16_t amber  = 0xA340;  // RGB( 160, 104,   0) — dark amber
-    const uint16_t red    = 0x7800;  // RGB( 120,   0,   0) — dark red
+    // GPU gradient: warm near-black → warm grey → amber → dark red
+    // Complements the orange (0xFD20) label colour; stays dark enough
+    // for white text to be legible at all load levels.
+    const uint16_t warmBlack = 0x2102;  // RGB( 32,  32,  16) — near-black, faint warm tint
+    const uint16_t warmGrey  = 0x4A43;  // RGB( 72,  72,  24) — medium warm grey
+    const uint16_t amber     = 0xA340;  // RGB(160, 104,   0) — dark amber
+    const uint16_t red       = 0x7800;  // RGB(120,   0,   0) — dark red
 
     uint16_t C1, C2;
     uint8_t alpha;
 
-    if (value < 25) {
-        C1 = purple; C2 = teal;
-        alpha = (value * 255) / 24;
-    } else if (value < 60) {
-        C1 = teal; C2 = amber;
-        alpha = ((value - 25) * 255) / 34;
+    if (value < 40) {
+        C1 = warmBlack; C2 = warmGrey;
+        alpha = (value * 255) / 39;
+    } else if (value < 70) {
+        C1 = warmGrey; C2 = amber;
+        alpha = ((value - 40) * 255) / 29;
     } else {
         C1 = amber; C2 = red;
-        alpha = ((value - 60) * 255) / 39;
+        alpha = ((value - 70) * 255) / 29;
     }
 
     return blendRgb565(C1, C2, alpha);
