@@ -1,10 +1,12 @@
 #include "MainScreen.h"
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
-                       AppConfigInterface& config, ApplicationMetrics& systemMetrics)
+                       AppConfigInterface& config, ApplicationMetrics& systemMetrics,
+                       const AirQualityData& airQualityData)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
-      systemMetrics_(systemMetrics) {}
+      systemMetrics_(systemMetrics),
+      airQualityData_(airQualityData) {}
 
 void MainScreen::createWidgets() {
     // Add PcMetricsWidget (without ThreadsWidget inside)
@@ -19,6 +21,12 @@ void MainScreen::createWidgets() {
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480 - 86 * 2, 60},
         config_.getHardwareMonitorThreadsRefreshMs(), pcMetrics_, config_, systemMetrics_));
     widgetManager_.addWidget(std::move(threadsWidget));
+
+    // Air quality widget — full-width bar just below PcMetrics (y=150, height=36)
+    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(new AirQualityWidget(
+        WidgetInterface::Dimensions{0, 150, 480, 36},
+        5000,  // check every 5 s; skips redraw when data hasn't changed
+        airQualityData_)));
 
     // Clock widget
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(

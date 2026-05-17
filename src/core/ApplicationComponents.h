@@ -17,6 +17,8 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/WebServerService.h"
+#include "services/airQuality/AirQualityData.h"
+#include "services/airQuality/AirQualityService.h"
 #include "ui/core/Colors.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/core/UiController.h"
@@ -43,6 +45,11 @@ class ApplicationComponents {
     // FreeRTOS semaphore — into every translation unit that needs SystemState).
     PcMetrics pcMetrics;
 
+    // Air quality data — written by AirQualityService in the background task,
+    // read by AirQualityWidget in the screen task. All fields are scalar so
+    // no mutex is required (Xtensa word reads are atomic).
+    AirQualityData airQualityData;
+
     // Hardware
     LGFX display;
 
@@ -60,6 +67,7 @@ class ApplicationComponents {
     // Services
     Logger logger;
     PcMetricsService pcMetricsService;
+    AirQualityService airQualityService;
     WebServerService webServerService;
     WebServer webServer;
 

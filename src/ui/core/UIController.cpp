@@ -9,7 +9,8 @@
 UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                            SystemState::ScreenState& screenState, AppConfigInterface& config,
-                           NetworkManager& networkManager)
+                           NetworkManager& networkManager,
+                           const AirQualityData& airQualityData)
     : context_(context),
       logger_(context.getLogger()),
       displayManager_(displayManager),
@@ -18,6 +19,7 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
       screenState_(screenState),
       config_(config),
       networkManager_(networkManager),
+      airQualityData_(airQualityData),
       actionHandler_(std::make_unique<UiEventHandler>(this, context.getLogger())),
       touchManager_(
           std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)) {
@@ -161,7 +163,7 @@ void UiController::loadAndActivateScreen() {
 
     std::unique_ptr<ScreenInterface> newScreen;
     ScreenCreationContext ctx{logger_, displayManager_, pcMetrics_, this,
-                              config_, systemMetrics_, networkManager_};
+                              config_, systemMetrics_, networkManager_, airQualityData_};
     newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, ctx);
 
     if (newScreen) {

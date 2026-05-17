@@ -8,6 +8,7 @@
 #include "DisplayManager.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
+#include "services/airQuality/AirQualityData.h"
 #include "ui/core/TouchManager.h"
 #include "ui/screens/ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
@@ -25,7 +26,8 @@ class UiController {
     explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                           SystemState::ScreenState& screenState, AppConfigInterface& config,
-                          NetworkManager& networkManager);
+                          NetworkManager& networkManager,
+                          const AirQualityData& airQualityData);
     ~UiController();
 
     // Lifecycle methods
@@ -79,6 +81,7 @@ class UiController {
     SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;
     NetworkManager& networkManager_;
+    const AirQualityData& airQualityData_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<UiEventHandler> actionHandler_;

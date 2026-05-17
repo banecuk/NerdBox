@@ -2,14 +2,19 @@
 
 #include <esp_task_wdt.h>
 
+#include "services/airQuality/AirQualityService.h"
+
 TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
                          PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
+                         AirQualityService& airQualityService, AirQualityData& airQualityData,
                          SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
                          AppConfigInterface& config, NetworkManager& networkManager)
     : logger_(logger),
       uiController_(uiController),
       pcMetricsService_(pcMetricsService),
       pcMetrics_(pcMetrics),
+      airQualityService_(airQualityService),
+      airQualityData_(airQualityData),
       coreState_(coreState),
       screenState_(screenState),
       config_(config),
@@ -124,6 +129,12 @@ void TaskManager::executeBackgroundTask() {
                     updatePcMetrics();
                 }
             }
+
+            // Air quality refresh runs regardless of active screen,
+            // and only when enough time has elapsed since the last fetch.
+            if (airQualityService_.isStale(airQualityData_)) {
+                updateAirQuality();
+            }
         }
 
         // Feed the watchdog every tick, regardless of screen or fetch state.
@@ -161,6 +172,15 @@ void TaskManager::updatePcMetrics() {
         if (pcMetricsService_.isDataStale()) {
             logger_.warning("PC metrics data is stale", true);
         }
+    }
+}
+
+void TaskManager::updateAirQuality() {
+    const bool ok = airQualityService_.fetchData(airQualityData_);
+    if (ok) {
+        logger_.debug("AirQuality data updated");
+    } else {
+        logger_.warning("AirQuality fetch failed");
     }
 }
 

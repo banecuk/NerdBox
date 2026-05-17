@@ -7,6 +7,8 @@
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
+#include "services/airQuality/AirQualityData.h"
+#include "services/airQuality/AirQualityService.h"
 #include "ui/core/UiController.h"
 #include "utils/Logger.h"
 
@@ -14,6 +16,7 @@ class TaskManager {
  public:
     TaskManager(LoggerInterface& logger, UiController& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
+                AirQualityService& airQualityService, AirQualityData& airQualityData,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
                 AppConfigInterface& config, NetworkManager& networkManager);
 
@@ -35,6 +38,8 @@ class TaskManager {
     UiController& uiController_;
     PcMetricsService& pcMetricsService_;
     PcMetrics& pcMetrics_;
+    AirQualityService& airQualityService_;
+    AirQualityData& airQualityData_;
     SystemState::CoreState& coreState_;
     SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;
@@ -57,6 +62,7 @@ class TaskManager {
     void initializeWatchdog();
     void logStackHighWaterMark(const char* taskName);
     void updatePcMetrics();
+    void updateAirQuality();
     void handlePcMetricsFailure();
     void resetWatchdog();
 
