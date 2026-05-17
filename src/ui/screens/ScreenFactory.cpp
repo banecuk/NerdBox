@@ -2,6 +2,7 @@
 
 #include "BootScreen.h"
 #include "services/airQuality/AirQualityData.h"
+#include "services/network/NetworkStatus.h"
 #include "ui/widgetScreens/MainScreen.h"
 #include "ui/widgetScreens/SettingsScreen.h"
 
@@ -13,7 +14,7 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::MAIN:
             return std::make_unique<MainScreen>(ctx.logger, ctx.metrics, ctx.controller,
                                                 ctx.config, ctx.systemMetrics,
-                                                ctx.airQualityData);
+                                                ctx.airQualityData, ctx.netStatus);
         case ScreenName::SETTINGS:
             return std::make_unique<SettingsScreen>(ctx.logger, ctx.controller, ctx.config,
                                                     ctx.networkManager, ctx.systemMetrics);

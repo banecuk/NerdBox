@@ -15,6 +15,7 @@ class AppConfigInterface;
 class ApplicationMetrics;
 class NetworkManager;
 struct AirQualityData;
+struct NetworkStatus;
 
 // Aggregates all dependencies that any screen might need.
 // Pass this struct to createScreen instead of a growing parameter list;
@@ -28,6 +29,7 @@ struct ScreenCreationContext {
     ApplicationMetrics&   systemMetrics;
     NetworkManager&       networkManager;
     const AirQualityData& airQualityData;
+    const NetworkStatus&  netStatus;
 };
 
 class ScreenFactory {

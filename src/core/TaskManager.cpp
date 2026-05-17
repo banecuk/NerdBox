@@ -3,10 +3,12 @@
 #include <esp_task_wdt.h>
 
 #include "services/airQuality/AirQualityService.h"
+#include "services/network/NetworkStatusService.h"
 
 TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
                          PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                          AirQualityService& airQualityService, AirQualityData& airQualityData,
+                         NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
                          SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
                          AppConfigInterface& config, NetworkManager& networkManager)
     : logger_(logger),
@@ -15,6 +17,8 @@ TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
       pcMetrics_(pcMetrics),
       airQualityService_(airQualityService),
       airQualityData_(airQualityData),
+      networkStatusService_(networkStatusService),
+      netStatus_(netStatus),
       coreState_(coreState),
       screenState_(screenState),
       config_(config),
@@ -130,12 +134,15 @@ void TaskManager::executeBackgroundTask() {
                 }
             }
 
-            // Air quality refresh runs regardless of active screen,
-            // and only when enough time has elapsed since the last fetch.
             if (airQualityService_.isStale(airQualityData_)) {
                 updateAirQuality();
             }
         }
+
+        // Network status update runs unconditionally — even when not fully
+        // initialized, we still want to track wifi connected/disconnected state.
+        networkStatusService_.updateWifi(netStatus_);
+        networkStatusService_.maybeTriggerProbe(netStatus_);
 
         // Feed the watchdog every tick, regardless of screen or fetch state.
         // Previously this was inside the metrics fetch block, causing a WDT

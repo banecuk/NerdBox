@@ -9,6 +9,8 @@
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/airQuality/AirQualityService.h"
+#include "services/network/NetworkStatus.h"
+#include "services/network/NetworkStatusService.h"
 #include "ui/core/UiController.h"
 #include "utils/Logger.h"
 
@@ -17,6 +19,7 @@ class TaskManager {
     TaskManager(LoggerInterface& logger, UiController& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                 AirQualityService& airQualityService, AirQualityData& airQualityData,
+                NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
                 AppConfigInterface& config, NetworkManager& networkManager);
 
@@ -40,6 +43,8 @@ class TaskManager {
     PcMetrics& pcMetrics_;
     AirQualityService& airQualityService_;
     AirQualityData& airQualityData_;
+    NetworkStatusService& networkStatusService_;
+    NetworkStatus& netStatus_;
     SystemState::CoreState& coreState_;
     SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;

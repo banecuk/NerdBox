@@ -19,6 +19,8 @@
 #include "services/WebServerService.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/airQuality/AirQualityService.h"
+#include "services/network/NetworkStatus.h"
+#include "services/network/NetworkStatusService.h"
 #include "ui/core/Colors.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/core/UiController.h"
@@ -50,6 +52,10 @@ class ApplicationComponents {
     // no mutex is required (Xtensa word reads are atomic).
     AirQualityData airQualityData;
 
+    // Network status — written by NetworkStatusService (background + probe tasks),
+    // read by NetworkWidget (screen task). All scalar fields — no mutex needed.
+    NetworkStatus netStatus;
+
     // Hardware
     LGFX display;
 
@@ -68,6 +74,7 @@ class ApplicationComponents {
     Logger logger;
     PcMetricsService pcMetricsService;
     AirQualityService airQualityService;
+    NetworkStatusService networkStatusService;
     WebServerService webServerService;
     WebServer webServer;
 

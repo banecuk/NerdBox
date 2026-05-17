@@ -2,38 +2,43 @@
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        AppConfigInterface& config, ApplicationMetrics& systemMetrics,
-                       const AirQualityData& airQualityData)
+                       const AirQualityData& airQualityData,
+                       const NetworkStatus& netStatus)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
       systemMetrics_(systemMetrics),
-      airQualityData_(airQualityData) {}
+      airQualityData_(airQualityData),
+      netStatus_(netStatus) {}
 
 void MainScreen::createWidgets() {
-    // Add PcMetricsWidget (without ThreadsWidget inside)
+    // PcMetrics
     auto pcMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 150}, 100,
         pcMetrics_, config_, systemMetrics_));
     pcMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(pcMetricsWidget));
 
-    // Add ThreadsWidget as a separate top-level widget for independent 60 FPS updates
+    // Threads
     auto threadsWidget = std::unique_ptr<ThreadsWidget>(new ThreadsWidget(
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480 - 86 * 2, 60},
         config_.getHardwareMonitorThreadsRefreshMs(), pcMetrics_, config_, systemMetrics_));
     widgetManager_.addWidget(std::move(threadsWidget));
 
-    // Air quality widget — full-width bar just below PcMetrics (y=150, height=36)
+    // Air quality bar
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(new AirQualityWidget(
-        WidgetInterface::Dimensions{0, 150, 480, 44},
-        5000,  // check every 5 s; skips redraw when data hasn't changed
-        airQualityData_)));
+        WidgetInterface::Dimensions{0, 150, 480, 44}, 5000, airQualityData_)));
 
-    // Clock widget
+    // Network widget — compact, right-aligned next to clock
+    // Clock: {328, 288, 150, 24}  →  network widget ends at x=328
+    // Width 148 px → x = 328 - 148 = 180
+    widgetManager_.addWidget(std::unique_ptr<NetworkWidget>(new NetworkWidget(
+        WidgetInterface::Dimensions{180, 288, 148, 24}, 1000, netStatus_)));
+
+    // Clock
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
         WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
 
-    // FPS widget — square, bottom-right corner, directly above the clock
-    // Visible only when data is available and FullscreenFps != -1
+    // FPS widget
     widgetManager_.addWidget(std::unique_ptr<FpsWidget>(
         new FpsWidget(uiController_->getDisplayContext(),
                       WidgetInterface::Dimensions{400, 200, 72, 72}, 250, pcMetrics_)));
