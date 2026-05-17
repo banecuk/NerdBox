@@ -42,6 +42,7 @@ void MetricWidget::drawStatic() {
 
     isStaticDrawn_ = true;
     lastDrawnValue_ = -1;
+    lastTextWidth_ = 0;
     valueAreaDirty_ = true;
     clearDirty();
 }
@@ -160,10 +161,30 @@ void MetricWidget::renderValueTextOnly() {
     }
     textY = dimensions_.y + dimensions_.height / 2;
 
-    // setTextColor with bgColor as second arg instructs LovyanGFX to fill each
-    // glyph's bounding box in a single pass — no separate fillRect erase step,
-    // no blank frame, no flash.  This is the same technique used by ClockWidget
-    // and UptimeWidget.
+    // If background colour changed, clear the full value area first to avoid
+    // stale pixels from a previously longer string.
+    if (newBgColor != lastBgColor_) {
+        const int16_t areaY = dimensions_.y + BORDER_MARGIN;
+        const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
+        lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
+        lastBgColor_ = newBgColor;
+    }
+
+    // Per-glyph bg fill handles normal value changes (e.g. "99" → "100").
+    // For shrinking values (e.g. "100" → "9") we detect the width change and
+    // clear the area first.
+    loadValueFont();
+    const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
+    unloadValueFont();
+
+    if (newTextW < lastTextWidth_) {
+        // New text is narrower — clear the full value area to erase leftover pixels.
+        const int16_t areaY = dimensions_.y + BORDER_MARGIN;
+        const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
+        lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
+    }
+    lastTextWidth_ = newTextW;
+
     loadValueFont();
     lcd->setTextColor(TFT_WHITE, newBgColor);
     lcd->setTextDatum(textAlignment_);
@@ -210,14 +231,21 @@ void MetricWidget::drawValueWithLoadedFont() {
     }
     textY = dimensions_.y + dimensions_.height / 2;
 
+    const int16_t areaY = dimensions_.y + BORDER_MARGIN;
+    const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
+
     if (newBgColor != lastBgColor_) {
-        // Background colour changed (threshold crossed). Clear the value area
-        // with fillRect, then draw over it. We do NOT call renderValueArea()
-        // because that would re-load the font the batch caller already has active.
-        const int16_t areaY = dimensions_.y + BORDER_MARGIN;
-        const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
+        // Background colour changed — clear the full area.
         lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
         lastBgColor_ = newBgColor;
+    } else {
+        // Same background — check whether the new text is narrower than the last
+        // drawn text; if so, clear first to erase leftover pixels.
+        const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
+        if (newTextW < lastTextWidth_) {
+            lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
+        }
+        lastTextWidth_ = newTextW;
     }
 
     // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a

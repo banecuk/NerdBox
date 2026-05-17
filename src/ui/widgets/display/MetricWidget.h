@@ -249,6 +249,7 @@ class MetricWidget : public Widget {
     bool dimensionsDirty_ = true;
     int lastDrawnValue_ = -1;
     uint16_t lastBgColor_ = TFT_BLACK;
+    int16_t lastTextWidth_ = 0;
     bool valueAreaDirty_ = true;
 
     // Cached values for performance

@@ -38,6 +38,7 @@ void PcMetricsWidget::buildCpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("CPU")
             .labelWidth(kLabelWidth)
+            .labelColor(0xC618)
             .build();
 
     cpuTemperatureWidget_ =
@@ -48,6 +49,7 @@ void PcMetricsWidget::buildCpuWidgets() {
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
             .labelWidth(kLabelWidth)
+            .labelColor(0xC618)
             .build();
 
     // Row 2: CPU power | CPU fan
@@ -59,6 +61,7 @@ void PcMetricsWidget::buildCpuWidgets() {
             .colorThresholds(55.0f, 140.0f)
             .label("PWR")
             .labelWidth(kLabelWidth)
+            .labelColor(0xC618)
             .build();
 
     cpuFanWidget_ =
@@ -69,6 +72,7 @@ void PcMetricsWidget::buildCpuWidgets() {
             .colorThresholds(800.0f, 1200.0f)
             .label("FAN")
             .labelWidth(kLabelWidth)
+            .labelColor(0xC618)
             .build();
 }
 
@@ -82,7 +86,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("GPU")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 
@@ -94,7 +98,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 
@@ -107,7 +111,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("3D")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 
@@ -118,9 +122,9 @@ void PcMetricsWidget::buildGpuWidgets() {
             .unit("%")
             .range(0, 100)
             .colorThresholds(30.0f, 90.0f)
-            .label("MEM")
+            .label("VRM")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 
@@ -133,7 +137,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(50.0f, 170.0f)
             .label("PWR")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 
@@ -145,7 +149,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(800.0f, 1400.0f)
             .label("FAN")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 
@@ -157,7 +161,7 @@ void PcMetricsWidget::buildGpuWidgets() {
             .colorThresholds(10.0f, 90.0f)
             .label("CMP")
             .labelWidth(kLabelWidth)
-            .labelColor(0x9486)
+            .labelColor(0xAD27)
             .useGpuColors()
             .build();
 }
@@ -172,6 +176,7 @@ void PcMetricsWidget::buildMemoryWidget() {
             .colorThresholds(60.0f, 90.0f)
             .label("RAM")
             .labelWidth(kLabelWidth)
+            .labelColor(0xC618)
             .build();
 }
 
@@ -223,6 +228,7 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
                      .colorThresholds(750.0f, 1200.0f)
                      .label(label)
                      .labelWidth(kFanLabelWidth)
+                     .labelColor(0xC618)
                      .smallFont()  // 4-digit RPM values don't fit NotoSans18 in the narrow fan tile
                      .build();
 
