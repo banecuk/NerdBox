@@ -28,11 +28,7 @@ void AirQualityWidget::drawStatic() {
     lcd->drawFastHLine(dimensions_.x, dimensions_.y,
                        dimensions_.width, 0x2104);
 
-    // Separator after icon
-    lcd->drawFastVLine(dimensions_.x + kIconW,
-                       dimensions_.y + 2, dimensions_.height - 4, 0x2104);
-
-    // Tile separators
+    // Tile separators (no separator between icon and first tile)
     for (uint8_t i = 1; i < kTileCount; ++i) {
         const int16_t sx = dimensions_.x + kIconW + i * kTileW;
         lcd->drawFastVLine(sx, dimensions_.y + 2, dimensions_.height - 4, 0x2104);
@@ -184,7 +180,7 @@ void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
             const int16_t startX = cx - (prefW + valW) / 2;
 
             Fonts::loadLabel(lcd);
-            lcd->setTextColor(0x4208, TFT_BLACK);
+            lcd->setTextColor(0x8410, TFT_BLACK);
             lcd->setTextDatum(ML_DATUM);
             lcd->drawString(prefix, startX, valueY);
             Fonts::unload(lcd);
@@ -203,7 +199,7 @@ void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
         }
 
         Fonts::loadLabel(lcd);
-        lcd->setTextColor(0x4208, TFT_BLACK);
+        lcd->setTextColor(0x8410, TFT_BLACK);
         lcd->setTextDatum(BC_DATUM);
         lcd->drawString(sub, cx, subY);
         Fonts::unload(lcd);
@@ -222,7 +218,7 @@ void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
         const int16_t startX = cx - (prefW + valW) / 2;
 
         Fonts::loadLabel(lcd);
-        lcd->setTextColor(0x4208, TFT_BLACK);
+        lcd->setTextColor(0x8410, TFT_BLACK);
         lcd->setTextDatum(ML_DATUM);
         lcd->drawString(prefix, startX, midY);
         Fonts::unload(lcd);

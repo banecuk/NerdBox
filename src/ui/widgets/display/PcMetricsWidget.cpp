@@ -43,7 +43,7 @@ void PcMetricsWidget::buildCpuWidgets() {
     cpuTemperatureWidget_ =
         MetricWidget::Builder(
             WidgetInterface::Dimensions{kCol9, kRow1, kTileWidth, kRowH}, updateIntervalMs_)
-            .unit(" C")
+            .unit("\xC2\xB0""C")
             .range(0, 100)
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
@@ -87,7 +87,7 @@ void PcMetricsWidget::buildGpuWidgets() {
     gpuTemperatureWidget_ =
         MetricWidget::Builder(
             WidgetInterface::Dimensions{kCol9, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
-            .unit(" C")
+            .unit("\xC2\xB0""C")
             .range(0, 100)
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
