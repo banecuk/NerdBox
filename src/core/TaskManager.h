@@ -6,6 +6,7 @@
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
+#include "services/pcMetrics/DataFreshnessGuard.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/airQuality/AirQualityService.h"
@@ -54,6 +55,10 @@ class TaskManager {
     TaskHandle_t screenTaskHandle_ = nullptr;
     TaskHandle_t backgroundTaskHandle_ = nullptr;
     uint8_t consecutiveFailures_ = 0;
+
+    // Single source of truth for PC-metrics staleness — shared with PcMetricsWidget
+    // via the same PcMetrics::last_update_timestamp field that DataFreshnessGuard reads.
+    DataFreshnessGuard pcMetricsFreshness_;
 
     // Task implementations
     void executeScreenTask();

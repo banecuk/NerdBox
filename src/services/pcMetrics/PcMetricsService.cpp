@@ -70,9 +70,6 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
     rawData_ = "";  // clear without freeing the buffer
     if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData_)) {
         bool success = parseData(rawData_, outData);
-        if (success) {
-            lastSuccessfulFetchTime_ = millis();
-        }
         return success;
     } else {
         outData.is_available = false;

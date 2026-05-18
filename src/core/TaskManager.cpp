@@ -22,7 +22,8 @@ TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
       coreState_(coreState),
       screenState_(screenState),
       config_(config),
-      networkManager_(networkManager) {}
+      networkManager_(networkManager),
+      pcMetricsFreshness_(pcMetrics) {}
 
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
@@ -176,7 +177,7 @@ void TaskManager::updatePcMetrics() {
         coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorFailureRefreshMs();
         handlePcMetricsFailure();
 
-        if (pcMetricsService_.isDataStale()) {
+        if (!pcMetricsFreshness_.isFresh()) {
             logger_.warning("PC metrics data is stale", true);
         }
     }
