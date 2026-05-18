@@ -14,9 +14,15 @@ struct NetworkStatus {
     enum class Internet : uint8_t {
         UNKNOWN,   // no probe completed yet
         OK,        // all recent probes passed
-        DEGRADED,  // mixed results
+        WARNING,   // exactly one service failed
+        DEGRADED,  // two or more services failed (but not all)
         DOWN       // all recent probes failed
     } internet = Internet::UNKNOWN;
+
+    // Per-endpoint last-known pass/fail (true=pass, false=fail/unknown).
+    // Index matches NetworkStatusService::kProbeUrls[].
+    // Updated atomically (bool is word-sized on Xtensa) — no mutex needed.
+    bool endpoint_ok[6] = {false, false, false, false, false, false};
 
     // Set true while the one-shot probe task is in-flight; guards against
     // spawning overlapping tasks.

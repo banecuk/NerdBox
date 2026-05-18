@@ -3,12 +3,15 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
-// Three lightweight endpoints, tried in rotation.
+// Six lightweight connectivity-check endpoints, tried in rotation.
 // All return quickly and are operated by highly reliable providers.
-const char* NetworkStatusService::kProbeUrls[3] = {
-    "http://connectivitycheck.gstatic.com/generate_204",  // Google  — expect 204
+const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints] = {
+    "http://connectivitycheck.gstatic.com/generate_204",  // Google        — expect 204
     "http://www.msftncsi.com/ncsi.txt",                   // Microsoft NCSI — expect 200
-    "http://captive.apple.com/hotspot-detect.html",       // Apple   — expect 200
+    "http://captive.apple.com/hotspot-detect.html",       // Apple          — expect 200
+    "http://connectivitycheck.android.com/generate_204",  // Android AOSP   — expect 204
+    "http://clients3.google.com/generate_204",            // Google alt     — expect 204
+    "http://nmcheck.gnome.org/check_network_status.txt",  // GNOME          — expect 200
 };
 
 // ---------------------------------------------------------------------------
@@ -27,7 +30,7 @@ void NetworkStatusService::updateWifi(NetworkStatus& status) {
     if (status.wifi_connected) {
         status.rssi = static_cast<int8_t>(WiFi.RSSI());
     } else {
-        status.rssi    = 0;
+        status.rssi     = 0;
         status.internet = NetworkStatus::Internet::UNKNOWN;
     }
 }
@@ -76,8 +79,9 @@ void NetworkStatusService::probeTaskEntry(void* param) {
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::runProbe(NetworkStatus& status) {
-    const char* url = kProbeUrls[probeTarget_];
-    probeTarget_    = (probeTarget_ + 1) % 3;
+    const uint8_t  idx = probeTarget_;
+    const char*    url = kProbeUrls[idx];
+    probeTarget_       = (probeTarget_ + 1) % kNumEndpoints;
 
     bool success = false;
 
@@ -87,7 +91,7 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
 
     if (http.begin(url)) {
         const int code = http.GET();
-        // Accept any 2xx response — 200 (NCSI, Apple) or 204 (Google)
+        // Accept any 2xx response — 200 or 204
         success = (code >= 200 && code < 300);
         logger_.debugf("NetProbe: %s -> %d (%s)", url, code, success ? "OK" : "FAIL");
         http.end();
@@ -95,27 +99,39 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
         logger_.warningf("NetProbe: http.begin failed for %s", url);
     }
 
-    recordResult(status, success);
+    recordResult(status, idx, success);
 
     status.last_probe    = millis();
     status.probe_running = false;
 }
 
 // ---------------------------------------------------------------------------
-// recordResult — update rolling buffer and recompute internet state
+// recordResult — update per-endpoint slot and recompute internet state
+//
+// WARNING  — exactly 1 of the 6 slots failed
+// DEGRADED — 2 or more failed, but not all 6
+// DOWN     — all 6 failed
+// OK       — all 6 passed
 // ---------------------------------------------------------------------------
 
-void NetworkStatusService::recordResult(NetworkStatus& status, bool success) {
-    results_[resultHead_] = success ? 1u : 0u;
-    resultHead_           = (resultHead_ + 1) % 3;
+void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointIdx, bool success) {
+    results_[endpointIdx]           = success ? 1u : 0u;
+    status.endpoint_ok[endpointIdx] = success;
 
-    uint8_t passes = results_[0] + results_[1] + results_[2];
+    uint8_t passes = 0;
+    for (uint8_t i = 0; i < kNumEndpoints; ++i) {
+        passes += results_[i];
+    }
 
-    if (passes == 3) {
+    const uint8_t failures = kNumEndpoints - passes;
+
+    if (failures == 0) {
         status.internet = NetworkStatus::Internet::OK;
-    } else if (passes == 0) {
-        status.internet = NetworkStatus::Internet::DOWN;
-    } else {
+    } else if (failures == 1) {
+        status.internet = NetworkStatus::Internet::WARNING;
+    } else if (failures < kNumEndpoints) {
         status.internet = NetworkStatus::Internet::DEGRADED;
+    } else {
+        status.internet = NetworkStatus::Internet::DOWN;
     }
 }

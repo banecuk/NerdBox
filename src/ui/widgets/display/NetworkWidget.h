@@ -7,12 +7,22 @@
 //
 // Layout (148 × 24 px):
 //
-//   [  WiFi bars + icon  68px  ] [ 1px sep ] [  Globe  68px  ] [ 11px pad ]
+//   [ WiFi bars  68px ] [1px sep] [ Globe 36px ] [ 3×2 dots 40px ] [3px pad]
 //
-// WiFi section: 4-bar signal strength indicator with a small antenna icon.
-// Globe section: internet reachability state coloured green/yellow/red/grey.
+// WiFi section  : 4-bar signal-strength indicator.
+// Globe section : internet reachability state coloured by severity.
+// Dot grid      : 3 columns × 2 rows — one dot per probe endpoint.
+//                 White = endpoint OK, red = endpoint failed.
 //
-// Redraws only when RSSI bracket, wifi_connected, or internet state changes.
+// Internet state colours (globe):
+//   OK       — white  (0xFFFF)
+//   WARNING  — yellow (0xFFE0)
+//   DEGRADED — orange (0xFC60)
+//   DOWN     — red    (0xF800)
+//   UNKNOWN  — dark grey (0x2104)
+//
+// Redraws only when RSSI bracket, wifi_connected, internet state, or any
+// endpoint_ok flag changes.
 class NetworkWidget : public Widget {
 public:
     NetworkWidget(const WidgetInterface::Dimensions& dims,
@@ -29,32 +39,51 @@ private:
     // -----------------------------------------------------------------------
     // Layout
     // -----------------------------------------------------------------------
-    static constexpr uint16_t kSectionW  = 68;  // each half
-    static constexpr uint16_t kSepW      = 1;
-    static constexpr uint16_t kPadRight  = 11;
+    static constexpr uint16_t kWifiSectionW = 68;  // left — signal bars
+    static constexpr uint16_t kSepW         = 1;
+    static constexpr uint16_t kGlobeSectionW = 36; // globe icon
+    static constexpr uint16_t kDotSectionW  = 40;  // 3×2 endpoint dots
+    static constexpr uint16_t kPadRight     = 3;
 
     // Bar geometry (WiFi signal bars)
-    static constexpr uint8_t kBarCount   = 4;
-    static constexpr uint8_t kBarWidth   = 6;
-    static constexpr uint8_t kBarGap     = 3;
-    static constexpr uint8_t kBarMaxH    = 18;   // tallest bar height
-    static constexpr uint8_t kBarBaseY   = 2;    // bottom margin from widget bottom
+    static constexpr uint8_t kBarCount  = 4;
+    static constexpr uint8_t kBarWidth  = 6;
+    static constexpr uint8_t kBarGap    = 3;
+    static constexpr uint8_t kBarBaseY  = 2;   // bottom margin from widget bottom
 
     // Globe geometry
-    static constexpr uint8_t kGlobeR     = 9;    // radius px
+    static constexpr uint8_t kGlobeR    = 9;   // radius px
+
+    // Dot grid geometry
+    static constexpr uint8_t  kDotR     = 3;   // radius of each dot
+    static constexpr uint8_t  kDotCols  = 3;
+    static constexpr uint8_t  kDotRows  = 2;
+    static constexpr uint8_t  kDotSpacX = 12;  // centre-to-centre horizontal
+    static constexpr uint8_t  kDotSpacY = 11;  // centre-to-centre vertical
+
+    // Colours
+    static constexpr uint16_t kColorOk       = 0xFFFF;  // white
+    static constexpr uint16_t kColorWarning  = 0xFFE0;  // yellow
+    static constexpr uint16_t kColorDegraded = 0xFC60;  // orange
+    static constexpr uint16_t kColorDown     = 0xF800;  // red
+    static constexpr uint16_t kColorUnknown  = 0x2104;  // dark grey
+    static constexpr uint16_t kColorDotFail  = 0xF800;  // red dot
+    static constexpr uint16_t kColorDotOk    = 0xFFFF;  // white dot
 
     // -----------------------------------------------------------------------
     const NetworkStatus& status_;
 
     // Cached state for dirty detection
-    bool     lastConnected_ = false;
-    int8_t   lastRssiBracket_ = -1;  // 0–3, derived from RSSI dBm
+    bool     lastConnected_   = false;
+    int8_t   lastRssiBracket_ = -1;
     NetworkStatus::Internet lastInternet_ = NetworkStatus::Internet::UNKNOWN;
+    bool     lastEndpointOk_[6] = {false, false, false, false, false, false};
     bool     lastInitialized_ = false;
 
     // -----------------------------------------------------------------------
     void drawWifi();
     void drawGlobe();
+    void drawDotGrid();
 
     // Returns 0–4: number of filled bars for the current RSSI
     uint8_t rssiBars() const;
@@ -65,6 +94,9 @@ private:
     // Returns RGB565 color for the current internet state
     uint16_t internetColor() const;
 
-    // RSSI bracket 0–3 (poor/weak/ok/good) for dirty detection
+    // RSSI bracket 0–4 for dirty detection
     int8_t rssiBracket() const;
+
+    // True if any endpoint_ok flag differs from cached
+    bool endpointsDirty() const;
 };
