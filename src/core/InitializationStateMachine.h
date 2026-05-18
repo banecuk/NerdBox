@@ -5,10 +5,7 @@
 #include <functional>
 #include <vector>
 
-#include "config/AppConfigService.h"
-#include "utils/Logger.h"
-
-class ApplicationComponents;
+#include "core/IInitializationTarget.h"
 
 class InitializationStateMachine {
  public:
@@ -26,7 +23,7 @@ class InitializationStateMachine {
 
     using StateHandler = std::function<bool()>;
 
-    explicit InitializationStateMachine(ApplicationComponents& components);
+    explicit InitializationStateMachine(IInitializationTarget& target);
     ~InitializationStateMachine() = default;
 
     // Delete copy/move operations
@@ -57,10 +54,7 @@ class InitializationStateMachine {
     void logRetryAttempt(const char* component, uint8_t attempt, uint8_t maxRetries) const;
     uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
 
-    // Components
-    ApplicationComponents& components_;  // Now we access logger via components_
-
-    // State
+    IInitializationTarget& target_;
     State currentState_;
 
     static constexpr const char* STATE_NAMES_[] = {"INITIAL",      "DISPLAY_INIT", "TASKS_INIT",

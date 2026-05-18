@@ -22,11 +22,11 @@
 //               DEGRADED — 2 or more failed, but not all.
 //               DOWN     — all 6 failed.
 class NetworkStatusService {
-public:
+ public:
     NetworkStatusService(LoggerInterface& logger);
     ~NetworkStatusService() = default;
 
-    NetworkStatusService(const NetworkStatusService&)            = delete;
+    NetworkStatusService(const NetworkStatusService&) = delete;
     NetworkStatusService& operator=(const NetworkStatusService&) = delete;
 
     // Call from background task every loop tick.
@@ -41,17 +41,17 @@ public:
 
     static constexpr uint8_t kNumEndpoints = 6;
 
-private:
+ private:
     // -----------------------------------------------------------------------
     // Probe task
     // -----------------------------------------------------------------------
     struct ProbeContext {
         NetworkStatusService* service;
-        NetworkStatus*        status;
+        NetworkStatus* status;
     };
 
     static void probeTaskEntry(void* param);
-    void        runProbe(NetworkStatus& status);
+    void runProbe(NetworkStatus& status);
 
     // Records a single probe result (1=pass, 0=fail) into the rolling buffer
     // and recomputes status_.internet.
@@ -62,11 +62,12 @@ private:
     // -----------------------------------------------------------------------
     LoggerInterface& logger_;
 
-    uint8_t probeTarget_ = 0;                          // round-robin index into kProbeUrls
-    uint8_t results_[kNumEndpoints] = {0,0,0,0,0,0};  // rolling pass/fail buffer (one slot per endpoint)
+    uint8_t probeTarget_ = 0;  // round-robin index into kProbeUrls
+    uint8_t results_[kNumEndpoints] = {0, 0, 0, 0,
+                                       0, 0};  // rolling pass/fail buffer (one slot per endpoint)
 
-    static constexpr uint32_t kProbeStack       = 4096;
-    static constexpr uint32_t kProbeTimeoutMs   = 1500;
+    static constexpr uint32_t kProbeStack = 4096;
+    static constexpr uint32_t kProbeTimeoutMs = 1500;
     static constexpr UBaseType_t kProbePriority = 1;
 
     static const char* kProbeUrls[kNumEndpoints];

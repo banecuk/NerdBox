@@ -6,7 +6,7 @@
 // Six lightweight connectivity-check endpoints, tried in rotation.
 // All return quickly and are operated by highly reliable providers.
 const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints] = {
-    "http://connectivitycheck.gstatic.com/generate_204",  // Google        — expect 204
+    "http://connectivitycheck.gstatic.com/generate_204",  // Google         — expect 204
     "http://www.msftncsi.com/ncsi.txt",                   // Microsoft NCSI — expect 200
     "http://captive.apple.com/hotspot-detect.html",       // Apple          — expect 200
     "http://connectivitycheck.android.com/generate_204",  // Android AOSP   — expect 204
@@ -18,8 +18,7 @@ const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints
 // Constructor
 // ---------------------------------------------------------------------------
 
-NetworkStatusService::NetworkStatusService(LoggerInterface& logger)
-    : logger_(logger) {}
+NetworkStatusService::NetworkStatusService(LoggerInterface& logger) : logger_(logger) {}
 
 // ---------------------------------------------------------------------------
 // updateWifi — cheap, called every background loop tick
@@ -30,7 +29,7 @@ void NetworkStatusService::updateWifi(NetworkStatus& status) {
     if (status.wifi_connected) {
         status.rssi = static_cast<int8_t>(WiFi.RSSI());
     } else {
-        status.rssi     = 0;
+        status.rssi = 0;
         status.internet = NetworkStatus::Internet::UNKNOWN;
     }
 }
@@ -40,19 +39,19 @@ void NetworkStatusService::updateWifi(NetworkStatus& status) {
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::maybeTriggerProbe(NetworkStatus& status) {
-    if (!status.wifi_connected)          return;
-    if (status.probe_running)            return;
-    if (status.last_probe != 0 &&
-        (millis() - status.last_probe) < kProbeIntervalMs) return;
+    if (!status.wifi_connected)
+        return;
+    if (status.probe_running)
+        return;
+    if (status.last_probe != 0 && (millis() - status.last_probe) < kProbeIntervalMs)
+        return;
 
     // Allocate context on the heap — freed by the probe task before self-delete.
-    auto* ctx    = new ProbeContext{this, &status};
+    auto* ctx = new ProbeContext{this, &status};
     status.probe_running = true;
 
     BaseType_t ok = xTaskCreatePinnedToCore(
-        probeTaskEntry, "net_probe",
-        kProbeStack, ctx,
-        kProbePriority, nullptr,
+        probeTaskEntry, "net_probe", kProbeStack, ctx, kProbePriority, nullptr,
         0  // core 0 — same as background task, away from display core
     );
 
@@ -79,9 +78,9 @@ void NetworkStatusService::probeTaskEntry(void* param) {
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::runProbe(NetworkStatus& status) {
-    const uint8_t  idx = probeTarget_;
-    const char*    url = kProbeUrls[idx];
-    probeTarget_       = (probeTarget_ + 1) % kNumEndpoints;
+    const uint8_t idx = probeTarget_;
+    const char* url = kProbeUrls[idx];
+    probeTarget_ = (probeTarget_ + 1) % kNumEndpoints;
 
     bool success = false;
 
@@ -101,7 +100,7 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
 
     recordResult(status, idx, success);
 
-    status.last_probe    = millis();
+    status.last_probe = millis();
     status.probe_running = false;
 }
 
@@ -115,7 +114,7 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointIdx, bool success) {
-    results_[endpointIdx]           = success ? 1u : 0u;
+    results_[endpointIdx] = success ? 1u : 0u;
     status.endpoint_ok[endpointIdx] = success;
 
     uint8_t passes = 0;
