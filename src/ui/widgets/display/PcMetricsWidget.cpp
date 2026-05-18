@@ -31,8 +31,8 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
 void PcMetricsWidget::buildCpuWidgets() {
     // Row 1: CPU load | CPU temperature
     cpuLoadWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol8, kRow1, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow1, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
@@ -42,9 +42,11 @@ void PcMetricsWidget::buildCpuWidgets() {
             .build();
 
     cpuTemperatureWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol9, kRow1, kTileWidth, kRowH}, updateIntervalMs_)
-            .unit("\xC2\xB0""C")
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow1, kTileWidth, kRowH},
+                              updateIntervalMs_)
+            .unit(
+                "\xC2\xB0"
+                "C")
             .range(0, 100)
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
@@ -54,8 +56,8 @@ void PcMetricsWidget::buildCpuWidgets() {
 
     // Row 2: CPU power | CPU fan
     cpuPowerWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol8, kRow2, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow2, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit(" W")
             .range(0, 400)
             .colorThresholds(55.0f, 140.0f)
@@ -65,8 +67,8 @@ void PcMetricsWidget::buildCpuWidgets() {
             .build();
 
     cpuFanWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol9, kRow2, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow2, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit("")
             .range(0, 1500)
             .colorThresholds(800.0f, 1200.0f)
@@ -79,8 +81,8 @@ void PcMetricsWidget::buildCpuWidgets() {
 void PcMetricsWidget::buildGpuWidgets() {
     // Row 3: RAM | GPU memory | GPU 3D | GPU load | GPU temperature
     gpuLoadWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol8, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow3, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
@@ -91,9 +93,11 @@ void PcMetricsWidget::buildGpuWidgets() {
             .build();
 
     gpuTemperatureWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol9, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
-            .unit("\xC2\xB0""C")
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow3, kTileWidth, kRowH},
+                              updateIntervalMs_)
+            .unit(
+                "\xC2\xB0"
+                "C")
             .range(0, 100)
             .colorThresholds(55.0f, 85.0f)
             .label("TMP")
@@ -104,8 +108,8 @@ void PcMetricsWidget::buildGpuWidgets() {
 
     // Row 3 (middle): GPU 3D workload
     gpu3dWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol7, kRow3, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol7, kRow3, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
@@ -117,8 +121,8 @@ void PcMetricsWidget::buildGpuWidgets() {
 
     // Row 3–4 span: GPU memory (double height)
     gpuMemoryWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol6, kRow3, kTileWidth, kRowH * 2}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol6, kRow3, kTileWidth, kRowH * 2},
+                              updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(30.0f, 90.0f)
@@ -130,8 +134,8 @@ void PcMetricsWidget::buildGpuWidgets() {
 
     // Row 4: GPU power | GPU fan | GPU compute
     gpuPowerWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol8, kRow4, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow4, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit(" W")
             .range(0, 400)
             .colorThresholds(50.0f, 170.0f)
@@ -142,8 +146,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .build();
 
     gpuFanWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol9, kRow4, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow4, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit("")
             .range(0, 1500)
             .colorThresholds(800.0f, 1400.0f)
@@ -154,8 +158,8 @@ void PcMetricsWidget::buildGpuWidgets() {
             .build();
 
     gpuComputeWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol7, kRow4, kTileWidth, kRowH}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol7, kRow4, kTileWidth, kRowH},
+                              updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(10.0f, 90.0f)
@@ -169,8 +173,8 @@ void PcMetricsWidget::buildGpuWidgets() {
 void PcMetricsWidget::buildMemoryWidget() {
     // Rows 3–4 span (double height), leftmost of the right-side tiles
     memoryLoadWidget_ =
-        MetricWidget::Builder(
-            WidgetInterface::Dimensions{kCol5, kRow3, kTileWidth, kRowH * 2}, updateIntervalMs_)
+        MetricWidget::Builder(WidgetInterface::Dimensions{kCol5, kRow3, kTileWidth, kRowH * 2},
+                              updateIntervalMs_)
             .unit("%")
             .range(0, 100)
             .colorThresholds(60.0f, 90.0f)
@@ -210,8 +214,8 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
     // Each tile is one row tall; fans beyond the available rows are silently
     // capped by kMaxSystemFanWidgets.
     const uint16_t fanWidth = kCol5 - kColFan;
-    const uint8_t  slots    = min(static_cast<uint8_t>(fanCount),
-                                  static_cast<uint8_t>(kMaxSystemFanWidgets));
+    const uint8_t slots =
+        min(static_cast<uint8_t>(fanCount), static_cast<uint8_t>(kMaxSystemFanWidgets));
 
     // Pre-build label strings: "F1" … "F<n>"
     char label[4];
@@ -219,9 +223,8 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
         snprintf(label, sizeof(label), "F%u", static_cast<unsigned>(i + 1));
 
         auto w = MetricWidget::Builder(
-                     WidgetInterface::Dimensions{kColFan,
-                                                static_cast<uint16_t>(kRow3 + i * kRowH),
-                                                fanWidth, kRowH},
+                     WidgetInterface::Dimensions{kColFan, static_cast<uint16_t>(kRow3 + i * kRowH),
+                                                 fanWidth, kRowH},
                      updateIntervalMs_)
                      .unit("")
                      .range(0, 1500)
@@ -252,9 +255,9 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
     std::vector<DriveSnapshot> snapshot;
     {
         PcMetricsDiskLock lock(pcMetrics_);
-        const size_t driveCount =
-            pcMetrics_.disk_drives.size() < kMaxDiskWidgets ? pcMetrics_.disk_drives.size()
-                                                           : kMaxDiskWidgets;
+        const size_t driveCount = pcMetrics_.disk_drives.size() < kMaxDiskWidgets
+                                      ? pcMetrics_.disk_drives.size()
+                                      : kMaxDiskWidgets;
         snapshot.reserve(driveCount);
         for (size_t i = 0; i < driveCount; ++i) {
             DriveSnapshot s;
@@ -282,8 +285,7 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
     const uint16_t guidelineY5 = 150;
     const uint16_t height = guidelineY5 - guidelineY4;
     const uint16_t maxWidgetWidth = 120;
-    uint16_t widgetWidth =
-        static_cast<uint16_t>(kScreenWidth / snapshot.size());
+    uint16_t widgetWidth = static_cast<uint16_t>(kScreenWidth / snapshot.size());
     if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
 
@@ -304,7 +306,8 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
                      .build();
 
         if (w) {
-            if (!w->isInitialized()) w->initialize(context_);
+            if (!w->isInitialized())
+                w->initialize(context_);
             initAndDrawWidget(*w);
             diskDriveWidgets_.push_back(std::move(w));
         }
@@ -316,26 +319,36 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
 }
 
 void PcMetricsWidget::updateDiskDriveWidgets() {
-    PcMetricsDiskLock lock(pcMetrics_);  // protect disk_drives for the duration of the update
-    size_t updateCount = (pcMetrics_.disk_drives.size() > kMaxDiskWidgets) ? kMaxDiskWidgets : pcMetrics_.disk_drives.size();
+    // Snapshot the free-space values under the lock, then release it before
+    // touching the display.  Holding PcMetricsDiskLock across draw() would
+    // keep the mutex taken while rendering pixels — a priority inversion risk
+    // that can block the background fetch task and cause missed frames.
+    // ensureDiskWidgetsCreated() uses the same snapshot pattern.
+    const size_t widgetCount = diskDriveWidgets_.size();
+    if (widgetCount == 0)
+        return;
 
-    for (size_t i = 0; i < updateCount && i < diskDriveWidgets_.size(); i++) {
-        const auto& drive = pcMetrics_.disk_drives[i];
-        if (diskDriveWidgets_[i]) {
-            int freeSpacePercent = static_cast<int>(drive.freeSpacePercent + 0.5f);
-            int currentValue = diskDriveWidgets_[i]->getValue();
-
-            // Only update and draw if value changed
-            if (currentValue != freeSpacePercent) {
-                diskDriveWidgets_[i]->setValue(freeSpacePercent);
-                // Don't force redraw here - let the normal draw cycle handle it
-            }
-
-            // Always ensure the widget is drawn if it's initialized
-            if (diskDriveWidgets_[i]->isInitialized()) {
-                diskDriveWidgets_[i]->draw(false);
-            }
+    // One int per widget slot.
+    int freeSpaceSnapshot[kMaxDiskWidgets];
+    size_t updateCount = 0;
+    {
+        PcMetricsDiskLock lock(pcMetrics_);
+        updateCount = (pcMetrics_.disk_drives.size() < widgetCount) ? pcMetrics_.disk_drives.size()
+                                                                    : widgetCount;
+        for (size_t i = 0; i < updateCount; ++i) {
+            freeSpaceSnapshot[i] =
+                static_cast<int>(pcMetrics_.disk_drives[i].freeSpacePercent + 0.5f);
         }
+    }  // mutex released — all display work below is lock-free
+
+    for (size_t i = 0; i < updateCount; ++i) {
+        if (!diskDriveWidgets_[i] || !diskDriveWidgets_[i]->isInitialized())
+            continue;
+
+        if (diskDriveWidgets_[i]->getValue() != freeSpaceSnapshot[i]) {
+            diskDriveWidgets_[i]->setValue(freeSpaceSnapshot[i]);
+        }
+        diskDriveWidgets_[i]->draw(false);
     }
 }
 
@@ -367,12 +380,14 @@ void PcMetricsWidget::drawStatic() {
         // System fans — created/rebuilt based on live fan count.
         ensureSystemFanWidgetsCreated();
         for (auto& fw : systemFanWidgets_) {
-            if (fw) initAndDrawWidget(*fw);
+            if (fw)
+                initAndDrawWidget(*fw);
         }
 
         ensureDiskWidgetsCreated();
         for (auto& dw : diskDriveWidgets_) {
-            if (dw) initAndDrawWidget(*dw);
+            if (dw)
+                initAndDrawWidget(*dw);
         }
 
         isStaticDrawn_ = true;
@@ -409,8 +424,7 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
     // Only rebuild fan/disk widgets when a new fetch has actually landed.
     // Comparing against pcMetrics_.last_update_timestamp avoids the mutex
     // acquire, snapshot allocation, and size comparison on every draw frame.
-    if (currentlyHasFreshData &&
-        pcMetrics_.last_update_timestamp != lastEnsureCheckTimestamp_) {
+    if (currentlyHasFreshData && pcMetrics_.last_update_timestamp != lastEnsureCheckTimestamp_) {
         ensureSystemFanWidgetsCreated();
         ensureDiskWidgetsCreated();
         lastEnsureCheckTimestamp_ = pcMetrics_.last_update_timestamp;
@@ -447,22 +461,22 @@ void PcMetricsWidget::drawDynamicData() {
     };
 
     // CPU
-    updateAndDraw(cpuLoadWidget_,        pcMetrics_.cpu_load);
+    updateAndDraw(cpuLoadWidget_, pcMetrics_.cpu_load);
     updateAndDraw(cpuTemperatureWidget_, pcMetrics_.cpu_temperature);
-    updateAndDraw(cpuPowerWidget_,       pcMetrics_.cpu_power);
-    updateAndDraw(cpuFanWidget_,         pcMetrics_.cpu_fan);
+    updateAndDraw(cpuPowerWidget_, pcMetrics_.cpu_power);
+    updateAndDraw(cpuFanWidget_, pcMetrics_.cpu_fan);
 
     // GPU
-    updateAndDraw(gpuLoadWidget_,        pcMetrics_.gpu_load);
+    updateAndDraw(gpuLoadWidget_, pcMetrics_.gpu_load);
     updateAndDraw(gpuTemperatureWidget_, pcMetrics_.gpu_temperature);
-    updateAndDraw(gpuPowerWidget_,       pcMetrics_.gpu_power);
-    updateAndDraw(gpu3dWidget_,          pcMetrics_.gpu_3d);
-    updateAndDraw(gpuComputeWidget_,     pcMetrics_.gpu_compute);
-    updateAndDraw(gpuMemoryWidget_,      pcMetrics_.gpu_mem);
-    updateAndDraw(gpuFanWidget_,         pcMetrics_.gpu_fan);
+    updateAndDraw(gpuPowerWidget_, pcMetrics_.gpu_power);
+    updateAndDraw(gpu3dWidget_, pcMetrics_.gpu_3d);
+    updateAndDraw(gpuComputeWidget_, pcMetrics_.gpu_compute);
+    updateAndDraw(gpuMemoryWidget_, pcMetrics_.gpu_mem);
+    updateAndDraw(gpuFanWidget_, pcMetrics_.gpu_fan);
 
     // RAM
-    updateAndDraw(memoryLoadWidget_,     pcMetrics_.mem_load);
+    updateAndDraw(memoryLoadWidget_, pcMetrics_.mem_load);
 
     // System fans
     for (uint8_t i = 0; i < pcMetrics_.system_fan_count && i < systemFanWidgets_.size(); ++i) {

@@ -4,22 +4,20 @@
 // Constructor
 // ---------------------------------------------------------------------------
 
-NetworkWidget::NetworkWidget(const WidgetInterface::Dimensions& dims,
-                             uint32_t updateIntervalMs,
+NetworkWidget::NetworkWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                              const NetworkStatus& status)
-    : Widget(dims, updateIntervalMs),
-      status_(status) {}
+    : Widget(dims, updateIntervalMs), status_(status) {}
 
 // ---------------------------------------------------------------------------
 // drawStatic — background only; called once on first paint and after wipe
 // ---------------------------------------------------------------------------
 
 void NetworkWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd()) return;
+    if (!isInitialized_ || !getLcd())
+        return;
     LGFX* lcd = getLcd();
 
-    lcd->fillRect(dimensions_.x, dimensions_.y,
-                  dimensions_.width, dimensions_.height, TFT_BLACK);
+    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
     // Separator between wifi and globe sections
     const int16_t sepX = dimensions_.x + kWifiSectionW;
@@ -27,10 +25,11 @@ void NetworkWidget::drawStatic() {
 
     isStaticDrawn_ = true;
     // Reset cache so onDraw does a full repaint
-    lastConnected_   = false;
+    lastConnected_ = false;
     lastRssiBracket_ = -1;
-    lastInternet_    = NetworkStatus::Internet::UNKNOWN;
-    for (uint8_t i = 0; i < 6; ++i) lastEndpointOk_[i] = false;
+    lastInternet_ = NetworkStatus::Internet::UNKNOWN;
+    for (uint8_t i = 0; i < 6; ++i)
+        lastEndpointOk_[i] = false;
     lastInitialized_ = false;
     clearDirty();
 }
@@ -40,30 +39,29 @@ void NetworkWidget::drawStatic() {
 // ---------------------------------------------------------------------------
 
 void NetworkWidget::onDraw(bool forceRedraw) {
-    if (!getLcd() || !isStaticDrawn_) return;
+    if (!getLcd() || !isStaticDrawn_)
+        return;
 
-    const bool   connected = status_.wifi_connected;
-    const int8_t bracket   = rssiBracket();
-    const auto   internet  = status_.internet;
+    const bool connected = status_.wifi_connected;
+    const int8_t bracket = rssiBracket();
+    const auto internet = status_.internet;
 
-    const bool changed =
-        forceRedraw           ||
-        !lastInitialized_     ||
-        connected != lastConnected_ ||
-        bracket   != lastRssiBracket_ ||
-        internet  != lastInternet_ ||
-        endpointsDirty();
+    const bool changed = forceRedraw || !lastInitialized_ || connected != lastConnected_ ||
+                         bracket != lastRssiBracket_ || internet != lastInternet_ ||
+                         endpointsDirty();
 
-    if (!changed) return;
+    if (!changed)
+        return;
 
     drawWifi();
     drawGlobe();
     drawDotGrid();
 
-    lastConnected_   = connected;
+    lastConnected_ = connected;
     lastRssiBracket_ = bracket;
-    lastInternet_    = internet;
-    for (uint8_t i = 0; i < 6; ++i) lastEndpointOk_[i] = status_.endpoint_ok[i];
+    lastInternet_ = internet;
+    for (uint8_t i = 0; i < 6; ++i)
+        lastEndpointOk_[i] = status_.endpoint_ok[i];
     lastInitialized_ = true;
 }
 
@@ -73,25 +71,26 @@ void NetworkWidget::onDraw(bool forceRedraw) {
 
 void NetworkWidget::drawWifi() {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     lcd->fillRect(dimensions_.x, dimensions_.y, kWifiSectionW, dimensions_.height, TFT_BLACK);
 
-    const uint8_t  filled = rssiBars();
+    const uint8_t filled = rssiBars();
     const uint16_t active = wifiColor();
-    const uint16_t dim    = 0x2104;  // dark grey for unfilled bars
+    const uint16_t dim = 0x2104;  // dark grey for unfilled bars
 
     const uint8_t barHeights[kBarCount] = {5, 9, 14, 20};
 
     const uint16_t totalBarsW = kBarCount * kBarWidth + (kBarCount - 1) * kBarGap;
-    const int16_t  barsStartX = dimensions_.x + (kWifiSectionW - totalBarsW) / 2;
-    const int16_t  baselineY  = dimensions_.y + dimensions_.height - kBarBaseY;
+    const int16_t barsStartX = dimensions_.x + (kWifiSectionW - totalBarsW) / 2;
+    const int16_t baselineY = dimensions_.y + dimensions_.height - kBarBaseY;
 
     for (uint8_t i = 0; i < kBarCount; ++i) {
-        const int16_t  bx = barsStartX + i * (kBarWidth + kBarGap);
-        const uint8_t  bh = barHeights[i];
-        const int16_t  by = baselineY - bh;
-        const uint16_t c  = (i < filled) ? active : dim;
+        const int16_t bx = barsStartX + i * (kBarWidth + kBarGap);
+        const uint8_t bh = barHeights[i];
+        const int16_t by = baselineY - bh;
+        const uint16_t c = (i < filled) ? active : dim;
         lcd->fillRect(bx, by, kBarWidth, bh, c);
     }
 }
@@ -102,7 +101,8 @@ void NetworkWidget::drawWifi() {
 
 void NetworkWidget::drawGlobe() {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     // Clear globe section (between separator and dot section)
     const int16_t secX = dimensions_.x + kWifiSectionW + kSepW;
@@ -119,11 +119,12 @@ void NetworkWidget::drawGlobe() {
 
     // Three horizontal latitude lines at 40%, 0%, -40% of radius
     for (int8_t frac : {-4, 0, 4}) {
-        const int16_t ly  = cy + (frac * static_cast<int16_t>(kGlobeR)) / 10;
-        const int16_t dy  = ly - cy;
-        const int16_t r2  = kGlobeR * kGlobeR;
+        const int16_t ly = cy + (frac * static_cast<int16_t>(kGlobeR)) / 10;
+        const int16_t dy = ly - cy;
+        const int16_t r2 = kGlobeR * kGlobeR;
         const int16_t dy2 = dy * dy;
-        if (dy2 >= r2) continue;
+        if (dy2 >= r2)
+            continue;
         const int16_t hw = static_cast<int16_t>(sqrtf(static_cast<float>(r2 - dy2)));
         lcd->drawFastHLine(cx - hw + 1, ly, hw * 2 - 2, c);
     }
@@ -139,7 +140,8 @@ void NetworkWidget::drawGlobe() {
 
 void NetworkWidget::drawDotGrid() {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     // Section starts after globe section
     const int16_t secX = dimensions_.x + kWifiSectionW + kSepW + kGlobeSectionW;
@@ -148,17 +150,17 @@ void NetworkWidget::drawDotGrid() {
     // Centre the 3×2 grid within the dot section
     // Total grid width  = 3 cols, gap between centres = kDotSpacX
     // Total grid height = 2 rows, gap between centres = kDotSpacY
-    const int16_t gridW    = (kDotCols - 1) * kDotSpacX;
-    const int16_t gridH    = (kDotRows - 1) * kDotSpacY;
-    const int16_t originX  = secX + (kDotSectionW - gridW) / 2;
-    const int16_t originY  = dimensions_.y + (dimensions_.height - gridH) / 2;
+    const int16_t gridW = (kDotCols - 1) * kDotSpacX;
+    const int16_t gridH = (kDotRows - 1) * kDotSpacY;
+    const int16_t originX = secX + (kDotSectionW - gridW) / 2;
+    const int16_t originY = dimensions_.y + (dimensions_.height - gridH) / 2;
 
     for (uint8_t row = 0; row < kDotRows; ++row) {
         for (uint8_t col = 0; col < kDotCols; ++col) {
-            const uint8_t  idx = row * kDotCols + col;
-            const int16_t  cx  = originX + col * kDotSpacX;
-            const int16_t  cy  = originY + row * kDotSpacY;
-            const uint16_t c   = status_.endpoint_ok[idx] ? kColorDotOk : kColorDotFail;
+            const uint8_t idx = row * kDotCols + col;
+            const int16_t cx = originX + col * kDotSpacX;
+            const int16_t cy = originY + row * kDotSpacY;
+            const uint16_t c = status_.endpoint_ok[idx] ? kColorDotOk : kColorDotFail;
             lcd->fillCircle(cx, cy, kDotR, c);
         }
     }
@@ -169,46 +171,64 @@ void NetworkWidget::drawDotGrid() {
 // ---------------------------------------------------------------------------
 
 uint8_t NetworkWidget::rssiBars() const {
-    if (!status_.wifi_connected) return 0;
+    if (!status_.wifi_connected)
+        return 0;
     const int8_t r = status_.rssi;
-    if (r > -65) return 4;
-    if (r > -75) return 3;
-    if (r > -85) return 2;
+    if (r > -65)
+        return 4;
+    if (r > -75)
+        return 3;
+    if (r > -85)
+        return 2;
     return 1;
 }
 
 uint16_t NetworkWidget::wifiColor() const {
-    if (!status_.wifi_connected) return 0x2104;
+    if (!status_.wifi_connected)
+        return 0x2104;
     const int8_t r = status_.rssi;
-    if (r > -65) return TFT_WHITE;
-    if (r > -75) return kColorWarning;   // yellow
-    if (r > -85) return kColorDegraded;  // orange
-    return kColorDown;                   // red
+    if (r > -65)
+        return TFT_LIGHTGRAY;
+    if (r > -75)
+        return kColorWarning;  // yellow
+    if (r > -85)
+        return kColorDegraded;  // orange
+    return kColorDown;          // red
 }
 
 uint16_t NetworkWidget::internetColor() const {
     using I = NetworkStatus::Internet;
     switch (status_.internet) {
-        case I::OK:       return kColorOk;
-        case I::WARNING:  return kColorWarning;
-        case I::DEGRADED: return kColorDegraded;
-        case I::DOWN:     return kColorDown;
-        default:          return kColorUnknown;
+        case I::OK:
+            return kColorOk;
+        case I::WARNING:
+            return kColorWarning;
+        case I::DEGRADED:
+            return kColorDegraded;
+        case I::DOWN:
+            return kColorDown;
+        default:
+            return kColorUnknown;
     }
 }
 
 int8_t NetworkWidget::rssiBracket() const {
-    if (!status_.wifi_connected) return 0;
+    if (!status_.wifi_connected)
+        return 0;
     const int8_t r = status_.rssi;
-    if (r > -65) return 4;
-    if (r > -75) return 3;
-    if (r > -85) return 2;
+    if (r > -65)
+        return 4;
+    if (r > -75)
+        return 3;
+    if (r > -85)
+        return 2;
     return 1;
 }
 
 bool NetworkWidget::endpointsDirty() const {
     for (uint8_t i = 0; i < 6; ++i) {
-        if (status_.endpoint_ok[i] != lastEndpointOk_[i]) return true;
+        if (status_.endpoint_ok[i] != lastEndpointOk_[i])
+            return true;
     }
     return false;
 }

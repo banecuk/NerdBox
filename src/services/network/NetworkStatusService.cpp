@@ -6,7 +6,7 @@
 // Six lightweight connectivity-check endpoints, tried in rotation.
 // All return quickly and are operated by highly reliable providers.
 const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints] = {
-    "http://connectivitycheck.gstatic.com/generate_204",  // Google         — expect 204
+    "http://connectivitycheck.gstatic.com/generate_204",  // Google        — expect 204
     "http://www.msftncsi.com/ncsi.txt",                   // Microsoft NCSI — expect 200
     "http://captive.apple.com/hotspot-detect.html",       // Apple          — expect 200
     "http://connectivitycheck.android.com/generate_204",  // Android AOSP   — expect 204
