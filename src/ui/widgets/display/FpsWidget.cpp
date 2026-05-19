@@ -2,9 +2,10 @@
 
 #include "core/resources/FontRegistry.h"
 
-static constexpr uint16_t kBgColor    = TFT_BLACK;
+static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kValueColor = TFT_GREEN;
+static constexpr uint16_t kPlaceholderColor = 0x2104;  // very dark gray (RGB565)
 
 FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
@@ -41,8 +42,8 @@ void FpsWidget::onDraw(bool forceRedraw) {
             // Number just appeared — render it
             renderFps(fps);
         } else {
-            // Number just disappeared — clear only the value area, keep the label
-            clearValueArea();
+            // Number just disappeared — show placeholder, keep the label
+            renderPlaceholder();
         }
         lastVisible_ = hasValue;
         lastDrawnFps_ = fps;
@@ -52,6 +53,9 @@ void FpsWidget::onDraw(bool forceRedraw) {
     }
 
     if (!hasValue) {
+        if (forceRedraw) {
+            renderPlaceholder();
+        }
         clearDirty();
         return;
     }
@@ -83,6 +87,23 @@ void FpsWidget::renderFps(int16_t fps) {
     lcd->setTextColor(kValueColor, kBgColor);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(buf, dimensions_.x + dimensions_.width / 2, valueAreaY + valueAreaH / 2);
+    Fonts::unload(lcd);
+}
+
+void FpsWidget::renderPlaceholder() {
+    LGFX* lcd = getLcd();
+    if (!lcd)
+        return;
+
+    clearValueArea();
+
+    const uint16_t valueAreaY = dimensions_.y + 16;
+    const uint16_t valueAreaH = dimensions_.height - 16;
+
+    Fonts::loadMono(lcd);
+    lcd->setTextColor(kPlaceholderColor, kBgColor);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString("---", dimensions_.x + dimensions_.width / 2, valueAreaY + valueAreaH / 2);
     Fonts::unload(lcd);
 }
 
