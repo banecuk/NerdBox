@@ -26,7 +26,7 @@ struct DebugImpl {
 
 // Init configuration
 struct InitImpl {
-    static constexpr uint8_t kDefaultNetworkRetries = 3;
+    static constexpr uint8_t kDefaultNetworkRetries = 10;
     static constexpr uint8_t kDefaultTimeSyncRetries = 3;
     static constexpr uint32_t kNetworkRetryDelayMs = 200;
     static constexpr uint32_t kTimeSyncRetryDelayBaseMs = 100;
@@ -83,15 +83,15 @@ struct UiImpl {
 
     // NVS (Preferences) keys for persisted display settings.
     // Namespace must be <= 15 chars; key must be <= 15 chars.
-    static constexpr const char* kNvsNamespace     = "nerdbox_ui";
+    static constexpr const char* kNvsNamespace = "nerdbox_ui";
     static constexpr const char* kNvsBrightnessKey = "brightness";
-    static constexpr uint8_t     kDefaultBrightness = 75;
+    static constexpr uint8_t kDefaultBrightness = 75;
 
     // Five fixed brightness steps used by BrightnessWidget and cycleBrightness().
     // Ordered dim → bright. Adding or reordering levels here is the only change
     // needed — DisplayManager and BrightnessWidget both derive from this array.
-    static constexpr uint8_t kBrightnessLevels[]    = { 20, 50, 75, 140, 255 };
-    static constexpr uint8_t kBrightnessLevelCount  = 5;
+    static constexpr uint8_t kBrightnessLevels[] = {20, 50, 75, 140, 255};
+    static constexpr uint8_t kBrightnessLevelCount = 5;
 };
 }  // namespace internal
 

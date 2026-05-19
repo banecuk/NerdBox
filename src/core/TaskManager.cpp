@@ -128,30 +128,30 @@ void TaskManager::executeBackgroundTask() {
     unsigned long lastStackLogTime = 0;
 
     while (true) {
-        if (coreState_.isInitialized && networkManager_.isConnected()) {
-            if (screenState_.activeScreen == ScreenName::MAIN) {
-                if (millis() >= coreState_.nextSync_pcMetrics) {
-                    updatePcMetrics();
-                }
+        if (coreState_.isInitialized) {
+            // Attempt reconnect if WiFi dropped; returns true if link is up.
+            if (!networkManager_.isConnected()) {
+                networkManager_.checkAndReconnect();
             }
 
-            if (airQualityService_.isStale(airQualityData_)) {
-                updateAirQuality();
+            if (networkManager_.isConnected()) {
+                if (screenState_.activeScreen == ScreenName::MAIN) {
+                    if (millis() >= coreState_.nextSync_pcMetrics) {
+                        updatePcMetrics();
+                    }
+                }
+
+                if (airQualityService_.isStale(airQualityData_)) {
+                    updateAirQuality();
+                }
             }
         }
 
-        // Network status update runs unconditionally — even when not fully
-        // initialized, we still want to track wifi connected/disconnected state.
         networkStatusService_.updateWifi(netStatus_);
         networkStatusService_.maybeTriggerProbe(netStatus_);
 
-        // Feed the watchdog every tick, regardless of screen or fetch state.
-        // Previously this was inside the metrics fetch block, causing a WDT
-        // reboot after ~20 s whenever the settings screen was active or WiFi
-        // was down.
         resetWatchdog();
 
-        // Periodic stack monitoring
         if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {
             logStackHighWaterMark(BACKGROUND_TASK_NAME);
             lastStackLogTime = millis();
