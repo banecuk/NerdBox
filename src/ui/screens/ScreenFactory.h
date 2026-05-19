@@ -1,18 +1,39 @@
 #pragma once
 
-#include "config/AppConfigInterface.h"
+#include <memory>
+
 #include "ScreenInterface.h"
 #include "ui/screens/ScreenTypes.h"
-#include "ui/UiController.h"
 
+// Forward declarations — avoids pulling every dependency into every TU that
+// just needs ScreenFactory.
 class LoggerInterface;
 class DisplayManager;
 class PcMetrics;
-class UIController;
+class UiController;
+class AppConfigInterface;
+class ApplicationMetrics;
+class NetworkManager;
+struct AirQualityData;
+struct NetworkStatus;
+
+// Aggregates all dependencies that any screen might need.
+// Pass this struct to createScreen instead of a growing parameter list;
+// add new fields here as more screens are introduced.
+struct ScreenCreationContext {
+    LoggerInterface&      logger;
+    DisplayManager*       display;
+    PcMetrics&            metrics;
+    UiController*         controller;
+    AppConfigInterface&   config;
+    ApplicationMetrics&   systemMetrics;
+    NetworkManager&       networkManager;
+    const AirQualityData& airQualityData;
+    const NetworkStatus&  netStatus;
+};
 
 class ScreenFactory {
  public:
-    static std::unique_ptr<ScreenInterface>
-    createScreen(ScreenName name, LoggerInterface& logger, DisplayManager* display,
-                 PcMetrics& metrics, UiController* controller, AppConfigInterface& config);
+    static std::unique_ptr<ScreenInterface> createScreen(ScreenName name,
+                                                         const ScreenCreationContext& ctx);
 };

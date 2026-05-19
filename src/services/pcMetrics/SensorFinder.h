@@ -26,11 +26,23 @@ class SensorFinder {
     static JsonObject findSection(JsonArray children, const char* sectionName);
 
     /**
-     * Find first sensor containing the substring in its Text field
+     * Find first sensor whose Text field contains the given substring
      */
     static JsonObject findContaining(JsonArray sensors, const char* substring);
 
  private:
     static bool textContains(const char* text, const char* substring);
     static bool textMatches(const char* text, const std::vector<const char*>& patterns);
+
+    // Core primitive: iterate `arr` and return the first element whose "Text"
+    // field satisfies `pred(text)`.  All public find* methods delegate here.
+    template <typename Predicate>
+    static JsonObject findWhere(JsonArray arr, Predicate pred) {
+        if (arr.isNull()) return JsonObject();
+        for (JsonObject obj : arr) {
+            const char* text = obj["Text"];
+            if (text && pred(text)) return obj;
+        }
+        return JsonObject();
+    }
 };

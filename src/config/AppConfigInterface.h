@@ -35,9 +35,12 @@ class AppConfigInterface {
 
     // HardwareMonitor getters
     virtual uint32_t getHardwareMonitorRefreshMs() const = 0;
+    virtual uint32_t getHardwareMonitorThreadsRefreshMs() const = 0;
     virtual uint32_t getHardwareMonitorFailureRefreshMs() const = 0;
     virtual uint32_t getHardwareMonitorRetryDelayMs() const = 0;
     virtual uint32_t getHardwareMonitorMaxRetries() const = 0;
+    virtual float getHardwareMonitorThreadsUpwardDecay() const = 0;
+    virtual float getHardwareMonitorThreadsDownwardDecay() const = 0;
 
     // Metrics getters
     virtual uint8_t getMetricsMaxScreenDrawTimes() const = 0;

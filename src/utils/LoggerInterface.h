@@ -17,9 +17,9 @@ class LoggerInterface {
     };
 
     struct LogEntry {
-        String timestamp;
+        char timestamp[12];   // "HH:MM:SS" + null — 9 chars, 12 is comfortable
         LogLevel level;
-        String message;
+        char message[200];    // matches the screenBuffer size in Logger.cpp
         bool forScreen;
     };
 

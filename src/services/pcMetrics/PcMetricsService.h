@@ -1,6 +1,7 @@
 #pragma once
-
 #include <ArduinoJson.h>
+
+#include <memory>
 
 #include "config/AppConfigInterface.h"
 #include "config/Environment.h"
@@ -13,29 +14,35 @@ class PcMetricsService {
  public:
     PcMetricsService(NetworkManager& networkManager, ApplicationMetrics& systemMetrics,
                      LoggerInterface& logger, AppConfigInterface& config);
+    ~PcMetricsService() = default;
+
+    // Delete copy operations
+    PcMetricsService(const PcMetricsService&) = delete;
+    PcMetricsService& operator=(const PcMetricsService&) = delete;
+
     bool fetchData(PcMetrics& outData);
 
  private:
-    struct HardwareIndices {
-        int motherboard;
-        int cpu;
-        int memory;
-        int gpu;
-    };
-
-    void initFilter();
     bool parseData(const String& rawData, PcMetrics& outData);
-
-    HardwareIndices findHardwareIndices(JsonArray hardwareChildren);
-    bool parseMotherboard(JsonArray hardwareChildren, int index, PcMetrics& outData);
-    bool parseCpu(JsonArray hardwareChildren, int index, PcMetrics& outData);
-    bool parseMemory(JsonArray hardwareChildren, int index, PcMetrics& outData);
-    bool parseGpu(JsonArray hardwareChildren, int index, PcMetrics& outData);
+    void initFilter();
+    bool validateJsonStructure(JsonObject metrics);
+    bool parseCpuData(JsonObject cpu, PcMetrics& outData);
+    bool parseCpuExtendedData(JsonObject cpuExtended, PcMetrics& outData);
+    bool parseRamData(JsonObject ram, PcMetrics& outData);
+    bool parseGpuData(JsonObject gpu, PcMetrics& outData);
+    bool parseMotherboardData(JsonObject motherboard, PcMetrics& outData);
+    bool parseDiskData(JsonObject disks, PcMetrics& outData);
 
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;
     LoggerInterface& logger_;
     AppConfigInterface& config_;
 
-    JsonDocument filter_;
+    // Use heap allocation for JSON document to avoid stack overflow
+    std::unique_ptr<JsonDocument> filterDoc_;
+    std::unique_ptr<JsonDocument> doc_;  // Reused across fetches to avoid heap fragmentation
+    JsonDocument filter_;  // Filter stays on stack (small size)
+    bool filterInitialized_ = false;
+
+    String rawData_;  // Reused across fetches — avoids a heap alloc + free every 300–500 ms
 };

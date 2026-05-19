@@ -3,21 +3,24 @@
 #include "ApplicationComponents.h"
 
 Application::Application(std::unique_ptr<ApplicationComponents> components)
-    : components_(std::move(components)) {}
+    : components_(std::move(components)),
+      config_(components_->config),
+      systemState_(components_->systemState),
+      webServerService_(components_->webServerService) {}
 
 bool Application::initialize() {
     return components_->initStateMachine.initialize();
 }
 
 void Application::run() {
-    if (!components_->systemState.core.isInitialized) {
+    if (!systemState_.core.isInitialized) {
         return;
     }
 
-    if (components_->config.getWatchdogEnableOnBoot()) {
+    if (config_.getWatchdogEnableOnBoot()) {
         esp_task_wdt_reset();
     }
 
-    components_->webServerService.processRequests();
-    vTaskDelay(components_->config.getTimingMainLoopMs());
+    webServerService_.processRequests();
+    vTaskDelay(config_.getTimingMainLoopMs());
 }

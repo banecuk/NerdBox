@@ -1,0 +1,151 @@
+#pragma once
+#include <string>
+
+#include "config/AppConfigInterface.h"
+#include "MetricWidget.h"
+#include "services/pcMetrics/DataFreshnessGuard.h"
+#include "services/pcMetrics/PcMetrics.h"
+#include "ui/core/DisplayContext.h"
+#include "ui/widgets/base/Widget.h"
+#include "ui/widgets/display/ThreadsWidget.h"
+
+class PcMetricsWidget : public Widget {
+ public:
+    PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
+                    uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config,
+                    ApplicationMetrics& systemMetrics);
+
+    void drawStatic() override;
+    bool handleTouch(uint16_t x, uint16_t y) override;
+    bool needsUpdate() const override;
+
+    void setStaleTimeout(unsigned long timeoutMs) { freshnessGuard_.setTimeout(timeoutMs); }
+    unsigned long getStaleTimeout() const { return freshnessGuard_.getTimeout(); }
+
+ protected:
+    void onDraw(bool forceRedraw) override;
+
+ private:
+    // -----------------------------------------------------------------------
+    // Layout constants — all magic numbers live here
+    // -----------------------------------------------------------------------
+
+    // Screen width the widget is designed for
+    static constexpr uint16_t kScreenWidth = 480;
+
+    // Uniform width of every metric tile
+    static constexpr uint16_t kTileWidth = 86;
+
+    // Width of the text label inside each tile (e.g. "CPU", "TMP")
+    static constexpr uint8_t kLabelWidth = 26;
+
+    // Narrow label for the system-fan tiles (shorter label text)
+    static constexpr uint8_t kFanLabelWidth = 14;
+
+    // Horizontal grid — counted from the right edge so tiles stay aligned
+    // regardless of kScreenWidth changes.
+    static constexpr uint16_t kColFan = 0;                            // system fans / disk area (left)
+    static constexpr uint16_t kCol5   = kScreenWidth - kTileWidth * 5;
+    static constexpr uint16_t kCol6   = kScreenWidth - kTileWidth * 4;
+    static constexpr uint16_t kCol7   = kScreenWidth - kTileWidth * 3;
+    static constexpr uint16_t kCol8   = kScreenWidth - kTileWidth * 2;
+    static constexpr uint16_t kCol9   = kScreenWidth - kTileWidth;
+
+    // Vertical row baselines (each row is 30 px tall)
+    static constexpr uint16_t kRow1 = 0;
+    static constexpr uint16_t kRow2 = 30;
+    static constexpr uint16_t kRow3 = 60;
+    static constexpr uint16_t kRow4 = 90;
+    static constexpr uint16_t kRow5 = 120;
+    static constexpr uint16_t kRow6 = 150;
+
+    // Row height shorthand
+    static constexpr uint16_t kRowH = 30;  // kRow(n+1) - kRow(n)
+
+    // Maximum number of disk-drive tiles that can be displayed simultaneously
+    static constexpr size_t kMaxDiskWidgets = 10;
+
+    // Maximum number of system-fan tiles that can be displayed simultaneously.
+    // Matches PcMetrics::kMaxSystemFans so the widget can always represent every
+    // connected fan without further bounds checks.
+    static constexpr uint8_t kMaxSystemFanWidgets = PcMetrics::kMaxSystemFans;
+
+    // -----------------------------------------------------------------------
+    // Dependencies
+    // -----------------------------------------------------------------------
+    DisplayContext& context_;
+    PcMetrics& pcMetrics_;
+    AppConfigInterface& config_;
+    ApplicationMetrics& systemMetrics_;
+
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+    unsigned long lastUpdateTimestamp_ = 0;
+    unsigned long lastEnsureCheckTimestamp_ = 0;  // last pcMetrics_ timestamp seen by the ensure calls
+    DataFreshnessGuard freshnessGuard_;
+    bool wasFreshData_ = false;
+    bool isStaticDrawn_    = false;
+    uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
+
+    // -----------------------------------------------------------------------
+    // Child widgets — grouped by subsystem for readability
+    // -----------------------------------------------------------------------
+
+    // CPU row
+    std::unique_ptr<MetricWidget> cpuLoadWidget_;
+    std::unique_ptr<MetricWidget> cpuTemperatureWidget_;
+    std::unique_ptr<MetricWidget> cpuPowerWidget_;
+    std::unique_ptr<MetricWidget> cpuFanWidget_;
+
+    // GPU rows
+    std::unique_ptr<MetricWidget> gpuLoadWidget_;
+    std::unique_ptr<MetricWidget> gpuTemperatureWidget_;
+    std::unique_ptr<MetricWidget> gpuPowerWidget_;
+    std::unique_ptr<MetricWidget> gpu3dWidget_;
+    std::unique_ptr<MetricWidget> gpuComputeWidget_;
+    std::unique_ptr<MetricWidget> gpuMemoryWidget_;
+    std::unique_ptr<MetricWidget> gpuFanWidget_;
+
+    // RAM
+    std::unique_ptr<MetricWidget> memoryLoadWidget_;
+
+    // System fans — built dynamically in ensureSystemFanWidgetsCreated() once
+    // the compacted fan count arrives from the first data fetch.
+    std::vector<std::unique_ptr<MetricWidget>> systemFanWidgets_;
+
+    // Disk drives (created dynamically when data first arrives)
+    std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
+
+    // -----------------------------------------------------------------------
+    // Construction helpers — each builds one logical group of widgets
+    // -----------------------------------------------------------------------
+    void buildCpuWidgets();
+    void buildGpuWidgets();
+    void buildMemoryWidget();
+
+    // -----------------------------------------------------------------------
+    // Runtime helpers
+    // -----------------------------------------------------------------------
+    void drawDynamicData();
+    void drawNoDataMessage();
+    void clearAllWidgets();
+    void restoreStaticDisplay();
+
+    bool hasFreshData() const { return freshnessGuard_.isFresh(); }
+    void showStaleIndicator();
+
+    // Creates/recreates system-fan tiles whenever the live fan count changes.
+    // Called from onDraw() after each data fetch so the layout always reflects
+    // the actual number of spinning fans reported by Libre Hardware Monitor.
+    void ensureSystemFanWidgetsCreated();
+
+    void ensureDiskWidgetsCreated();
+    void updateDiskDriveWidgets();
+
+    // Runs the standard initialize → drawStatic → forceRefresh → draw(true)
+    // sequence that every MetricWidget needs on first paint.  Used by
+    // drawStatic(), ensureSystemFanWidgetsCreated(), and ensureDiskWidgetsCreated()
+    // so the four-step sequence lives in exactly one place.
+    void initAndDrawWidget(MetricWidget& widget);
+};

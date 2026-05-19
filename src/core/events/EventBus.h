@@ -1,41 +1,39 @@
 #pragma once
 
+#include <array>
 #include <functional>
-#include <map>
 #include <vector>
 
 #include "EventTypes.h"
 
 class EventBus {
  public:
-    // Singleton instance
     static EventBus& getInstance() {
         static EventBus instance;
         return instance;
     }
 
-    // Event handler type
     using EventCallback = std::function<void()>;
 
-    // Subscribe to an event
-    void subscribe(EventType actionType, EventCallback callback) {
-        subscribers[actionType].push_back(callback);
+    void subscribe(EventType type, EventCallback callback) {
+        subscribers_[index(type)].push_back(std::move(callback));
     }
 
-    // Publish an event
-    void publish(EventType actionType) {
-        if (subscribers.find(actionType) != subscribers.end()) {
-            for (auto& callback : subscribers[actionType]) {
-                callback();
-            }
+    void publish(EventType type) {
+        for (auto& callback : subscribers_[index(type)]) {
+            callback();
         }
     }
 
  private:
+    static constexpr size_t EVENT_TYPE_COUNT = static_cast<size_t>(EventType::COUNT);
+
+    static constexpr size_t index(EventType type) { return static_cast<size_t>(type); }
+
+    std::array<std::vector<EventCallback>, EVENT_TYPE_COUNT> subscribers_;
+
     EventBus() = default;
     ~EventBus() = default;
     EventBus(const EventBus&) = delete;
     EventBus& operator=(const EventBus&) = delete;
-
-    std::map<EventType, std::vector<EventCallback>> subscribers;
 };

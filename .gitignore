@@ -5,3 +5,5 @@
 .vscode/ipch
 docs
 src/config/Environment.h
+CLAUDE.md
+PRIORITIES.md

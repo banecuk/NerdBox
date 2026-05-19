@@ -41,14 +41,14 @@ struct WatchdogImpl {
 
 // Timing configuration
 struct TimingImpl {
-    static constexpr uint32_t kScreenTaskMs = 33;
+    static constexpr uint32_t kScreenTaskMs = 16;
     static constexpr uint32_t kBackgroundTaskMs = 20;
     static constexpr uint32_t kMainLoopMs = 10;
 };
 
 // Tasks configuration
 struct TasksImpl {
-    static constexpr uint32_t kScreenStack = 4096;
+    static constexpr uint32_t kScreenStack = 6144;
     static constexpr uint32_t kBackgroundStack = 8096;
     static constexpr uint32_t kScreenPriority = 2;
     static constexpr uint32_t kBackgroundPriority = 1;
@@ -57,9 +57,12 @@ struct TasksImpl {
 // HardwareMonitor configuration
 struct HardwareMonitorImpl {
     static constexpr uint32_t kRefreshMs = 500;
+    static constexpr uint32_t kThreadsRefreshMs = 16;
     static constexpr uint32_t kRefreshAfterFailureMs = 3000;
     static constexpr uint32_t kRetryDelayMs = 200;
     static constexpr uint32_t kMaxRetries = 2;
+    static constexpr float kThreadsUpwardSmoothing = 0.4f;
+    static constexpr float kThreadsDownwardSmoothing = 0.075f;
 };
 
 // Metrics configuration
@@ -77,6 +80,18 @@ struct UiImpl {
     static constexpr uint32_t kTransitionTimeoutMs = 1000;
     static constexpr uint32_t kTouchDebounceIntervalMs = 200;
     static constexpr uint32_t kDisplayLockTimeoutMs = 200;
+
+    // NVS (Preferences) keys for persisted display settings.
+    // Namespace must be <= 15 chars; key must be <= 15 chars.
+    static constexpr const char* kNvsNamespace     = "nerdbox_ui";
+    static constexpr const char* kNvsBrightnessKey = "brightness";
+    static constexpr uint8_t     kDefaultBrightness = 75;
+
+    // Five fixed brightness steps used by BrightnessWidget and cycleBrightness().
+    // Ordered dim → bright. Adding or reordering levels here is the only change
+    // needed — DisplayManager and BrightnessWidget both derive from this array.
+    static constexpr uint8_t kBrightnessLevels[]    = { 20, 50, 75, 140, 255 };
+    static constexpr uint8_t kBrightnessLevelCount  = 5;
 };
 }  // namespace internal
 

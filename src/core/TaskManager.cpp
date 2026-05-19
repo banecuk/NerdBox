@@ -2,17 +2,28 @@
 
 #include <esp_task_wdt.h>
 
+#include "services/airQuality/AirQualityService.h"
+#include "services/network/NetworkStatusService.h"
+
 TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
                          PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
+                         AirQualityService& airQualityService, AirQualityData& airQualityData,
+                         NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
                          SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                         AppConfigInterface& config)
+                         AppConfigInterface& config, NetworkManager& networkManager)
     : logger_(logger),
       uiController_(uiController),
       pcMetricsService_(pcMetricsService),
       pcMetrics_(pcMetrics),
+      airQualityService_(airQualityService),
+      airQualityData_(airQualityData),
+      networkStatusService_(networkStatusService),
+      netStatus_(netStatus),
       coreState_(coreState),
       screenState_(screenState),
-      config_(config) {}
+      config_(config),
+      networkManager_(networkManager),
+      pcMetricsFreshness_(pcMetrics) {}
 
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
@@ -27,8 +38,7 @@ bool TaskManager::createTasks() {
     }
 
     success = createTask(backgroundTask, BACKGROUND_TASK_NAME, config_.getTasksBackgroundStack(),
-                         config_.getTasksBackgroundPriority(), &backgroundTaskHandle_,
-                         0);  // Core 0
+                         config_.getTasksBackgroundPriority(), &backgroundTaskHandle_, 0);
 
     if (!success) {
         logger_.critical("Failed to create background task", true);
@@ -62,12 +72,11 @@ bool TaskManager::createTask(TaskFunction_t taskFunction, const char* taskName, 
                                                 taskHandle, coreId);
 
     if (status != pdPASS) {
-        // Use the formatted version for including error code
         logger_.criticalf("Failed to create task: %s, error: %d", taskName, status);
         return false;
     }
 
-    logger_.info("Task created successfully: " + String(taskName), true);
+    logger_.infof("Task created successfully: %s", taskName);
     return true;
 }
 
@@ -99,8 +108,10 @@ void TaskManager::executeScreenTask() {
     while (true) {
         if (screenState_.isInitialized) {
             uiController_.updateDisplay();
-            resetWatchdog();
         }
+
+        // Feed the watchdog every tick regardless of init state.
+        resetWatchdog();
 
         // Periodic stack monitoring
         if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {
@@ -117,14 +128,28 @@ void TaskManager::executeBackgroundTask() {
     unsigned long lastStackLogTime = 0;
 
     while (true) {
-        if (coreState_.isInitialized && WiFi.status() == WL_CONNECTED) {
+        if (coreState_.isInitialized && networkManager_.isConnected()) {
             if (screenState_.activeScreen == ScreenName::MAIN) {
                 if (millis() >= coreState_.nextSync_pcMetrics) {
                     updatePcMetrics();
-                    resetWatchdog();
                 }
             }
+
+            if (airQualityService_.isStale(airQualityData_)) {
+                updateAirQuality();
+            }
         }
+
+        // Network status update runs unconditionally — even when not fully
+        // initialized, we still want to track wifi connected/disconnected state.
+        networkStatusService_.updateWifi(netStatus_);
+        networkStatusService_.maybeTriggerProbe(netStatus_);
+
+        // Feed the watchdog every tick, regardless of screen or fetch state.
+        // Previously this was inside the metrics fetch block, causing a WDT
+        // reboot after ~20 s whenever the settings screen was active or WiFi
+        // was down.
+        resetWatchdog();
 
         // Periodic stack monitoring
         if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {
@@ -138,21 +163,32 @@ void TaskManager::executeBackgroundTask() {
 
 void TaskManager::logStackHighWaterMark(const char* taskName) {
     UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(nullptr);
-    // Use the formatted version for including the number
     logger_.debugf("%s stack high water mark: %u", taskName, stackHighWaterMark);
 }
 
 void TaskManager::updatePcMetrics() {
     bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
-
     if (fetchSuccess) {
         consecutiveFailures_ = 0;
         coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshMs();
-        logger_.debug("PC metrics updated successfully", true);
+        // logger_.debug("PC metrics updated successfully", true);
     } else {
         consecutiveFailures_++;
         coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorFailureRefreshMs();
         handlePcMetricsFailure();
+
+        if (!pcMetricsFreshness_.isFresh()) {
+            logger_.warning("PC metrics data is stale", true);
+        }
+    }
+}
+
+void TaskManager::updateAirQuality() {
+    const bool ok = airQualityService_.fetchData(airQualityData_);
+    if (ok) {
+        logger_.debug("AirQuality data updated");
+    } else {
+        logger_.warning("AirQuality fetch failed");
     }
 }
 

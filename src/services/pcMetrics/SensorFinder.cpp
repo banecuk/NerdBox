@@ -1,78 +1,43 @@
 #include "SensorFinder.h"
 
 JsonObject SensorFinder::findByExactName(JsonArray sensors, const char* name) {
-    if (sensors.isNull() || name == nullptr) {
-        return JsonObject();
-    }
-
-    for (JsonObject sensor : sensors) {
-        const char* text = sensor["Text"];
-        if (text && strcmp(text, name) == 0) {
-            return sensor;
-        }
-    }
-    return JsonObject();
+    if (name == nullptr) return JsonObject();
+    return findWhere(sensors, [name](const char* text) {
+        return strcmp(text, name) == 0;
+    });
 }
 
 JsonObject SensorFinder::findByPartialMatch(JsonArray sensors,
                                             const std::vector<const char*>& patterns) {
-    if (sensors.isNull() || patterns.empty()) {
-        return JsonObject();
-    }
-
-    for (JsonObject sensor : sensors) {
-        const char* text = sensor["Text"];
-        if (text && textMatches(text, patterns)) {
-            return sensor;
-        }
-    }
-    return JsonObject();
+    if (patterns.empty()) return JsonObject();
+    return findWhere(sensors, [&patterns](const char* text) {
+        return textMatches(text, patterns);
+    });
 }
 
 JsonObject SensorFinder::findSection(JsonArray children, const char* sectionName) {
-    if (children.isNull() || sectionName == nullptr) {
-        return JsonObject();
-    }
-
-    for (JsonObject child : children) {
-        const char* text = child["Text"];
-        if (text && textContains(text, sectionName)) {
-            return child;
-        }
-    }
-    return JsonObject();
+    if (sectionName == nullptr) return JsonObject();
+    return findWhere(children, [sectionName](const char* text) {
+        return textContains(text, sectionName);
+    });
 }
 
 JsonObject SensorFinder::findContaining(JsonArray sensors, const char* substring) {
-    if (sensors.isNull() || substring == nullptr) {
-        return JsonObject();
-    }
-
-    for (JsonObject sensor : sensors) {
-        const char* text = sensor["Text"];
-        if (text && textContains(text, substring)) {
-            return sensor;
-        }
-    }
-    return JsonObject();
+    if (substring == nullptr) return JsonObject();
+    return findWhere(sensors, [substring](const char* text) {
+        return textContains(text, substring);
+    });
 }
 
 bool SensorFinder::textContains(const char* text, const char* substring) {
-    if (text == nullptr || substring == nullptr) {
-        return false;
-    }
+    if (text == nullptr || substring == nullptr) return false;
     return strstr(text, substring) != nullptr;
 }
 
 bool SensorFinder::textMatches(const char* text, const std::vector<const char*>& patterns) {
-    if (text == nullptr) {
-        return false;
-    }
-
+    if (text == nullptr) return false;
     for (const char* pattern : patterns) {
-        if (pattern && textContains(text, pattern)) {
-            return true;
-        }
+        if (pattern && textContains(text, pattern)) return true;
     }
     return false;
 }

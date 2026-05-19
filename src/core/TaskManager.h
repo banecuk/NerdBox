@@ -4,17 +4,25 @@
 
 #include "config/AppConfigInterface.h"
 #include "core/state/SystemState.h"
+#include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
+#include "services/pcMetrics/DataFreshnessGuard.h"
 #include "services/pcMetrics/PcMetricsService.h"
-#include "ui/UiController.h"
+#include "services/airQuality/AirQualityData.h"
+#include "services/airQuality/AirQualityService.h"
+#include "services/network/NetworkStatus.h"
+#include "services/network/NetworkStatusService.h"
+#include "ui/core/UiController.h"
 #include "utils/Logger.h"
 
 class TaskManager {
  public:
     TaskManager(LoggerInterface& logger, UiController& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
+                AirQualityService& airQualityService, AirQualityData& airQualityData,
+                NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                AppConfigInterface& config);
+                AppConfigInterface& config, NetworkManager& networkManager);
 
     bool createTasks();  // Public method name matches your existing code
     void cleanup();
@@ -34,14 +42,23 @@ class TaskManager {
     UiController& uiController_;
     PcMetricsService& pcMetricsService_;
     PcMetrics& pcMetrics_;
+    AirQualityService& airQualityService_;
+    AirQualityData& airQualityData_;
+    NetworkStatusService& networkStatusService_;
+    NetworkStatus& netStatus_;
     SystemState::CoreState& coreState_;
     SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;
+    NetworkManager& networkManager_;
 
     // Task management
     TaskHandle_t screenTaskHandle_ = nullptr;
     TaskHandle_t backgroundTaskHandle_ = nullptr;
     uint8_t consecutiveFailures_ = 0;
+
+    // Single source of truth for PC-metrics staleness — shared with PcMetricsWidget
+    // via the same PcMetrics::last_update_timestamp field that DataFreshnessGuard reads.
+    DataFreshnessGuard pcMetricsFreshness_;
 
     // Task implementations
     void executeScreenTask();
@@ -55,6 +72,7 @@ class TaskManager {
     void initializeWatchdog();
     void logStackHighWaterMark(const char* taskName);
     void updatePcMetrics();
+    void updateAirQuality();
     void handlePcMetricsFailure();
     void resetWatchdog();
 

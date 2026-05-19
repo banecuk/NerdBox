@@ -37,7 +37,6 @@ void setup() {
         // Print panic details if available
         Serial.println("Panic details (if any):");
         if (reason == ESP_RST_PANIC) {
-            // You may need to include esp_debug_helpers.h for more details
             Serial.println("Panic occurred. Check backtrace in debugger.");
         }
     }

@@ -7,36 +7,31 @@ NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
 bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    uint8_t attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < config_.getInitNetworkRetries()) {
-        delay(config_.getInitNetworkRetryDelayMs());
-        attempts++;
+    logger_.info("Connecting to WiFi...", true);
 
-        logger_.warning("Retry connect...", true);
-    }
+    // waitForConnectResult blocks until connected, failed, or timeout
+    uint32_t timeoutMs = config_.getInitNetworkRetries() * config_.getInitNetworkRetryDelayMs();
+    wl_status_t status = static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
 
-    isConnected_ = (WiFi.status() == WL_CONNECTED);
-    if (isConnected_) {
-        String ipAddress = WiFi.localIP().toString();
-        logger_.info("WiFi connected - IP: " + ipAddress, true);
+    bool connected = (status == WL_CONNECTED);
+    if (connected) {
+        logger_.info("WiFi connected - IP: " + WiFi.localIP().toString(), true);
     } else {
-        logger_.error("WiFi connection failed", true);
+        logger_.errorf("WiFi failed, status: %d", status);
     }
-    return isConnected_;
+    return connected;
 }
 
 bool NetworkManager::isConnected() const {
-    return isConnected_;
+    return WiFi.status() == WL_CONNECTED;
 }
 
 String NetworkManager::get(const String& url) {
-    if (!isConnected_)
+    if (!isConnected())
         return "";
-
     HTTPClient http;
     http.begin(url);
     int httpCode = http.GET();
-
     if (httpCode == HTTP_CODE_OK) {
         return http.getString();
     }
