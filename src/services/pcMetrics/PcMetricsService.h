@@ -25,7 +25,6 @@ class PcMetricsService {
  private:
     bool parseData(const String& rawData, PcMetrics& outData);
     void initFilter();
-    bool validateJsonStructure(JsonObject metrics);
     bool parseCpuData(JsonObject cpu, PcMetrics& outData);
     bool parseCpuExtendedData(JsonObject cpuExtended, PcMetrics& outData);
     bool parseRamData(JsonObject ram, PcMetrics& outData);
@@ -41,7 +40,7 @@ class PcMetricsService {
     // Use heap allocation for JSON document to avoid stack overflow
     std::unique_ptr<JsonDocument> filterDoc_;
     std::unique_ptr<JsonDocument> doc_;  // Reused across fetches to avoid heap fragmentation
-    JsonDocument filter_;  // Filter stays on stack (small size)
+    JsonDocument filter_;                // Filter stays on stack (small size)
     bool filterInitialized_ = false;
 
     String rawData_;  // Reused across fetches — avoids a heap alloc + free every 300–500 ms

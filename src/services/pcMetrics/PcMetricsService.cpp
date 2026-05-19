@@ -89,7 +89,8 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     }
     doc_->clear();
 
-    DeserializationError error = deserializeJson(*doc_, rawData, DeserializationOption::Filter(filter_));
+    DeserializationError error =
+        deserializeJson(*doc_, rawData, DeserializationOption::Filter(filter_));
 
     if (error) {
         logger_.errorf("JSON parsing failed: %s", error.c_str());
@@ -167,24 +168,6 @@ bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
     return allComponentsValid;
 }
 
-bool PcMetricsService::validateJsonStructure(JsonObject metrics) {
-    if (metrics.isNull())
-        return false;
-
-    // Check for required top-level objects
-    if (!metrics["Cpu"].is<JsonObject>()) {
-        logger_.warning("Missing or invalid CPU object in JSON");
-        return false;
-    }
-
-    if (!metrics["Ram"].is<JsonObject>()) {
-        logger_.warning("Missing or invalid RAM object in JSON");
-        return false;
-    }
-
-    return true;
-}
-
 bool PcMetricsService::parseDiskData(JsonObject disks, PcMetrics& outData) {
     try {
         PcMetricsDiskLock lock(outData);  // protect disk_drives for the duration of this write
@@ -231,7 +214,8 @@ bool PcMetricsService::parseCpuData(JsonObject cpu, PcMetrics& outData) {
         if (!coreLoads.isNull()) {
             uint8_t coreCount = config_.getPcMetricsCores();
             uint8_t actualCores = min(coreCount, static_cast<uint8_t>(coreLoads.size()));
-            const int maxThreads = sizeof(outData.cpu_thread_load) / sizeof(outData.cpu_thread_load[0]);
+            const int maxThreads =
+                sizeof(outData.cpu_thread_load) / sizeof(outData.cpu_thread_load[0]);
 
             for (int i = 0; i < actualCores; i++) {
                 if (i < maxThreads) {  // Check against array size in PcMetrics
@@ -302,7 +286,9 @@ bool PcMetricsService::parseMotherboardData(JsonObject motherboard, PcMetrics& o
         outData.system_fan_count = 0;
 
         if (!systemFans.isNull()) {
-            for (int i = 0; i < systemFans.size() && outData.system_fan_count < PcMetrics::kMaxSystemFans; i++) {
+            for (int i = 0;
+                 i < systemFans.size() && outData.system_fan_count < PcMetrics::kMaxSystemFans;
+                 i++) {
                 uint16_t rpm = static_cast<uint16_t>(systemFans[i] | 0);
                 if (rpm > 0) {
                     outData.system_fans[outData.system_fan_count++] = rpm;
