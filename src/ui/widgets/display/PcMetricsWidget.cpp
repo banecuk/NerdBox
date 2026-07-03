@@ -126,10 +126,11 @@ void PcMetricsWidget::buildGpuWidgets() {
             .unit("%")
             .range(0, 100)
             .colorThresholds(30.0f, 90.0f)
-            .label("VRM")
+            .label("VRAM")
             .labelWidth(kLabelWidth)
             .labelColor(0xAD27)
             .useGpuColors()
+            .verticalLabel()
             .build();
 
     // Row 4: GPU power | GPU fan | GPU compute
@@ -181,6 +182,7 @@ void PcMetricsWidget::buildMemoryWidget() {
             .label("RAM")
             .labelWidth(kLabelWidth)
             .labelColor(0xC618)
+            .verticalLabel()
             .build();
 }
 

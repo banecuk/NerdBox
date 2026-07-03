@@ -32,6 +32,7 @@ class MetricWidget : public Widget {
     // Label configuration
     void setLabel(const char* label);
     void setLabelWidth(uint16_t width);
+    void setVerticalLabel(bool vertical = true);  // stack label chars top-to-bottom — for tall tiles
 
     // Display configuration
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
@@ -146,6 +147,12 @@ class MetricWidget : public Widget {
             return *this;
         }
 
+        Builder& verticalLabel(bool vertical = true) {
+            verticalLabel_ = vertical;
+            hasVerticalLabel_ = true;
+            return *this;
+        }
+
         Builder& textAlignment(uint8_t alignment) {
             textAlignment_ = alignment;
             hasTextAlignment_ = true;
@@ -184,6 +191,8 @@ class MetricWidget : public Widget {
                 widget->setLabel(label_);
             if (hasLabelWidth_)
                 widget->setLabelWidth(labelWidth_);
+            if (hasVerticalLabel_)
+                widget->setVerticalLabel(verticalLabel_);
             if (hasTextAlignment_)
                 widget->setTextAlignment(textAlignment_);
             if (hasValueFormat_)
@@ -210,6 +219,7 @@ class MetricWidget : public Widget {
         uint16_t labelColor_ = TFT_WHITE;
         char label_[32] = "";
         uint16_t labelWidth_ = 0;
+        bool verticalLabel_ = false;
         uint8_t textAlignment_ = MC_DATUM;
         ValueFormat valueFormat_ = ValueFormat::kDefault;
 
@@ -224,6 +234,7 @@ class MetricWidget : public Widget {
         bool hasLabelColor_ = false;
         bool hasLabel_ = false;
         bool hasLabelWidth_ = false;
+        bool hasVerticalLabel_ = false;
         bool hasTextAlignment_ = false;
         bool hasValueFormat_ = false;
     };
@@ -251,6 +262,7 @@ class MetricWidget : public Widget {
 
     // State
     bool hasLabel_ = false;
+    bool verticalLabel_ = false;
     int16_t valueX_ = 0;
     uint16_t valueWidth_ = 0;
     bool dimensionsDirty_ = true;

@@ -30,15 +30,32 @@ void MetricWidget::drawStatic() {
 
     // Draw static elements (label if exists)
     if (hasLabel_ && labelWidth_ > 0) {
-        // Calculate label position (centered in label area)
-        int16_t labelX = dimensions_.x + (labelWidth_ / 2);
-        int16_t labelY = dimensions_.y + (dimensions_.height / 2);
+        const int16_t labelX = dimensions_.x + (labelWidth_ / 2);
 
-        // Draw label text
         lcd->setTextColor(labelColor_, TFT_BLACK);
         lcd->setTextDatum(MC_DATUM);
         Fonts::loadLabel(lcd);
-        lcd->drawString(label_, labelX, labelY);
+
+        if (verticalLabel_) {
+            // Stack one character per row, evenly spaced across the tile's
+            // full height — for tall (double-row) tiles where "RAM"/"VRAM"
+            // would otherwise overflow the narrow label column.
+            const size_t len = strlen(label_);
+            if (len > 0) {
+                const int16_t rowH = dimensions_.height / static_cast<int16_t>(len);
+                char ch[2] = {'\0', '\0'};
+                for (size_t i = 0; i < len; ++i) {
+                    ch[0] = label_[i];
+                    const int16_t labelY =
+                        dimensions_.y + rowH * static_cast<int16_t>(i) + rowH / 2;
+                    lcd->drawString(ch, labelX, labelY);
+                }
+            }
+        } else {
+            const int16_t labelY = dimensions_.y + (dimensions_.height / 2);
+            lcd->drawString(label_, labelX, labelY);
+        }
+
         Fonts::unload(lcd);
     }
 
@@ -529,6 +546,13 @@ void MetricWidget::setLabelWidth(uint16_t width) {
         labelWidth_ = width;
         dimensionsDirty_ = true;
         valueAreaDirty_ = true;
+        markDirty();
+    }
+}
+
+void MetricWidget::setVerticalLabel(bool vertical) {
+    if (verticalLabel_ != vertical) {
+        verticalLabel_ = vertical;
         markDirty();
     }
 }
