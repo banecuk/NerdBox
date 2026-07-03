@@ -23,7 +23,7 @@ class PcMetricsService {
     bool fetchData(PcMetrics& outData);
 
  private:
-    bool parseData(const String& rawData, PcMetrics& outData);
+    bool parseData(PcMetrics& outData);
     void initFilter();
     bool parseCpuData(JsonObject cpu, PcMetrics& outData);
     bool parseCpuExtendedData(JsonObject cpuExtended, PcMetrics& outData);
@@ -42,6 +42,4 @@ class PcMetricsService {
     std::unique_ptr<JsonDocument> doc_;  // Reused across fetches to avoid heap fragmentation
     JsonDocument filter_;                // Filter stays on stack (small size)
     bool filterInitialized_ = false;
-
-    String rawData_;  // Reused across fetches — avoids a heap alloc + free every 300–500 ms
 };

@@ -67,36 +67,26 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
         filterInitialized_ = true;
     }
 
-    rawData_ = "";  // clear without freeing the buffer
-    if (networkManager_.getHttpClient().download(LIBRE_HM_API, rawData_)) {
-        bool success = parseData(rawData_, outData);
-        return success;
-    } else {
+    // Deserializes straight from the HTTP stream into doc_ — no intermediate
+    // String buffer for the response body — and reuses doc_ across fetches
+    // to avoid heap fragmentation.
+    doc_->clear();
+    HttpClient& http = networkManager_.getHttpClient();
+    if (!http.downloadAndParse(LIBRE_HM_API, *doc_, filter_)) {
         outData.is_available = false;
-        logger_.error("Failed to fetch data from PC metrics API");
+        if (http.getLastHttpCode() == HTTP_CODE_OK) {
+            logger_.errorf("JSON parsing failed: %s", http.getLastParseError().c_str());
+        } else {
+            logger_.error("Failed to fetch data from PC metrics API");
+        }
         return false;
     }
+
+    return parseData(outData);
 }
 
-bool PcMetricsService::parseData(const String& rawData, PcMetrics& outData) {
+bool PcMetricsService::parseData(PcMetrics& outData) {
     unsigned long startTime = millis();
-
-    // Reuse the persistent doc_ to avoid heap fragmentation on every fetch
-    if (!doc_) {
-        logger_.error("JSON document not allocated");
-        outData.is_available = false;
-        return false;
-    }
-    doc_->clear();
-
-    DeserializationError error =
-        deserializeJson(*doc_, rawData, DeserializationOption::Filter(filter_));
-
-    if (error) {
-        logger_.errorf("JSON parsing failed: %s", error.c_str());
-        outData.is_available = false;
-        return false;
-    }
 
     JsonObject metrics = (*doc_)["Metrics"];
     if (metrics.isNull()) {
