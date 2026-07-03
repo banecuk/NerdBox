@@ -4,8 +4,27 @@
 
 #include "core/resources/FontRegistry.h"
 
+namespace {
+constexpr const char* kDegreesC =
+    "\xC2\xB0"
+    "C";
+
+float valueCpuLoad(const PcMetrics& m) { return m.cpu_load; }
+float valueCpuTemperature(const PcMetrics& m) { return m.cpu_temperature; }
+float valueCpuPower(const PcMetrics& m) { return m.cpu_power; }
+float valueCpuFan(const PcMetrics& m) { return m.cpu_fan; }
+float valueGpuLoad(const PcMetrics& m) { return m.gpu_load; }
+float valueGpuTemperature(const PcMetrics& m) { return m.gpu_temperature; }
+float valueGpuPower(const PcMetrics& m) { return m.gpu_power; }
+float valueGpu3d(const PcMetrics& m) { return m.gpu_3d; }
+float valueGpuCompute(const PcMetrics& m) { return m.gpu_compute; }
+float valueGpuMemory(const PcMetrics& m) { return m.gpu_mem; }
+float valueGpuFan(const PcMetrics& m) { return m.gpu_fan; }
+float valueMemoryLoad(const PcMetrics& m) { return m.mem_load; }
+}  // namespace
+
 // ---------------------------------------------------------------------------
-// Constructor — delegates layout work to per-subsystem helpers
+// Constructor — builds the fixed tiles from the descriptor table
 // ---------------------------------------------------------------------------
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
@@ -17,9 +36,7 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
       config_(config),
       systemMetrics_(systemMetrics),
       freshnessGuard_(pcMetrics) {
-    buildCpuWidgets();
-    buildGpuWidgets();
-    buildMemoryWidget();
+    buildFixedWidgets();
     // System fan widgets are built lazily in ensureSystemFanWidgetsCreated()
     // once the first data fetch reveals how many fans are actually connected.
 }
@@ -28,162 +45,56 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
 // Widget construction helpers
 // ---------------------------------------------------------------------------
 
-void PcMetricsWidget::buildCpuWidgets() {
-    // Row 1: CPU load | CPU temperature
-    cpuLoadWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow1, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(10.0f, 90.0f)
-            .label("CPU")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xC618)
-            .build();
+const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
+PcMetricsWidget::fixedTileDescriptors() {
+    static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = {{
+        // CPU row
+        {{kCol8, kRow1, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CPU", kLabelWidth, 0xC618,
+         false, false, valueCpuLoad},
+        {{kCol9, kRow1, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
+         0xC618, false, false, valueCpuTemperature},
+        {{kCol8, kRow2, kTileWidth, kRowH}, " W", 0, 400, 55.0f, 140.0f, "PWR", kLabelWidth,
+         0xC618, false, false, valueCpuPower},
+        {{kCol9, kRow2, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1200.0f, "FAN", kLabelWidth,
+         0xC618, false, false, valueCpuFan},
 
-    cpuTemperatureWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow1, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit(
-                "\xC2\xB0"
-                "C")
-            .range(0, 100)
-            .colorThresholds(55.0f, 85.0f)
-            .label("TMP")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xC618)
-            .build();
+        // GPU rows
+        {{kCol8, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "GPU", kLabelWidth, 0xAD27,
+         true, false, valueGpuLoad},
+        {{kCol9, kRow3, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
+         0xAD27, true, false, valueGpuTemperature},
+        {{kCol8, kRow4, kTileWidth, kRowH}, " W", 0, 400, 50.0f, 170.0f, "PWR", kLabelWidth,
+         0xAD27, true, false, valueGpuPower},
+        {{kCol7, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "3D", kLabelWidth, 0xAD27,
+         true, false, valueGpu3d},
+        {{kCol7, kRow4, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CMP", kLabelWidth, 0xAD27,
+         true, false, valueGpuCompute},
+        {{kCol6, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)}, "%", 0, 100, 30.0f, 90.0f,
+         "VRAM", kLabelWidth, 0xAD27, true, true, valueGpuMemory},
+        {{kCol9, kRow4, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1400.0f, "FAN", kLabelWidth,
+         0xAD27, true, false, valueGpuFan},
 
-    // Row 2: CPU power | CPU fan
-    cpuPowerWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow2, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit(" W")
-            .range(0, 400)
-            .colorThresholds(55.0f, 140.0f)
-            .label("PWR")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xC618)
-            .build();
-
-    cpuFanWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow2, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit("")
-            .range(0, 1500)
-            .colorThresholds(800.0f, 1200.0f)
-            .label("FAN")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xC618)
-            .build();
+        // RAM — rows 3-4 span (double height), leftmost of the right-side tiles
+        {{kCol5, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)}, "%", 0, 100, 60.0f, 90.0f,
+         "RAM", kLabelWidth, 0xC618, false, true, valueMemoryLoad},
+    }};
+    return kTiles;
 }
 
-void PcMetricsWidget::buildGpuWidgets() {
-    // Row 3: RAM | GPU memory | GPU 3D | GPU load | GPU temperature
-    gpuLoadWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow3, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(10.0f, 90.0f)
-            .label("GPU")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .build();
-
-    gpuTemperatureWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow3, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit(
-                "\xC2\xB0"
-                "C")
-            .range(0, 100)
-            .colorThresholds(55.0f, 85.0f)
-            .label("TMP")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .build();
-
-    // Row 3 (middle): GPU 3D workload
-    gpu3dWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol7, kRow3, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(10.0f, 90.0f)
-            .label("3D")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .build();
-
-    // Row 3–4 span: GPU memory (double height)
-    gpuMemoryWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol6, kRow3, kTileWidth, kRowH * 2},
-                              updateIntervalMs_)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(30.0f, 90.0f)
-            .label("VRAM")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .verticalLabel()
-            .build();
-
-    // Row 4: GPU power | GPU fan | GPU compute
-    gpuPowerWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol8, kRow4, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit(" W")
-            .range(0, 400)
-            .colorThresholds(50.0f, 170.0f)
-            .label("PWR")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .build();
-
-    gpuFanWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol9, kRow4, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit("")
-            .range(0, 1500)
-            .colorThresholds(800.0f, 1400.0f)
-            .label("FAN")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .build();
-
-    gpuComputeWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol7, kRow4, kTileWidth, kRowH},
-                              updateIntervalMs_)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(10.0f, 90.0f)
-            .label("CMP")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xAD27)
-            .useGpuColors()
-            .build();
-}
-
-void PcMetricsWidget::buildMemoryWidget() {
-    // Rows 3–4 span (double height), leftmost of the right-side tiles
-    memoryLoadWidget_ =
-        MetricWidget::Builder(WidgetInterface::Dimensions{kCol5, kRow3, kTileWidth, kRowH * 2},
-                              updateIntervalMs_)
-            .unit("%")
-            .range(0, 100)
-            .colorThresholds(60.0f, 90.0f)
-            .label("RAM")
-            .labelWidth(kLabelWidth)
-            .labelColor(0xC618)
-            .verticalLabel()
-            .build();
+void PcMetricsWidget::buildFixedWidgets() {
+    for (uint8_t i = 0; i < kFixedTileCount; ++i) {
+        const FixedTileDescriptor& d = fixedTileDescriptors()[i];
+        fixedWidgets_[i] = MetricWidget::Builder(d.dims, updateIntervalMs_)
+                               .unit(d.unit)
+                               .range(d.rangeMin, d.rangeMax)
+                               .colorThresholds(d.thresholdLow, d.thresholdHigh)
+                               .label(d.label)
+                               .labelWidth(d.labelWidth)
+                               .labelColor(d.labelColor)
+                               .useGpuColors(d.useGpuColors)
+                               .verticalLabel(d.verticalLabel)
+                               .build();
+    }
 }
 
 void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
@@ -371,18 +282,10 @@ void PcMetricsWidget::drawStatic() {
         return;
 
     if (hasFreshData()) {
-        initAndDrawWidget(*cpuLoadWidget_);
-        initAndDrawWidget(*cpuTemperatureWidget_);
-        initAndDrawWidget(*cpuPowerWidget_);
-        initAndDrawWidget(*cpuFanWidget_);
-        initAndDrawWidget(*gpuLoadWidget_);
-        initAndDrawWidget(*gpuPowerWidget_);
-        initAndDrawWidget(*gpuTemperatureWidget_);
-        initAndDrawWidget(*gpu3dWidget_);
-        initAndDrawWidget(*gpuComputeWidget_);
-        initAndDrawWidget(*gpuFanWidget_);
-        initAndDrawWidget(*gpuMemoryWidget_);
-        initAndDrawWidget(*memoryLoadWidget_);
+        for (auto& w : fixedWidgets_) {
+            if (w)
+                initAndDrawWidget(*w);
+        }
 
         // System fans — created/rebuilt based on live fan count.
         ensureSystemFanWidgetsCreated();
@@ -465,31 +368,14 @@ void PcMetricsWidget::drawDynamicData() {
     // down to 2 for the value pass.
     Fonts::loadMetric(lcd);
 
-    // Helper: set value and draw without loading the font again.
-    auto updateAndDraw = [](const std::unique_ptr<MetricWidget>& widget, float value) {
+    const auto& descriptors = fixedTileDescriptors();
+    for (uint8_t i = 0; i < kFixedTileCount; ++i) {
+        auto& widget = fixedWidgets_[i];
         if (widget) {
-            widget->setValue(static_cast<int>(value));
+            widget->setValue(static_cast<int>(descriptors[i].getValue(pcMetrics_)));
             widget->drawValueWithLoadedFont();
         }
-    };
-
-    // CPU
-    updateAndDraw(cpuLoadWidget_, pcMetrics_.cpu_load);
-    updateAndDraw(cpuTemperatureWidget_, pcMetrics_.cpu_temperature);
-    updateAndDraw(cpuPowerWidget_, pcMetrics_.cpu_power);
-    updateAndDraw(cpuFanWidget_, pcMetrics_.cpu_fan);
-
-    // GPU
-    updateAndDraw(gpuLoadWidget_, pcMetrics_.gpu_load);
-    updateAndDraw(gpuTemperatureWidget_, pcMetrics_.gpu_temperature);
-    updateAndDraw(gpuPowerWidget_, pcMetrics_.gpu_power);
-    updateAndDraw(gpu3dWidget_, pcMetrics_.gpu_3d);
-    updateAndDraw(gpuComputeWidget_, pcMetrics_.gpu_compute);
-    updateAndDraw(gpuMemoryWidget_, pcMetrics_.gpu_mem);
-    updateAndDraw(gpuFanWidget_, pcMetrics_.gpu_fan);
-
-    // RAM
-    updateAndDraw(memoryLoadWidget_, pcMetrics_.mem_load);
+    }
 
     // System fans
     for (uint8_t i = 0; i < pcMetrics_.system_fan_count && i < systemFanWidgets_.size(); ++i) {
@@ -507,20 +393,10 @@ void PcMetricsWidget::drawDynamicData() {
     // steady-state frames cost almost nothing here.
     Fonts::loadLabel(lcd);
 
-    cpuLoadWidget_->drawUnitWithLoadedFont();
-    cpuTemperatureWidget_->drawUnitWithLoadedFont();
-    cpuPowerWidget_->drawUnitWithLoadedFont();
-    cpuFanWidget_->drawUnitWithLoadedFont();
-
-    gpuLoadWidget_->drawUnitWithLoadedFont();
-    gpuTemperatureWidget_->drawUnitWithLoadedFont();
-    gpuPowerWidget_->drawUnitWithLoadedFont();
-    gpu3dWidget_->drawUnitWithLoadedFont();
-    gpuComputeWidget_->drawUnitWithLoadedFont();
-    gpuMemoryWidget_->drawUnitWithLoadedFont();
-    gpuFanWidget_->drawUnitWithLoadedFont();
-
-    memoryLoadWidget_->drawUnitWithLoadedFont();
+    for (auto& widget : fixedWidgets_) {
+        if (widget)
+            widget->drawUnitWithLoadedFont();
+    }
 
     for (uint8_t i = 0; i < pcMetrics_.system_fan_count && i < systemFanWidgets_.size(); ++i) {
         if (systemFanWidgets_[i]) {

@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <string>
 
 #include "config/AppConfigInterface.h"
@@ -71,6 +72,44 @@ class PcMetricsWidget : public Widget {
     static constexpr uint8_t kMaxSystemFanWidgets = PcMetrics::kMaxSystemFans;
 
     // -----------------------------------------------------------------------
+    // Fixed tile layout — descriptor table replaces one named unique_ptr
+    // member per tile. Index order here also fixes the draw order used by
+    // drawStatic()/drawDynamicData().
+    // -----------------------------------------------------------------------
+    enum FixedTile : uint8_t {
+        kCpuLoad = 0,
+        kCpuTemperature,
+        kCpuPower,
+        kCpuFan,
+        kGpuLoad,
+        kGpuTemperature,
+        kGpuPower,
+        kGpu3d,
+        kGpuCompute,
+        kGpuMemory,
+        kGpuFan,
+        kMemoryLoad,
+        kFixedTileCount
+    };
+
+    struct FixedTileDescriptor {
+        WidgetInterface::Dimensions dims;
+        const char* unit;
+        int rangeMin;
+        int rangeMax;
+        float thresholdLow;
+        float thresholdHigh;
+        const char* label;
+        uint8_t labelWidth;
+        uint16_t labelColor;
+        bool useGpuColors;
+        bool verticalLabel;
+        float (*getValue)(const PcMetrics&);
+    };
+
+    static const std::array<FixedTileDescriptor, kFixedTileCount>& fixedTileDescriptors();
+
+    // -----------------------------------------------------------------------
     // Dependencies
     // -----------------------------------------------------------------------
     DisplayContext& context_;
@@ -92,26 +131,12 @@ class PcMetricsWidget : public Widget {
     uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 
     // -----------------------------------------------------------------------
-    // Child widgets — grouped by subsystem for readability
+    // Child widgets
     // -----------------------------------------------------------------------
 
-    // CPU row
-    std::unique_ptr<MetricWidget> cpuLoadWidget_;
-    std::unique_ptr<MetricWidget> cpuTemperatureWidget_;
-    std::unique_ptr<MetricWidget> cpuPowerWidget_;
-    std::unique_ptr<MetricWidget> cpuFanWidget_;
-
-    // GPU rows
-    std::unique_ptr<MetricWidget> gpuLoadWidget_;
-    std::unique_ptr<MetricWidget> gpuTemperatureWidget_;
-    std::unique_ptr<MetricWidget> gpuPowerWidget_;
-    std::unique_ptr<MetricWidget> gpu3dWidget_;
-    std::unique_ptr<MetricWidget> gpuComputeWidget_;
-    std::unique_ptr<MetricWidget> gpuMemoryWidget_;
-    std::unique_ptr<MetricWidget> gpuFanWidget_;
-
-    // RAM
-    std::unique_ptr<MetricWidget> memoryLoadWidget_;
+    // CPU/GPU/RAM tiles — one entry per FixedTile, built from
+    // fixedTileDescriptors() in the constructor.
+    std::array<std::unique_ptr<MetricWidget>, kFixedTileCount> fixedWidgets_;
 
     // System fans — built dynamically in ensureSystemFanWidgetsCreated() once
     // the compacted fan count arrives from the first data fetch.
@@ -121,11 +146,9 @@ class PcMetricsWidget : public Widget {
     std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
 
     // -----------------------------------------------------------------------
-    // Construction helpers — each builds one logical group of widgets
+    // Construction helpers
     // -----------------------------------------------------------------------
-    void buildCpuWidgets();
-    void buildGpuWidgets();
-    void buildMemoryWidget();
+    void buildFixedWidgets();
 
     // -----------------------------------------------------------------------
     // Runtime helpers
