@@ -31,7 +31,6 @@ bool AirQualityService::parseResponse(const String& raw, AirQualityData& outData
     filter["data"]["current"]["weather"]["ws"]        = true;
     filter["data"]["current"]["weather"]["wd"]        = true;
     filter["data"]["current"]["weather"]["ic"]        = true;
-    filter["data"]["current"]["weather"]["heatIndex"] = true;
     filter["data"]["current"]["pollution"]["aqius"]   = true;
 
     doc_->clear();
@@ -61,7 +60,6 @@ bool AirQualityService::parseResponse(const String& raw, AirQualityData& outData
     outData.humidity        = static_cast<uint8_t>(weather["hu"]       | 0);
     outData.pressure        = static_cast<int16_t>(weather["pr"]       | 0);
     outData.wind_dir        = static_cast<uint16_t>(weather["wd"]      | 0);
-    outData.heat_index      = static_cast<int8_t>(weather["heatIndex"] | 0);
 
     // Icon code — copy at most 3 chars ("01d", "10n", etc.)
     const char* ic = weather["ic"] | "";
@@ -76,8 +74,8 @@ bool AirQualityService::parseResponse(const String& raw, AirQualityData& outData
     outData.is_available   = true;
     outData.last_update    = millis();
 
-    logger_.debugf("AirQuality: tp=%d hi=%d hu=%d pr=%d ws=%.1f wd=%d aqi=%d",
-                   outData.temperature, outData.heat_index, outData.humidity,
+    logger_.debugf("AirQuality: tp=%d hu=%d pr=%d ws=%.1f wd=%d aqi=%d",
+                   outData.temperature, outData.humidity,
                    outData.pressure, ws, outData.wind_dir, outData.aqi_us);
 
     return true;

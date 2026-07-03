@@ -10,7 +10,6 @@ struct AirQualityData {
 
     // Weather
     int8_t   temperature    = 0;   // tp        — °C
-    int8_t   heat_index     = 0;   // heatIndex — apparent temperature °C
     uint8_t  humidity       = 0;   // hu        — %
     int16_t  pressure       = 0;   // pr        — hPa
     uint16_t wind_speed_x10 = 0;   // ws*10     — m/s stored as integer (194 = 1.94)
