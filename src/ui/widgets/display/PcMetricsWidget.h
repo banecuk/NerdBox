@@ -85,7 +85,10 @@ class PcMetricsWidget : public Widget {
     unsigned long lastEnsureCheckTimestamp_ = 0;  // last pcMetrics_ timestamp seen by the ensure calls
     DataFreshnessGuard freshnessGuard_;
     bool wasFreshData_ = false;
-    bool isStaticDrawn_    = false;
+    // isStaticDrawn_ is inherited (protected) from Widget — previously
+    // shadowed by a same-named member here, which meant Widget::cleanUp()
+    // reset the base copy while this class read/wrote a separate one, so a
+    // cleanup/reinit cycle could leave this class's chrome-drawn flag stale.
     uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 
     // -----------------------------------------------------------------------
