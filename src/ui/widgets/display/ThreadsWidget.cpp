@@ -64,6 +64,13 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
 }
 
 void ThreadsWidget::updateSmoothedValues() {
+    // Called every screen tick (kThreadsRefreshMs), not just when a new fetch
+    // lands (kRefreshMs). This is intentional: the raw target stays constant
+    // between fetches, so repeated calls just keep nudging the smoothed value
+    // toward it, and the kThreadsUpward/DownwardSmoothing alphas are tuned for
+    // this per-tick cadence to produce a fast-attack / slow-decay VU-meter
+    // animation. Gating this on pcMetrics_.last_update_timestamp would turn
+    // that smooth animation into a hard step every fetch instead.
     valueSmoother_->update(pcMetrics_.cpu_thread_load, config_.getPcMetricsCores());
     valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.getPcMetricsCores());
 }

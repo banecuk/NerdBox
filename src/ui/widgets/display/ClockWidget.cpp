@@ -79,44 +79,45 @@ void ClockWidget::onDraw(bool forceRedraw) {
 }
 
 void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
-    bool changed = false;
+    const bool hoursChanged = forceRedraw || timeinfo.tm_hour != hours_.lastValue;
+    const bool minsChanged  = forceRedraw || timeinfo.tm_min  != mins_.lastValue;
+    const bool secsChanged  = forceRedraw || timeinfo.tm_sec  != secs_.lastValue;
 
-    if (forceRedraw || timeinfo.tm_hour != hours_.lastValue) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_hour);
-        drawField(buf, xHours_);
-        hours_.lastValue = timeinfo.tm_hour;
-        changed = true;
-    }
-    if (forceRedraw || timeinfo.tm_min != mins_.lastValue) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_min);
-        drawField(buf, xMins_);
-        mins_.lastValue = timeinfo.tm_min;
-        changed = true;
-    }
-    if (forceRedraw || timeinfo.tm_sec != secs_.lastValue) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_sec);
-        drawField(buf, xSecs_);
-        secs_.lastValue = timeinfo.tm_sec;
-        changed = true;
+    if (!hoursChanged && !minsChanged && !secsChanged) {
+        return;
     }
 
-    if (changed) {
-        lastUpdateTimeMs_ = millis();
-        clearDirty();
-    }
-}
-
-void ClockWidget::drawField(const char* text, uint16_t x) {
+    // Load the font once for every field that changed this tick instead of
+    // once per field — at steady state (seconds ticking) this was one
+    // heap alloc/free every second; on minute/hour rollovers, up to three.
     LGFX* lcd = getLcd();
     Fonts::loadMono(lcd);
-    
     lcd->setTextColor(textColor_, bgColor_);
     lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(text, x, yText_);
+
+    if (hoursChanged) {
+        char buf[3];
+        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_hour);
+        lcd->drawString(buf, xHours_, yText_);
+        hours_.lastValue = timeinfo.tm_hour;
+    }
+    if (minsChanged) {
+        char buf[3];
+        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_min);
+        lcd->drawString(buf, xMins_, yText_);
+        mins_.lastValue = timeinfo.tm_min;
+    }
+    if (secsChanged) {
+        char buf[3];
+        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_sec);
+        lcd->drawString(buf, xSecs_, yText_);
+        secs_.lastValue = timeinfo.tm_sec;
+    }
+
     Fonts::unload(lcd);
+
+    lastUpdateTimeMs_ = millis();
+    clearDirty();
 }
 
 bool ClockWidget::handleTouch(uint16_t x, uint16_t y) {

@@ -20,10 +20,6 @@ class ClockWidget : public Widget {
     void computeLayout();
     void updateIfNeeded(struct tm& timeinfo, bool forceRedraw);
 
-    // Draws a 2-digit field in-place with a solid text background — no fillRect,
-    // no blank frame, no flicker.
-    void drawField(const char* text, uint16_t x);
-
     uint16_t textColor_;
     uint16_t bgColor_;
     std::string format_;

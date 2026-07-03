@@ -187,9 +187,11 @@ void MetricWidget::renderValueTextOnly() {
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
+    // Value font stays loaded across the measure, background clear, and draw
+    // below — loadFont()/unloadFont() stream from PROGMEM into a fresh heap
+    // buffer each time, so this keeps it to one load instead of two.
     loadValueFont();
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
-    unloadValueFont();
 
     // When a unit is attached, its position depends on the value's width, so
     // ANY width change (not just shrinking) must clear the area to avoid
@@ -214,7 +216,6 @@ void MetricWidget::renderValueTextOnly() {
         startX = areaX + areaWidth / 2 - totalW / 2;
     }
 
-    loadValueFont();
     lcd->setTextColor(TFT_WHITE, newBgColor);
     lcd->setTextDatum(ML_DATUM);
     lcd->drawString(displayText, startX, textY);

@@ -52,9 +52,22 @@ private:
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
-    void drawTile(uint8_t tileIndex, const char* prefix,
-                  const char* value, uint16_t valueColor,
-                  const char* unit = nullptr);
+
+    // One display tile: prefix XOR unit (never both) — matching drawTiles()'s
+    // three layout branches (prefix+value, value+unit, or value alone).
+    struct TileSpec {
+        const char* prefix;
+        const char* value;
+        uint16_t    valueColor;
+        const char* unit;
+    };
+
+    // Draws all kTileCount tiles per refresh. Widths are measured with each
+    // font loaded once across every tile, then values and labels are each
+    // drawn with a single font load — a flat 4 font loads total instead of
+    // up to 4 per tile (20 for all 5) from loading/unloading inside a
+    // per-tile drawTile() call.
+    void drawTiles(const TileSpec (&tiles)[kTileCount]);
     void drawIcon(const char* code);
     void drawNoData();
     const uint16_t* iconForCode(const char* code) const;

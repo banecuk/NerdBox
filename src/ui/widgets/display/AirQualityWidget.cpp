@@ -78,34 +78,27 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
 
     if (!lastAvail_) drawStatic();
 
-    char buf[20];
-
     // Icon
     if (forceRedraw || !lastAvail_ || iconChanged) {
         drawIcon(airData_.icon_code);
     }
 
-    // Tile 0 — Temperature
-    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.temperature));
-    drawTile(0, nullptr, buf, TFT_WHITE, "\xc2\xb0""C");
-
-    // Tile 1 — Humidity
-    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.humidity));
-    drawTile(1, nullptr, buf, 0x867F, "%");
-
-    // Tile 2 — Pressure
-    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.pressure));
-    drawTile(2, nullptr, buf, TFT_LIGHTGREY, " hPa");
-
-    // Tile 3 — Wind speed
-    snprintf(buf, sizeof(buf), "%u.%u",
-             airData_.wind_speed_x10 / 10,
+    char bufTemp[8], bufHumidity[8], bufPressure[8], bufWind[8], bufAqi[8];
+    snprintf(bufTemp, sizeof(bufTemp), "%d", static_cast<int>(airData_.temperature));
+    snprintf(bufHumidity, sizeof(bufHumidity), "%d", static_cast<int>(airData_.humidity));
+    snprintf(bufPressure, sizeof(bufPressure), "%d", static_cast<int>(airData_.pressure));
+    snprintf(bufWind, sizeof(bufWind), "%u.%u", airData_.wind_speed_x10 / 10,
              airData_.wind_speed_x10 % 10);
-    drawTile(3, nullptr, buf, TFT_LIGHTGREY, " m/s");
+    snprintf(bufAqi, sizeof(bufAqi), "%d", static_cast<int>(airData_.aqi_us));
 
-    // Tile 4 — AQI with inline prefix
-    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.aqi_us));
-    drawTile(4, "AQI ", buf, aqiColor(airData_.aqi_us));
+    const TileSpec tiles[kTileCount] = {
+        {nullptr, bufTemp, TFT_WHITE, "\xc2\xb0""C"},
+        {nullptr, bufHumidity, 0x867F, "%"},
+        {nullptr, bufPressure, TFT_LIGHTGREY, " hPa"},
+        {nullptr, bufWind, TFT_LIGHTGREY, " m/s"},
+        {"AQI ", bufAqi, aqiColor(airData_.aqi_us), nullptr},
+    };
+    drawTiles(tiles);
 
     // Cache
     lastAvail_    = true;
@@ -136,82 +129,92 @@ void AirQualityWidget::drawIcon(const char* code) {
 }
 
 // ---------------------------------------------------------------------------
-// drawTile
+// drawTiles
 // Values use loadMetric() — NotoSans 18 pt.
 // prefix/unit use loadLabel() — NotoSansDisplay 12 pt, dimmed to de-emphasise.
+//
+// Two passes across all tiles per font (measure, then draw) instead of
+// loading/unloading per tile — loadFont() streams the font from PROGMEM into
+// a fresh heap buffer each time, so this keeps font swaps at a flat 4
+// (2 measure + 2 draw) regardless of tile count, instead of up to 4 per tile.
 // ---------------------------------------------------------------------------
 
-void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
-                                const char* value, uint16_t valueColor,
-                                const char* unit) {
+void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
     LGFX* lcd = getLcd();
     if (!lcd) return;
 
-    const int16_t tx  = dimensions_.x + kIconW + tileIndex * kTileW;
-    const int16_t ty  = dimensions_.y;
-    const int16_t cx  = tx + kTileW / 2;
-    const int16_t h   = dimensions_.height;
+    const int16_t ty = dimensions_.y;
+    const int16_t h  = dimensions_.height;
+    const int16_t midY = ty + h / 2;
 
-    lcd->fillRect(tx + 1, ty + 1, kTileW - 2, h - 2, TFT_BLACK);
-
-    if (prefix != nullptr) {
-        // Inline prefix (dim, 12 pt) + value (18 pt), vertically centred
-        const int16_t midY = ty + h / 2;
-
-        Fonts::loadLabel(lcd);
-        const int16_t prefW = static_cast<int16_t>(lcd->textWidth(prefix));
-        Fonts::unload(lcd);
-        Fonts::loadMetric(lcd);
-        const int16_t valW = static_cast<int16_t>(lcd->textWidth(value));
-        Fonts::unload(lcd);
-
-        const int16_t startX = cx - (prefW + valW) / 2;
-
-        Fonts::loadLabel(lcd);
-        lcd->setTextColor(0x8410, TFT_BLACK);
-        lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(prefix, startX, midY);
-        Fonts::unload(lcd);
-
-        Fonts::loadMetric(lcd);
-        lcd->setTextColor(valueColor, TFT_BLACK);
-        lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(value, startX + prefW, midY);
-        Fonts::unload(lcd);
-
-    } else if (unit != nullptr) {
-        // Value (18 pt) + inline unit suffix (dim, 12 pt), vertically centred
-        const int16_t midY = ty + h / 2;
-
-        Fonts::loadMetric(lcd);
-        const int16_t valW = static_cast<int16_t>(lcd->textWidth(value));
-        Fonts::unload(lcd);
-        Fonts::loadLabel(lcd);
-        const int16_t unitW = static_cast<int16_t>(lcd->textWidth(unit));
-        Fonts::unload(lcd);
-
-        const int16_t startX = cx - (valW + unitW) / 2;
-
-        Fonts::loadMetric(lcd);
-        lcd->setTextColor(valueColor, TFT_BLACK);
-        lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(value, startX, midY);
-        Fonts::unload(lcd);
-
-        Fonts::loadLabel(lcd);
-        lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-        lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(unit, startX + valW, midY);
-        Fonts::unload(lcd);
-
-    } else {
-        // Value only — centred
-        Fonts::loadMetric(lcd);
-        lcd->setTextColor(valueColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(value, cx, ty + h / 2);
-        Fonts::unload(lcd);
+    for (uint8_t i = 0; i < kTileCount; ++i) {
+        const int16_t tx = dimensions_.x + kIconW + i * kTileW;
+        lcd->fillRect(tx + 1, ty + 1, kTileW - 2, h - 2, TFT_BLACK);
     }
+
+    int16_t valW[kTileCount]  = {0};
+    int16_t textW[kTileCount] = {0};
+
+    // Pass 1 — measure values (needed for every branch except value-only,
+    // which uses MC_DATUM and doesn't need a pre-measured width).
+    Fonts::loadMetric(lcd);
+    for (uint8_t i = 0; i < kTileCount; ++i) {
+        if (tiles[i].prefix != nullptr || tiles[i].unit != nullptr) {
+            valW[i] = static_cast<int16_t>(lcd->textWidth(tiles[i].value));
+        }
+    }
+    Fonts::unload(lcd);
+
+    // Pass 2 — measure prefix/unit text.
+    Fonts::loadLabel(lcd);
+    for (uint8_t i = 0; i < kTileCount; ++i) {
+        const char* text = tiles[i].prefix != nullptr ? tiles[i].prefix : tiles[i].unit;
+        if (text != nullptr) {
+            textW[i] = static_cast<int16_t>(lcd->textWidth(text));
+        }
+    }
+    Fonts::unload(lcd);
+
+    // Pass 3 — draw values.
+    Fonts::loadMetric(lcd);
+    for (uint8_t i = 0; i < kTileCount; ++i) {
+        const int16_t tx = dimensions_.x + kIconW + i * kTileW;
+        const int16_t cx = tx + kTileW / 2;
+        lcd->setTextColor(tiles[i].valueColor, TFT_BLACK);
+
+        if (tiles[i].prefix != nullptr) {
+            const int16_t startX = cx - (textW[i] + valW[i]) / 2;
+            lcd->setTextDatum(ML_DATUM);
+            lcd->drawString(tiles[i].value, startX + textW[i], midY);
+        } else if (tiles[i].unit != nullptr) {
+            const int16_t startX = cx - (valW[i] + textW[i]) / 2;
+            lcd->setTextDatum(ML_DATUM);
+            lcd->drawString(tiles[i].value, startX, midY);
+        } else {
+            lcd->setTextDatum(MC_DATUM);
+            lcd->drawString(tiles[i].value, cx, midY);
+        }
+    }
+    Fonts::unload(lcd);
+
+    // Pass 4 — draw prefix/unit text.
+    Fonts::loadLabel(lcd);
+    lcd->setTextDatum(ML_DATUM);
+    for (uint8_t i = 0; i < kTileCount; ++i) {
+        const int16_t tx = dimensions_.x + kIconW + i * kTileW;
+        const int16_t cx = tx + kTileW / 2;
+
+        if (tiles[i].prefix != nullptr) {
+            const int16_t startX = cx - (textW[i] + valW[i]) / 2;
+            lcd->setTextColor(0x8410, TFT_BLACK);
+            lcd->drawString(tiles[i].prefix, startX, midY);
+        } else if (tiles[i].unit != nullptr) {
+            const int16_t startX = cx - (valW[i] + textW[i]) / 2;
+            lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
+            lcd->drawString(tiles[i].unit, startX + valW[i], midY);
+        }
+    }
+    Fonts::unload(lcd);
 }
 
 // ---------------------------------------------------------------------------
