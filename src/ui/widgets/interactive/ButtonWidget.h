@@ -45,7 +45,6 @@ class ButtonWidget : public Widget {
 
     std::string label_;
     ButtonIcon icon_;
-    unsigned long lastTouchTime_;
     EventType action_;
     ActionCallback callback_;
     uint16_t bgColor_;
@@ -59,6 +58,5 @@ class ButtonWidget : public Widget {
     static constexpr uint16_t kBorderRadius = 5;
     static constexpr uint8_t kIconPad = 4;  // px between icon and label
 
-    static constexpr unsigned long DEBOUNCE_TIME_MS = 200;
     static constexpr unsigned long PRESS_FEEDBACK_MS = 100;
 };

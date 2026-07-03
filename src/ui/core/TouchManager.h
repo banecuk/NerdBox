@@ -30,9 +30,10 @@ class TouchManager {
 
     bool isValidCoordinate(int32_t x, int32_t y) const;
 
-    void resetDebounce();
-
-    unsigned long getTimeSinceLastTouch() const;
+    // Suppresses all touches for durationMs from now. Single chokepoint for
+    // anything that needs to blackout touch input (e.g. post-transition
+    // cooldown) — replaces having callers keep their own cooldown timers.
+    void suppressFor(uint32_t durationMs);
 
  private:
     LGFX& display_;
@@ -40,6 +41,7 @@ class TouchManager {
     AppConfigInterface& config_;
 
     unsigned long lastTouchTime_;
+    unsigned long suppressUntilTime_;
     uint32_t debounceIntervalMs_;
 
     bool shouldDebounce() const;

@@ -93,6 +93,4 @@ class UiController : public IScreenUpdater {
     SemaphoreHandle_t displayAccessMutex_;
 
     ScreenTransition activeTransition_;
-    unsigned long lastScreenTransitionTime_ = 0;
-    static constexpr unsigned long SCREEN_TRANSITION_COOLDOWN_MS = 300;
 };

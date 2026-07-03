@@ -125,6 +125,10 @@ class AppConfigService : public AppConfigInterface {
         return AppConfig::internal::UiImpl::kTouchDebounceIntervalMs;
     }
 
+    uint32_t getUiScreenTransitionCooldownMs() const override {
+        return AppConfig::internal::UiImpl::kScreenTransitionCooldownMs;
+    }
+
     uint32_t getUiDisplayLockTimeoutMs() const override {
         return AppConfig::internal::UiImpl::kDisplayLockTimeoutMs;
     }

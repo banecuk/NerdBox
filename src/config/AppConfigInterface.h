@@ -51,5 +51,6 @@ class AppConfigInterface {
     // UI getters
     virtual uint32_t getUiTransitionTimeoutMs() const = 0;
     virtual uint32_t getUiTouchDebounceIntervalMs() const = 0;
+    virtual uint32_t getUiScreenTransitionCooldownMs() const = 0;
     virtual uint32_t getUiDisplayLockTimeoutMs() const = 0;
 };

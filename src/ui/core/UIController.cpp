@@ -64,9 +64,6 @@ bool UiController::requestTransitionTo(ScreenName screenName) {
     activeTransition_.isActive = true;
     activeTransition_.startTime = millis();
 
-    // Reset touch debounce timer during transitions to prevent accidental touches
-    touchManager_->resetDebounce();
-
     return true;
 }
 
@@ -185,18 +182,13 @@ void UiController::completeTransition() {
     activeTransition_.isActive = false;
     activeTransition_.startTime = 0;
 
-    // Set cooldown period to prevent rapid screen switching
-    lastScreenTransitionTime_ = millis();
+    // Suppress touches briefly to prevent accidental input / rapid re-triggering
+    // right after a screen transition completes.
+    touchManager_->suppressFor(config_.getUiScreenTransitionCooldownMs());
     logger_.debug("[UiController] Screen transition complete - cooldown active");
 }
 
 void UiController::processTouchInput() {
-    // Prevent touch processing during cooldown period after screen transitions
-    unsigned long currentTime = millis();
-    if (currentTime - lastScreenTransitionTime_ < SCREEN_TRANSITION_COOLDOWN_MS) {
-        return;
-    }
-
     // Use TouchManager to read and validate touch
     TouchManager::TouchPoint touch = touchManager_->readTouch();
 

@@ -67,6 +67,7 @@ struct PcMetricsImpl {
 struct UiImpl {
     static constexpr uint32_t kTransitionTimeoutMs = 1000;
     static constexpr uint32_t kTouchDebounceIntervalMs = 200;
+    static constexpr uint32_t kScreenTransitionCooldownMs = 300;
     static constexpr uint32_t kDisplayLockTimeoutMs = 200;
 
     // NVS (Preferences) keys for persisted display settings.

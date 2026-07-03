@@ -15,7 +15,6 @@ ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label,
       icon_(ButtonIcon::NONE),
       action_(action),
       callback_(callback),
-      lastTouchTime_(0),
       bgColor_(bgColor),
       textColor_(textColor) {}
 
@@ -28,7 +27,6 @@ ButtonWidget::ButtonWidget(DisplayContext& context, ButtonIcon icon, const std::
       icon_(icon),
       action_(action),
       callback_(callback),
-      lastTouchTime_(0),
       bgColor_(bgColor),
       textColor_(textColor) {}
 
@@ -164,9 +162,6 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
         return false;
 
     const unsigned long now = millis();
-    if (now - lastTouchTime_ < DEBOUNCE_TIME_MS)
-        return false;
-    lastTouchTime_ = now;
 
     isPressed_ = true;
     pressStartTime_ = now;
