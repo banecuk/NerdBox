@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "config/AppConfigInterface.h"
+#include "core/IScreenUpdater.h"
 #include "core/state/SystemState.h"
 #include "DisplayContext.h"
 #include "DisplayManager.h"
@@ -12,7 +13,7 @@
 #include "services/network/NetworkStatus.h"
 #include "ui/core/TouchManager.h"
 #include "ui/screens/ScreenInterface.h"
-#include "ui/screens/ScreenTypes.h"
+#include "core/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
@@ -22,7 +23,7 @@ class MainScreen;
 class SettingsScreen;
 class UiEventHandler;
 
-class UiController {
+class UiController : public IScreenUpdater {
  public:
     explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
@@ -34,7 +35,7 @@ class UiController {
 
     // Lifecycle methods
     void initialize();
-    void updateDisplay();
+    void updateDisplay() override;
     bool isTransitioning() const { return activeTransition_.isActive; }
 
     // Screen transition methods

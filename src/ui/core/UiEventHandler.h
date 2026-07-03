@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EventBus.h"
+#include "core/events/EventBus.h"
 #include "utils/Logger.h"
 
 // Forward declarations

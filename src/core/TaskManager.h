@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "config/AppConfigInterface.h"
+#include "core/IScreenUpdater.h"
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
@@ -13,12 +14,11 @@
 #include "services/network/NetworkStatus.h"
 #include "services/network/NetworkStatusService.h"
 #include "services/NtpService.h"
-#include "ui/core/UiController.h"
 #include "utils/Logger.h"
 
 class TaskManager {
  public:
-    TaskManager(LoggerInterface& logger, UiController& uiController,
+    TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
                 PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                 AirQualityService& airQualityService, AirQualityData& airQualityData,
                 NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
@@ -41,7 +41,7 @@ class TaskManager {
 
     // Dependencies
     LoggerInterface& logger_;
-    UiController& uiController_;
+    IScreenUpdater& uiController_;
     PcMetricsService& pcMetricsService_;
     PcMetrics& pcMetrics_;
     AirQualityService& airQualityService_;

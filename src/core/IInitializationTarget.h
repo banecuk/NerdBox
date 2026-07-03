@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/screens/ScreenTypes.h"
+#include "core/ScreenTypes.h"
 #include "utils/LoggerInterface.h"
 
 /**

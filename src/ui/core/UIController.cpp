@@ -1,6 +1,6 @@
 #include "UIController.h"
 
-#include "core/events/UiEventHandler.h"
+#include "ui/core/UiEventHandler.h"
 #include "ui/screens/BootScreen.h"
 #include "ui/screens/ScreenFactory.h"
 #include "ui/widgetScreens/MainScreen.h"

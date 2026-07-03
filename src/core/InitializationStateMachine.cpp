@@ -1,6 +1,6 @@
 #include "InitializationStateMachine.h"
 
-#include "ui/screens/ScreenTypes.h"
+#include "core/ScreenTypes.h"
 
 InitializationStateMachine::InitializationStateMachine(IInitializationTarget& target)
     : target_(target), currentState_(State::INITIAL) {}

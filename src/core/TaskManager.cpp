@@ -5,7 +5,7 @@
 #include "services/airQuality/AirQualityService.h"
 #include "services/network/NetworkStatusService.h"
 
-TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
+TaskManager::TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
                          PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
                          AirQualityService& airQualityService, AirQualityData& airQualityData,
                          NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
