@@ -35,10 +35,9 @@ void WidgetManager::initializeWidgets() {
 
     lcd_->startWrite();
     for (auto& entry : widgetCache_) {
-        entry.widget->initialize(context_);
-        entry.widget->drawStatic();
-        entry.widget->draw(true);  // Force initial draw
-        entry.isDirty = false;     // Mark as clean after initialization
+        entry.widget->initialize(context_);  // draws static chrome once internally
+        entry.widget->draw(true);            // force the initial value draw
+        entry.isDirty = false;               // Mark as clean after initialization
     }
     lcd_->endWrite();
 

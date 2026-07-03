@@ -355,10 +355,15 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
 }
 
 void PcMetricsWidget::initAndDrawWidget(MetricWidget& widget) {
+    // initialize() draws static chrome on first call only (no-op on repeat
+    // calls once the widget is already initialized), so the explicit
+    // drawStatic() below is what actually repaints chrome on every
+    // subsequent stale->fresh transition. forceRefresh() resets the cached
+    // layout state and performs the initial value draw immediately — a
+    // trailing draw(true) would just repeat that same value draw.
     widget.initialize(context_);
     widget.drawStatic();
     widget.forceRefresh();
-    widget.draw(true);
 }
 
 void PcMetricsWidget::drawStatic() {

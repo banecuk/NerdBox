@@ -70,10 +70,11 @@ void Widget::draw(bool forceRedraw) {
         bool shouldDraw = forceRedraw || isDirty_ || needsUpdate();
 
         if (shouldDraw) {
-            if (forceRedraw) {
-                drawStatic();  // Redraw static if forced
-            }
-
+            // Callers that want a static repaint on a forced redraw are
+            // responsible for calling drawStatic() themselves beforehand —
+            // every current call site already does. Calling it here too used
+            // to double- (and via initAndDrawWidget-style call chains,
+            // triple-) repaint the widget's chrome on every forced redraw.
             onDraw(forceRedraw || isDirty_);
             lastUpdateTimeMs_ = millis();
             isDirty_ = false;
