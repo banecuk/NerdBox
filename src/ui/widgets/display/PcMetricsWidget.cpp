@@ -446,10 +446,16 @@ void PcMetricsWidget::drawDynamicData() {
 
     LGFX* lcd = getLcd();
 
-    // Load the metric font once for the entire batch of 14 MetricWidgets.
-    // Each widget calls drawValueWithLoadedFont() which skips the per-widget
-    // loadFont()/unloadFont() pair — reducing 28 heap alloc/free operations
-    // to 2, eliminating the inter-widget flash and the ThreadsWidget slowdown.
+    // Two passes across the same batch of MetricWidgets, one font each,
+    // instead of swapping fonts per-widget. loadFont() streams the font from
+    // PROGMEM into RAM — expensive — so this keeps the cost at a flat 4
+    // swaps (2 per pass) regardless of widget count, rather than 2 per widget
+    // if each widget's dim unit suffix were drawn inline with its value.
+    //
+    // Pass 1 — values (NotoSans18). Each widget calls drawValueWithLoadedFont(),
+    // which skips its own loadFont()/unloadFont() pair — see drawDynamicData's
+    // original comment history: this alone took 28 heap alloc/free operations
+    // down to 2 for the value pass.
     Fonts::loadMetric(lcd);
 
     // Helper: set value and draw without loading the font again.
@@ -486,7 +492,36 @@ void PcMetricsWidget::drawDynamicData() {
         }
     }
 
-    Fonts::unload(lcd);  // single unload for the entire batch
+    Fonts::unload(lcd);
+
+    // Pass 2 — unit suffixes, smaller font but same colour as the value
+    // (NotoSansDisplay12). drawUnitWithLoadedFont() is a no-op unless the
+    // paired value draw above actually moved or recoloured the unit, so
+    // steady-state frames cost almost nothing here.
+    Fonts::loadLabel(lcd);
+
+    cpuLoadWidget_->drawUnitWithLoadedFont();
+    cpuTemperatureWidget_->drawUnitWithLoadedFont();
+    cpuPowerWidget_->drawUnitWithLoadedFont();
+    cpuFanWidget_->drawUnitWithLoadedFont();
+
+    gpuLoadWidget_->drawUnitWithLoadedFont();
+    gpuTemperatureWidget_->drawUnitWithLoadedFont();
+    gpuPowerWidget_->drawUnitWithLoadedFont();
+    gpu3dWidget_->drawUnitWithLoadedFont();
+    gpuComputeWidget_->drawUnitWithLoadedFont();
+    gpuMemoryWidget_->drawUnitWithLoadedFont();
+    gpuFanWidget_->drawUnitWithLoadedFont();
+
+    memoryLoadWidget_->drawUnitWithLoadedFont();
+
+    for (uint8_t i = 0; i < pcMetrics_.system_fan_count && i < systemFanWidgets_.size(); ++i) {
+        if (systemFanWidgets_[i]) {
+            systemFanWidgets_[i]->drawUnitWithLoadedFont();
+        }
+    }
+
+    Fonts::unload(lcd);
 
     // Disk drives keep their own draw() call — they use a different update path.
     updateDiskDriveWidgets();

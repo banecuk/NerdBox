@@ -23,6 +23,8 @@ void MetricWidget::drawStatic() {
         updateDimensionCache();
     }
 
+    refreshUnitWidthIfNeeded();
+
     // Clear the entire widget area
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
@@ -51,6 +53,8 @@ void MetricWidget::onDraw(bool forceRedraw) {
     if (!getLcd() || !isStaticDrawn_) {
         return;
     }
+
+    refreshUnitWidthIfNeeded();
 
     bool valueChanged = (value_ != lastDrawnValue_);
     bool baseWidgetDirty = isDirty();
@@ -107,24 +111,37 @@ void MetricWidget::renderValueArea() {
         displayText = "0";  // Fallback to show something
     }
 
-    lcd->setTextColor(TFT_WHITE, lastBgColor_);
-    lcd->setTextDatum(textAlignment_);
     loadValueFont();
+    const int16_t valW = static_cast<int16_t>(lcd->textWidth(displayText));
+    const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
+    const int16_t totalW = valW + unitW;
 
-    // Calculate text position based on alignment
-    int16_t textX, textY;
+    // Calculate the combined [value][unit] block position based on alignment
+    int16_t startX;
     if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        textX = areaX + TEXT_MARGIN;
+        startX = areaX + TEXT_MARGIN;
     } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
                textAlignment_ == BR_DATUM) {
-        textX = areaX + areaWidth - TEXT_MARGIN;
+        startX = areaX + areaWidth - TEXT_MARGIN - totalW;
     } else {
-        textX = areaX + areaWidth / 2;
+        startX = areaX + areaWidth / 2 - totalW / 2;
     }
-    textY = dimensions_.y + dimensions_.height / 2;
+    const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
-    lcd->drawString(displayText, textX, textY);
+    lcd->setTextColor(TFT_WHITE, lastBgColor_);
+    lcd->setTextDatum(ML_DATUM);
+    lcd->drawString(displayText, startX, textY);
     unloadValueFont();
+
+    if (unitW > 0) {
+        Fonts::loadLabel(lcd);
+        lcd->setTextColor(TFT_WHITE, lastBgColor_);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->drawString(getUnitText(), startX + valW, textY);
+        Fonts::unload(lcd);
+    }
+
+    lastTextWidth_ = valW;
 }
 
 void MetricWidget::renderValueTextOnly() {
@@ -140,6 +157,7 @@ void MetricWidget::renderValueTextOnly() {
     }
 
     const char* displayText = getFormattedValueText();
+    const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
 
     int16_t areaX, areaWidth;
     if (hasLabel_) {
@@ -150,57 +168,65 @@ void MetricWidget::renderValueTextOnly() {
         areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
     }
 
-    int16_t textX, textY;
-    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        textX = areaX + TEXT_MARGIN;
-    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
-               textAlignment_ == BR_DATUM) {
-        textX = areaX + areaWidth - TEXT_MARGIN;
-    } else {
-        textX = areaX + areaWidth / 2;
-    }
-    textY = dimensions_.y + dimensions_.height / 2;
+    const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
-    // If background colour changed, clear the full value area first to avoid
-    // stale pixels from a previously longer string.
-    if (newBgColor != lastBgColor_) {
-        const int16_t areaY = dimensions_.y + BORDER_MARGIN;
-        const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
-        lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
-        lastBgColor_ = newBgColor;
-    }
-
-    // Per-glyph bg fill handles normal value changes (e.g. "99" → "100").
-    // For shrinking values (e.g. "100" → "9") we detect the width change and
-    // clear the area first.
     loadValueFont();
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
     unloadValueFont();
 
-    if (newTextW < lastTextWidth_) {
-        // New text is narrower — clear the full value area to erase leftover pixels.
+    // When a unit is attached, its position depends on the value's width, so
+    // ANY width change (not just shrinking) must clear the area to avoid
+    // leaving stale unit pixels behind at the old position.
+    const bool layoutShifted =
+        unitW > 0 ? (newTextW != lastTextWidth_) : (newTextW < lastTextWidth_);
+    if (layoutShifted) {
         const int16_t areaY = dimensions_.y + BORDER_MARGIN;
         const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
         lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
     }
     lastTextWidth_ = newTextW;
 
+    const int16_t totalW = newTextW + unitW;
+    int16_t startX;
+    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
+        startX = areaX + TEXT_MARGIN;
+    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
+               textAlignment_ == BR_DATUM) {
+        startX = areaX + areaWidth - TEXT_MARGIN - totalW;
+    } else {
+        startX = areaX + areaWidth / 2 - totalW / 2;
+    }
+
     loadValueFont();
     lcd->setTextColor(TFT_WHITE, newBgColor);
-    lcd->setTextDatum(textAlignment_);
-    lcd->drawString(displayText, textX, textY);
+    lcd->setTextDatum(ML_DATUM);
+    lcd->drawString(displayText, startX, textY);
     unloadValueFont();
+
+    // The unit only needs to be repainted when the layout actually shifted —
+    // otherwise the previously drawn glyphs are still valid on screen.
+    if (layoutShifted && unitW > 0) {
+        Fonts::loadLabel(lcd);
+        lcd->setTextColor(TFT_WHITE, newBgColor);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->drawString(getUnitText(), startX + newTextW, textY);
+        Fonts::unload(lcd);
+    }
 }
 
 void MetricWidget::drawValueWithLoadedFont() {
     // Fast path: font is already loaded by PcMetricsWidget's batch caller.
-    // We never call loadFont/unloadFont here — that's the caller's job.
+    // We never call loadFont/unloadFont here — that's the caller's job. The
+    // unit suffix (if any) is drawn separately by drawUnitWithLoadedFont() in
+    // a follow-up pass under the label font — see PcMetricsWidget::drawDynamicData.
     //
     // Exception: small-font widgets use NotoSansDisplay15, not the batch font
     // (NotoSans18).  Fall back to renderValueTextOnly() which handles its own
-    // load/unload so the batch font on the stack is left undisturbed.
+    // load/unload (value + unit) so the batch font on the stack is left
+    // undisturbed, and skip the paired drawUnitWithLoadedFont() call.
     if (useSmallFont_) {
         renderValueTextOnly();
+        unitNeedsRedraw_ = false;
         return;
     }
     LGFX* lcd = getLcd();
@@ -209,6 +235,7 @@ void MetricWidget::drawValueWithLoadedFont() {
     const uint16_t newBgColor = calculateBackgroundColor();
     const char* displayText = getFormattedValueText();
     if (!displayText || displayText[0] == '\0') displayText = "0";
+    const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
 
     int16_t areaX, areaWidth;
     if (hasLabel_) {
@@ -219,43 +246,67 @@ void MetricWidget::drawValueWithLoadedFont() {
         areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
     }
 
-    int16_t textX, textY;
-    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM ||
-        textAlignment_ == BL_DATUM) {
-        textX = areaX + TEXT_MARGIN;
-    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
-               textAlignment_ == BR_DATUM) {
-        textX = areaX + areaWidth - TEXT_MARGIN;
-    } else {
-        textX = areaX + areaWidth / 2;
-    }
-    textY = dimensions_.y + dimensions_.height / 2;
-
+    const int16_t textY = dimensions_.y + dimensions_.height / 2;
     const int16_t areaY = dimensions_.y + BORDER_MARGIN;
     const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
 
-    if (newBgColor != lastBgColor_) {
-        // Background colour changed — clear the full area.
+    const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
+    const bool bgChanged = (newBgColor != lastBgColor_);
+    // When a unit is attached, its position depends on the value's width, so
+    // ANY width change (not just shrinking) must clear the area — otherwise
+    // stale unit pixels are left behind at the old position.
+    const bool layoutShifted =
+        unitW > 0 ? (newTextW != lastTextWidth_) : (newTextW < lastTextWidth_);
+
+    if (bgChanged || layoutShifted) {
         lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
-        lastBgColor_ = newBgColor;
+    }
+    lastBgColor_ = newBgColor;
+    lastTextWidth_ = newTextW;
+
+    const int16_t totalW = newTextW + unitW;
+    int16_t startX;
+    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM ||
+        textAlignment_ == BL_DATUM) {
+        startX = areaX + TEXT_MARGIN;
+    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
+               textAlignment_ == BR_DATUM) {
+        startX = areaX + areaWidth - TEXT_MARGIN - totalW;
     } else {
-        // Same background — check whether the new text is narrower than the last
-        // drawn text; if so, clear first to erase leftover pixels.
-        const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
-        if (newTextW < lastTextWidth_) {
-            lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
-        }
-        lastTextWidth_ = newTextW;
+        startX = areaX + areaWidth / 2 - totalW / 2;
     }
 
     // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a
     // single pass — no blank frame, no flash, even after a background change.
     lcd->setTextColor(TFT_WHITE, newBgColor);
-    lcd->setTextDatum(textAlignment_);
-    lcd->drawString(displayText, textX, textY);
+    lcd->setTextDatum(ML_DATUM);
+    lcd->drawString(displayText, startX, textY);
+
+    // Stash the position for the paired drawUnitWithLoadedFont() call; only
+    // flag it when the unit actually needs to move/recolour.
+    unitDrawX_ = startX + newTextW;
+    unitDrawY_ = textY;
+    unitBgColor_ = newBgColor;
+    unitNeedsRedraw_ = unitW > 0 && (bgChanged || layoutShifted);
 
     lastDrawnValue_ = value_;
     clearDirty();
+}
+
+void MetricWidget::drawUnitWithLoadedFont() {
+    // Fast path: label font is already loaded by PcMetricsWidget's batch
+    // caller (see drawDynamicData's second pass). No-op unless the paired
+    // drawValueWithLoadedFont() call just moved or recoloured the unit.
+    if (!unitNeedsRedraw_) return;
+
+    LGFX* lcd = getLcd();
+    if (!lcd) return;
+
+    lcd->setTextColor(TFT_WHITE, unitBgColor_);
+    lcd->setTextDatum(ML_DATUM);
+    lcd->drawString(getUnitText(), unitDrawX_, unitDrawY_);
+
+    unitNeedsRedraw_ = false;
 }
 
 
@@ -284,35 +335,49 @@ void MetricWidget::updateDimensionCache() {
 }
 
 const char* MetricWidget::getFormattedValueText() const {
+    // The unit suffix is drawn separately (smaller, dimmed font) — see
+    // getUnitText() and refreshUnitWidthIfNeeded() — so this only formats
+    // the bare number.
     if (formatCacheDirty_) {
-        switch (valueFormat_) {
-            case ValueFormat::kPercent:
-                snprintf(formattedValue_, sizeof(formattedValue_), "%d%%", value_);
-                break;
-            case ValueFormat::kRpm:
-                snprintf(formattedValue_, sizeof(formattedValue_), "%d RPM", value_);
-                break;
-            case ValueFormat::kWatts:
-                snprintf(formattedValue_, sizeof(formattedValue_), "%dW", value_);
-                break;
-            case ValueFormat::kCelsius:
-                snprintf(formattedValue_, sizeof(formattedValue_), "%d\xC2\xB0""C", value_);
-                break;
-            case ValueFormat::kMB:
-                snprintf(formattedValue_, sizeof(formattedValue_), "%d MB", value_);
-                break;
-            case ValueFormat::kDefault:
-            default:
-                if (unit_[0] == '\0') {
-                    snprintf(formattedValue_, sizeof(formattedValue_), "%d", value_);
-                } else {
-                    snprintf(formattedValue_, sizeof(formattedValue_), "%d%s", value_, unit_);
-                }
-                break;
-        }
+        snprintf(formattedValue_, sizeof(formattedValue_), "%d", value_);
         formatCacheDirty_ = false;
     }
     return formattedValue_;
+}
+
+const char* MetricWidget::getUnitText() const {
+    switch (valueFormat_) {
+        case ValueFormat::kPercent:
+            return "%";
+        case ValueFormat::kRpm:
+            return " RPM";
+        case ValueFormat::kWatts:
+            return "W";
+        case ValueFormat::kCelsius:
+            return "\xC2\xB0""C";
+        case ValueFormat::kMB:
+            return " MB";
+        case ValueFormat::kDefault:
+        default:
+            return unit_;
+    }
+}
+
+void MetricWidget::refreshUnitWidthIfNeeded() const {
+    if (!unitWidthDirty_) return;
+
+    LGFX* lcd = getLcd();
+    if (!lcd) return;
+
+    const char* unit = getUnitText();
+    if (unit[0] != '\0') {
+        Fonts::loadLabel(lcd);
+        unitWidthCache_ = static_cast<uint16_t>(lcd->textWidth(unit));
+        Fonts::unload(lcd);
+    } else {
+        unitWidthCache_ = 0;
+    }
+    unitWidthDirty_ = false;
 }
 
 uint16_t MetricWidget::calculateBackgroundColor() const {
@@ -384,6 +449,7 @@ void MetricWidget::setUnit(const char* unit) {
     if (strcmp(unit_, unit) != 0) {
         safeStringCopy(unit_, unit, sizeof(unit_));
         formatCacheDirty_ = true;
+        unitWidthDirty_ = true;
         markDirty();
     }
 }
@@ -478,6 +544,7 @@ void MetricWidget::setValueFormat(ValueFormat format) {
     if (valueFormat_ != format) {
         valueFormat_ = format;
         formatCacheDirty_ = true;
+        unitWidthDirty_ = true;
         markDirty();
     }
 }

@@ -7,15 +7,15 @@
 
 class MetricWidget : public Widget {
  public:
-    // Format modes for integer-to-string conversion.
-    // Replaces the heap-allocating std::function<String(int)> formatter.
+    // Format modes — select which unit suffix is drawn (smaller font, same
+    // colour as the value) next to it. See getUnitText() in the .cpp.
     enum class ValueFormat : uint8_t {
-        kDefault,   // "<value><unit>" (uses unit_ field, same as no formatter)
-        kPercent,   // "<value>%"
-        kRpm,       // "<value> RPM"
-        kWatts,     // "<value>W"
-        kCelsius,   // "<value>°C"
-        kMB,        // "<value> MB"
+        kDefault,   // unit_ field (same as no formatter)
+        kPercent,   // "%"
+        kRpm,       // "RPM"
+        kWatts,     // "W"
+        kCelsius,   // "°C"
+        kMB,        // "MB"
     };
 
     MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
@@ -45,6 +45,13 @@ class MetricWidget : public Widget {
     // is already loaded by the caller.  Skips loadFont/unloadFont overhead.
     // Only valid when the background colour hasn't changed (value-only update).
     void drawValueWithLoadedFont();
+
+    // Paired with drawValueWithLoadedFont() — call after it, with the label
+    // font (NotoSansDisplay12) loaded by the caller, to draw the unit
+    // suffix. Only redraws when the preceding drawValueWithLoadedFont() call
+    // actually moved or recoloured it; a no-op otherwise.
+    void drawUnitWithLoadedFont();
+
     void setUseDimColors(bool useDim = false);
 
     void forceRefresh();
@@ -256,6 +263,18 @@ class MetricWidget : public Widget {
     mutable char formattedValue_[24];  // Buffer for formatted value
     mutable bool formatCacheDirty_ = true;
 
+    // Unit suffix (label font) — rendered as a second piece next to the
+    // value instead of being baked into the same string/font. Width is
+    // measured once (not on every draw) so the batched hot path
+    // (drawValueWithLoadedFont/drawUnitWithLoadedFont) never has to load a
+    // font itself. See refreshUnitWidthIfNeeded().
+    mutable uint16_t unitWidthCache_ = 0;
+    mutable bool unitWidthDirty_ = true;
+    int16_t unitDrawX_ = 0;
+    int16_t unitDrawY_ = 0;
+    uint16_t unitBgColor_ = TFT_BLACK;
+    bool unitNeedsRedraw_ = false;
+
     // Constants
     static constexpr uint16_t TEXT_MARGIN = 10;
     static constexpr uint16_t SEPARATOR_WIDTH = 1;
@@ -276,5 +295,7 @@ class MetricWidget : public Widget {
     uint16_t calculateBackgroundColor() const;
     void updateDimensionCache();
     const char* getFormattedValueText() const;
+    const char* getUnitText() const;
+    void refreshUnitWidthIfNeeded() const;
     void safeStringCopy(char* dest, const char* src, size_t destSize) const;
 };
