@@ -2,30 +2,14 @@
 
 #include <esp_task_wdt.h>
 
-#include "services/airQuality/AirQualityService.h"
-#include "services/network/NetworkStatusService.h"
-
 TaskManager::TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
-                         PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
-                         AirQualityService& airQualityService, AirQualityData& airQualityData,
-                         NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
-                         SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                         AppConfigInterface& config, NetworkManager& networkManager,
-                         NtpService& ntpService)
+                         AppConfigInterface& config, SystemState::ScreenState& screenState,
+                         std::vector<BackgroundJob*> jobs)
     : logger_(logger),
       uiController_(uiController),
-      pcMetricsService_(pcMetricsService),
-      pcMetrics_(pcMetrics),
-      airQualityService_(airQualityService),
-      airQualityData_(airQualityData),
-      networkStatusService_(networkStatusService),
-      netStatus_(netStatus),
-      coreState_(coreState),
-      screenState_(screenState),
       config_(config),
-      networkManager_(networkManager),
-      ntpService_(ntpService),
-      pcMetricsFreshness_(pcMetrics) {}
+      screenState_(screenState),
+      jobs_(std::move(jobs)) {}
 
 bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
@@ -130,35 +114,12 @@ void TaskManager::executeBackgroundTask() {
     unsigned long lastStackLogTime = 0;
 
     while (true) {
-        if (coreState_.isInitialized) {
-            // Attempt reconnect if WiFi dropped; returns true if link is up.
-            if (!networkManager_.isConnected()) {
-                networkManager_.checkAndReconnect();
-            }
-
-            // Retry NTP sync if the boot-time attempt (InitializationStateMachine)
-            // exhausted its retries. Rate-limited internally, so this is cheap
-            // to call every tick.
-            if (!coreState_.isTimeSynced && ntpService_.retrySyncIfNeeded()) {
-                coreState_.isTimeSynced = true;
-                logger_.info("Time synchronized (background retry)", true);
-            }
-
-            if (networkManager_.isConnected()) {
-                if (screenState_.activeScreen == ScreenName::MAIN) {
-                    if (millis() >= coreState_.nextSync_pcMetrics) {
-                        updatePcMetrics();
-                    }
-                }
-
-                if (airQualityService_.isStale(airQualityData_)) {
-                    updateAirQuality();
-                }
+        unsigned long now = millis();
+        for (BackgroundJob* job : jobs_) {
+            if (now >= job->nextDueMs()) {
+                job->run();
             }
         }
-
-        networkStatusService_.updateWifi(netStatus_);
-        networkStatusService_.maybeTriggerProbe(netStatus_);
 
         resetWatchdog();
 
@@ -174,41 +135,6 @@ void TaskManager::executeBackgroundTask() {
 void TaskManager::logStackHighWaterMark(const char* taskName) {
     UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(nullptr);
     logger_.debugf("%s stack high water mark: %u", taskName, stackHighWaterMark);
-}
-
-void TaskManager::updatePcMetrics() {
-    bool fetchSuccess = pcMetricsService_.fetchData(pcMetrics_);
-    if (fetchSuccess) {
-        consecutiveFailures_ = 0;
-        coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshMs();
-        // logger_.debug("PC metrics updated successfully", true);
-    } else {
-        consecutiveFailures_++;
-        coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorFailureRefreshMs();
-        handlePcMetricsFailure();
-
-        if (!pcMetricsFreshness_.isFresh()) {
-            logger_.warning("PC metrics data is stale", true);
-        }
-    }
-}
-
-void TaskManager::updateAirQuality() {
-    const bool ok = airQualityService_.fetchData(airQualityData_);
-    if (ok) {
-        logger_.debug("AirQuality data updated");
-    } else {
-        logger_.warning("AirQuality fetch failed");
-    }
-}
-
-void TaskManager::handlePcMetricsFailure() {
-    logger_.debug("PC metrics update failed", true);
-
-    if (consecutiveFailures_ >= config_.getHardwareMonitorMaxRetries()) {
-        logger_.warning("Multiple consecutive PC metrics failures detected", true);
-        consecutiveFailures_ = 0;
-    }
 }
 
 void TaskManager::resetWatchdog() {

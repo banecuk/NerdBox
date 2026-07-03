@@ -10,6 +10,11 @@
 #include "config/AppConfigService.h"
 #include "core/IInitializationTarget.h"
 #include "core/InitializationStateMachine.h"
+#include "core/jobs/AirQualityJob.h"
+#include "core/jobs/NetworkStatusJob.h"
+#include "core/jobs/NtpRetryJob.h"
+#include "core/jobs/PcMetricsJob.h"
+#include "core/jobs/WifiReconnectJob.h"
 #include "core/state/SystemState.h"
 #include "core/TaskManager.h"
 #include "network/HttpClient.h"
@@ -132,6 +137,15 @@ class ApplicationComponents : public IInitializationTarget {
     // Web server — depends on uiController, systemMetrics.
     WebServer webServer;
     WebServerService webServerService;
+
+    // Background jobs — one adapter per periodic service, registered with
+    // TaskManager below. Adding a new periodic service means adding a job
+    // here and appending it to the list passed to taskManager's constructor.
+    WifiReconnectJob wifiReconnectJob;
+    NtpRetryJob ntpRetryJob;
+    PcMetricsJob pcMetricsJob;
+    AirQualityJob airQualityJob;
+    NetworkStatusJob networkStatusJob;
 
     // Managers — depend on everything above.
     TaskManager taskManager;

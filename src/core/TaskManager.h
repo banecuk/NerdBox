@@ -2,29 +2,21 @@
 
 #include <Arduino.h>
 
+#include <vector>
+
 #include "config/AppConfigInterface.h"
+#include "core/BackgroundJob.h"
 #include "core/IScreenUpdater.h"
 #include "core/state/SystemState.h"
-#include "network/NetworkManager.h"
-#include "services/pcMetrics/PcMetrics.h"
-#include "services/pcMetrics/DataFreshnessGuard.h"
-#include "services/pcMetrics/PcMetricsService.h"
-#include "services/airQuality/AirQualityData.h"
-#include "services/airQuality/AirQualityService.h"
-#include "services/network/NetworkStatus.h"
-#include "services/network/NetworkStatusService.h"
-#include "services/NtpService.h"
 #include "utils/Logger.h"
 
 class TaskManager {
  public:
-    TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
-                PcMetricsService& pcMetricsService, PcMetrics& pcMetrics,
-                AirQualityService& airQualityService, AirQualityData& airQualityData,
-                NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
-                SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                AppConfigInterface& config, NetworkManager& networkManager,
-                NtpService& ntpService);
+    // `jobs` is a flat list of periodic background jobs (see BackgroundJob) —
+    // adding a new periodic service means writing a job adapter and appending
+    // it here, not adding a constructor parameter.
+    TaskManager(LoggerInterface& logger, IScreenUpdater& uiController, AppConfigInterface& config,
+                SystemState::ScreenState& screenState, std::vector<BackgroundJob*> jobs);
 
     bool createTasks();
     void cleanup();
@@ -42,26 +34,13 @@ class TaskManager {
     // Dependencies
     LoggerInterface& logger_;
     IScreenUpdater& uiController_;
-    PcMetricsService& pcMetricsService_;
-    PcMetrics& pcMetrics_;
-    AirQualityService& airQualityService_;
-    AirQualityData& airQualityData_;
-    NetworkStatusService& networkStatusService_;
-    NetworkStatus& netStatus_;
-    SystemState::CoreState& coreState_;
-    SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;
-    NetworkManager& networkManager_;
-    NtpService& ntpService_;
+    SystemState::ScreenState& screenState_;
+    std::vector<BackgroundJob*> jobs_;
 
     // Task management
     TaskHandle_t screenTaskHandle_ = nullptr;
     TaskHandle_t backgroundTaskHandle_ = nullptr;
-    uint8_t consecutiveFailures_ = 0;
-
-    // Single source of truth for PC-metrics staleness — shared with PcMetricsWidget
-    // via the same PcMetrics::last_update_timestamp field that DataFreshnessGuard reads.
-    DataFreshnessGuard pcMetricsFreshness_;
 
     // Task implementations
     void executeScreenTask();
@@ -74,9 +53,6 @@ class TaskManager {
 
     void initializeWatchdog();
     void logStackHighWaterMark(const char* taskName);
-    void updatePcMetrics();
-    void updateAirQuality();
-    void handlePcMetricsFailure();
     void resetWatchdog();
 
     // Non-copyable
