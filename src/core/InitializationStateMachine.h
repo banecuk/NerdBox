@@ -2,9 +2,6 @@
 
 #include <esp_task_wdt.h>
 
-#include <functional>
-#include <vector>
-
 #include "core/IInitializationTarget.h"
 
 class InitializationStateMachine {
@@ -20,8 +17,6 @@ class InitializationStateMachine {
         COMPLETE,
         FAILED
     };
-
-    using StateHandler = std::function<bool()>;
 
     explicit InitializationStateMachine(IInitializationTarget& target);
     ~InitializationStateMachine() = default;
@@ -51,7 +46,6 @@ class InitializationStateMachine {
 
     // Helper methods
     void transitionTo(State newState);
-    void logRetryAttempt(const char* component, uint8_t attempt, uint8_t maxRetries) const;
     uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
 
     IInitializationTarget& target_;

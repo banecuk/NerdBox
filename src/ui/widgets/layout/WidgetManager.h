@@ -15,7 +15,6 @@ class WidgetManager {
 
     void addWidget(std::unique_ptr<WidgetInterface> widget);
     void initializeWidgets();
-    void updateAndDrawWidgets(bool forceRedraw = false);
     bool handleTouch(uint16_t x, uint16_t y);
     void cleanupWidgets();
     size_t getWidgetCount() const { return widgetCache_.size(); }

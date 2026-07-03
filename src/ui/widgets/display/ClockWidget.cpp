@@ -5,10 +5,7 @@
 
 ClockWidget::ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                          uint16_t textColor, uint16_t bgColor, const std::string& format)
-    : Widget(dims, updateIntervalMs),
-      textColor_(textColor),
-      bgColor_(bgColor),
-      format_(format) {}
+    : Widget(dims, updateIntervalMs), textColor_(textColor), bgColor_(bgColor) {}
 
 void ClockWidget::computeLayout() {
     LGFX* lcd = getLcd();

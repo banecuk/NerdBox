@@ -78,17 +78,6 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
     return blendRgb565(C1, C2, alpha);
 }
 
-uint16_t Colors::getColorFromPercent30plus(uint8_t value, bool dim) {
-    if (value > 29) {
-        // Map 30-100 to 0-99: (value-30) * 99/70
-        value = ((value - 30) * 99 + 35) / 70;  // +35 for proper rounding
-    } else {
-        value = 0;
-    }
-    const uint16_t* gradient = dim ? COLOR_GRADIENT_DIM : COLOR_GRADIENT;
-    return gradient[value];
-}
-
 #define MAKE_RGB565(r, g, b) (((r) << 11) | ((g) << 5) | (b))
 
 uint16_t Colors::blendRgb565(uint16_t a, uint16_t b, uint8_t alpha) {

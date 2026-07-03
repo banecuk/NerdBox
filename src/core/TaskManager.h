@@ -26,7 +26,7 @@ class TaskManager {
                 AppConfigInterface& config, NetworkManager& networkManager,
                 NtpService& ntpService);
 
-    bool createTasks();  // Public method name matches your existing code
+    bool createTasks();
     void cleanup();
 
     // Task entry points (keep these public and static for FreeRTOS)

@@ -24,7 +24,6 @@ class ValueSmoother {
     float upwardSmoothing_;
     float downwardSmoothing_;
     std::vector<float> smoothedValues_;
-    std::vector<float> previousValues_;
     bool hasPrevious_ = false;
 
     static constexpr float ROUNDING_OFFSET = 0.5f;

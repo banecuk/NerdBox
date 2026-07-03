@@ -34,14 +34,6 @@ class Widget : public WidgetInterface {
     bool isDirty() const override { return isDirty_; }
     void clearDirty() override { isDirty_ = false; }
 
-    // Data freshness
-    void markDataStale() override {
-        isStale_ = true;
-        isDirty_ = true;
-    }
-    bool isDataStale() const override { return isStale_; }
-    void markDataFresh() override { isStale_ = false; }
-
     // Touch handling
     bool handleTouch(uint16_t x, uint16_t y) override { return false; }
 
@@ -80,7 +72,6 @@ class Widget : public WidgetInterface {
     WidgetInterface::State state_ = WidgetInterface::State::UNINITIALIZED;
     bool isVisible_ = true;
     bool isDirty_ = false;
-    bool isStale_ = false;
     bool isStaticDrawn_ = false;  // Track if static elements are drawn
     bool isInitialized_ = false;  // Track initialization status
 

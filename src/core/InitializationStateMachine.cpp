@@ -108,7 +108,6 @@ bool InitializationStateMachine::handleTimeInit() {
             return true;
         }
 
-        logRetryAttempt("Time sync", attempt, target_.initTimeSyncRetries());
         delay(calculateBackoffDelay(attempt, target_.initTimeSyncBaseDelayMs()));
     }
 
@@ -176,11 +175,6 @@ bool InitializationStateMachine::handleFailed() {
 void InitializationStateMachine::transitionTo(State newState) {
     target_.logger().debugf("%s -> %s", getStateName(currentState_), getStateName(newState));
     currentState_ = newState;
-}
-
-void InitializationStateMachine::logRetryAttempt(const char* component, uint8_t attempt,
-                                                 uint8_t maxRetries) const {
-    // target_.logger().warningf("%s init attempt %d/%d failed", component, attempt, maxRetries);
 }
 
 uint16_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,

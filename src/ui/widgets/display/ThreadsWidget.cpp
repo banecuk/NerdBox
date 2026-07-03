@@ -60,7 +60,7 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     lastUpdateTimeMs_ = millis();
     clearDirty();
 
-    systemMetrics_.addThreadWidgetFrameTime(1);
+    systemMetrics_.addThreadWidgetFrameTime();
 }
 
 void ThreadsWidget::updateSmoothedValues() {

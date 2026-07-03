@@ -588,14 +588,3 @@ bool PcMetricsWidget::needsUpdate() const {
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
 }
-
-void PcMetricsWidget::showStaleIndicator() {
-    if (getLcd()) {
-        LGFX* lcd = getLcd();
-        Fonts::loadLabel(lcd);
-        lcd->setTextColor(TFT_ORANGE, TFT_BLACK);
-        lcd->setTextDatum(TL_DATUM);
-        lcd->drawString("STALE", dimensions_.x + 10, dimensions_.y + 10);
-        Fonts::unload(lcd);
-    }
-}

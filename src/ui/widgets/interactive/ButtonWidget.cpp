@@ -11,7 +11,6 @@ ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label,
                            EventType action, ActionCallback callback, uint16_t bgColor,
                            uint16_t textColor)
     : Widget(dims, updateIntervalMs),
-      context_(context),
       label_(label),
       icon_(ButtonIcon::NONE),
       action_(action),
@@ -25,7 +24,6 @@ ButtonWidget::ButtonWidget(DisplayContext& context, ButtonIcon icon, const std::
                            EventType action, ActionCallback callback, uint16_t bgColor,
                            uint16_t textColor)
     : Widget(dims, updateIntervalMs),
-      context_(context),
       label_(label),
       icon_(icon),
       action_(action),

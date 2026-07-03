@@ -108,7 +108,6 @@ void Widget::cleanUp() {
     isInitialized_ = false;
     isStaticDrawn_ = false;
     isDirty_ = false;
-    isStale_ = false;
 
     lcd_ = nullptr;
     logger_ = nullptr;

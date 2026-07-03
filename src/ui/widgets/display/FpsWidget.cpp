@@ -9,7 +9,7 @@ static constexpr uint16_t kPlaceholderColor = 0x2104;  // very dark gray (RGB565
 
 FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), context_(context), pcMetrics_(pcMetrics) {}
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
 
 void FpsWidget::drawStatic() {
     if (!isInitialized_ || !getLcd())

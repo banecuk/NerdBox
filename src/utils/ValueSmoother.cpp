@@ -7,8 +7,7 @@ ValueSmoother::ValueSmoother(size_t size, float upwardSmoothing, float downwardS
     : size_(size),
       upwardSmoothing_(upwardSmoothing),
       downwardSmoothing_(downwardSmoothing),
-      smoothedValues_(size, 0.0f),
-      previousValues_(size, 0.0f) {
+      smoothedValues_(size, 0.0f) {
     assert(size > 0 && "Size must be greater than zero");
     assert(upwardSmoothing >= 0.0f && upwardSmoothing <= 1.0f &&
            "Upward smoothing must be in range [0, 1]");
@@ -23,9 +22,7 @@ void ValueSmoother::update(const uint8_t* newValues, size_t count) {
         // First update - initialize with raw values
         const size_t processCount = std::min(size_, count);
         for (size_t i = 0; i < processCount; ++i) {
-            const float rawValue = static_cast<float>(newValues[i]);
-            smoothedValues_[i] = rawValue;
-            previousValues_[i] = rawValue;
+            smoothedValues_[i] = static_cast<float>(newValues[i]);
         }
         hasPrevious_ = true;
         return;
@@ -34,14 +31,13 @@ void ValueSmoother::update(const uint8_t* newValues, size_t count) {
     const size_t processCount = std::min(size_, count);
     for (size_t i = 0; i < processCount; ++i) {
         const float newValue = static_cast<float>(newValues[i]);
-        const float previousValue = previousValues_[i];
+        const float previousValue = smoothedValues_[i];
 
         // Choose smoothing factor based on value direction
         const float smoothing = (newValue > previousValue) ? upwardSmoothing_ : downwardSmoothing_;
 
         // Apply exponential smoothing
         smoothedValues_[i] = previousValue * (1.0f - smoothing) + newValue * smoothing;
-        previousValues_[i] = smoothedValues_[i];
     }
 }
 
@@ -70,5 +66,4 @@ void ValueSmoother::getSmoothedValues(std::vector<uint8_t>& output) const {
 void ValueSmoother::reset() {
     hasPrevious_ = false;
     std::fill(smoothedValues_.begin(), smoothedValues_.end(), 0.0f);
-    std::fill(previousValues_.begin(), previousValues_.end(), 0.0f);
 }

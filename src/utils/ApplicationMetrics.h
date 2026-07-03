@@ -4,8 +4,6 @@
 
 #include <array>
 
-#include "config/AppConfigInterface.h"
-
 class ApplicationMetrics {
  public:
     // Capacity of the circular screen-draw-time buffer.
@@ -14,7 +12,7 @@ class ApplicationMetrics {
     // via getMetricsMaxScreenDrawTimes() for runtime queries.
     static constexpr size_t kDrawTimesCapacity = 30;
 
-    ApplicationMetrics(AppConfigInterface& config);
+    ApplicationMetrics() = default;
 
     // JSON parse time methods
     void setPcMetricsJsonParseTime(uint32_t timeMs);
@@ -30,13 +28,11 @@ class ApplicationMetrics {
     void getFormattedUptime(char* buf, size_t size) const;
 
     // Thread widget FPS methods
-    void addThreadWidgetFrameTime(uint32_t timeMs);
+    void addThreadWidgetFrameTime();
     float getThreadWidgetFPS() const;
     size_t getThreadWidgetFrameCount() const;
 
  private:
-    AppConfigInterface& config_;
-
     uint32_t pcMetricsJsonParseTime_ = 0;
     std::array<uint32_t, kDrawTimesCapacity> screenDrawTimes_{};
     size_t screenDrawIndex_ = 0;

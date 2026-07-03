@@ -18,7 +18,7 @@ class AppConfigService : public AppConfigInterface {
         return AppConfig::internal::DebugImpl::kWaitForSerial;
     }
 
-    // Init getters - MATCHING NAMES
+    // Init getters
     uint8_t getInitNetworkRetries() const override {
         return AppConfig::internal::InitImpl::kDefaultNetworkRetries;
     }
@@ -78,7 +78,7 @@ class AppConfigService : public AppConfigInterface {
         return AppConfig::internal::TasksImpl::kBackgroundPriority;
     }
 
-    // HardwareMonitor getters - MATCHING NAMES
+    // HardwareMonitor getters
     uint32_t getHardwareMonitorRefreshMs() const override {
         return AppConfig::internal::HardwareMonitorImpl::kRefreshMs;
     }
@@ -106,7 +106,7 @@ class AppConfigService : public AppConfigInterface {
         return AppConfig::internal::HardwareMonitorImpl::kThreadsDownwardSmoothing;
     }
 
-    // Metrics getters - MATCHING NAMES
+    // Metrics getters
     uint8_t getMetricsMaxScreenDrawTimes() const override {
         return AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes;
     }

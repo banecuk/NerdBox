@@ -123,14 +123,6 @@ void WidgetManager::updateDirtyWidgets() {
     updateWidgetStats(dirtyCount, updatedCount, skippedCount);
 }
 
-// Legacy entry point
-void WidgetManager::updateAndDrawWidgets(bool forceRedraw) {
-    if (forceRedraw) {
-        markAllDirty();
-    }
-    updateDirtyWidgets();
-}
-
 void WidgetManager::markAllDirty() {
     allDirty_ = true;
     for (auto& entry : widgetCache_) {

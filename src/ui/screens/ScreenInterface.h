@@ -6,7 +6,7 @@
 
 class ScreenInterface {
  public:
-    virtual ~ScreenInterface() = default;  // ✅ Already correct - virtual destructor
+    virtual ~ScreenInterface() = default;
 
     virtual void draw() = 0;
     virtual void onEnter() {}

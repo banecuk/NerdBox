@@ -4,18 +4,6 @@
 
 namespace AppConfig {
 
-// Public empty namespaces - direct usage will cause linker errors
-namespace Debug {};
-namespace Init {};
-namespace Watchdog {};
-namespace Timing {};
-namespace Tasks {};
-namespace HardwareMonitor {};
-namespace Metrics {};
-namespace PcMetrics {};
-namespace Ui {};
-
-// Private implementation details
 namespace internal {
 // Debug configuration
 struct DebugImpl {

@@ -51,11 +51,6 @@ class WidgetInterface {
     virtual bool isDirty() const = 0;
     virtual void clearDirty() = 0;
 
-    // Data freshness (separate from state)
-    virtual void markDataStale() = 0;
-    virtual bool isDataStale() const = 0;
-    virtual void markDataFresh() = 0;
-
     // Touch handling
     virtual bool handleTouch(uint16_t x, uint16_t y) = 0;
 

@@ -76,7 +76,7 @@ void NetworkWidget::drawWifi() {
 
     lcd->fillRect(dimensions_.x, dimensions_.y, kWifiSectionW, dimensions_.height, TFT_BLACK);
 
-    const uint8_t filled = rssiBars();
+    const uint8_t filled = rssiBracket();
     const uint16_t active = wifiColor();
     const uint16_t dim = 0x2104;  // dark grey for unfilled bars
 
@@ -169,19 +169,6 @@ void NetworkWidget::drawDotGrid() {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-uint8_t NetworkWidget::rssiBars() const {
-    if (!status_.wifi_connected)
-        return 0;
-    const int8_t r = status_.rssi;
-    if (r > -65)
-        return 4;
-    if (r > -75)
-        return 3;
-    if (r > -85)
-        return 2;
-    return 1;
-}
 
 uint16_t NetworkWidget::wifiColor() const {
     if (!status_.wifi_connected)

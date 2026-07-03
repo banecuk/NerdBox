@@ -1,7 +1,5 @@
 #include "ApplicationMetrics.h"
 
-ApplicationMetrics::ApplicationMetrics(AppConfigInterface& config) : config_(config) {}
-
 void ApplicationMetrics::setPcMetricsJsonParseTime(uint32_t timeMs) {
     pcMetricsJsonParseTime_ = timeMs;
 }
@@ -48,7 +46,7 @@ void ApplicationMetrics::getFormattedUptime(char* buf, size_t size) const {
     snprintf(buf, size, "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
 }
 
-void ApplicationMetrics::addThreadWidgetFrameTime(uint32_t timeMs) {
+void ApplicationMetrics::addThreadWidgetFrameTime() {
     threadWidgetFrameCount_++;
 
     uint32_t currentTime = millis();

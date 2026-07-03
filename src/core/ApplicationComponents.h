@@ -73,9 +73,17 @@ class ApplicationComponents : public IInitializationTarget {
 
     // -----------------------------------------------------------------------
     // Public data — accessed by Application, TaskManager wiring, etc.
+    //
+    // Declaration order matters: members construct in declaration order
+    // regardless of the constructor's initializer-list order, and several
+    // members below are constructed from references to other members here.
+    // This list is topologically sorted so every member is fully constructed
+    // before anything that depends on it runs its own constructor — keep it
+    // that way when adding new members (add near what it depends on, before
+    // whatever will depend on it).
     // -----------------------------------------------------------------------
 
-    // Core configuration and state
+    // Core configuration and state — no dependencies.
     AppConfigService config;
     SystemState systemState;
 
@@ -93,33 +101,39 @@ class ApplicationComponents : public IInitializationTarget {
     // read by NetworkWidget (screen task). All scalar fields — no mutex needed.
     NetworkStatus netStatus;
 
-    // Hardware
+    // Hardware — no dependencies.
     LGFX display;
-
-    // UI Components
     Colors colors;
+    HttpClient httpClient;
+
+    // Logger — depends only on systemState (bool& for isTimeSynced_).
+    Logger logger_;  // named logger_ to avoid collision with IInitializationTarget::logger()
+
+    // UI display plumbing — depends on display, colors, logger_.
     DisplayContext displayContext;
     DisplayManager displayManager;
-    UiController uiController;
 
-    // Network Components
-    HttpClient httpClient;
+    // Network — depends on logger_, httpClient, config.
     NetworkManager networkManager;
     NtpService ntpService;
 
-    // Services
-    Logger logger_;  // named logger_ to avoid collision with IInitializationTarget::logger()
+    // Metrics aggregator — depends on config.
+    ApplicationMetrics systemMetrics;
+
+    // Services — depend on networkManager/logger_/config/systemMetrics above.
     PcMetricsService pcMetricsService;
     AirQualityService airQualityService;
     NetworkStatusService networkStatusService;
-    WebServerService webServerService;
+
+    // UI controller — depends on displayContext, displayManager, systemMetrics,
+    // pcMetrics, systemState, config, networkManager, airQualityData, netStatus.
+    UiController uiController;
+
+    // Web server — depends on uiController, systemMetrics.
     WebServer webServer;
+    WebServerService webServerService;
 
-    // Managers
-    ApplicationMetrics systemMetrics;
+    // Managers — depend on everything above.
     TaskManager taskManager;
-    InitializationStateMachine initStateMachine;
-
- private:
-    void initializeComponents();
+    InitializationStateMachine initStateMachine;  // depends on *this; must stay last
 };

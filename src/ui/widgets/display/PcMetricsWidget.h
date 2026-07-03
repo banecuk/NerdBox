@@ -136,7 +136,6 @@ class PcMetricsWidget : public Widget {
     void restoreStaticDisplay();
 
     bool hasFreshData() const { return freshnessGuard_.isFresh(); }
-    void showStaleIndicator();
 
     // Creates/recreates system-fan tiles whenever the live fan count changes.
     // Called from onDraw() after each data fetch so the layout always reflects

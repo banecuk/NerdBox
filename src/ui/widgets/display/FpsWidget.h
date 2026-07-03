@@ -22,7 +22,6 @@ class FpsWidget : public Widget {
     void onDraw(bool forceRedraw) override;
 
  private:
-    DisplayContext& context_;
     PcMetrics& pcMetrics_;
 
     int16_t lastDrawnFps_ = -2;  // sentinel so the first draw always renders

@@ -84,16 +84,13 @@ class NetworkWidget : public Widget {
     void drawGlobe();
     void drawDotGrid();
 
-    // Returns 0–4: number of filled bars for the current RSSI
-    uint8_t rssiBars() const;
-
     // Returns RGB565 color for the current wifi state
     uint16_t wifiColor() const;
 
     // Returns RGB565 color for the current internet state
     uint16_t internetColor() const;
 
-    // RSSI bracket 0–4 for dirty detection
+    // RSSI bracket 0–4: number of filled wifi bars, also used for dirty detection
     int8_t rssiBracket() const;
 
     // True if any endpoint_ok flag differs from cached

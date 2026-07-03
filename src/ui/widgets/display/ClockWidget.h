@@ -22,7 +22,6 @@ class ClockWidget : public Widget {
 
     uint16_t textColor_;
     uint16_t bgColor_;
-    std::string format_;
 
     // Font metrics — measured once after first loadFont call.
     uint16_t fontH_       = 0;  // font cap height in pixels

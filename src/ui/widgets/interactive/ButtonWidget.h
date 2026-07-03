@@ -43,7 +43,6 @@ class ButtonWidget : public Widget {
 
     static constexpr uint8_t kGearBitmapSize = 40;  // gear_icon_40.h pixel dimensions
 
-    DisplayContext& context_;
     std::string label_;
     ButtonIcon icon_;
     unsigned long lastTouchTime_;
