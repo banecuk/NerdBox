@@ -53,7 +53,8 @@ private:
     // Helpers
     // -----------------------------------------------------------------------
     void drawTile(uint8_t tileIndex, const char* prefix,
-                  const char* value, uint16_t valueColor);
+                  const char* value, uint16_t valueColor,
+                  const char* unit = nullptr);
     void drawIcon(const char* code);
     void drawNoData();
     const uint16_t* iconForCode(const char* code) const;

@@ -86,22 +86,22 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
     }
 
     // Tile 0 — Temperature
-    snprintf(buf, sizeof(buf), "%d\xc2\xb0""C", static_cast<int>(airData_.temperature));
-    drawTile(0, nullptr, buf, TFT_WHITE);
+    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.temperature));
+    drawTile(0, nullptr, buf, TFT_WHITE, "\xc2\xb0""C");
 
     // Tile 1 — Humidity
-    snprintf(buf, sizeof(buf), "%d%%", static_cast<int>(airData_.humidity));
-    drawTile(1, nullptr, buf, 0x867F);
+    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.humidity));
+    drawTile(1, nullptr, buf, 0x867F, "%");
 
     // Tile 2 — Pressure
-    snprintf(buf, sizeof(buf), "%dhPa", static_cast<int>(airData_.pressure));
-    drawTile(2, nullptr, buf, TFT_LIGHTGREY);
+    snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.pressure));
+    drawTile(2, nullptr, buf, TFT_LIGHTGREY, " hPa");
 
     // Tile 3 — Wind speed
-    snprintf(buf, sizeof(buf), "%u.%um/s",
+    snprintf(buf, sizeof(buf), "%u.%u",
              airData_.wind_speed_x10 / 10,
              airData_.wind_speed_x10 % 10);
-    drawTile(3, nullptr, buf, TFT_LIGHTGREY);
+    drawTile(3, nullptr, buf, TFT_LIGHTGREY, " m/s");
 
     // Tile 4 — AQI with inline prefix
     snprintf(buf, sizeof(buf), "%d", static_cast<int>(airData_.aqi_us));
@@ -137,12 +137,13 @@ void AirQualityWidget::drawIcon(const char* code) {
 
 // ---------------------------------------------------------------------------
 // drawTile
-// All values use loadMetric() — NotoSans 18 pt.
-// prefix uses loadLabel() — NotoSansDisplay 12 pt.
+// Values use loadMetric() — NotoSans 18 pt.
+// prefix/unit use loadLabel() — NotoSansDisplay 12 pt, dimmed to de-emphasise.
 // ---------------------------------------------------------------------------
 
 void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
-                                const char* value, uint16_t valueColor) {
+                                const char* value, uint16_t valueColor,
+                                const char* unit) {
     LGFX* lcd = getLcd();
     if (!lcd) return;
 
@@ -176,6 +177,31 @@ void AirQualityWidget::drawTile(uint8_t tileIndex, const char* prefix,
         lcd->setTextColor(valueColor, TFT_BLACK);
         lcd->setTextDatum(ML_DATUM);
         lcd->drawString(value, startX + prefW, midY);
+        Fonts::unload(lcd);
+
+    } else if (unit != nullptr) {
+        // Value (18 pt) + inline unit suffix (dim, 12 pt), vertically centred
+        const int16_t midY = ty + h / 2;
+
+        Fonts::loadMetric(lcd);
+        const int16_t valW = static_cast<int16_t>(lcd->textWidth(value));
+        Fonts::unload(lcd);
+        Fonts::loadLabel(lcd);
+        const int16_t unitW = static_cast<int16_t>(lcd->textWidth(unit));
+        Fonts::unload(lcd);
+
+        const int16_t startX = cx - (valW + unitW) / 2;
+
+        Fonts::loadMetric(lcd);
+        lcd->setTextColor(valueColor, TFT_BLACK);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->drawString(value, startX, midY);
+        Fonts::unload(lcd);
+
+        Fonts::loadLabel(lcd);
+        lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->drawString(unit, startX + valW, midY);
         Fonts::unload(lcd);
 
     } else {
