@@ -2,12 +2,18 @@
 
 #include <string>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 #include "LoggerInterface.h"
 
 class Logger : public LoggerInterface {
  public:
     Logger(const bool& isTimeSynced);
     ~Logger();
+
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
 
     // Basic log methods
     void debug(const String& message, bool forScreen = false) override;
@@ -29,6 +35,7 @@ class Logger : public LoggerInterface {
  private:
     const bool& isTimeSynced_;
     std::queue<LogEntry> screenQueue_;
+    SemaphoreHandle_t screenQueueMutex_ = xSemaphoreCreateMutex();
 
     // Constants for memory management
     static constexpr size_t MAX_SCREEN_QUEUE_SIZE = 25;  // Prevent memory exhaustion

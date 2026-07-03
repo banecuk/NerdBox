@@ -72,7 +72,6 @@ bool InitializationStateMachine::handleInitial() {
 bool InitializationStateMachine::handleDisplayInit() {
     target_.logger().info("Initializing display", true);
     target_.initializeDisplay();
-    target_.setScreenInitialized();
     target_.initializeUi();
     transitionTo(State::TASKS_INIT);
     return true;
@@ -154,6 +153,7 @@ bool InitializationStateMachine::handleFinalSetup() {
 
     target_.logger().debugf("Free heap post-init: %d", ESP.getFreeHeap());
     target_.requestScreen(ScreenName::MAIN);
+    target_.setScreenInitialized();
     target_.setSystemInitialized();
 
     transitionTo(State::COMPLETE);

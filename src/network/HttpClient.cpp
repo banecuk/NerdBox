@@ -1,5 +1,22 @@
 #include "HttpClient.h"
 
+namespace {
+// LAN-appropriate timeouts — NerdWinSense is on the same network, so a slow
+// response almost certainly means the request is stuck, not just crossing
+// the internet. Keeps a failed fetch cycle from stalling the background
+// task for the HTTPClient library's default 5 s timeouts.
+constexpr uint16_t kConnectTimeoutMs = 1000;
+constexpr uint16_t kResponseTimeoutMs = 2000;
+
+// Only transient failures are worth retrying: negative codes are
+// HTTPClient-level errors (connection refused, timeout, DNS failure) and 5xx
+// are server-side. 4xx means the request itself is malformed/rejected and
+// retrying it will fail identically every time.
+bool isRetryable(int httpCode) {
+    return httpCode < 0 || httpCode >= 500;
+}
+}  // namespace
+
 HttpClient::HttpClient() {
     // Keeps the TCP connection open across requests to the same host (sends
     // "Connection: keep-alive" and skips the handshake on the next begin()
@@ -22,17 +39,29 @@ bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetri
     lastHttpCode_ = 0;
 
     while (retryCount < maxRetries && !success) {
-        http_.begin(url);
+        if (!http_.begin(url)) {
+            lastHttpCode_ = HTTPC_ERROR_CONNECTION_REFUSED;
+            retryCount++;
+            if (retryCount < maxRetries) {
+                vTaskDelay(pdMS_TO_TICKS(retryDelayMs));
+            }
+            continue;
+        }
+
+        http_.setConnectTimeout(kConnectTimeoutMs);
+        http_.setTimeout(kResponseTimeoutMs);
         lastHttpCode_ = http_.GET();
 
         if (lastHttpCode_ == HTTP_CODE_OK) {
             outResponse = http_.getString();
             success = true;
-        } else {
+        } else if (isRetryable(lastHttpCode_)) {
             retryCount++;
             if (retryCount < maxRetries) {
                 vTaskDelay(pdMS_TO_TICKS(retryDelayMs));
             }
+        } else {
+            break;  // Non-retryable HTTP error (e.g. 4xx) — retrying won't help
         }
         http_.end();
     }
@@ -48,7 +77,17 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
     lastParseError_ = DeserializationError::Ok;
 
     while (retryCount < maxRetries && !success) {
-        http_.begin(url);
+        if (!http_.begin(url)) {
+            lastHttpCode_ = HTTPC_ERROR_CONNECTION_REFUSED;
+            retryCount++;
+            if (retryCount < maxRetries) {
+                vTaskDelay(pdMS_TO_TICKS(retryDelayMs));
+            }
+            continue;
+        }
+
+        http_.setConnectTimeout(kConnectTimeoutMs);
+        http_.setTimeout(kResponseTimeoutMs);
         lastHttpCode_ = http_.GET();
 
         if (lastHttpCode_ == HTTP_CODE_OK) {
@@ -62,11 +101,15 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
                      // malformed 200 response.
         }
 
+        http_.end();
+        if (!isRetryable(lastHttpCode_)) {
+            break;  // Non-retryable HTTP error (e.g. 4xx) — retrying won't help
+        }
+
         retryCount++;
         if (retryCount < maxRetries) {
             vTaskDelay(pdMS_TO_TICKS(retryDelayMs));
         }
-        http_.end();
     }
 
     return success;

@@ -25,31 +25,16 @@ bool NetworkManager::connect() {
     return connected;
 }
 
-bool NetworkManager::reconnect() {
+void NetworkManager::startReconnect(uint32_t now) {
     reconnectAttempts_++;
     logger_.infof("WiFi lost — reconnect attempt %u...", reconnectAttempts_);
 
     // Cleanly tear down before re-joining; false = keep credentials
     WiFi.disconnect(false);
-    vTaskDelay(pdMS_TO_TICKS(kReconnectPreDelayMs));
-
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    const uint32_t start = millis();
-    while (WiFi.status() != WL_CONNECTED) {
-        if (millis() - start >= kReconnectTimeoutMs) {
-            logger_.errorf("Reconnect attempt %u timed out after %u ms",
-                           reconnectAttempts_, kReconnectTimeoutMs);
-            return false;
-        }
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-
-    logger_.infof("Reconnected (attempt %u) — IP: %s",
-                  reconnectAttempts_,
-                  WiFi.localIP().toString().c_str());
-    reconnectAttempts_ = 0;
-    return true;
+    reconnecting_     = true;
+    reconnectStartMs_ = now;
 }
 
 bool NetworkManager::isConnected() const {
@@ -57,23 +42,43 @@ bool NetworkManager::isConnected() const {
 }
 
 /**
- * Call this periodically from the background task (e.g. every
- * kReconnectCheckIntervalMs). Returns true if the link is (or just became)
- * up, false if it is still down after a reconnect attempt.
+ * Call this periodically from the background task (e.g. every tick).
+ * Non-blocking: kicks off WiFi.begin() once when the link drops, then polls
+ * WiFi.status() on subsequent calls instead of busy-waiting. Returns true if
+ * the link is (or just became) up, false if it is still down.
  */
 bool NetworkManager::checkAndReconnect() {
     if (isConnected()) {
+        if (reconnecting_) {
+            logger_.infof("Reconnected (attempt %u) — IP: %s",
+                          reconnectAttempts_,
+                          WiFi.localIP().toString().c_str());
+            reconnecting_      = false;
+            reconnectAttempts_ = 0;
+        }
         return true;
     }
 
     const uint32_t now = millis();
-    if (now - lastReconnectAttemptMs_ < kReconnectCheckIntervalMs) {
+
+    if (!reconnecting_) {
         // Back off — do not hammer the WiFi stack
+        if (now - lastReconnectAttemptMs_ < kReconnectCheckIntervalMs) {
+            return false;
+        }
+        lastReconnectAttemptMs_ = now;
+        startReconnect(now);
         return false;
     }
-    lastReconnectAttemptMs_ = now;
 
-    return reconnect();
+    if (now - reconnectStartMs_ >= kReconnectTimeoutMs) {
+        logger_.errorf("Reconnect attempt %u timed out after %u ms",
+                       reconnectAttempts_, kReconnectTimeoutMs);
+        reconnecting_           = false;
+        lastReconnectAttemptMs_ = now;
+    }
+
+    return false;
 }
 
 String NetworkManager::get(const String& url) {

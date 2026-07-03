@@ -14,7 +14,7 @@ Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
 }
 
 Logger::~Logger() {
-    // Cleanup if needed
+    vSemaphoreDelete(screenQueueMutex_);
 }
 
 void Logger::getUptimeTimestamp(char* buffer, size_t bufferSize, bool forScreen) {
@@ -115,12 +115,14 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
         entry.level = level;
         strncpy(entry.message, screenBuffer, sizeof(entry.message) - 1);
         entry.forScreen = true;
-        screenQueue_.push(entry);
 
+        xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
+        screenQueue_.push(entry);
         // Limit queue size to prevent memory exhaustion
         while (screenQueue_.size() > MAX_SCREEN_QUEUE_SIZE) {
             screenQueue_.pop();
         }
+        xSemaphoreGive(screenQueueMutex_);
     }
 }
 
@@ -186,12 +188,14 @@ void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool
         entry.level = level;
         strncpy(entry.message, screenBuffer, sizeof(entry.message) - 1);
         entry.forScreen = true;
-        screenQueue_.push(entry);
 
+        xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
+        screenQueue_.push(entry);
         // Limit queue size
         while (screenQueue_.size() > MAX_SCREEN_QUEUE_SIZE) {
             screenQueue_.pop();
         }
+        xSemaphoreGive(screenQueueMutex_);
     }
 }
 
@@ -233,18 +237,21 @@ void Logger::criticalf(const char* format, ...) {
 std::queue<String> Logger::getScreenMessages() {
     std::queue<String> result;
 
+    xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
     while (!screenQueue_.empty()) {
         const LogEntry& entry = screenQueue_.front();
         result.push(String(entry.message));
         screenQueue_.pop();
     }
+    xSemaphoreGive(screenQueueMutex_);
 
     return result;
 }
 
 void Logger::clearScreenMessages() {
-    // Efficient queue clearing
+    xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
     while (!screenQueue_.empty()) {
         screenQueue_.pop();
     }
+    xSemaphoreGive(screenQueueMutex_);
 }
