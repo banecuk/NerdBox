@@ -36,7 +36,7 @@ void Logger::getTimestamp(char* buffer, size_t bufferSize, bool forScreen) {
         getUptimeTimestamp(buffer, bufferSize, forScreen);
     } else {
         struct tm timeinfo;
-        if (!getLocalTime(&timeinfo)) {
+        if (!getLocalTime(&timeinfo, 0)) {
             getUptimeTimestamp(buffer, bufferSize, forScreen);
         } else {
             if (forScreen) {

@@ -43,7 +43,10 @@ void NetworkStatusService::maybeTriggerProbe(NetworkStatus& status) {
         return;
     if (status.probe_running)
         return;
-    if (status.last_probe != 0 && (millis() - status.last_probe) < kProbeIntervalMs)
+
+    const unsigned long interval =
+        allEndpointsProbed() ? kProbeIntervalMs : kWarmupProbeIntervalMs;
+    if (status.last_probe != 0 && (millis() - status.last_probe) < interval)
         return;
 
     // Allocate context on the heap — freed by the probe task before self-delete.
@@ -107,30 +110,48 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
 // ---------------------------------------------------------------------------
 // recordResult — update per-endpoint slot and recompute internet state
 //
-// WARNING  — exactly 1 of the 6 slots failed
-// DEGRADED — 2 or more failed, but not all 6
-// DOWN     — all 6 failed
-// OK       — all 6 passed
+// Only slots that have actually been probed at least once count towards the
+// verdict — a never-probed slot is neither a pass nor a fail. This keeps the
+// status accurate during the ~kNumEndpoints * kProbeIntervalMs warm-up window
+// right after boot, when most slots haven't been probed yet.
+//
+// OK       — every probed slot passed
+// DOWN     — every probed slot failed
+// WARNING  — exactly 1 probed slot failed, the rest passed
+// DEGRADED — 2 or more probed slots failed, but not all of them
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointIdx, bool success) {
     results_[endpointIdx] = success ? 1u : 0u;
+    probed_[endpointIdx] = true;
     status.endpoint_ok[endpointIdx] = success;
 
     uint8_t passes = 0;
+    uint8_t probedCount = 0;
     for (uint8_t i = 0; i < kNumEndpoints; ++i) {
-        passes += results_[i];
+        if (probed_[i]) {
+            ++probedCount;
+            passes += results_[i];
+        }
     }
 
-    const uint8_t failures = kNumEndpoints - passes;
+    const uint8_t failures = probedCount - passes;
 
     if (failures == 0) {
         status.internet = NetworkStatus::Internet::OK;
+    } else if (failures == probedCount) {
+        status.internet = NetworkStatus::Internet::DOWN;
     } else if (failures == 1) {
         status.internet = NetworkStatus::Internet::WARNING;
-    } else if (failures < kNumEndpoints) {
-        status.internet = NetworkStatus::Internet::DEGRADED;
     } else {
-        status.internet = NetworkStatus::Internet::DOWN;
+        status.internet = NetworkStatus::Internet::DEGRADED;
     }
+}
+
+bool NetworkStatusService::allEndpointsProbed() const {
+    for (uint8_t i = 0; i < kNumEndpoints; ++i) {
+        if (!probed_[i])
+            return false;
+    }
+    return true;
 }

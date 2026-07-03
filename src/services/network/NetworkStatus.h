@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include <Arduino.h>
 
 // Written by NetworkStatusService (background/probe tasks),
@@ -25,8 +27,11 @@ struct NetworkStatus {
     bool endpoint_ok[6] = {false, false, false, false, false, false};
 
     // Set true while the one-shot probe task is in-flight; guards against
-    // spawning overlapping tasks.
-    volatile bool probe_running = false;
+    // spawning overlapping tasks. std::atomic (not volatile) so the probe
+    // task's writes to last_probe/results/endpoint_ok/internet are guaranteed
+    // visible to the background task on the other core once it observes
+    // probe_running go false — volatile gives no such ordering on Xtensa.
+    std::atomic<bool> probe_running{false};
 
     // millis() of the last completed probe — used by TaskManager to pace retriggers
     unsigned long last_probe = 0;

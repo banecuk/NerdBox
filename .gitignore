@@ -4,6 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 docs
+docs-local
 src/config/Environment.h
 CLAUDE.md
 PRIORITIES.md

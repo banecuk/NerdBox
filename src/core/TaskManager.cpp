@@ -10,7 +10,8 @@ TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
                          AirQualityService& airQualityService, AirQualityData& airQualityData,
                          NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
                          SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                         AppConfigInterface& config, NetworkManager& networkManager)
+                         AppConfigInterface& config, NetworkManager& networkManager,
+                         NtpService& ntpService)
     : logger_(logger),
       uiController_(uiController),
       pcMetricsService_(pcMetricsService),
@@ -23,6 +24,7 @@ TaskManager::TaskManager(LoggerInterface& logger, UiController& uiController,
       screenState_(screenState),
       config_(config),
       networkManager_(networkManager),
+      ntpService_(ntpService),
       pcMetricsFreshness_(pcMetrics) {}
 
 bool TaskManager::createTasks() {
@@ -132,6 +134,14 @@ void TaskManager::executeBackgroundTask() {
             // Attempt reconnect if WiFi dropped; returns true if link is up.
             if (!networkManager_.isConnected()) {
                 networkManager_.checkAndReconnect();
+            }
+
+            // Retry NTP sync if the boot-time attempt (InitializationStateMachine)
+            // exhausted its retries. Rate-limited internally, so this is cheap
+            // to call every tick.
+            if (!coreState_.isTimeSynced && ntpService_.retrySyncIfNeeded()) {
+                coreState_.isTimeSynced = true;
+                logger_.info("Time synchronized (background retry)", true);
             }
 
             if (networkManager_.isConnected()) {

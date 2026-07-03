@@ -15,5 +15,5 @@ ApplicationComponents::ApplicationComponents()
       webServerService(webServer, uiController, systemMetrics),
       taskManager(logger_, uiController, pcMetricsService, pcMetrics, airQualityService,
                   airQualityData, networkStatusService, netStatus, systemState.core,
-                  systemState.screen, config, networkManager),
+                  systemState.screen, config, networkManager, ntpService),
       initStateMachine(*this) {}

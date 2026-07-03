@@ -12,6 +12,7 @@
 #include "services/airQuality/AirQualityService.h"
 #include "services/network/NetworkStatus.h"
 #include "services/network/NetworkStatusService.h"
+#include "services/NtpService.h"
 #include "ui/core/UiController.h"
 #include "utils/Logger.h"
 
@@ -22,7 +23,8 @@ class TaskManager {
                 AirQualityService& airQualityService, AirQualityData& airQualityData,
                 NetworkStatusService& networkStatusService, NetworkStatus& netStatus,
                 SystemState::CoreState& coreState, SystemState::ScreenState& screenState,
-                AppConfigInterface& config, NetworkManager& networkManager);
+                AppConfigInterface& config, NetworkManager& networkManager,
+                NtpService& ntpService);
 
     bool createTasks();  // Public method name matches your existing code
     void cleanup();
@@ -50,6 +52,7 @@ class TaskManager {
     SystemState::ScreenState& screenState_;
     AppConfigInterface& config_;
     NetworkManager& networkManager_;
+    NtpService& ntpService_;
 
     // Task management
     TaskHandle_t screenTaskHandle_ = nullptr;
