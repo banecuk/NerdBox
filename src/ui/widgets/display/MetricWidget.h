@@ -267,6 +267,13 @@ class MetricWidget : public Widget {
     uint16_t valueWidth_ = 0;
     bool dimensionsDirty_ = true;
     int lastDrawnValue_ = -1;
+    // Tracks "has this widget completed at least one draw since the last
+    // drawStatic()?" separately from lastDrawnValue_, since -1 is also a
+    // legitimate value domain for a signed int (e.g. any future metric that
+    // uses -1 as a "not available" sentinel, mirroring PcMetrics::gpu_fps) —
+    // using lastDrawnValue_ == -1 as the "first render" check would collide
+    // with that and force a full redraw every frame instead of just once.
+    bool hasDrawnOnce_ = false;
     uint16_t lastBgColor_ = TFT_BLACK;
     int16_t lastTextWidth_ = 0;
     bool valueAreaDirty_ = true;

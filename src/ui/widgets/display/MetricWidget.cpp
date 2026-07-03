@@ -61,6 +61,7 @@ void MetricWidget::drawStatic() {
 
     isStaticDrawn_ = true;
     lastDrawnValue_ = -1;
+    hasDrawnOnce_ = false;
     lastTextWidth_ = 0;
     valueAreaDirty_ = true;
     clearDirty();
@@ -76,15 +77,15 @@ void MetricWidget::onDraw(bool forceRedraw) {
     bool valueChanged = (value_ != lastDrawnValue_);
     bool baseWidgetDirty = isDirty();
 
-    // Always draw on first render (lastDrawnValue_ == -1)
-    bool firstRender = (lastDrawnValue_ == -1);
+    // Always draw on the first render since drawStatic().
+    bool firstRender = !hasDrawnOnce_;
 
     // Only check other dirty flags if value changed or forced
     if (!firstRender && !valueChanged && !forceRedraw && !baseWidgetDirty && !valueAreaDirty_) {
         return;  // Nothing to do
     }
 
-    if (valueChanged && lastDrawnValue_ != -1 && !forceRedraw && !valueAreaDirty_) {
+    if (valueChanged && hasDrawnOnce_ && !forceRedraw && !valueAreaDirty_) {
         // Optimization: only redraw text if just the value changed
         renderValueTextOnly();
     } else {
@@ -92,6 +93,7 @@ void MetricWidget::onDraw(bool forceRedraw) {
         renderValueArea();
     }
     lastDrawnValue_ = value_;
+    hasDrawnOnce_ = true;
     clearDirty();
     valueAreaDirty_ = false;
 }
@@ -308,6 +310,7 @@ void MetricWidget::drawValueWithLoadedFont() {
     unitNeedsRedraw_ = unitW > 0 && (bgChanged || layoutShifted);
 
     lastDrawnValue_ = value_;
+    hasDrawnOnce_ = true;
     clearDirty();
 }
 
@@ -575,7 +578,7 @@ void MetricWidget::setValueFormat(ValueFormat format) {
 }
 
 void MetricWidget::forceRefresh() {
-    lastDrawnValue_ = -1;      // Force redraw by making last value different
+    hasDrawnOnce_ = false;     // Force the next draw to take the full-render path
     formatCacheDirty_ = true;  // Force format recalculation
     valueAreaDirty_ = true;    // Force area redraw
     markDirty();               // Mark widget as dirty
