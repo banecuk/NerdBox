@@ -46,27 +46,49 @@ float valueMemoryLoad(const PcMetrics& m) {
     return m.mem_load;
 }
 
-// Disk read/write activity color scale, in KB/s. Breakpoints: <5 MB/s dark
-// gray (idle), 5-40 MB/s dark green, 40-75 MB/s light green, 75-87.5 MB/s
-// yellow, 87.5-100 MB/s orange, >100 MB/s hot pink.
+// Averages the RGB565 channels of two colors to produce an intermediate shade.
+constexpr uint16_t blendColor565(uint16_t a, uint16_t b) {
+    const uint8_t r = static_cast<uint8_t>((((a >> 11) & 0x1F) + ((b >> 11) & 0x1F)) / 2);
+    const uint8_t g = static_cast<uint8_t>((((a >> 5) & 0x3F) + ((b >> 5) & 0x3F)) / 2);
+    const uint8_t bl = static_cast<uint8_t>(((a & 0x1F) + (b & 0x1F)) / 2);
+    return static_cast<uint16_t>((r << 11) | (g << 5) | bl);
+}
+
+constexpr uint16_t kDiskIdleColor = 0x2104;  // dark grey, matches other widgets' dim color
+
+// Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
+// gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
+// yellow, >75.5 MB/s orange (capped -- everything above kSaturated stays
+// orange), with a blended intermediate shade inserted at the midpoint of
+// each band below kSaturated for finer gradation.
 uint16_t diskActivityColor(float kbPerSec) {
-    constexpr float kIdle = 5.0f * 1024.0f;
+    constexpr float kIdle = 2.0f * 1024.0f;
+    constexpr float kIdleModerateMid = 13.5f * 1024.0f;
     constexpr float kModerate = 25.0f * 1024.0f;
+    constexpr float kModerateHighMid = 37.5f * 1024.0f;
     constexpr float kHigh = 50.0f * 1024.0f;
+    constexpr float kHighElevatedMid = 62.75f * 1024.0f;
     constexpr float kElevated = 75.5f * 1024.0f;
+    constexpr float kElevatedSaturatedMid = 87.75f * 1024.0f;
     constexpr float kSaturated = 100.0f * 1024.0f;
 
     if (kbPerSec < kIdle)
-        return 0x2104;  // dark grey (idle), matches other widgets' dim color
+        return kDiskIdleColor;
+    if (kbPerSec < kIdleModerateMid)
+        return blendColor565(kDiskIdleColor, TFT_DARKGREEN);
     if (kbPerSec < kModerate)
         return TFT_DARKGREEN;
+    if (kbPerSec < kModerateHighMid)
+        return blendColor565(TFT_DARKGREEN, TFT_GREEN);
     if (kbPerSec < kHigh)
         return TFT_GREEN;
+    if (kbPerSec < kHighElevatedMid)
+        return blendColor565(TFT_GREEN, TFT_YELLOW);
     if (kbPerSec < kElevated)
         return TFT_YELLOW;
-    if (kbPerSec < kSaturated)
-        return TFT_ORANGE;
-    return TFT_HOTPINK;
+    if (kbPerSec < kElevatedSaturatedMid)
+        return blendColor565(TFT_YELLOW, TFT_ORANGE);
+    return TFT_ORANGE;
 }
 }  // namespace
 
