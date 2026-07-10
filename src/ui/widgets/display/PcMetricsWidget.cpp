@@ -48,7 +48,7 @@ float valueMemoryLoad(const PcMetrics& m) {
 
 // Disk read/write activity color scale, in KB/s. Breakpoints: <5 MB/s dark
 // gray (idle), 5-40 MB/s dark green, 40-75 MB/s light green, 75-87.5 MB/s
-// yellow, 87.5-100 MB/s orange, >100 MB/s red.
+// yellow, 87.5-100 MB/s orange, >100 MB/s hot pink.
 uint16_t diskActivityColor(float kbPerSec) {
     constexpr float kIdle = 5.0f * 1024.0f;
     constexpr float kModerate = 25.0f * 1024.0f;
@@ -66,7 +66,7 @@ uint16_t diskActivityColor(float kbPerSec) {
         return TFT_YELLOW;
     if (kbPerSec < kSaturated)
         return TFT_ORANGE;
-    return TFT_RED;
+    return TFT_HOTPINK;
 }
 }  // namespace
 
