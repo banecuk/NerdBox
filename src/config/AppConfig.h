@@ -81,6 +81,14 @@ struct UiImpl {
     // needed — DisplayManager and BrightnessWidget both derive from this array.
     static constexpr uint8_t kBrightnessLevels[] = {20, 50, 75, 140, 255};
     static constexpr uint8_t kBrightnessLevelCount = 5;
+
+    // "Dim at night" — when enabled, brightness is reduced by kDimAtNightPercent
+    // whenever the local hour is >= kDimAtNightStartHour or < kDimAtNightEndHour.
+    static constexpr const char* kNvsDimAtNightKey = "dim_at_night";
+    static constexpr bool kDefaultDimAtNightEnabled = false;
+    static constexpr uint8_t kDimAtNightStartHour = 20;  // 20:00
+    static constexpr uint8_t kDimAtNightEndHour = 6;     // 06:00
+    static constexpr uint8_t kDimAtNightPercent = 60;    // reduce brightness by 60%
 };
 }  // namespace internal
 

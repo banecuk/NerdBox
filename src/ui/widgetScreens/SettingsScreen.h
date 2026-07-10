@@ -8,6 +8,7 @@
 #include "ui/widgets/display/UptimeWidget.h"
 #include "ui/widgets/interactive/BrightnessWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
+#include "ui/widgets/interactive/SwitchWidget.h"
 #include "utils/ApplicationMetrics.h"
 
 class SettingsScreen : public BaseWidgetScreen {

@@ -1,7 +1,10 @@
 #include "DisplayManager.h"
 
 DisplayManager::DisplayManager(LGFX& display, LoggerInterface& logger)
-    : display_(display), logger_(logger), brightness_(kDefaultBrightness) {}
+    : display_(display),
+      logger_(logger),
+      brightness_(kDefaultBrightness),
+      dimAtNightEnabled_(AppConfig::internal::UiImpl::kDefaultDimAtNightEnabled) {}
 
 void DisplayManager::initialize() {
     if (!display_.init()) {
@@ -19,7 +22,8 @@ void DisplayManager::initialize() {
 void DisplayManager::postInitialization() {
     // Load whatever the user last chose from NVS, then apply it.
     brightness_ = loadBrightnessFromNvs();
-    setBrightness(brightness_);
+    dimAtNightEnabled_ = loadDimAtNightFromNvs();
+    applyEffectiveBrightness();
 }
 
 LGFX* DisplayManager::getDisplay() {
@@ -28,9 +32,9 @@ LGFX* DisplayManager::getDisplay() {
 
 void DisplayManager::setBrightness(uint8_t level) {
     brightness_ = level;
-    display_.setBrightness(brightness_);
     logger_.infof("Brightness set to %d", brightness_);
     saveBrightnessToNvs();
+    applyEffectiveBrightness();
 }
 
 uint8_t DisplayManager::getBrightness() const {
@@ -51,6 +55,44 @@ void DisplayManager::cycleBrightness() {
         }
     }
     setBrightness(levels[nextIndex]);
+}
+
+void DisplayManager::setDimAtNightEnabled(bool enabled) {
+    dimAtNightEnabled_ = enabled;
+    logger_.infof("Dim at night %s", enabled ? "enabled" : "disabled");
+    saveDimAtNightToNvs();
+    updateDimState();
+}
+
+bool DisplayManager::isDimAtNightEnabled() const {
+    return dimAtNightEnabled_;
+}
+
+void DisplayManager::setNightWindowActive(bool isNight) {
+    if (isNight == isNightWindowActive_)
+        return;
+    isNightWindowActive_ = isNight;
+    updateDimState();
+}
+
+void DisplayManager::updateDimState() {
+    const bool shouldDim = dimAtNightEnabled_ && isNightWindowActive_;
+    if (shouldDim == isCurrentlyDimmed_)
+        return;
+    isCurrentlyDimmed_ = shouldDim;
+    logger_.infof("Night dim %s (brightness %d)", isCurrentlyDimmed_ ? "applied" : "cleared",
+                  brightness_);
+    applyEffectiveBrightness();
+}
+
+void DisplayManager::applyEffectiveBrightness() {
+    uint8_t effective = brightness_;
+    if (isCurrentlyDimmed_) {
+        using Cfg = AppConfig::internal::UiImpl;
+        effective = static_cast<uint8_t>(
+            (static_cast<uint16_t>(brightness_) * (100 - Cfg::kDimAtNightPercent)) / 100);
+    }
+    display_.setBrightness(effective);
 }
 
 // ---------------------------------------------------------------------------
@@ -82,4 +124,33 @@ void DisplayManager::saveBrightnessToNvs() {
     prefs_.end();
 
     logger_.debugf("DisplayManager: saved brightness %d to NVS", brightness_);
+}
+
+bool DisplayManager::loadDimAtNightFromNvs() {
+    using Cfg = AppConfig::internal::UiImpl;
+
+    if (!prefs_.begin(Cfg::kNvsNamespace, /*readOnly=*/true)) {
+        logger_.debug("DisplayManager: NVS namespace not found, using default dim-at-night state");
+        return Cfg::kDefaultDimAtNightEnabled;
+    }
+
+    bool saved = prefs_.getBool(Cfg::kNvsDimAtNightKey, Cfg::kDefaultDimAtNightEnabled);
+    prefs_.end();
+
+    logger_.infof("DisplayManager: loaded dim-at-night=%d from NVS", saved);
+    return saved;
+}
+
+void DisplayManager::saveDimAtNightToNvs() {
+    using Cfg = AppConfig::internal::UiImpl;
+
+    if (!prefs_.begin(Cfg::kNvsNamespace, /*readOnly=*/false)) {
+        logger_.error("DisplayManager: failed to open NVS for writing");
+        return;
+    }
+
+    prefs_.putBool(Cfg::kNvsDimAtNightKey, dimAtNightEnabled_);
+    prefs_.end();
+
+    logger_.debugf("DisplayManager: saved dim-at-night=%d to NVS", dimAtNightEnabled_);
 }

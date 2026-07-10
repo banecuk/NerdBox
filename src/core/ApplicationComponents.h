@@ -11,6 +11,7 @@
 #include "core/IInitializationTarget.h"
 #include "core/InitializationStateMachine.h"
 #include "core/jobs/AirQualityJob.h"
+#include "core/jobs/DimAtNightJob.h"
 #include "core/jobs/NetworkStatusJob.h"
 #include "core/jobs/NtpRetryJob.h"
 #include "core/jobs/PcMetricsJob.h"
@@ -146,6 +147,7 @@ class ApplicationComponents : public IInitializationTarget {
     PcMetricsJob pcMetricsJob;
     AirQualityJob airQualityJob;
     NetworkStatusJob networkStatusJob;
+    DimAtNightJob dimAtNightJob;
 
     // Managers — depend on everything above.
     TaskManager taskManager;

@@ -21,7 +21,9 @@ ApplicationComponents::ApplicationComponents()
                    networkManager, config, logger_),
       airQualityJob(airQualityService, airQualityData, systemState.core, networkManager, logger_),
       networkStatusJob(networkStatusService, netStatus),
+      dimAtNightJob(ntpService, displayManager),
       taskManager(logger_, uiController, config, systemState.screen,
                   std::vector<BackgroundJob*>{&wifiReconnectJob, &ntpRetryJob, &pcMetricsJob,
-                                              &airQualityJob, &networkStatusJob}),
+                                              &airQualityJob, &networkStatusJob,
+                                              &dimAtNightJob}),
       initStateMachine(*this) {}

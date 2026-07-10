@@ -10,32 +10,51 @@ SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiControll
       systemMetrics_(systemMetrics) {}
 
 void SettingsScreen::createWidgets() {
+    // Row heights below are taller than a typical 48px bar (64px) so the
+    // brightness segments and the dim-at-night track stay comfortable tap
+    // targets — the previous 48/40px rows were too short to hit reliably.
+    static constexpr uint16_t kBrightnessH = 64;
+    static constexpr uint16_t kSwitchY = kBrightnessH + 8;  // = 72
+    static constexpr uint16_t kSwitchH = 64;
+
     // ── Top bar ────────────────────────────────────────────────────────────
-    // Brightness selector — spans from left edge to just before Reset button.
-    // Three tappable level segments with a visible active-level indicator.
+    // Brightness selector — now spans the full width since Reset moved down.
     widgetManager_.addWidget(std::unique_ptr<BrightnessWidget>(
-        new BrightnessWidget(WidgetInterface::Dimensions{0, 0, 480 - 100 - 4, 48},
+        new BrightnessWidget(WidgetInterface::Dimensions{0, 0, 480, kBrightnessH},
                              *uiController_->getDisplayManager())));
 
-    // Reset — top-right
-    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "Reset",
-        WidgetInterface::Dimensions{480 - 100, 0, 100, 48}, 0, EventType::RESET_DEVICE,
-        [this](EventType action) { this->handleAction(action); }, TFT_RED, TFT_WHITE)));
+    // Dim at night — toggles dimming brightness 50% between 20:00 and 06:00.
+    // Actual dimming is applied by DimAtNightJob/DisplayManager in the
+    // background; this widget just reflects/writes the enabled flag. Sits
+    // directly below the brightness selector, moving with its height.
+    widgetManager_.addWidget(std::unique_ptr<SwitchWidget>(new SwitchWidget(
+        WidgetInterface::Dimensions{0, kSwitchY, 160, kSwitchH}, "DIM AT NIGHT",
+        [this]() { return uiController_->getDisplayManager()->isDimAtNightEnabled(); },
+        [this](bool enabled) {
+            uiController_->getDisplayManager()->setDimAtNightEnabled(enabled);
+        })));
 
     // ── Info widgets ────────────────────────────────────────────────────────
-    // IP address — left column, y=100
-    widgetManager_.addWidget(std::unique_ptr<IpAddressWidget>(
-        new IpAddressWidget(WidgetInterface::Dimensions{12, 100, 220, 40}, networkManager_)));
+    // IP address / Uptime — sit below the switch, well clear of the Reset
+    // button now parked just above the clock.
+    static constexpr uint16_t kInfoRowY = kSwitchY + kSwitchH + 16;  // = 152
 
-    // Uptime — right of IP, same row
+    widgetManager_.addWidget(std::unique_ptr<IpAddressWidget>(
+        new IpAddressWidget(WidgetInterface::Dimensions{12, kInfoRowY, 220, 40}, networkManager_)));
+
     widgetManager_.addWidget(std::unique_ptr<UptimeWidget>(
-        new UptimeWidget(WidgetInterface::Dimensions{260, 100, 200, 40}, systemMetrics_)));
+        new UptimeWidget(WidgetInterface::Dimensions{260, kInfoRowY, 200, 40}, systemMetrics_)));
 
     // ── Bottom bar ─────────────────────────────────────────────────────────
     // Clock — bottom-right
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
         WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_YELLOW, TFT_BLACK)));
+
+    // Reset — moved down, directly above the clock (was top-right).
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
+        uiController_->getDisplayContext(), "Reset",
+        WidgetInterface::Dimensions{328, 288 - 8 - 40, 150, 40}, 0, EventType::RESET_DEVICE,
+        [this](EventType action) { this->handleAction(action); }, TFT_RED, TFT_WHITE)));
 
     // Back button — bottom-left
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
