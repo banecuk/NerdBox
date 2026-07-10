@@ -12,7 +12,7 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
 void MainScreen::createWidgets() {
     // PcMetrics
     auto pcMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 150}, 100,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 154}, 100,
         pcMetrics_, config_, systemMetrics_));
     pcMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(pcMetricsWidget));
@@ -25,7 +25,7 @@ void MainScreen::createWidgets() {
 
     // Air quality bar
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
-        new AirQualityWidget(WidgetInterface::Dimensions{0, 150, 480, 44}, 5000, airQualityData_)));
+        new AirQualityWidget(WidgetInterface::Dimensions{0, 154, 480, 44}, 5000, airQualityData_)));
 
     // Network widget — compact, right-aligned next to clock
     // Clock: {328, 288, 150, 24}  →  network widget ends at x=328

@@ -9,18 +9,65 @@ constexpr const char* kDegreesC =
     "\xC2\xB0"
     "C";
 
-float valueCpuLoad(const PcMetrics& m) { return m.cpu_load; }
-float valueCpuTemperature(const PcMetrics& m) { return m.cpu_temperature; }
-float valueCpuPower(const PcMetrics& m) { return m.cpu_power; }
-float valueCpuFan(const PcMetrics& m) { return m.cpu_fan; }
-float valueGpuLoad(const PcMetrics& m) { return m.gpu_load; }
-float valueGpuTemperature(const PcMetrics& m) { return m.gpu_temperature; }
-float valueGpuPower(const PcMetrics& m) { return m.gpu_power; }
-float valueGpu3d(const PcMetrics& m) { return m.gpu_3d; }
-float valueGpuCompute(const PcMetrics& m) { return m.gpu_compute; }
-float valueGpuMemory(const PcMetrics& m) { return m.gpu_mem; }
-float valueGpuFan(const PcMetrics& m) { return m.gpu_fan; }
-float valueMemoryLoad(const PcMetrics& m) { return m.mem_load; }
+float valueCpuLoad(const PcMetrics& m) {
+    return m.cpu_load;
+}
+float valueCpuTemperature(const PcMetrics& m) {
+    return m.cpu_temperature;
+}
+float valueCpuPower(const PcMetrics& m) {
+    return m.cpu_power;
+}
+float valueCpuFan(const PcMetrics& m) {
+    return m.cpu_fan;
+}
+float valueGpuLoad(const PcMetrics& m) {
+    return m.gpu_load;
+}
+float valueGpuTemperature(const PcMetrics& m) {
+    return m.gpu_temperature;
+}
+float valueGpuPower(const PcMetrics& m) {
+    return m.gpu_power;
+}
+float valueGpu3d(const PcMetrics& m) {
+    return m.gpu_3d;
+}
+float valueGpuCompute(const PcMetrics& m) {
+    return m.gpu_compute;
+}
+float valueGpuMemory(const PcMetrics& m) {
+    return m.gpu_mem;
+}
+float valueGpuFan(const PcMetrics& m) {
+    return m.gpu_fan;
+}
+float valueMemoryLoad(const PcMetrics& m) {
+    return m.mem_load;
+}
+
+// Disk read/write activity color scale, in KB/s. Breakpoints: <5 MB/s dark
+// gray (idle), 5-40 MB/s dark green, 40-75 MB/s light green, 75-87.5 MB/s
+// yellow, 87.5-100 MB/s orange, >100 MB/s red.
+uint16_t diskActivityColor(float kbPerSec) {
+    constexpr float kIdle = 5.0f * 1024.0f;
+    constexpr float kModerate = 25.0f * 1024.0f;
+    constexpr float kHigh = 50.0f * 1024.0f;
+    constexpr float kElevated = 75.5f * 1024.0f;
+    constexpr float kSaturated = 100.0f * 1024.0f;
+
+    if (kbPerSec < kIdle)
+        return 0x2104;  // dark grey (idle), matches other widgets' dim color
+    if (kbPerSec < kModerate)
+        return TFT_DARKGREEN;
+    if (kbPerSec < kHigh)
+        return TFT_GREEN;
+    if (kbPerSec < kElevated)
+        return TFT_YELLOW;
+    if (kbPerSec < kSaturated)
+        return TFT_ORANGE;
+    return TFT_RED;
+}
 }  // namespace
 
 // ---------------------------------------------------------------------------
@@ -47,37 +94,159 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
 
 const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
 PcMetricsWidget::fixedTileDescriptors() {
-    static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = {{
-        // CPU row
-        {{kCol8, kRow1, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CPU", kLabelWidth, 0xC618,
-         false, false, valueCpuLoad},
-        {{kCol9, kRow1, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-         0xC618, false, false, valueCpuTemperature},
-        {{kCol8, kRow2, kTileWidth, kRowH}, " W", 0, 400, 55.0f, 140.0f, "PWR", kLabelWidth,
-         0xC618, false, false, valueCpuPower},
-        {{kCol9, kRow2, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1200.0f, "FAN", kLabelWidth,
-         0xC618, false, false, valueCpuFan},
+    static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = {
+        {
+         // CPU row
+            {{kCol8, kRow1, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "CPU",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             valueCpuLoad},
+         {{kCol9, kRow1, kTileWidth, kRowH},
+             kDegreesC,
+             0,
+             100,
+             55.0f,
+             85.0f,
+             "TMP",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             valueCpuTemperature},
+         {{kCol8, kRow2, kTileWidth, kRowH},
+             " W",
+             0,
+             400,
+             55.0f,
+             140.0f,
+             "PWR",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             valueCpuPower},
+         {{kCol9, kRow2, kTileWidth, kRowH},
+             "",
+             0,
+             1500,
+             800.0f,
+             1200.0f,
+             "FAN",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             valueCpuFan},
 
-        // GPU rows
-        {{kCol8, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "GPU", kLabelWidth, 0xAD27,
-         true, false, valueGpuLoad},
-        {{kCol9, kRow3, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-         0xAD27, true, false, valueGpuTemperature},
-        {{kCol8, kRow4, kTileWidth, kRowH}, " W", 0, 400, 50.0f, 170.0f, "PWR", kLabelWidth,
-         0xAD27, true, false, valueGpuPower},
-        {{kCol7, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "3D", kLabelWidth, 0xAD27,
-         true, false, valueGpu3d},
-        {{kCol7, kRow4, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CMP", kLabelWidth, 0xAD27,
-         true, false, valueGpuCompute},
-        {{kCol6, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)}, "%", 0, 100, 30.0f, 90.0f,
-         "VRAM", kLabelWidth, 0xAD27, true, true, valueGpuMemory},
-        {{kCol9, kRow4, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1400.0f, "FAN", kLabelWidth,
-         0xAD27, true, false, valueGpuFan},
+         // GPU rows
+            {{kCol8, kRow3, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "GPU",
+             kLabelWidth,
+             0xAD27,
+             true,
+             false,
+             valueGpuLoad},
+         {{kCol9, kRow3, kTileWidth, kRowH},
+             kDegreesC,
+             0,
+             100,
+             55.0f,
+             85.0f,
+             "TMP",
+             kLabelWidth,
+             0xAD27,
+             true,
+             false,
+             valueGpuTemperature},
+         {{kCol8, kRow4, kTileWidth, kRowH},
+             " W",
+             0,
+             400,
+             50.0f,
+             170.0f,
+             "PWR",
+             kLabelWidth,
+             0xAD27,
+             true,
+             false,
+             valueGpuPower},
+         {{kCol7, kRow3, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "3D",
+             kLabelWidth,
+             0xAD27,
+             true,
+             false,
+             valueGpu3d},
+         {{kCol7, kRow4, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "CMP",
+             kLabelWidth,
+             0xAD27,
+             true,
+             false,
+             valueGpuCompute},
+         {{kCol6, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)},
+             "%",
+             0,
+             100,
+             30.0f,
+             90.0f,
+             "VRAM",
+             kLabelWidth,
+             0xAD27,
+             true,
+             true,
+             valueGpuMemory},
+         {{kCol9, kRow4, kTileWidth, kRowH},
+             "",
+             0,
+             1500,
+             800.0f,
+             1400.0f,
+             "FAN",
+             kLabelWidth,
+             0xAD27,
+             true,
+             false,
+             valueGpuFan},
 
-        // RAM — rows 3-4 span (double height), leftmost of the right-side tiles
-        {{kCol5, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)}, "%", 0, 100, 60.0f, 90.0f,
-         "RAM", kLabelWidth, 0xC618, false, true, valueMemoryLoad},
-    }};
+         // RAM — rows 3-4 span (double height), leftmost of the right-side tiles
+            {{kCol5, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)},
+             "%",
+             0,
+             100,
+             60.0f,
+             90.0f,
+             "RAM",
+             kLabelWidth,
+             0xC618,
+             false,
+             true,
+             valueMemoryLoad},
+         }
+    };
     return kTiles;
 }
 
@@ -193,10 +362,9 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
 
     // Rebuild widgets from the snapshot
     diskDriveWidgets_.clear();
+    diskWriteLineColor_.assign(snapshot.size(), 0xFFFF);  // sentinel forces first draw
+    diskReadLineColor_.assign(snapshot.size(), 0xFFFF);
 
-    const uint16_t guidelineY4 = 120;
-    const uint16_t guidelineY5 = 150;
-    const uint16_t height = guidelineY5 - guidelineY4;
     const uint16_t maxWidgetWidth = 120;
     uint16_t widgetWidth = static_cast<uint16_t>(kScreenWidth / snapshot.size());
     if (widgetWidth > maxWidgetWidth)
@@ -206,7 +374,7 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
         uint16_t xPos = static_cast<uint16_t>(i * widgetWidth);
 
         auto w = MetricWidget::Builder(
-                     WidgetInterface::Dimensions{xPos, guidelineY4, widgetWidth, height},
+                     WidgetInterface::Dimensions{xPos, kDiskAreaY, widgetWidth, kDiskAreaHeight},
                      updateIntervalMs_)
                      .unit("")
                      .range(0, 100)
@@ -243,6 +411,8 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
 
     // One int per widget slot.
     int freeSpaceSnapshot[kMaxDiskWidgets];
+    float writeSnapshot[kMaxDiskWidgets];
+    float readSnapshot[kMaxDiskWidgets];
     size_t updateCount = 0;
     {
         PcMetricsDiskLock lock(pcMetrics_);
@@ -251,6 +421,8 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
         for (size_t i = 0; i < updateCount; ++i) {
             freeSpaceSnapshot[i] =
                 static_cast<int>(pcMetrics_.disk_drives[i].freeSpacePercent + 0.5f);
+            writeSnapshot[i] = pcMetrics_.disk_drives[i].writeKBPerSec;
+            readSnapshot[i] = pcMetrics_.disk_drives[i].readKBPerSec;
         }
     }  // mutex released — all display work below is lock-free
 
@@ -262,6 +434,23 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
             diskDriveWidgets_[i]->setValue(freeSpaceSnapshot[i]);
         }
         diskDriveWidgets_[i]->draw(false);
+
+        const auto dims = diskDriveWidgets_[i]->getDimensions();
+        const uint16_t writeColor = diskActivityColor(writeSnapshot[i]);
+        if (i >= diskWriteLineColor_.size())
+            continue;
+        if (diskWriteLineColor_[i] != writeColor) {
+            getLcd()->fillRect(dims.x, kDiskWriteLineY, dims.width, kDiskActivityLineHeight,
+                               writeColor);
+            diskWriteLineColor_[i] = writeColor;
+        }
+
+        const uint16_t readColor = diskActivityColor(readSnapshot[i]);
+        if (diskReadLineColor_[i] != readColor) {
+            getLcd()->fillRect(dims.x, kDiskReadLineY, dims.width, kDiskActivityLineHeight,
+                               readColor);
+            diskReadLineColor_[i] = readColor;
+        }
     }
 }
 
@@ -431,6 +620,8 @@ void PcMetricsWidget::clearAllWidgets() {
     systemFanWidgets_.clear();
     lastSystemFanCount_ = 0xFF;  // force rebuild on next data arrive
     diskDriveWidgets_.clear();
+    diskWriteLineColor_.clear();
+    diskReadLineColor_.clear();
 
     lastEnsureCheckTimestamp_ = 0;  // force both ensures to run after next fetch
     isStaticDrawn_ = false;

@@ -66,6 +66,16 @@ class PcMetricsWidget : public Widget {
     // Maximum number of disk-drive tiles that can be displayed simultaneously
     static constexpr size_t kMaxDiskWidgets = 10;
 
+    // Disk read/write activity indicator bars — a solid-color 2px line above
+    // (write) and below (read) each drive's name/usage tile. kDiskAreaY/
+    // kDiskAreaHeight are the drive tile's own bounds; the write line sits
+    // immediately above at kRow5, the read line immediately below.
+    static constexpr uint16_t kDiskActivityLineHeight = 2;
+    static constexpr uint16_t kDiskWriteLineY = kRow5;
+    static constexpr uint16_t kDiskAreaY = kRow5 + kDiskActivityLineHeight;
+    static constexpr uint16_t kDiskAreaHeight = kRow6 - kRow5;
+    static constexpr uint16_t kDiskReadLineY = kDiskAreaY + kDiskAreaHeight;
+
     // Maximum number of system-fan tiles that can be displayed simultaneously.
     // Matches PcMetrics::kMaxSystemFans so the widget can always represent every
     // connected fan without further bounds checks.
@@ -144,6 +154,12 @@ class PcMetricsWidget : public Widget {
 
     // Disk drives (created dynamically when data first arrives)
     std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
+
+    // Last-drawn colors for each drive's write/read activity line, parallel
+    // to diskDriveWidgets_ — redraw only happens when the color actually
+    // changes, avoiding a fillRect on every draw tick.
+    std::vector<uint16_t> diskWriteLineColor_;
+    std::vector<uint16_t> diskReadLineColor_;
 
     // -----------------------------------------------------------------------
     // Construction helpers
