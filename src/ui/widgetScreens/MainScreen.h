@@ -8,6 +8,7 @@
 #include "ui/widgets/display/AirQualityWidget.h"
 #include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/display/FpsWidget.h"
+#include "ui/widgets/display/MultiWidget.h"
 #include "ui/widgets/display/NetworkWidget.h"
 #include "ui/widgets/display/PcMetricsWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"

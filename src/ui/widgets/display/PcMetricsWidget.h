@@ -69,10 +69,11 @@ class PcMetricsWidget : public Widget {
     // Disk read/write activity indicator bars — a solid-color 2px line above
     // (write) and below (read) each drive's name/usage tile. kDiskAreaY/
     // kDiskAreaHeight are the drive tile's own bounds; the write line sits
-    // immediately above at kRow5, the read line immediately below.
+    // immediately above at kRow5, the read line immediately below. A 1px gap
+    // separates the write line from the tile so the two don't touch.
     static constexpr uint16_t kDiskActivityLineHeight = 2;
     static constexpr uint16_t kDiskWriteLineY = kRow5;
-    static constexpr uint16_t kDiskAreaY = kRow5 + kDiskActivityLineHeight;
+    static constexpr uint16_t kDiskAreaY = kRow5 + kDiskActivityLineHeight + 1;
     static constexpr uint16_t kDiskAreaHeight = kRow6 - kRow5;
     static constexpr uint16_t kDiskReadLineY = kDiskAreaY + kDiskAreaHeight;
 

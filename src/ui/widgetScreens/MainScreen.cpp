@@ -12,7 +12,7 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
 void MainScreen::createWidgets() {
     // PcMetrics
     auto pcMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 154}, 100,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 155}, 100,
         pcMetrics_, config_, systemMetrics_));
     pcMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(pcMetricsWidget));
@@ -25,7 +25,7 @@ void MainScreen::createWidgets() {
 
     // Air quality bar
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
-        new AirQualityWidget(WidgetInterface::Dimensions{0, 154, 480, 44}, 5000, airQualityData_)));
+        new AirQualityWidget(WidgetInterface::Dimensions{0, 155, 480, 44}, 5000, airQualityData_)));
 
     // Network widget — compact, right-aligned next to clock
     // Clock: {328, 288, 150, 24}  →  network widget ends at x=328
@@ -36,6 +36,10 @@ void MainScreen::createWidgets() {
     // Clock
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
         WidgetInterface::Dimensions{328, 288, 150, 24}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
+
+    // Multifunctional widget — below weather, left of FPS, above clock row
+    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
+        new MultiWidget(WidgetInterface::Dimensions{0, 199, 400, 73}, 1000)));
 
     // FPS widget
     widgetManager_.addWidget(std::unique_ptr<FpsWidget>(
