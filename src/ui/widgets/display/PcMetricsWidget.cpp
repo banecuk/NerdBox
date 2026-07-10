@@ -364,6 +364,7 @@ void PcMetricsWidget::ensureDiskWidgetsCreated() {
     diskDriveWidgets_.clear();
     diskWriteLineColor_.assign(snapshot.size(), 0xFFFF);  // sentinel forces first draw
     diskReadLineColor_.assign(snapshot.size(), 0xFFFF);
+    diskFreeSpaceSmoothed_.assign(snapshot.size(), -1.0f);  // sentinel: no previous value yet
 
     const uint16_t maxWidgetWidth = 120;
     uint16_t widgetWidth = static_cast<uint16_t>(kScreenWidth / snapshot.size());
@@ -409,8 +410,8 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
     if (widgetCount == 0)
         return;
 
-    // One int per widget slot.
-    int freeSpaceSnapshot[kMaxDiskWidgets];
+    // One float per widget slot (raw, pre-smoothing).
+    float freeSpaceRawSnapshot[kMaxDiskWidgets];
     float writeSnapshot[kMaxDiskWidgets];
     float readSnapshot[kMaxDiskWidgets];
     size_t updateCount = 0;
@@ -419,8 +420,7 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
         updateCount = (pcMetrics_.disk_drives.size() < widgetCount) ? pcMetrics_.disk_drives.size()
                                                                     : widgetCount;
         for (size_t i = 0; i < updateCount; ++i) {
-            freeSpaceSnapshot[i] =
-                static_cast<int>(pcMetrics_.disk_drives[i].freeSpacePercent + 0.5f);
+            freeSpaceRawSnapshot[i] = pcMetrics_.disk_drives[i].freeSpacePercent;
             writeSnapshot[i] = pcMetrics_.disk_drives[i].writeKBPerSec;
             readSnapshot[i] = pcMetrics_.disk_drives[i].readKBPerSec;
         }
@@ -430,8 +430,19 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
         if (!diskDriveWidgets_[i] || !diskDriveWidgets_[i]->isInitialized())
             continue;
 
-        if (diskDriveWidgets_[i]->getValue() != freeSpaceSnapshot[i]) {
-            diskDriveWidgets_[i]->setValue(freeSpaceSnapshot[i]);
+        // Smooth falling free-space values: if the new reading is lower than
+        // the previously displayed value, show the average of the two instead
+        // of jumping straight down, and carry that average forward as the new
+        // previous value. Rising values (or the first sample) are shown as-is.
+        const float raw = freeSpaceRawSnapshot[i];
+        const float previous = (i < diskFreeSpaceSmoothed_.size()) ? diskFreeSpaceSmoothed_[i] : -1.0f;
+        const float smoothed = (previous >= 0.0f && raw < previous) ? (previous + raw) / 2.0f : raw;
+        if (i < diskFreeSpaceSmoothed_.size())
+            diskFreeSpaceSmoothed_[i] = smoothed;
+        const int freeSpaceValue = static_cast<int>(smoothed + 0.5f);
+
+        if (diskDriveWidgets_[i]->getValue() != freeSpaceValue) {
+            diskDriveWidgets_[i]->setValue(freeSpaceValue);
         }
         diskDriveWidgets_[i]->draw(false);
 
@@ -622,6 +633,7 @@ void PcMetricsWidget::clearAllWidgets() {
     diskDriveWidgets_.clear();
     diskWriteLineColor_.clear();
     diskReadLineColor_.clear();
+    diskFreeSpaceSmoothed_.clear();
 
     lastEnsureCheckTimestamp_ = 0;  // force both ensures to run after next fetch
     isStaticDrawn_ = false;

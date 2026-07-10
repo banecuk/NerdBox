@@ -161,6 +161,13 @@ class PcMetricsWidget : public Widget {
     std::vector<uint16_t> diskWriteLineColor_;
     std::vector<uint16_t> diskReadLineColor_;
 
+    // Smoothed free-space percent per drive, parallel to diskDriveWidgets_.
+    // A negative value means "no previous value yet" (first sample after
+    // creation, drawn as-is). See updateDiskDriveWidgets() for the smoothing
+    // rule: only decreases are averaged against the previous smoothed value,
+    // so the displayed percentage falls gradually instead of jumping down.
+    std::vector<float> diskFreeSpaceSmoothed_;
+
     // -----------------------------------------------------------------------
     // Construction helpers
     // -----------------------------------------------------------------------
