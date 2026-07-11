@@ -145,7 +145,7 @@ All tunable values live in `src/config/AppConfig.h` inside the `AppConfig::inter
 | `TimingImpl` | `kBackgroundTaskMs` | `20` | Background task tick period |
 | `TimingImpl` | `kMainLoopMs` | `10` | Main loop tick period |
 | `TasksImpl` | `kScreenStack` | `6144` | FreeRTOS screen task stack size (bytes) |
-| `TasksImpl` | `kBackgroundStack` | `8096` | FreeRTOS background task stack size (bytes) |
+| `TasksImpl` | `kBackgroundStack` | `8192` | FreeRTOS background task stack size (bytes) |
 | `HardwareMonitorImpl` | `kRefreshMs` | `500` | Polling interval when data is healthy |
 | `HardwareMonitorImpl` | `kThreadsRefreshMs` | `16` | Per-thread widget redraw interval (animation speed, not data freshness) |
 | `HardwareMonitorImpl` | `kRefreshAfterFailureMs` | `3000` | Back-off interval after a failed fetch |

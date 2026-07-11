@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 enum class EventType : uint8_t {
     NONE = 0,
     RESET_DEVICE,

@@ -71,7 +71,7 @@ void FpsWidget::renderFps(int16_t fps) {
 
     clearValueArea();
 
-    char buf[6];
+    char buf[8];
     snprintf(buf, sizeof(buf), "%d", static_cast<int>(fps));
 
     const uint16_t valueAreaY = dimensions_.y + 16;

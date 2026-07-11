@@ -6,7 +6,6 @@
 
 #include "config/AppSettings.h"
 #include "core/ApplicationComponents.h"
-#include "core/state/SystemState.h"
 #include "services/WebServerService.h"
 
 class Application {
@@ -30,6 +29,5 @@ class Application {
     // These are extracted from components_ in the constructor so that run()
     // does not need to reach into the composition root on every loop tick.
     const AppSettings&   config_;
-    SystemState&         systemState_;
     WebServerService&    webServerService_;
 };

@@ -41,7 +41,7 @@ struct TimingImpl {
 // Tasks configuration
 struct TasksImpl {
     static constexpr uint32_t kScreenStack = 6144;
-    static constexpr uint32_t kBackgroundStack = 8096;
+    static constexpr uint32_t kBackgroundStack = 8192;
     static constexpr uint32_t kScreenPriority = 2;
     static constexpr uint32_t kBackgroundPriority = 1;
 };

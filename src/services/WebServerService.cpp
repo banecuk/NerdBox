@@ -466,7 +466,7 @@ void WebServerService::handleApiStatus() {
     server_.sendContent(buf);
 
     // Stack high-water marks — early warning before a tight task stack
-    // (6144/8096 B) overflows and reboots the device. 0 means the task
+    // (6144/8192 B) overflows and reboots the device. 0 means the task
     // hasn't been created yet.
     const TaskHandle_t screenTask = taskManager_.getScreenTaskHandle();
     const TaskHandle_t backgroundTask = taskManager_.getBackgroundTaskHandle();

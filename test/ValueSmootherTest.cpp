@@ -252,3 +252,8 @@ TEST(ValueSmootherTest, SmoothedValueClampsToUint8Range) {
     // getSmoothedValue casts float → uint8_t; ensure no wraparound.
     EXPECT_EQ(s.getSmoothedValue(0), 255);
 }
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
