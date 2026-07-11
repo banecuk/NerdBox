@@ -1,8 +1,10 @@
+#include <memory>
+
 #include "core/Application.h"
-#include "core/ApplicationFactory.h"
+#include "core/ApplicationComponents.h"
 
 static AppSettings config;
-static Application* app = nullptr;
+static std::unique_ptr<Application> app;
 
 void waitForSerial(uint32_t timeoutMs) {
     uint32_t start = millis();
@@ -41,12 +43,11 @@ void setup() {
         }
     }
 
-    // Create application instance using factory
-    app = ApplicationFactory::createApplication();
+    // Create application instance
+    app = std::make_unique<Application>(std::make_unique<ApplicationComponents>());
 
     if (!app->initialize()) {
-        ApplicationFactory::destroyApplication(app);
-        app = nullptr;
+        app.reset();
         Serial.println("Init failed! Rebooting in 5s...");
         delay(5000);
         esp_restart();

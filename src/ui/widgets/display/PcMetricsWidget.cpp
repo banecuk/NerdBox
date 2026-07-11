@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include "core/resources/FontRegistry.h"
+#include "ui/core/Colors.h"
 
 namespace {
 constexpr const char* kDegreesC =
@@ -46,12 +47,9 @@ float valueMemoryLoad(const PcMetrics& m) {
     return m.mem_load;
 }
 
-// Averages the RGB565 channels of two colors to produce an intermediate shade.
-constexpr uint16_t blendColor565(uint16_t a, uint16_t b) {
-    const uint8_t r = static_cast<uint8_t>((((a >> 11) & 0x1F) + ((b >> 11) & 0x1F)) / 2);
-    const uint8_t g = static_cast<uint8_t>((((a >> 5) & 0x3F) + ((b >> 5) & 0x3F)) / 2);
-    const uint8_t bl = static_cast<uint8_t>(((a & 0x1F) + (b & 0x1F)) / 2);
-    return static_cast<uint16_t>((r << 11) | (g << 5) | bl);
+// Midpoint blend between two colors (~50/50), using the shared Colors blender.
+uint16_t blendColor565(uint16_t a, uint16_t b) {
+    return Colors::blendRgb565(a, b, 128);
 }
 
 constexpr uint16_t kDiskIdleColor = 0x2104;  // dark grey, matches other widgets' dim color

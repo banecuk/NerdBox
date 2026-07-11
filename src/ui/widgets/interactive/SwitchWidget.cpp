@@ -13,11 +13,7 @@ void SwitchWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->setTextDatum(TL_DATUM);
-    lcd->drawString(label_.c_str(), dimensions_.x, dimensions_.y + 2);
-    Fonts::unload(lcd);
+    drawCaptionLabel(label_.c_str());
 
     hasDrawnOnce_ = false;  // force full track redraw on next onDraw()
 }
@@ -41,22 +37,14 @@ void SwitchWidget::onDraw(bool forceRedraw) {
 }
 
 void SwitchWidget::drawTrack(bool on) {
-    LGFX* lcd = getLcd();
-
     const uint16_t trackY = dimensions_.y + kLabelH + kGap;
     const uint16_t trackH = dimensions_.height - kLabelH - kGap;
 
     const uint16_t bgColor = on ? kOnColor : kOffColor;
     const uint16_t textColor = on ? TFT_BLACK : static_cast<uint16_t>(0x6B4D);  // mid-grey
 
-    lcd->fillRoundRect(dimensions_.x, trackY, dimensions_.width, trackH, kRadius, bgColor);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(textColor, bgColor);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(on ? "ON" : "OFF", static_cast<int32_t>(dimensions_.x + dimensions_.width / 2),
-                    static_cast<int32_t>(trackY + trackH / 2));
-    Fonts::unload(lcd);
+    drawPillToggle(dimensions_.x, trackY, dimensions_.width, trackH, kRadius, bgColor, textColor,
+                   on ? "ON" : "OFF");
 }
 
 bool SwitchWidget::handleTouch(uint16_t x, uint16_t y) {

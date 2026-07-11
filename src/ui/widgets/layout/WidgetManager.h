@@ -19,11 +19,6 @@ class WidgetManager {
     void cleanupWidgets();
     size_t getWidgetCount() const { return widgetCache_.size(); }
 
-    // State management methods
-    std::vector<WidgetInterface::State> getWidgetStates() const;
-    size_t getVisibleWidgetCount() const;
-    bool setWidgetVisibility(size_t index, bool visible);
-
     // Dirty management
     void markAllDirty();
     void updateDirtyWidgets();
@@ -32,26 +27,6 @@ class WidgetManager {
     // any work to do.  Call this before acquiring the display lock so the
     // semaphore take/give is skipped entirely on idle frames.
     bool hasAnyDirtyWidgets() const;
-
-    void markAllWidgetsDirty();
-    void markAllWidgetsStale();
-
-    // Update cached dimensions if widget resizes
-    void updateCachedDimensions(size_t index);
-
-    // Debug methods
-    void logWidgetStates() const;
-    size_t getWidgetsInState(WidgetInterface::State state) const;
-
-    // Performance monitoring
-    struct UpdateStats {
-        size_t totalWidgets = 0;
-        size_t dirtyWidgets = 0;
-        size_t updatedWidgets = 0;
-        size_t skippedWidgets = 0;
-    };
-
-    UpdateStats getLastUpdateStats() const { return lastUpdateStats_; }
 
  private:
     // Cache structure to avoid repeated getDimensions() calls
@@ -69,8 +44,5 @@ class WidgetManager {
     bool isInitialized_ = false;
 
     bool allDirty_ = false;
-    UpdateStats lastUpdateStats_;
     uint32_t lastStatsLogTime_ = 0;
-
-    void updateWidgetStats(size_t dirtyCount, size_t updatedCount, size_t skippedCount);
 };

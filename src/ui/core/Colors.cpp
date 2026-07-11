@@ -80,7 +80,7 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
 
 #define MAKE_RGB565(r, g, b) (((r) << 11) | ((g) << 5) | (b))
 
-uint16_t Colors::blendRgb565(uint16_t a, uint16_t b, uint8_t alpha) {
+/* static */ uint16_t Colors::blendRgb565(uint16_t a, uint16_t b, uint8_t alpha) {
     const uint16_t invAlpha = 255 - alpha;
 
     // Extract RGB components (5-6-5 format)

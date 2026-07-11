@@ -13,13 +13,15 @@ class Colors {
  private:
     uint16_t COLOR_GRADIENT[100] = {};
     uint16_t COLOR_GRADIENT_DIM[100] = {};
-    uint16_t blendRgb565(uint16_t a, uint16_t b, uint8_t Alpha);
     uint16_t generateColorFromPercent(byte value);
     void generateGradient();
 
  public:
     Colors();
     ~Colors();
+
+    // Alpha-weighted blend between two RGB565 colors (alpha=0 -> a, alpha=255 -> b).
+    static uint16_t blendRgb565(uint16_t a, uint16_t b, uint8_t alpha);
 
     uint16_t getColorFromPercent(uint8_t value, bool dim = false);
     uint16_t getColorFromPercentGpu(uint8_t value);

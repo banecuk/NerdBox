@@ -42,12 +42,7 @@ void IpAddressWidget::onDrawStatic() {
     if (!layoutReady_)
         computeLayout();
 
-    // "IP ADDRESS" label
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, bgColor_);
-    lcd->setTextDatum(TL_DATUM);
-    lcd->drawString("IP ADDRESS", dimensions_.x, dimensions_.y + 2);
-    Fonts::unload(lcd);
+    drawCaptionLabel("IP ADDRESS", bgColor_);
 }
 
 void IpAddressWidget::onDraw(bool forceRedraw) {

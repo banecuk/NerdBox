@@ -47,11 +47,7 @@ void BrightnessWidget::onDrawStatic() {
     lcd->fillRect(dimensions_.x, dimensions_.y,
                   dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->setTextDatum(TL_DATUM);
-    lcd->drawString("BRIGHTNESS", dimensions_.x, dimensions_.y + 2);
-    Fonts::unload(lcd);
+    drawCaptionLabel("BRIGHTNESS");
 
     lastDrawnLevel_ = 0;  // force full segment redraw on next onDraw()
 }
@@ -76,8 +72,6 @@ void BrightnessWidget::onDraw(bool forceRedraw) {
 }
 
 void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
-    LGFX* lcd = getLcd();
-
     const uint16_t segY = dimensions_.y + kLabelH + kGap;
     const uint16_t segH = dimensions_.height - kLabelH - kGap;
 
@@ -86,15 +80,7 @@ void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
     const uint16_t textColor = active ? TFT_BLACK
                                       : static_cast<uint16_t>(0x6B4D);  // mid-grey
 
-    lcd->fillRoundRect(seg.x, segY, seg.width, segH, kRadius, bgColor);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(textColor, bgColor);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(seg.label,
-                    static_cast<int32_t>(seg.x + seg.width / 2),
-                    static_cast<int32_t>(segY  + segH / 2));
-    Fonts::unload(lcd);
+    drawPillToggle(seg.x, segY, seg.width, segH, kRadius, bgColor, textColor, seg.label);
 }
 
 bool BrightnessWidget::handleTouch(uint16_t x, uint16_t y) {

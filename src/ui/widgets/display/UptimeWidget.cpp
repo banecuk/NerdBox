@@ -53,11 +53,7 @@ void UptimeWidget::onDrawStatic() {
     if (!layoutReady_)
         computeLayout();
 
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, bgColor_);
-    lcd->setTextDatum(TL_DATUM);
-    lcd->drawString("UPTIME", dimensions_.x, dimensions_.y + 2);
-    Fonts::unload(lcd);
+    drawCaptionLabel("UPTIME", bgColor_);
 
     // Draw static colons in value font at the vertical midpoint of the value
     // row so they align with digit cap height — ML_DATUM places the glyph

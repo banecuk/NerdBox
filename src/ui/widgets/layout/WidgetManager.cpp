@@ -120,7 +120,13 @@ void WidgetManager::updateDirtyWidgets() {
 
     allDirty_ = false;
 
-    updateWidgetStats(dirtyCount, updatedCount, skippedCount);
+    uint32_t currentTime = millis();
+    if (currentTime - lastStatsLogTime_ > 10000) {  // Every 10 seconds
+        float efficiency = (float)skippedCount / (float)widgetCache_.size() * 100.0f;
+        logger_.debugf("WidgetManager: %zu/%zu widgets updated (%.1f%% skipped)", updatedCount,
+                       widgetCache_.size(), efficiency);
+        lastStatsLogTime_ = currentTime;
+    }
 }
 
 void WidgetManager::markAllDirty() {
@@ -130,21 +136,6 @@ void WidgetManager::markAllDirty() {
         if (entry.widget->isValid()) {
             entry.widget->markDirty();
         }
-    }
-}
-
-void WidgetManager::updateWidgetStats(size_t dirtyCount, size_t updatedCount, size_t skippedCount) {
-    lastUpdateStats_.totalWidgets = widgetCache_.size();
-    lastUpdateStats_.dirtyWidgets = dirtyCount;
-    lastUpdateStats_.updatedWidgets = updatedCount;
-    lastUpdateStats_.skippedWidgets = skippedCount;
-
-    uint32_t currentTime = millis();
-    if (currentTime - lastStatsLogTime_ > 10000) {  // Every 10 seconds
-        float efficiency = (float)skippedCount / (float)widgetCache_.size() * 100.0f;
-        logger_.debugf("WidgetManager: %zu/%zu widgets updated (%.1f%% skipped)", updatedCount,
-                       widgetCache_.size(), efficiency);
-        lastStatsLogTime_ = currentTime;
     }
 }
 
@@ -195,83 +186,4 @@ void WidgetManager::cleanupWidgets() {
     }
 
     widgetCache_.clear();
-}
-
-void WidgetManager::markAllWidgetsDirty() {
-    markAllDirty();
-}
-
-std::vector<WidgetInterface::State> WidgetManager::getWidgetStates() const {
-    std::vector<WidgetInterface::State> states;
-    for (const auto& entry : widgetCache_) {
-        states.push_back(entry.widget->getState());
-    }
-    return states;
-}
-
-size_t WidgetManager::getVisibleWidgetCount() const {
-    size_t count = 0;
-    for (const auto& entry : widgetCache_) {
-        if (entry.widget->isVisible()) {
-            count++;
-        }
-    }
-    return count;
-}
-
-bool WidgetManager::setWidgetVisibility(size_t index, bool visible) {
-    if (index < widgetCache_.size()) {
-        bool changed = widgetCache_[index].widget->setVisible(visible);
-        if (changed) {
-            widgetCache_[index].isDirty = true;
-        }
-        return changed;
-    }
-    return false;
-}
-
-void WidgetManager::updateCachedDimensions(size_t index) {
-    if (index < widgetCache_.size()) {
-        widgetCache_[index].cachedDims = widgetCache_[index].widget->getDimensions();
-        widgetCache_[index].isDirty = true;
-    }
-}
-
-void WidgetManager::logWidgetStates() const {
-    for (size_t i = 0; i < widgetCache_.size(); ++i) {
-        auto state = widgetCache_[i].widget->getState();
-        const char* stateStr = "UNKNOWN";
-        switch (state) {
-            case WidgetInterface::State::UNINITIALIZED:
-                stateStr = "UNINITIALIZED";
-                break;
-            case WidgetInterface::State::READY:
-                stateStr = "READY";
-                break;
-            case WidgetInterface::State::HIDDEN:
-                stateStr = "HIDDEN";
-                break;
-            case WidgetInterface::State::ERROR:
-                stateStr = "ERROR";
-                break;
-        }
-        logger_.debugf("Widget %d: %s (dirty: %s)", i, stateStr,
-                       widgetCache_[i].isDirty ? "yes" : "no");
-    }
-}
-
-size_t WidgetManager::getWidgetsInState(WidgetInterface::State state) const {
-    size_t count = 0;
-    for (const auto& entry : widgetCache_) {
-        if (entry.widget->getState() == state) {
-            count++;
-        }
-    }
-    return count;
-}
-
-void WidgetManager::markAllWidgetsStale() {
-    for (auto& entry : widgetCache_) {
-        entry.isDirty = true;
-    }
 }
