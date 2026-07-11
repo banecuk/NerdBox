@@ -3,6 +3,7 @@
 #include <functional>
 #include <string>
 
+#include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 
 // Tappable ON/OFF switch with a label, for boolean settings (e.g. "dim at
@@ -37,5 +38,5 @@ class SwitchWidget : public Widget {
     static constexpr uint8_t kGap = 3;       // px gap between label and track
     static constexpr uint8_t kRadius = 4;    // corner radius
     static constexpr uint16_t kOnColor = 0x07E0;    // green
-    static constexpr uint16_t kOffColor = 0x2104;   // ~#202020
+    static constexpr uint16_t kOffColor = Colors::kHairline;
 };

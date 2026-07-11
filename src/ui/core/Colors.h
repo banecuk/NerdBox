@@ -17,6 +17,12 @@ class Colors {
     void generateGradient();
 
  public:
+    // Shared chrome constants — hairline borders/separators/idle states, and
+    // inactive-label text, used across widgets so there's one place to tune
+    // the look instead of scattered literals.
+    static constexpr uint16_t kHairline = 0x2104;      // dark grey
+    static constexpr uint16_t kInactiveText = 0x6B4D;  // mid-grey
+
     Colors();
     ~Colors();
 

@@ -1,6 +1,7 @@
 #include "BrightnessWidget.h"
 
 #include "core/resources/FontRegistry.h"
+#include "ui/core/Colors.h"
 
 BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,
                                    DisplayManager& displayManager)
@@ -75,10 +76,8 @@ void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
     const uint16_t segY = dimensions_.y + kLabelH + kGap;
     const uint16_t segH = dimensions_.height - kLabelH - kGap;
 
-    const uint16_t bgColor   = active ? seg.activeColor
-                                      : static_cast<uint16_t>(0x2104);  // ~#202020
-    const uint16_t textColor = active ? TFT_BLACK
-                                      : static_cast<uint16_t>(0x6B4D);  // mid-grey
+    const uint16_t bgColor   = active ? seg.activeColor : Colors::kHairline;
+    const uint16_t textColor = active ? TFT_BLACK : Colors::kInactiveText;
 
     drawPillToggle(seg.x, segY, seg.width, segH, kRadius, bgColor, textColor, seg.label);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 
 // Multifunctional content area on MainScreen — sits below the AirQualityWidget,
@@ -15,5 +16,5 @@ class MultiWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    static constexpr uint16_t kBorderColor = 0x2104;  // dark grey, matches other widgets
+    static constexpr uint16_t kBorderColor = Colors::kHairline;
 };

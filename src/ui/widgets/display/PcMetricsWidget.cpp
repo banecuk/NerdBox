@@ -52,7 +52,7 @@ uint16_t blendColor565(uint16_t a, uint16_t b) {
     return Colors::blendRgb565(a, b, 128);
 }
 
-constexpr uint16_t kDiskIdleColor = 0x2104;  // dark grey, matches other widgets' dim color
+constexpr uint16_t kDiskIdleColor = Colors::kHairline;
 
 // Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
 // gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
@@ -128,6 +128,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xC618,
              false,
              false,
+             false,
              valueCpuLoad},
          {{kCol9, kRow1, kTileWidth, kRowH},
              kDegreesC,
@@ -138,6 +139,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              "TMP",
              kLabelWidth,
              0xC618,
+             false,
              false,
              false,
              valueCpuTemperature},
@@ -152,6 +154,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xC618,
              false,
              false,
+             false,
              valueCpuPower},
          {{kCol9, kRow2, kTileWidth, kRowH},
              "",
@@ -164,6 +167,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xC618,
              false,
              false,
+             true,
              valueCpuFan},
 
          // GPU rows
@@ -178,6 +182,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xAD27,
              true,
              false,
+             false,
              valueGpuLoad},
          {{kCol9, kRow3, kTileWidth, kRowH},
              kDegreesC,
@@ -189,6 +194,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              kLabelWidth,
              0xAD27,
              true,
+             false,
              false,
              valueGpuTemperature},
          {{kCol8, kRow4, kTileWidth, kRowH},
@@ -202,6 +208,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xAD27,
              true,
              false,
+             false,
              valueGpuPower},
          {{kCol7, kRow3, kTileWidth, kRowH},
              "%",
@@ -213,6 +220,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              kLabelWidth,
              0xAD27,
              true,
+             false,
              false,
              valueGpu3d},
          {{kCol7, kRow4, kTileWidth, kRowH},
@@ -226,6 +234,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xAD27,
              true,
              false,
+             false,
              valueGpuCompute},
          {{kCol6, kRow3, kTileWidth, static_cast<uint16_t>(kRowH * 2)},
              "%",
@@ -238,6 +247,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xAD27,
              true,
              true,
+             false,
              valueGpuMemory},
          {{kCol9, kRow4, kTileWidth, kRowH},
              "",
@@ -250,6 +260,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xAD27,
              true,
              false,
+             true,
              valueGpuFan},
 
          // RAM — rows 3-4 span (double height), leftmost of the right-side tiles
@@ -264,6 +275,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              0xC618,
              false,
              true,
+             false,
              valueMemoryLoad},
          }
     };
@@ -282,6 +294,7 @@ void PcMetricsWidget::buildFixedWidgets() {
                                .labelColor(d.labelColor)
                                .useGpuColors(d.useGpuColors)
                                .verticalLabel(d.verticalLabel)
+                               .useDimColors(d.useDimColors)
                                .build();
     }
 }
@@ -335,6 +348,7 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
                      .labelWidth(kFanLabelWidth)
                      .labelColor(0xC618)
                      .smallFont()  // 4-digit RPM values don't fit NotoSans18 in the narrow fan tile
+                     .useDimColors(true)
                      .build();
 
         if (w) {

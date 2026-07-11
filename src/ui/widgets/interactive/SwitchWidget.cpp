@@ -41,7 +41,7 @@ void SwitchWidget::drawTrack(bool on) {
     const uint16_t trackH = dimensions_.height - kLabelH - kGap;
 
     const uint16_t bgColor = on ? kOnColor : kOffColor;
-    const uint16_t textColor = on ? TFT_BLACK : static_cast<uint16_t>(0x6B4D);  // mid-grey
+    const uint16_t textColor = on ? TFT_BLACK : Colors::kInactiveText;
 
     drawPillToggle(dimensions_.x, trackY, dimensions_.width, trackH, kRadius, bgColor, textColor,
                    on ? "ON" : "OFF");

@@ -19,7 +19,7 @@ void NetworkWidget::onDrawStatic() {
 
     // Separator between wifi and globe sections
     const int16_t sepX = dimensions_.x + kWifiSectionW;
-    lcd->drawFastVLine(sepX, dimensions_.y + 3, dimensions_.height - 6, 0x2104);
+    lcd->drawFastVLine(sepX, dimensions_.y + 3, dimensions_.height - 6, Colors::kHairline);
 
     // Reset cache so onDraw does a full repaint
     lastConnected_ = false;
@@ -74,7 +74,7 @@ void NetworkWidget::drawWifi() {
 
     const uint8_t filled = rssiBracket();
     const uint16_t active = wifiColor();
-    const uint16_t dim = 0x2104;  // dark grey for unfilled bars
+    const uint16_t dim = Colors::kHairline;
 
     const uint8_t barHeights[kBarCount] = {5, 9, 14, 20};
 
@@ -168,7 +168,7 @@ void NetworkWidget::drawDotGrid() {
 
 uint16_t NetworkWidget::wifiColor() const {
     if (!status_.wifi_connected)
-        return 0x2104;
+        return Colors::kHairline;
     const int8_t r = status_.rssi;
     if (r > -65)
         return TFT_LIGHTGRAY;

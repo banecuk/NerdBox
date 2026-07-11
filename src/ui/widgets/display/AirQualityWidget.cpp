@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "ui/core/Colors.h"
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
@@ -24,12 +26,12 @@ void AirQualityWidget::onDrawStatic() {
                   dimensions_.width, dimensions_.height, TFT_BLACK);
 
     lcd->drawFastHLine(dimensions_.x, dimensions_.y,
-                       dimensions_.width, 0x2104);
+                       dimensions_.width, Colors::kHairline);
 
     // Tile separators (no separator between icon and first tile)
     for (uint8_t i = 1; i < kTileCount; ++i) {
         const int16_t sx = dimensions_.x + kIconW + i * kTileW;
-        lcd->drawFastVLine(sx, dimensions_.y + 2, dimensions_.height - 4, 0x2104);
+        lcd->drawFastVLine(sx, dimensions_.y + 2, dimensions_.height - 4, Colors::kHairline);
     }
 
     lastAvail_    = false;
