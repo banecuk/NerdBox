@@ -82,17 +82,17 @@ static constexpr char kHtmlHead2[] =
     "*{box-sizing:border-box;}"
     "body{background:var(--bg);color:var(--fg);font-family:'Segoe UI',Arial,sans-serif;"
     "margin:0;padding:0;line-height:1.6;}"
+    ".bar{max-width:1200px;margin:0 auto;box-sizing:border-box;}"
     "header{background:var(--card);border-bottom:1px solid var(--line);}"
-    ".header-content{max-width:1200px;margin:0 auto;padding:1rem 1.2rem;}"
-    ".header-content>span{color:var(--dim);font-size:0.85rem;}"
-    "nav{margin-top:0.5rem;}"
-    "nav ul{list-style:none;padding:0;margin:0;display:flex;gap:1rem;flex-wrap:wrap;}"
-    "nav a{color:var(--dim);text-decoration:none;padding:0.2rem 0;}"
+    "header .bar{padding:0.9rem 1.2rem;display:flex;align-items:baseline;"
+    "justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}"
+    "header h1{margin:0;font-size:1.3rem;color:var(--accent);}"
+    "header .meta{color:var(--dim);font-size:0.85rem;}"
+    "nav{background:var(--card);border-bottom:1px solid var(--line);}"
+    "nav .bar{padding:0.6rem 1.2rem;display:flex;gap:1rem;font-size:0.85rem;flex-wrap:wrap;}"
+    "nav a{color:var(--dim);text-decoration:none;}"
     "nav a:hover{color:var(--accent);}"
-    "h1{margin:0;font-size:1.3rem;color:var(--accent);}"
-    ".content{max-width:1200px;margin:0 auto;padding:0 1.2rem 2rem;}"
-    "footer{background:var(--card);margin-top:2rem;padding:1.2rem;border-top:"
-    "1px solid var(--line);color:var(--dim);text-align:center;font-size:0.85rem;}"
+    ".content{max-width:1200px;margin:0 auto;padding:1.2rem;}"
     "pre{background:var(--card);padding:1rem;border-radius:8px;overflow-x:auto;"
     "border:1px solid var(--line);font-family:Consolas,monospace;color:var(--fg);}"
     "table{border-collapse:collapse;width:100%;margin-top:0.5rem;font-size:0.9rem;}"
@@ -102,28 +102,24 @@ static constexpr char kHtmlHead2[] =
     "padding:0.1rem 0.35rem;}"
     "</style></head>"
     "<body>"
-    "<header>"
-    "<div class='header-content'>"
-    "<span>NerdBox</span>"
-    "<h1>";
+    "<header><div class='bar'>"
+    "<h1>NerdBox</h1>"
+    "<div class='meta'>";
 
 static constexpr char kHtmlHead3[] =
-    "</h1>"
-    "<nav><ul>"
-    "<li><a href='/'>Home</a></li>"
-    "<li><a href='/app-info'>App Info</a></li>"
-    "<li><a href='/system-info'>System Info</a></li>"
-    "<li><a href='/logs'>Logs</a></li>"
-    "<li><a href='/config'>Config</a></li>"
-    "<li><a href='/api'>API</a></li>"
-    "</ul></nav>"
+    "</div>"
     "</div></header>"
+    "<nav><div class='bar'>"
+    "<a href='/'>Home</a>"
+    "<a href='/app-info'>App Info</a>"
+    "<a href='/system-info'>System Info</a>"
+    "<a href='/logs'>Logs</a>"
+    "<a href='/config'>Config</a>"
+    "<a href='/api'>API</a>"
+    "</div></nav>"
     "<div class='content'>";
 
-static constexpr char kHtmlFoot[] =
-    "</div>"
-    "<footer>NerdBox 2025<br /><small>WT32-SC01-PLUS</small></footer>"
-    "</body></html>";
+static constexpr char kHtmlFoot[] = "</div></body></html>";
 
 void WebServerService::sendHtmlBegin(const char* title) {
     // Tell the client we will stream the body — no Content-Length needed.
@@ -132,7 +128,7 @@ void WebServerService::sendHtmlBegin(const char* title) {
     server_.sendContent(kHtmlHead1);
     server_.sendContent(title);
     server_.sendContent(kHtmlHead2);
-    server_.sendContent(title);              // repeated in <h1>
+    server_.sendContent(title);              // repeated in the header's meta area
     server_.sendContent(kHtmlHead3);
 }
 
@@ -532,8 +528,17 @@ void WebServerService::handleApiHelp() {
 
     char row[384];
     for (const auto& endpoint : kApiEndpoints) {
-        snprintf(row, sizeof(row), "<tr><td>%s</td><td><code>%s</code></td><td>%s</td></tr>",
-                 endpoint.method, endpoint.path, endpoint.description);
+        // Only GET endpoints are linked — a POST route (/restart, /screen/*)
+        // would just 404 on a plain click since it can't send the method.
+        char pathCell[192];
+        if (strcmp(endpoint.method, "GET") == 0) {
+            snprintf(pathCell, sizeof(pathCell), "<a href='%s' target='_blank'><code>%s</code></a>",
+                     endpoint.path, endpoint.path);
+        } else {
+            snprintf(pathCell, sizeof(pathCell), "<code>%s</code>", endpoint.path);
+        }
+        snprintf(row, sizeof(row), "<tr><td>%s</td><td>%s</td><td>%s</td></tr>", endpoint.method,
+                 pathCell, endpoint.description);
         server_.sendContent(row);
     }
     server_.sendContent("</table>");
