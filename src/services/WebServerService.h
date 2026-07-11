@@ -35,6 +35,7 @@ class WebServerService {
 
     void handleNotFound();
     void handleHome();
+    void handleFavicon();
     void handleSystemInfo();
     void handleAppInfo();
     void handleApiStatus();
