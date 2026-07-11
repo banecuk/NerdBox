@@ -10,6 +10,7 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dim
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
+      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp),
       barWidth_(dims.width / config_.getPcMetricsCores()),
       previousBarHeights_(config_.getPcMetricsCores(), 0),
       previousColors_(config_.getPcMetricsCores(), 0),
@@ -27,7 +28,7 @@ void ThreadsWidget::initialize(DisplayContext& context) {
     setUpdateInterval(config_.getHardwareMonitorThreadsRefreshMs());
 
     // Initialize the value smoother with current data if available
-    if (pcMetrics_.is_available) {
+    if (freshnessGuard_.isFresh()) {
         updateSmoothedValues();
     }
 }
@@ -46,7 +47,7 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    if (pcMetrics_.is_available) {
+    if (freshnessGuard_.isFresh()) {
         updateSmoothedValues();
     }
 

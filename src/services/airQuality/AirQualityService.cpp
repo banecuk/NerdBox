@@ -3,45 +3,45 @@
 AirQualityService::AirQualityService(NetworkManager& networkManager, LoggerInterface& logger)
     : networkManager_(networkManager),
       logger_(logger),
-      doc_(std::make_unique<JsonDocument>()) {}
+      doc_(std::make_unique<JsonDocument>()) {
+    initFilter();
+}
+
+void AirQualityService::initFilter() {
+    JsonObject filter = filter_.to<JsonObject>();
+    JsonObject weather = filter["data"]["current"]["weather"].to<JsonObject>();
+    weather["tp"] = true;
+    weather["hu"] = true;
+    weather["pr"] = true;
+    weather["ws"] = true;
+    weather["wd"] = true;
+    weather["ic"] = true;
+
+    JsonObject pollution = filter["data"]["current"]["pollution"].to<JsonObject>();
+    pollution["aqius"] = true;
+}
 
 bool AirQualityService::fetchData(AirQualityData& outData) {
-    rawData_ = "";
-
     if (!networkManager_.isConnected()) {
         logger_.warning("AirQuality: network not connected");
         return false;
     }
 
     HttpClient& http = networkManager_.getHttpClient();
-    if (!http.download(AIR_VISUAL_API, rawData_)) {
-        logger_.errorf("AirQuality: HTTP GET failed, code: %d", http.getLastHttpCode());
+    doc_->clear();
+    if (!http.downloadAndParse(AIR_VISUAL_API, *doc_, filter_)) {
+        if (http.getLastHttpCode() == HTTP_CODE_OK) {
+            logger_.warningf("AirQuality: JSON parse error: %s", http.getLastParseError().c_str());
+        } else {
+            logger_.errorf("AirQuality: HTTP GET failed, code: %d", http.getLastHttpCode());
+        }
         return false;
     }
 
-    return parseResponse(rawData_, outData);
+    return parseData(outData);
 }
 
-bool AirQualityService::parseResponse(const String& raw, AirQualityData& outData) {
-    // Filter document kept on the stack — it's small and constant.
-    JsonDocument filter;
-    filter["data"]["current"]["weather"]["tp"]        = true;
-    filter["data"]["current"]["weather"]["hu"]        = true;
-    filter["data"]["current"]["weather"]["pr"]        = true;
-    filter["data"]["current"]["weather"]["ws"]        = true;
-    filter["data"]["current"]["weather"]["wd"]        = true;
-    filter["data"]["current"]["weather"]["ic"]        = true;
-    filter["data"]["current"]["pollution"]["aqius"]   = true;
-
-    doc_->clear();
-    const DeserializationError err =
-        deserializeJson(*doc_, raw, DeserializationOption::Filter(filter));
-
-    if (err) {
-        logger_.warningf("AirQuality: JSON parse error: %s", err.c_str());
-        return false;
-    }
-
+bool AirQualityService::parseData(AirQualityData& outData) {
     JsonObject data = (*doc_)["data"];
     if (data.isNull()) {
         logger_.warning("AirQuality: missing 'data' key");
@@ -79,9 +79,4 @@ bool AirQualityService::parseResponse(const String& raw, AirQualityData& outData
                    outData.pressure, ws, outData.wind_dir, outData.aqi_us);
 
     return true;
-}
-
-bool AirQualityService::isStale(const AirQualityData& data) const {
-    if (!data.is_available) return true;
-    return (millis() - data.last_update) > kRefreshIntervalMs;
 }

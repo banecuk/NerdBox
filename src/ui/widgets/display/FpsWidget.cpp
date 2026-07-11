@@ -9,7 +9,9 @@ static constexpr uint16_t kPlaceholderColor = 0x2104;  // very dark gray (RGB565
 
 FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
+    : Widget(dims, updateIntervalMs),
+      pcMetrics_(pcMetrics),
+      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
 
 void FpsWidget::onDrawStatic() {
     clearArea();
@@ -28,7 +30,7 @@ void FpsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const int16_t fps = pcMetrics_.is_available ? pcMetrics_.gpu_fps : int16_t(-1);
+    const int16_t fps = freshnessGuard_.isFresh() ? pcMetrics_.gpu_fps : int16_t(-1);
     const bool hasValue = (fps != -1);
 
     if (hasValue != lastVisible_) {

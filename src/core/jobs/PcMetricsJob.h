@@ -9,9 +9,9 @@
 #include "core/ScreenTypes.h"
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
-#include "services/pcMetrics/DataFreshnessGuard.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
+#include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
 
 // Periodically fetches PC hardware metrics while the main screen is active.
@@ -29,7 +29,7 @@ class PcMetricsJob : public BackgroundJob {
           networkManager_(networkManager),
           config_(config),
           logger_(logger),
-          freshness_(metrics) {}
+          freshness_(metrics_.is_available, metrics_.last_update_timestamp) {}
 
     unsigned long nextDueMs() const override {
         if (!coreState_.isInitialized || screenState_.activeScreen != ScreenName::MAIN ||

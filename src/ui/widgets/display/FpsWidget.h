@@ -4,6 +4,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/DataFreshnessGuard.h"
 
 // Displays the GPU fullscreen FPS in a compact square in the bottom-right area
 // of the main screen, just above the ClockWidget.
@@ -23,6 +24,7 @@ class FpsWidget : public Widget {
 
  private:
     PcMetrics& pcMetrics_;
+    DataFreshnessGuard freshnessGuard_;
 
     int16_t lastDrawnFps_ = -2;  // sentinel so the first draw always renders
     bool lastVisible_ = false;

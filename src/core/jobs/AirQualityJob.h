@@ -8,6 +8,7 @@
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/airQuality/AirQualityService.h"
+#include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
 
 // Refreshes air quality data whenever it goes stale, once the system is
@@ -25,11 +26,11 @@ class AirQualityJob : public BackgroundJob {
           coreState_(coreState),
           networkManager_(networkManager),
           config_(config),
-          logger_(logger) {}
+          logger_(logger),
+          freshness_(data_.is_available, data_.last_update, AirQualityService::kRefreshIntervalMs) {}
 
     unsigned long nextDueMs() const override {
-        if (!coreState_.isInitialized || !networkManager_.isConnected() ||
-            !service_.isStale(data_)) {
+        if (!coreState_.isInitialized || !networkManager_.isConnected() || freshness_.isFresh()) {
             return ULONG_MAX;
         }
         return nextAttemptMs_;
@@ -51,5 +52,6 @@ class AirQualityJob : public BackgroundJob {
     NetworkManager& networkManager_;
     AppConfigInterface& config_;
     LoggerInterface& logger_;
+    DataFreshnessGuard freshness_;
     unsigned long nextAttemptMs_ = 0;
 };

@@ -61,7 +61,6 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
     doc_->clear();
     HttpClient& http = networkManager_.getHttpClient();
     if (!http.downloadAndParse(LIBRE_HM_API, *doc_, filter_)) {
-        outData.is_available = false;
         if (http.getLastHttpCode() == HTTP_CODE_OK) {
             logger_.errorf("JSON parsing failed: %s", http.getLastParseError().c_str());
         } else {
@@ -79,7 +78,6 @@ bool PcMetricsService::parseData(PcMetrics& outData) {
     JsonObject metrics = (*doc_)["Metrics"];
     if (metrics.isNull()) {
         logger_.error("No Metrics object found in JSON");
-        outData.is_available = false;
         return false;
     }
 
@@ -130,9 +128,14 @@ bool PcMetricsService::parseData(PcMetrics& outData) {
         logger_.debug("No Disks in filtered JSON");
     }
 
-    // Update metrics
-    outData.last_update_timestamp = millis();
-    outData.is_available = allComponentsValid;
+    // Update metrics — sticky on success only: a partial/failed parse leaves
+    // the last known-good reading and its timestamp untouched, so its age
+    // keeps growing toward the staleness timeout instead of instantly
+    // flipping unavailable.
+    if (allComponentsValid) {
+        outData.last_update_timestamp = millis();
+        outData.is_available = true;
+    }
 
     unsigned long parseTime = millis() - startTime;
     systemMetrics_.setPcMetricsJsonParseTime(parseTime);

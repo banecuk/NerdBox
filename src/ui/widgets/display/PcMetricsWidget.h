@@ -4,11 +4,11 @@
 
 #include "config/AppConfigInterface.h"
 #include "MetricWidget.h"
-#include "services/pcMetrics/DataFreshnessGuard.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
 #include "ui/widgets/display/ThreadsWidget.h"
+#include "utils/DataFreshnessGuard.h"
 
 class PcMetricsWidget : public Widget {
  public:

@@ -104,7 +104,7 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
-      freshnessGuard_(pcMetrics) {
+      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {
     buildFixedWidgets();
     // System fan widgets are built lazily in ensureSystemFanWidgetsCreated()
     // once the first data fetch reveals how many fans are actually connected.

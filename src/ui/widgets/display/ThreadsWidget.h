@@ -8,6 +8,7 @@
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
+#include "utils/DataFreshnessGuard.h"
 #include "utils/ValueSmoother.h"
 
 class ThreadsWidget : public Widget {
@@ -29,6 +30,7 @@ class ThreadsWidget : public Widget {
     PcMetrics& pcMetrics_;
     AppConfigInterface& config_;
     ApplicationMetrics& systemMetrics_;
+    DataFreshnessGuard freshnessGuard_;
 
     uint16_t barWidth_;
     std::vector<uint16_t> previousBarHeights_;
