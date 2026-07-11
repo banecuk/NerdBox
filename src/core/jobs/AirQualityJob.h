@@ -52,6 +52,6 @@ class AirQualityJob : public BackgroundJob {
     NetworkManager& networkManager_;
     const AppSettings& config_;
     LoggerInterface& logger_;
-    DataFreshnessGuard freshness_;
+    DataFreshnessGuard<bool, unsigned long> freshness_;
     unsigned long nextAttemptMs_ = 0;
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <freertos/FreeRTOS.h>
@@ -45,7 +47,11 @@ class PcMetrics {
     // word-sized and accessed on Xtensa as naturally atomic — no lock needed.
     SemaphoreHandle_t disk_drivesMutex = xSemaphoreCreateMutex();
 
-    bool is_available = false;
+    // is_available is the cross-core publish flag: parseData() writes every
+    // other field (including last_update_timestamp) before setting this,
+    // and readers must check this first — see DataFreshnessGuard for the
+    // happens-before argument that makes that ordering safe without a lock.
+    std::atomic<bool> is_available{false};
     unsigned long last_update_timestamp = 0;
 
     uint8_t cpu_temperature = 0;

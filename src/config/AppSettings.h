@@ -66,4 +66,6 @@ struct AppSettings {
     uint32_t uiScreenTransitionCooldownMs =
         AppConfig::internal::UiImpl::kScreenTransitionCooldownMs;
     uint32_t uiDisplayLockTimeoutMs = AppConfig::internal::UiImpl::kDisplayLockTimeoutMs;
+    uint8_t uiDimAtNightStartHour = AppConfig::internal::UiImpl::kDimAtNightStartHour;
+    uint8_t uiDimAtNightEndHour = AppConfig::internal::UiImpl::kDimAtNightEndHour;
 };

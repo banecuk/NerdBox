@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -30,7 +31,7 @@ class ThreadsWidget : public Widget {
     PcMetrics& pcMetrics_;
     const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
-    DataFreshnessGuard freshnessGuard_;
+    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
 
     uint16_t barWidth_;
     std::vector<uint16_t> previousBarHeights_;

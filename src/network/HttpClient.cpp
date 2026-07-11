@@ -1,13 +1,6 @@
 #include "HttpClient.h"
 
 namespace {
-// LAN-appropriate timeouts — NerdWinSense is on the same network, so a slow
-// response almost certainly means the request is stuck, not just crossing
-// the internet. Keeps a failed fetch cycle from stalling the background
-// task for the HTTPClient library's default 5 s timeouts.
-constexpr uint16_t kConnectTimeoutMs = 1000;
-constexpr uint16_t kResponseTimeoutMs = 2000;
-
 // Only transient failures are worth retrying: negative codes are
 // HTTPClient-level errors (connection refused, timeout, DNS failure) and 5xx
 // are server-side. 4xx means the request itself is malformed/rejected and
@@ -33,7 +26,8 @@ HttpClient::~HttpClient() {
 }
 
 bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetries,
-                          uint32_t retryDelayMs) {
+                          uint32_t retryDelayMs, uint16_t connectTimeoutMs,
+                          uint16_t responseTimeoutMs) {
     bool success = false;
     uint8_t retryCount = 0;
     lastHttpCode_ = 0;
@@ -48,8 +42,8 @@ bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetri
             continue;
         }
 
-        http_.setConnectTimeout(kConnectTimeoutMs);
-        http_.setTimeout(kResponseTimeoutMs);
+        http_.setConnectTimeout(connectTimeoutMs);
+        http_.setTimeout(responseTimeoutMs);
         lastHttpCode_ = http_.GET();
 
         if (lastHttpCode_ == HTTP_CODE_OK) {
@@ -61,6 +55,7 @@ bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetri
                 vTaskDelay(pdMS_TO_TICKS(retryDelayMs));
             }
         } else {
+            http_.end();  // Unread body on a kept-alive socket would desync the next request
             break;  // Non-retryable HTTP error (e.g. 4xx) — retrying won't help
         }
         http_.end();
@@ -70,7 +65,8 @@ bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetri
 }
 
 bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const JsonDocument& filter,
-                                  uint8_t maxRetries, uint32_t retryDelayMs) {
+                                  uint8_t maxRetries, uint32_t retryDelayMs,
+                                  uint16_t connectTimeoutMs, uint16_t responseTimeoutMs) {
     bool success = false;
     uint8_t retryCount = 0;
     lastHttpCode_ = 0;
@@ -86,8 +82,13 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
             continue;
         }
 
-        http_.setConnectTimeout(kConnectTimeoutMs);
-        http_.setTimeout(kResponseTimeoutMs);
+        http_.setConnectTimeout(connectTimeoutMs);
+        http_.setTimeout(responseTimeoutMs);
+        // Forces HTTP/1.0 semantics (no "Transfer-Encoding: chunked", no
+        // keep-alive) so getStream() always yields a plain Content-Length
+        // body that deserializeJson() can parse directly — the standard
+        // ArduinoJson streaming-parse recipe.
+        http_.useHTTP10(true);
         lastHttpCode_ = http_.GET();
 
         if (lastHttpCode_ == HTTP_CODE_OK) {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include <time.h>
 
 class NtpService {
@@ -17,7 +15,6 @@ class NtpService {
 
     bool isTimeSynced() const;
     struct tm getTime() const;
-    std::string getFormattedTime() const;
 
     static const char* DEFAULT_NTP_SERVER1;
     static const char* DEFAULT_NTP_SERVER2;

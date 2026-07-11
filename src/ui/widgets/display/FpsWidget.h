@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
@@ -23,7 +25,7 @@ class FpsWidget : public Widget {
 
  private:
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard freshnessGuard_;
+    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
 
     int16_t lastDrawnFps_ = -2;  // sentinel so the first draw always renders
     bool lastVisible_ = false;

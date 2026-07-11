@@ -20,7 +20,7 @@ ApplicationComponents::ApplicationComponents()
       airQualityJob(airQualityService, airQualityData, systemState.core, networkManager, config,
                     logger_),
       networkStatusJob(networkStatusService, netStatus),
-      dimAtNightJob(ntpService, displayManager),
+      dimAtNightJob(ntpService, displayManager, config),
       taskManager(logger_, uiController, config, systemState.screen,
                   std::vector<BackgroundJob*>{&wifiReconnectJob, &ntpRetryJob, &pcMetricsJob,
                                               &airQualityJob, &networkStatusJob,

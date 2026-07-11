@@ -1,20 +1,21 @@
 #pragma once
 
-#include "config/AppConfig.h"
+#include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "services/NtpService.h"
 #include "ui/core/DisplayManager.h"
 
 // Watches the local clock and tells DisplayManager whether it's currently
-// inside the "dim at night" window (kDimAtNightStartHour..kDimAtNightEndHour).
+// inside the "dim at night" window (config_.uiDimAtNightStartHour..EndHour).
 // DisplayManager itself gates on whether the feature is enabled and only
 // touches the display when the night/day state actually flips. The clock only
 // needs hour-granularity, so polling every kCheckIntervalMs is plenty prompt
 // for catching the 20:00/06:00 boundary without checking every single tick.
 class DimAtNightJob : public BackgroundJob {
  public:
-    DimAtNightJob(NtpService& ntpService, DisplayManager& displayManager)
-        : ntpService_(ntpService), displayManager_(displayManager) {}
+    DimAtNightJob(NtpService& ntpService, DisplayManager& displayManager,
+                  const AppSettings& config)
+        : ntpService_(ntpService), displayManager_(displayManager), config_(config) {}
 
     unsigned long nextDueMs() const override { return lastCheckMs_ + kCheckIntervalMs; }
 
@@ -24,10 +25,9 @@ class DimAtNightJob : public BackgroundJob {
         if (!ntpService_.isTimeSynced())
             return;
 
-        using Cfg = AppConfig::internal::UiImpl;
         const int hour = ntpService_.getTime().tm_hour;
-        const bool isNight =
-            (hour >= Cfg::kDimAtNightStartHour) || (hour < Cfg::kDimAtNightEndHour);
+        const bool isNight = (hour >= config_.uiDimAtNightStartHour) ||
+                             (hour < config_.uiDimAtNightEndHour);
 
         displayManager_.setNightWindowActive(isNight);
     }
@@ -37,5 +37,6 @@ class DimAtNightJob : public BackgroundJob {
 
     NtpService& ntpService_;
     DisplayManager& displayManager_;
+    const AppSettings& config_;
     unsigned long lastCheckMs_ = 0;
 };

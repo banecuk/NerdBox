@@ -2,18 +2,11 @@
 
 #include "core/ScreenTypes.h"
 
-// Forward declaration
-class UIController;
-
 class SystemState {
  public:
     struct CoreState {
         bool isInitialized = false;
         bool isTimeSynced = false;
-
-        // Service sync timestamps
-        unsigned long nextSync_pcMetrics = 0;
-        // unsigned long nextSync_Weather = 0;
     };
 
     struct ScreenState {

@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <atomic>
 #include <string>
 
 #include "config/AppSettings.h"
@@ -134,7 +135,7 @@ class PcMetricsWidget : public Widget {
     // -----------------------------------------------------------------------
     unsigned long lastUpdateTimestamp_ = 0;
     unsigned long lastEnsureCheckTimestamp_ = 0;  // last pcMetrics_ timestamp seen by the ensure calls
-    DataFreshnessGuard freshnessGuard_;
+    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
     bool wasFreshData_ = false;
     // isStaticDrawn_ is inherited (protected) from Widget — previously
     // shadowed by a same-named member here, which meant Widget::cleanUp()

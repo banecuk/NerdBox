@@ -29,7 +29,10 @@ bool AirQualityService::fetchData(AirQualityData& outData) {
 
     HttpClient& http = networkManager_.getHttpClient();
     doc_->clear();
-    if (!http.downloadAndParse(AIR_VISUAL_API, *doc_, filter_)) {
+    // AirVisual is an internet-facing API, not LAN-local like NerdWinSense —
+    // give it more headroom than HttpClient's default LAN timeouts so a
+    // legitimately slow response isn't treated as a failure.
+    if (!http.downloadAndParse(AIR_VISUAL_API, *doc_, filter_, 2, 100, 3000, 6000)) {
         if (http.getLastHttpCode() == HTTP_CODE_OK) {
             logger_.warningf("AirQuality: JSON parse error: %s", http.getLastParseError().c_str());
         } else {

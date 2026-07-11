@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include <atomic>
 #include <climits>
 
 #include "config/AppSettings.h"
@@ -36,18 +37,18 @@ class PcMetricsJob : public BackgroundJob {
             !networkManager_.isConnected()) {
             return ULONG_MAX;
         }
-        return coreState_.nextSync_pcMetrics;
+        return nextSync_;
     }
 
     void run() override {
         if (service_.fetchData(metrics_)) {
             consecutiveFailures_ = 0;
-            coreState_.nextSync_pcMetrics = millis() + config_.hardwareMonitorRefreshMs;
+            nextSync_ = millis() + config_.hardwareMonitorRefreshMs;
             return;
         }
 
         consecutiveFailures_++;
-        coreState_.nextSync_pcMetrics = millis() + config_.hardwareMonitorFailureRefreshMs;
+        nextSync_ = millis() + config_.hardwareMonitorFailureRefreshMs;
         logger_.debug("PC metrics update failed", true);
 
         if (consecutiveFailures_ >= config_.hardwareMonitorMaxRetries) {
@@ -71,6 +72,7 @@ class PcMetricsJob : public BackgroundJob {
 
     // Single source of truth for PC-metrics staleness — shared with
     // PcMetricsWidget via the same PcMetrics::last_update_timestamp field.
-    DataFreshnessGuard freshness_;
+    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshness_;
     uint8_t consecutiveFailures_ = 0;
+    unsigned long nextSync_ = 0;
 };

@@ -135,7 +135,7 @@ bool InitializationStateMachine::handleWatchdogInit() {
         return true;
     }
 
-    target_.logger().infof("Watchdog initialized with %dms timeout", target_.watchdogTimeoutMs());
+    target_.logger().infof("Watchdog initialized with %lums timeout", target_.watchdogTimeoutMs());
     transitionTo(State::TASKS_INIT);
     return true;
 }
@@ -161,7 +161,7 @@ bool InitializationStateMachine::handleFinalSetup() {
 
     target_.postInitializeDisplay();
 
-    target_.logger().debugf("Free heap post-init: %d", ESP.getFreeHeap());
+    target_.logger().debugf("Free heap post-init: %u", ESP.getFreeHeap());
     target_.requestScreen(ScreenName::MAIN);
     target_.setScreenInitialized();
     target_.setSystemInitialized();

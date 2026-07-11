@@ -69,10 +69,3 @@ struct tm NtpService::getTime() const {
     }
     return timeinfo;
 }
-
-std::string NtpService::getFormattedTime() const {
-    struct tm timeinfo = getTime();
-    char buffer[8];
-    strftime(buffer, sizeof(buffer), "%H:%M:%S", &timeinfo);
-    return std::string(buffer);
-}

@@ -25,8 +25,8 @@ void setup() {
         waitForSerial(config.debugSerialTimeoutMs);
     }
 
-    Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());
-    Serial.printf("Free PSRAM: %d bytes\n", ESP.getFreePsram());
+    Serial.printf("Total PSRAM: %u bytes\n", ESP.getPsramSize());
+    Serial.printf("Free PSRAM: %u bytes\n", ESP.getFreePsram());
 
     // Print the last reset reason
     esp_reset_reason_t reason = esp_reset_reason();
