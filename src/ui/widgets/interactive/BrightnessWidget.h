@@ -4,13 +4,14 @@
 #include "ui/core/DisplayManager.h"
 #include "ui/widgets/base/Widget.h"
 
-// Displays five tappable brightness segments; the active level is highlighted.
+// Displays tappable brightness segments (one per AppConfig brightness level);
+// the active level is highlighted.
 //
-// Layout (476 × 48 px example):
+// Layout (476 × 48 px example, 6 levels):
 //
 //   ┌──────────────────────────────────────────────────────┐
 //   │  BRIGHTNESS                              (label)     │
-//   │  [ ░ 1 ][ ░░ 2 ][ ▒▒ 3 ][ ▓▓ 4 ][ ██ 5 ]           │
+//   │  [░1][░░2][▒▒3][▒▒4][▓▓5][██6]                        │
 //   └──────────────────────────────────────────────────────┘
 //
 // Level values and count come from AppConfig::internal::UiImpl::kBrightnessLevels

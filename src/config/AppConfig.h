@@ -80,11 +80,14 @@ struct UiImpl {
     static constexpr const char* kNvsBrightnessKey = "brightness";
     static constexpr uint8_t kDefaultBrightness = 75;
 
-    // Five fixed brightness steps used by BrightnessWidget and cycleBrightness().
+    // Six fixed brightness steps used by BrightnessWidget and cycleBrightness().
     // Ordered dim → bright. Adding or reordering levels here is the only change
     // needed — DisplayManager and BrightnessWidget both derive from this array.
-    static constexpr uint8_t kBrightnessLevels[] = {20, 60, 85, 140, 255};
-    static constexpr uint8_t kBrightnessLevelCount = 5;
+    // (BrightnessWidget's per-segment labels/colors are sized off
+    // kBrightnessLevelCount but still hand-listed — update those arrays too if
+    // this count changes.)
+    static constexpr uint8_t kBrightnessLevels[] = {20, 60, 85, 110, 140, 255};
+    static constexpr uint8_t kBrightnessLevelCount = 6;
 
     // "Dim at night" — when enabled, brightness is reduced by kDimAtNightPercent
     // whenever the local hour is >= kDimAtNightStartHour or < kDimAtNightEndHour.

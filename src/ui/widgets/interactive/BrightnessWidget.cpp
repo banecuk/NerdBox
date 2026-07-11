@@ -17,16 +17,18 @@ void BrightnessWidget::buildSegments() {
     const uint16_t segW      = (dimensions_.width - totalGaps) / kSegmentCount;
 
     // Labels — one per level, ordered dim → bright.
-    static constexpr const char* kLabels[kSegmentCount] = { "1", "2", "3", "4", "5" };
+    static constexpr const char* kLabels[kSegmentCount] = { "1", "2", "3", "4", "5", "6" };
 
-    // Active-state accent colours, graduating dim-blue → amber → white.
-    // RGB565 values chosen so text (black) is readable on each.
+    // Active-state accent colours, graduating dim-blue → steel blue → amber →
+    // orange → warm yellow → white. RGB565 values chosen so text (black) is
+    // readable on each.
     static constexpr uint16_t kColors[kSegmentCount] = {
         0x4208,   // 1 — dim blue-grey  (~#404040)
         0x7BCF,   // 2 — steel blue     (~#7090C8)
         0xFD20,   // 3 — amber          (~#FF6800)
-        0xFF80,   // 4 — warm yellow    (~#FFB000)
-        TFT_WHITE // 5 — full white
+        0xFD00,   // 4 — orange         (~#FFA000)
+        0xFF80,   // 5 — warm yellow    (~#FFB000)
+        TFT_WHITE // 6 — full white
     };
 
     for (uint8_t i = 0; i < kSegmentCount; ++i) {
