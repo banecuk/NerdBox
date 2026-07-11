@@ -29,6 +29,18 @@ class PcMetricsDiskLock {
 
 class PcMetrics {
  public:
+    PcMetrics() = default;
+    ~PcMetrics() { vSemaphoreDelete(disk_drivesMutex); }
+
+    // There is exactly one PcMetrics instance for the app's lifetime. Copying
+    // or moving it would duplicate/steal the SemaphoreHandle_t below — the
+    // copy shares the same handle as the original, and both destructors would
+    // delete it, double-freeing the semaphore.
+    PcMetrics(const PcMetrics&) = delete;
+    PcMetrics& operator=(const PcMetrics&) = delete;
+    PcMetrics(PcMetrics&&) = delete;
+    PcMetrics& operator=(PcMetrics&&) = delete;
+
     // Mutex protecting disk_drives only. All scalar fields (cpu_load, etc.) are
     // word-sized and accessed on Xtensa as naturally atomic — no lock needed.
     SemaphoreHandle_t disk_drivesMutex = xSemaphoreCreateMutex();

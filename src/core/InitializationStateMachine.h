@@ -9,10 +9,10 @@ class InitializationStateMachine {
     enum class State {
         INITIAL,
         DISPLAY_INIT,
+        WATCHDOG_INIT,
         TASKS_INIT,
         NETWORK_INIT,
         TIME_INIT,
-        WATCHDOG_INIT,
         FINAL_SETUP,
         COMPLETE,
         FAILED
@@ -48,10 +48,17 @@ class InitializationStateMachine {
     void transitionTo(State newState);
     uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
 
+    // Adds the calling (main/setup) task to the watchdog. Deliberately called
+    // only after NETWORK_INIT/TIME_INIT finish their blocking work (WiFi
+    // connect + up to kDefaultTimeSyncRetries NTP attempts, worst case ~13s+)
+    // — nothing resets the watchdog for this task until Application::run()
+    // starts, so joining it any earlier risks a watchdog panic mid-boot.
+    void addMainTaskToWatchdog();
+
     IInitializationTarget& target_;
     State currentState_;
 
-    static constexpr const char* STATE_NAMES_[] = {"INITIAL",      "DISPLAY_INIT", "TASKS_INIT",
-                                                   "NETWORK_INIT", "TIME_INIT",    "WATCHDOG_INIT",
+    static constexpr const char* STATE_NAMES_[] = {"INITIAL",      "DISPLAY_INIT", "WATCHDOG_INIT",
+                                                   "TASKS_INIT",   "NETWORK_INIT", "TIME_INIT",
                                                    "FINAL_SETUP",  "COMPLETE",     "FAILED"};
 };

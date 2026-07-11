@@ -136,15 +136,7 @@ void MetricWidget::renderValueArea() {
     const int16_t totalW = valW + unitW;
 
     // Calculate the combined [value][unit] block position based on alignment
-    int16_t startX;
-    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        startX = areaX + TEXT_MARGIN;
-    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
-               textAlignment_ == BR_DATUM) {
-        startX = areaX + areaWidth - TEXT_MARGIN - totalW;
-    } else {
-        startX = areaX + areaWidth / 2 - totalW / 2;
-    }
+    const int16_t startX = computeStartX(areaX, areaWidth, totalW);
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
     lcd->setTextColor(TFT_WHITE, lastBgColor_);
@@ -198,9 +190,8 @@ void MetricWidget::renderValueTextOnly() {
     // When a unit is attached, its position depends on the value's width, so
     // ANY width change (not just shrinking) must clear the area to avoid
     // leaving stale unit pixels behind at the old position.
-    const bool layoutShifted =
-        unitW > 0 ? (newTextW != lastTextWidth_) : (newTextW < lastTextWidth_);
-    if (layoutShifted) {
+    const bool shifted = layoutShifted(newTextW, unitW);
+    if (shifted) {
         const int16_t areaY = dimensions_.y + BORDER_MARGIN;
         const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
         lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
@@ -208,15 +199,7 @@ void MetricWidget::renderValueTextOnly() {
     lastTextWidth_ = newTextW;
 
     const int16_t totalW = newTextW + unitW;
-    int16_t startX;
-    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        startX = areaX + TEXT_MARGIN;
-    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
-               textAlignment_ == BR_DATUM) {
-        startX = areaX + areaWidth - TEXT_MARGIN - totalW;
-    } else {
-        startX = areaX + areaWidth / 2 - totalW / 2;
-    }
+    const int16_t startX = computeStartX(areaX, areaWidth, totalW);
 
     lcd->setTextColor(TFT_WHITE, newBgColor);
     lcd->setTextDatum(ML_DATUM);
@@ -225,7 +208,7 @@ void MetricWidget::renderValueTextOnly() {
 
     // The unit only needs to be repainted when the layout actually shifted —
     // otherwise the previously drawn glyphs are still valid on screen.
-    if (layoutShifted && unitW > 0) {
+    if (shifted && unitW > 0) {
         Fonts::loadLabel(lcd);
         lcd->setTextColor(TFT_WHITE, newBgColor);
         lcd->setTextDatum(ML_DATUM);
@@ -275,26 +258,16 @@ void MetricWidget::drawValueWithLoadedFont() {
     // When a unit is attached, its position depends on the value's width, so
     // ANY width change (not just shrinking) must clear the area — otherwise
     // stale unit pixels are left behind at the old position.
-    const bool layoutShifted =
-        unitW > 0 ? (newTextW != lastTextWidth_) : (newTextW < lastTextWidth_);
+    const bool shifted = layoutShifted(newTextW, unitW);
 
-    if (bgChanged || layoutShifted) {
+    if (bgChanged || shifted) {
         lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
     }
     lastBgColor_ = newBgColor;
     lastTextWidth_ = newTextW;
 
     const int16_t totalW = newTextW + unitW;
-    int16_t startX;
-    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM ||
-        textAlignment_ == BL_DATUM) {
-        startX = areaX + TEXT_MARGIN;
-    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
-               textAlignment_ == BR_DATUM) {
-        startX = areaX + areaWidth - TEXT_MARGIN - totalW;
-    } else {
-        startX = areaX + areaWidth / 2 - totalW / 2;
-    }
+    const int16_t startX = computeStartX(areaX, areaWidth, totalW);
 
     // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a
     // single pass — no blank frame, no flash, even after a background change.
@@ -307,7 +280,7 @@ void MetricWidget::drawValueWithLoadedFont() {
     unitDrawX_ = startX + newTextW;
     unitDrawY_ = textY;
     unitBgColor_ = newBgColor;
-    unitNeedsRedraw_ = unitW > 0 && (bgChanged || layoutShifted);
+    unitNeedsRedraw_ = unitW > 0 && (bgChanged || shifted);
 
     lastDrawnValue_ = value_;
     hasDrawnOnce_ = true;
@@ -449,6 +422,20 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
 
 bool MetricWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
+}
+
+int16_t MetricWidget::computeStartX(int16_t areaX, int16_t areaWidth, int16_t totalW) const {
+    if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
+        return areaX + TEXT_MARGIN;
+    }
+    if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM || textAlignment_ == BR_DATUM) {
+        return areaX + areaWidth - TEXT_MARGIN - totalW;
+    }
+    return areaX + areaWidth / 2 - totalW / 2;
+}
+
+bool MetricWidget::layoutShifted(int16_t newTextWidth, int16_t unitWidth) const {
+    return unitWidth > 0 ? (newTextWidth != lastTextWidth_) : (newTextWidth < lastTextWidth_);
 }
 
 void MetricWidget::safeStringCopy(char* dest, const char* src, size_t destSize) const {

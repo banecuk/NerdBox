@@ -8,8 +8,14 @@ void WebServerService::begin() {
     server_.on("/", [this]() { this->handleHome(); });
     server_.on("/system-info", [this]() { this->handleSystemInfo(); });
     server_.on("/app-info", [this]() { this->handleAppInfo(); });
-    server_.on("/screen/main", [this]() { uiController_.requestScreen(ScreenName::MAIN); });
-    server_.on("/screen/settings", [this]() { uiController_.requestScreen(ScreenName::SETTINGS); });
+    server_.on("/screen/main", [this]() {
+        uiController_.requestScreen(ScreenName::MAIN);
+        server_.send(200, "text/plain", "OK");
+    });
+    server_.on("/screen/settings", [this]() {
+        uiController_.requestScreen(ScreenName::SETTINGS);
+        server_.send(200, "text/plain", "OK");
+    });
     server_.onNotFound([this]() { this->handleNotFound(); });
     server_.begin();
 }

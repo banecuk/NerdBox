@@ -68,10 +68,18 @@ bool TaskManager::createTask(TaskFunction_t taskFunction, const char* taskName, 
 
 void TaskManager::initializeWatchdog() {
     if (screenTaskHandle_ != nullptr) {
-        esp_task_wdt_add(screenTaskHandle_);
+        esp_err_t ret = esp_task_wdt_add(screenTaskHandle_);
+        if (ret != ESP_OK) {
+            logger_.errorf("Failed to add %s to watchdog: %s", SCREEN_TASK_NAME,
+                           esp_err_to_name(ret));
+        }
     }
     if (backgroundTaskHandle_ != nullptr) {
-        esp_task_wdt_add(backgroundTaskHandle_);
+        esp_err_t ret = esp_task_wdt_add(backgroundTaskHandle_);
+        if (ret != ESP_OK) {
+            logger_.errorf("Failed to add %s to watchdog: %s", BACKGROUND_TASK_NAME,
+                           esp_err_to_name(ret));
+        }
     }
     logger_.debug("Watchdog initialized for tasks", true);
 }

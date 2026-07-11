@@ -25,6 +25,10 @@ struct InitImpl {
 struct WatchdogImpl {
     static constexpr unsigned long kTimeoutMs = 20000;
     static constexpr bool kEnableOnBoot = true;
+
+    static_assert(kTimeoutMs >= 1000,
+                  "kTimeoutMs is passed to esp_task_wdt_init() in whole seconds; "
+                  "a value below 1000 truncates to 0");
 };
 
 // Timing configuration
@@ -79,7 +83,7 @@ struct UiImpl {
     // Five fixed brightness steps used by BrightnessWidget and cycleBrightness().
     // Ordered dim → bright. Adding or reordering levels here is the only change
     // needed — DisplayManager and BrightnessWidget both derive from this array.
-    static constexpr uint8_t kBrightnessLevels[] = {20, 50, 75, 140, 255};
+    static constexpr uint8_t kBrightnessLevels[] = {20, 60, 85, 140, 255};
     static constexpr uint8_t kBrightnessLevelCount = 5;
 
     // "Dim at night" — when enabled, brightness is reduced by kDimAtNightPercent

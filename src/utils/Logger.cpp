@@ -9,7 +9,8 @@
 #define DEBUG_MODE 0
 #endif
 
-Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
+Logger::Logger(const bool& isTimeSynced)
+    : isTimeSynced_(isTimeSynced), screenQueue_(new LogEntry[MAX_SCREEN_QUEUE_SIZE]()) {
     // Serial is initialized by main.cpp using the configured baud rate
 }
 
@@ -68,7 +69,7 @@ const char* Logger::levelToString(LogLevel level) {
 }
 
 // OPTIMIZED: Single buffer approach for all logging
-void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
+void Logger::logMessage(LogLevel level, const char* message, bool forScreen) {
     if (level == LogLevel::DEBUG && !DEBUG_MODE) {
         return;
     }
@@ -82,7 +83,7 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
     const char* levelStr = levelToString(level);
 
     // Direct format to avoid intermediate String operations
-    snprintf(logBuffer, sizeof(logBuffer), "%s [%s] %s", timestamp, levelStr, message.c_str());
+    snprintf(logBuffer, sizeof(logBuffer), "%s [%s] %s", timestamp, levelStr, message);
 
     // Send to Serial
     Serial.println(logBuffer);
@@ -97,8 +98,7 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
 
         // Truncate message if too long for screen display
         size_t maxMessageLen = sizeof(screenBuffer) - 32;  // Reserve space for timestamp and level
-        const char* messageStr = message.c_str();
-        size_t messageLen = strlen(messageStr);
+        size_t messageLen = strlen(message);
         if (messageLen > maxMessageLen) {
             messageLen = maxMessageLen;
         }
@@ -106,44 +106,51 @@ void Logger::logMessage(LogLevel level, const String& message, bool forScreen) {
         // Build screen message efficiently
         snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] ", screenTimestamp, shortLevelStr);
         size_t prefixLen = strlen(screenBuffer);
-        strncpy(screenBuffer + prefixLen, messageStr, sizeof(screenBuffer) - prefixLen - 1);
+        strncpy(screenBuffer + prefixLen, message, sizeof(screenBuffer) - prefixLen - 1);
         screenBuffer[sizeof(screenBuffer) - 1] = '\0';
 
-        // Store in queue — no heap allocation, copy into fixed char arrays
-        LogEntry entry{};
-        strncpy(entry.timestamp, screenTimestamp, sizeof(entry.timestamp) - 1);
-        entry.level = level;
-        strncpy(entry.message, screenBuffer, sizeof(entry.message) - 1);
-        entry.forScreen = true;
-
-        xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
-        screenQueue_.push(entry);
-        // Limit queue size to prevent memory exhaustion
-        while (screenQueue_.size() > MAX_SCREEN_QUEUE_SIZE) {
-            screenQueue_.pop();
-        }
-        xSemaphoreGive(screenQueueMutex_);
+        pushScreenEntry(screenTimestamp, level, screenBuffer);
     }
 }
 
-void Logger::debug(const String& message, bool forScreen) {
+void Logger::debug(const char* message, bool forScreen) {
     logMessage(LogLevel::DEBUG, message, forScreen);
 }
 
-void Logger::info(const String& message, bool forScreen) {
+void Logger::info(const char* message, bool forScreen) {
     logMessage(LogLevel::INFO, message, forScreen);
 }
 
-void Logger::warning(const String& message, bool forScreen) {
+void Logger::warning(const char* message, bool forScreen) {
     logMessage(LogLevel::WARNING, message, forScreen);
 }
 
-void Logger::error(const String& message, bool forScreen) {
+void Logger::error(const char* message, bool forScreen) {
     logMessage(LogLevel::ERROR, message, forScreen);
 }
 
-void Logger::critical(const String& message, bool forScreen) {
+void Logger::critical(const char* message, bool forScreen) {
     logMessage(LogLevel::CRITICAL, message, forScreen);
+}
+
+void Logger::debug(const String& message, bool forScreen) {
+    logMessage(LogLevel::DEBUG, message.c_str(), forScreen);
+}
+
+void Logger::info(const String& message, bool forScreen) {
+    logMessage(LogLevel::INFO, message.c_str(), forScreen);
+}
+
+void Logger::warning(const String& message, bool forScreen) {
+    logMessage(LogLevel::WARNING, message.c_str(), forScreen);
+}
+
+void Logger::error(const String& message, bool forScreen) {
+    logMessage(LogLevel::ERROR, message.c_str(), forScreen);
+}
+
+void Logger::critical(const String& message, bool forScreen) {
+    logMessage(LogLevel::CRITICAL, message.c_str(), forScreen);
 }
 
 // OPTIMIZED: Single-pass formatted logging
@@ -182,20 +189,7 @@ void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool
         snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] %s", screenTimestamp, shortLevelStr,
                  messageBuffer);
 
-        // Store in queue — no heap allocation
-        LogEntry entry{};
-        strncpy(entry.timestamp, screenTimestamp, sizeof(entry.timestamp) - 1);
-        entry.level = level;
-        strncpy(entry.message, screenBuffer, sizeof(entry.message) - 1);
-        entry.forScreen = true;
-
-        xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
-        screenQueue_.push(entry);
-        // Limit queue size
-        while (screenQueue_.size() > MAX_SCREEN_QUEUE_SIZE) {
-            screenQueue_.pop();
-        }
-        xSemaphoreGive(screenQueueMutex_);
+        pushScreenEntry(screenTimestamp, level, screenBuffer);
     }
 }
 
@@ -234,24 +228,44 @@ void Logger::criticalf(const char* format, ...) {
     va_end(args);
 }
 
-std::queue<String> Logger::getScreenMessages() {
-    std::queue<String> result;
+void Logger::pushScreenEntry(const char* timestamp, LogLevel level, const char* message) {
+    LogEntry entry{};
+    strncpy(entry.timestamp, timestamp, sizeof(entry.timestamp) - 1);
+    entry.level = level;
+    strncpy(entry.message, message, sizeof(entry.message) - 1);
+    entry.forScreen = true;
 
     xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
-    while (!screenQueue_.empty()) {
-        const LogEntry& entry = screenQueue_.front();
-        result.push(String(entry.message));
-        screenQueue_.pop();
+    size_t index = (screenQueueHead_ + screenQueueCount_) % MAX_SCREEN_QUEUE_SIZE;
+    screenQueue_[index] = entry;
+    if (screenQueueCount_ < MAX_SCREEN_QUEUE_SIZE) {
+        ++screenQueueCount_;
+    } else {
+        screenQueueHead_ = (screenQueueHead_ + 1) % MAX_SCREEN_QUEUE_SIZE;
+    }
+    xSemaphoreGive(screenQueueMutex_);
+}
+
+bool Logger::popScreenMessage(char* buffer, size_t bufferSize) {
+    bool hasMessage = false;
+
+    xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
+    if (screenQueueCount_ > 0) {
+        const LogEntry& entry = screenQueue_[screenQueueHead_];
+        strncpy(buffer, entry.message, bufferSize - 1);
+        buffer[bufferSize - 1] = '\0';
+        screenQueueHead_ = (screenQueueHead_ + 1) % MAX_SCREEN_QUEUE_SIZE;
+        --screenQueueCount_;
+        hasMessage = true;
     }
     xSemaphoreGive(screenQueueMutex_);
 
-    return result;
+    return hasMessage;
 }
 
 void Logger::clearScreenMessages() {
     xSemaphoreTake(screenQueueMutex_, portMAX_DELAY);
-    while (!screenQueue_.empty()) {
-        screenQueue_.pop();
-    }
+    screenQueueHead_ = 0;
+    screenQueueCount_ = 0;
     xSemaphoreGive(screenQueueMutex_);
 }

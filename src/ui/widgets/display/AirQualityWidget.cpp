@@ -64,22 +64,28 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
 
     const bool iconChanged = (strncmp(airData_.icon_code, lastIcon_,
                                       sizeof(lastIcon_)) != 0);
-    const bool changed =
-        forceRedraw                              ||
-        !lastAvail_                              ||
-        iconChanged                              ||
-        airData_.temperature    != lastTemp_     ||
-        airData_.humidity       != lastHumidity_ ||
-        airData_.pressure       != lastPressure_ ||
-        airData_.wind_speed_x10 != lastWindX10_  ||
-        airData_.aqi_us         != lastAqi_;
+    const bool becomingAvailable = !lastAvail_;
+
+    const bool tempChanged     = forceRedraw || becomingAvailable ||
+                                 airData_.temperature != lastTemp_;
+    const bool humidityChanged = forceRedraw || becomingAvailable ||
+                                 airData_.humidity != lastHumidity_;
+    const bool pressureChanged = forceRedraw || becomingAvailable ||
+                                 airData_.pressure != lastPressure_;
+    const bool windChanged     = forceRedraw || becomingAvailable ||
+                                 airData_.wind_speed_x10 != lastWindX10_;
+    const bool aqiChanged      = forceRedraw || becomingAvailable ||
+                                 airData_.aqi_us != lastAqi_;
+
+    const bool changed = tempChanged || humidityChanged || pressureChanged ||
+                         windChanged || aqiChanged || iconChanged;
 
     if (!changed) return;
 
-    if (!lastAvail_) drawStatic();
+    if (becomingAvailable) drawStatic();
 
     // Icon
-    if (forceRedraw || !lastAvail_ || iconChanged) {
+    if (forceRedraw || becomingAvailable || iconChanged) {
         drawIcon(airData_.icon_code);
     }
 
@@ -98,7 +104,10 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
         {nullptr, bufWind, TFT_LIGHTGREY, " m/s"},
         {"AQI ", bufAqi, aqiColor(airData_.aqi_us), nullptr},
     };
-    drawTiles(tiles);
+    const bool tileChanged[kTileCount] = {
+        tempChanged, humidityChanged, pressureChanged, windChanged, aqiChanged,
+    };
+    drawTiles(tiles, tileChanged);
 
     // Cache
     lastAvail_    = true;
@@ -139,7 +148,8 @@ void AirQualityWidget::drawIcon(const char* code) {
 // (2 measure + 2 draw) regardless of tile count, instead of up to 4 per tile.
 // ---------------------------------------------------------------------------
 
-void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
+void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount],
+                                 const bool (&changed)[kTileCount]) {
     LGFX* lcd = getLcd();
     if (!lcd) return;
 
@@ -148,6 +158,7 @@ void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
     const int16_t midY = ty + h / 2;
 
     for (uint8_t i = 0; i < kTileCount; ++i) {
+        if (!changed[i]) continue;
         const int16_t tx = dimensions_.x + kIconW + i * kTileW;
         lcd->fillRect(tx + 1, ty + 1, kTileW - 2, h - 2, TFT_BLACK);
     }
@@ -159,6 +170,7 @@ void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
     // which uses MC_DATUM and doesn't need a pre-measured width).
     Fonts::loadMetric(lcd);
     for (uint8_t i = 0; i < kTileCount; ++i) {
+        if (!changed[i]) continue;
         if (tiles[i].prefix != nullptr || tiles[i].unit != nullptr) {
             valW[i] = static_cast<int16_t>(lcd->textWidth(tiles[i].value));
         }
@@ -168,6 +180,7 @@ void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
     // Pass 2 — measure prefix/unit text.
     Fonts::loadLabel(lcd);
     for (uint8_t i = 0; i < kTileCount; ++i) {
+        if (!changed[i]) continue;
         const char* text = tiles[i].prefix != nullptr ? tiles[i].prefix : tiles[i].unit;
         if (text != nullptr) {
             textW[i] = static_cast<int16_t>(lcd->textWidth(text));
@@ -178,6 +191,7 @@ void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
     // Pass 3 — draw values.
     Fonts::loadMetric(lcd);
     for (uint8_t i = 0; i < kTileCount; ++i) {
+        if (!changed[i]) continue;
         const int16_t tx = dimensions_.x + kIconW + i * kTileW;
         const int16_t cx = tx + kTileW / 2;
         lcd->setTextColor(tiles[i].valueColor, TFT_BLACK);
@@ -201,6 +215,7 @@ void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount]) {
     Fonts::loadLabel(lcd);
     lcd->setTextDatum(ML_DATUM);
     for (uint8_t i = 0; i < kTileCount; ++i) {
+        if (!changed[i]) continue;
         const int16_t tx = dimensions_.x + kIconW + i * kTileW;
         const int16_t cx = tx + kTileW / 2;
 

@@ -18,6 +18,9 @@ bool InitializationStateMachine::initialize() {
             case State::DISPLAY_INIT:
                 success = handleDisplayInit();
                 break;
+            case State::WATCHDOG_INIT:
+                success = handleWatchdogInit();
+                break;
             case State::TASKS_INIT:
                 success = handleTasksInit();
                 break;
@@ -26,9 +29,6 @@ bool InitializationStateMachine::initialize() {
                 break;
             case State::TIME_INIT:
                 success = handleTimeInit();
-                break;
-            case State::WATCHDOG_INIT:
-                success = handleWatchdogInit();
                 break;
             case State::FINAL_SETUP:
                 success = handleFinalSetup();
@@ -73,7 +73,7 @@ bool InitializationStateMachine::handleDisplayInit() {
     target_.logger().info("Initializing display", true);
     target_.initializeDisplay();
     target_.initializeUi();
-    transitionTo(State::TASKS_INIT);
+    transitionTo(State::WATCHDOG_INIT);
     return true;
 }
 
@@ -103,7 +103,8 @@ bool InitializationStateMachine::handleTimeInit() {
         if (target_.syncTime()) {
             target_.logger().info("Time synchronized successfully", true);
             target_.setTimeSynced();
-            transitionTo(State::WATCHDOG_INIT);
+            addMainTaskToWatchdog();
+            transitionTo(State::FINAL_SETUP);
             return true;
         }
 
@@ -111,34 +112,43 @@ bool InitializationStateMachine::handleTimeInit() {
     }
 
     target_.logger().warning("Time sync failed, using local time", true);
-    transitionTo(State::WATCHDOG_INIT);
+    addMainTaskToWatchdog();
+    transitionTo(State::FINAL_SETUP);
     return true;
 }
 
 bool InitializationStateMachine::handleWatchdogInit() {
     if (!target_.watchdogEnabledOnBoot()) {
         target_.logger().info("Watchdog disabled in configuration", true);
-        transitionTo(State::FINAL_SETUP);
+        transitionTo(State::TASKS_INIT);
         return true;
     }
 
+    // Only esp_task_wdt_init() happens here, before any task is created —
+    // that ordering is what TASKS_INIT needs to safely esp_task_wdt_add()
+    // the screen/background tasks. The main/setup task itself joins later,
+    // in addMainTaskToWatchdog() — see its declaration for why.
     esp_err_t ret = esp_task_wdt_init(target_.watchdogTimeoutMs() / 1000, true);
     if (ret != ESP_OK) {
         target_.logger().errorf("Failed to initialize watchdog: %s", esp_err_to_name(ret));
-        transitionTo(State::FINAL_SETUP);
-        return true;
-    }
-
-    ret = esp_task_wdt_add(nullptr);
-    if (ret != ESP_OK) {
-        target_.logger().errorf("Failed to add main task to watchdog: %s", esp_err_to_name(ret));
-        transitionTo(State::FINAL_SETUP);
+        transitionTo(State::TASKS_INIT);
         return true;
     }
 
     target_.logger().infof("Watchdog initialized with %dms timeout", target_.watchdogTimeoutMs());
-    transitionTo(State::FINAL_SETUP);
+    transitionTo(State::TASKS_INIT);
     return true;
+}
+
+void InitializationStateMachine::addMainTaskToWatchdog() {
+    if (!target_.watchdogEnabledOnBoot()) return;
+
+    esp_err_t ret = esp_task_wdt_add(nullptr);
+    if (ret != ESP_OK) {
+        target_.logger().errorf("Failed to add main task to watchdog: %s", esp_err_to_name(ret));
+        return;
+    }
+    target_.logger().debug("Main task added to watchdog", true);
 }
 
 bool InitializationStateMachine::handleFinalSetup() {

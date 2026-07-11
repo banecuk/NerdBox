@@ -13,9 +13,9 @@ bool AirQualityService::fetchData(AirQualityData& outData) {
         return false;
     }
 
-    rawData_ = networkManager_.get(String(AIR_VISUAL_API));
-    if (rawData_.isEmpty()) {
-        logger_.warning("AirQuality: empty response from API");
+    HttpClient& http = networkManager_.getHttpClient();
+    if (!http.download(AIR_VISUAL_API, rawData_)) {
+        logger_.errorf("AirQuality: HTTP GET failed, code: %d", http.getLastHttpCode());
         return false;
     }
 

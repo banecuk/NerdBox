@@ -67,7 +67,7 @@ private:
     // drawn with a single font load — a flat 4 font loads total instead of
     // up to 4 per tile (20 for all 5) from loading/unloading inside a
     // per-tile drawTile() call.
-    void drawTiles(const TileSpec (&tiles)[kTileCount]);
+    void drawTiles(const TileSpec (&tiles)[kTileCount], const bool (&changed)[kTileCount]);
     void drawIcon(const char* code);
     void drawNoData();
     const uint16_t* iconForCode(const char* code) const;

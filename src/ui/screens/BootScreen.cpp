@@ -34,17 +34,14 @@ void BootScreen::onExit() {}
 void BootScreen::draw() {
     if (!lcd_) return;
 
-    std::queue<String> screenMessages = logger_.getScreenMessages();
-    while (!screenMessages.empty()) {
-        const String& msg = screenMessages.front();
-
+    char message[200];
+    while (logger_.popScreenMessage(message, sizeof(message))) {
         Fonts::loadLabel(lcd_);
         lcd_->setTextColor(TFT_WHITE, TFT_BLACK);
         lcd_->setTextDatum(TL_DATUM);
-        lcd_->drawString(msg.c_str(), 0, lineY_);
+        lcd_->drawString(message, 0, lineY_);
         Fonts::unload(lcd_);
 
         lineY_ += lineHeight_;
-        screenMessages.pop();
     }
 }

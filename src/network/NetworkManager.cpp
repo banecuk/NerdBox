@@ -16,7 +16,10 @@ bool NetworkManager::connect() {
     bool connected = (status == WL_CONNECTED);
 
     if (connected) {
-        logger_.info("WiFi connected - IP: " + WiFi.localIP().toString(), true);
+        char msg[64];
+        snprintf(msg, sizeof(msg), "WiFi connected - IP: %s",
+                WiFi.localIP().toString().c_str());
+        logger_.info(msg, true);
         reconnectAttempts_ = 0;
     } else {
         logger_.errorf("WiFi failed, status: %d", status);
@@ -79,22 +82,4 @@ bool NetworkManager::checkAndReconnect() {
     }
 
     return false;
-}
-
-String NetworkManager::get(const String& url) {
-    if (!isConnected())
-        return "";
-
-    HTTPClient http;
-    http.begin(url);
-    int httpCode = http.GET();
-    String body = "";
-    if (httpCode == HTTP_CODE_OK) {
-        body = http.getString();
-    } else {
-        logger_.errorf("HTTP GET failed, code: %d  url: %s",
-                       httpCode, url.c_str());
-    }
-    http.end();  // always release connection
-    return body;
 }

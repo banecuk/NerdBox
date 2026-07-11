@@ -2,7 +2,6 @@
 
 #include <esp_system.h>
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/core/UiController.h"
 
@@ -24,17 +23,10 @@ void UiEventHandler::registerHandlers() {
 }
 
 void UiEventHandler::resetDevice() {
+    // No on-screen message: drawing here would race the screen task (no
+    // lock), and with no delay before restart() it would never actually be
+    // visible anyway.
     logger_.debug("RESET action received");
-
-    if (uiController_->getDisplayManager()->getDisplay()) {
-        LGFX* display = uiController_->getDisplayManager()->getDisplay();
-        Fonts::loadMetric(display);
-        display->setTextColor(TFT_WHITE, TFT_BLACK);
-        display->setTextDatum(TL_DATUM);
-        display->drawString("RESETING DEVICE", 0, 0);
-        Fonts::unload(display);
-    }
-
     ESP.restart();
 }
 
