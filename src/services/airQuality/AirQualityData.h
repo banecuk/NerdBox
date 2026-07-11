@@ -19,5 +19,5 @@ struct AirQualityData {
     char icon_code[4] = {0};
 
     // Pollution
-    uint8_t aqi_us = 0;            // aqius — US AQI
+    uint16_t aqi_us = 0;            // aqius — US AQI (0–500)
 };

@@ -2,6 +2,8 @@
 
 #include <esp_task_wdt.h>
 
+#include <climits>
+
 TaskManager::TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
                          AppConfigInterface& config, SystemState::ScreenState& screenState,
                          std::vector<BackgroundJob*> jobs)
@@ -124,7 +126,13 @@ void TaskManager::executeBackgroundTask() {
     while (true) {
         unsigned long now = millis();
         for (BackgroundJob* job : jobs_) {
-            if (now >= job->nextDueMs()) {
+            unsigned long dueAt = job->nextDueMs();
+            // Wrap-safe: at 32-bit millis() rollover (~49.7 days), `now` can
+            // be smaller than `dueAt` while the deadline has still passed.
+            // ULONG_MAX is the "not eligible" sentinel (see BackgroundJob.h)
+            // and must be excluded — it would otherwise wrap to a due
+            // deadline as soon as `now` is small.
+            if (dueAt != ULONG_MAX && (long)(now - dueAt) >= 0) {
                 job->run();
             }
         }

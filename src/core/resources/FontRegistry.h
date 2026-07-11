@@ -30,11 +30,12 @@
 //
 // Note on PROGMEM font headers
 // ──────────────────────────────────────────────────────────────────────────
-// The font .h files define their arrays as plain (non-static) const uint8_t.
-// They are included here directly so the compiler sees the definitions in
-// every TU that needs them. PROGMEM data lives in flash; the linker places
-// each symbol once regardless of how many TUs include it, so there is no
-// RAM cost from including them in a shared header.
+// Each font .h file is guarded by NERDBOX_DEFINE_FONT_DATA. Included here
+// (that macro undefined), it expands to just `extern const uint8_t X[]
+// PROGMEM;` — a declaration, not a definition, so no font data is duplicated
+// into the TUs that include this registry. The one real definition of each
+// array lives in Fonts.cpp, which defines NERDBOX_DEFINE_FONT_DATA before
+// including the same headers. Every widget links against that single copy.
 
 #include <Arduino.h>
 

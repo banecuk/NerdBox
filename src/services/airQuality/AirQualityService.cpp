@@ -70,7 +70,7 @@ bool AirQualityService::parseResponse(const String& raw, AirQualityData& outData
     const float ws         = weather["ws"].isNull() ? 0.0f : weather["ws"].as<float>();
     outData.wind_speed_x10 = static_cast<uint16_t>(ws * 10.0f + 0.5f);
 
-    outData.aqi_us         = static_cast<uint8_t>(pollution["aqius"]   | 0);
+    outData.aqi_us         = static_cast<uint16_t>(pollution["aqius"]   | 0);
     outData.is_available   = true;
     outData.last_update    = millis();
 

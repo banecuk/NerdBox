@@ -57,6 +57,14 @@ struct HardwareMonitorImpl {
     static constexpr float kThreadsDownwardSmoothing = 0.075f;
 };
 
+// AirQuality configuration
+struct AirQualityImpl {
+    // How long to wait before retrying after a failed fetch. Data is only
+    // 30-minutes-fresh, so a few minutes of backoff costs nothing and avoids
+    // hammering the API (and the shared background task) on outages.
+    static constexpr uint32_t kFailureBackoffMs = 60000;
+};
+
 // Metrics configuration
 struct MetricsImpl {
     static constexpr uint8_t kMaxScreenDrawTimes = 30;

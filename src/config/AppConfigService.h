@@ -106,6 +106,11 @@ class AppConfigService : public AppConfigInterface {
         return AppConfig::internal::HardwareMonitorImpl::kThreadsDownwardSmoothing;
     }
 
+    // AirQuality getters
+    uint32_t getAirQualityFailureBackoffMs() const override {
+        return AppConfig::internal::AirQualityImpl::kFailureBackoffMs;
+    }
+
     // Metrics getters
     uint8_t getMetricsMaxScreenDrawTimes() const override {
         return AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes;

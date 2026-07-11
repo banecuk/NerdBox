@@ -283,7 +283,7 @@ const uint16_t* AirQualityWidget::iconForCode(const char* code) const {
 // aqiColor
 // ---------------------------------------------------------------------------
 
-uint16_t AirQualityWidget::aqiColor(uint8_t aqi) const {
+uint16_t AirQualityWidget::aqiColor(uint16_t aqi) const {
     if (aqi <= 50)  return 0x07E0;
     if (aqi <= 100) return 0xFFE0;
     if (aqi <= 150) return 0xFD20;

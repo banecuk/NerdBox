@@ -42,6 +42,9 @@ class AppConfigInterface {
     virtual float getHardwareMonitorThreadsUpwardDecay() const = 0;
     virtual float getHardwareMonitorThreadsDownwardDecay() const = 0;
 
+    // AirQuality getters
+    virtual uint32_t getAirQualityFailureBackoffMs() const = 0;
+
     // Metrics getters
     virtual uint8_t getMetricsMaxScreenDrawTimes() const = 0;
 

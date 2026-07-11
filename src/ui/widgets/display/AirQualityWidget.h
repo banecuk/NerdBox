@@ -45,7 +45,7 @@ private:
     uint8_t  lastHumidity_ = 0xFF;
     int16_t  lastPressure_ = -1;
     uint16_t lastWindX10_  = 0xFFFF;
-    uint8_t  lastAqi_      = 0xFF;
+    uint16_t lastAqi_      = 0xFFFF;
     bool     lastAvail_    = false;
     char     lastIcon_[4]  = {0};
 
@@ -71,5 +71,5 @@ private:
     void drawIcon(const char* code);
     void drawNoData();
     const uint16_t* iconForCode(const char* code) const;
-    uint16_t aqiColor(uint8_t aqi) const;
+    uint16_t aqiColor(uint16_t aqi) const;
 };
