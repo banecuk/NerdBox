@@ -47,10 +47,9 @@ void setup() {
     if (!app->initialize()) {
         ApplicationFactory::destroyApplication(app);
         app = nullptr;
-        while (true) {
-            Serial.println("Init failed!");
-            delay(1000);
-        }
+        Serial.println("Init failed! Rebooting in 5s...");
+        delay(5000);
+        esp_restart();
     }
 }
 

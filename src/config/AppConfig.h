@@ -86,7 +86,7 @@ struct UiImpl {
     // Namespace must be <= 15 chars; key must be <= 15 chars.
     static constexpr const char* kNvsNamespace = "nerdbox_ui";
     static constexpr const char* kNvsBrightnessKey = "brightness";
-    static constexpr uint8_t kDefaultBrightness = 75;
+    static constexpr uint8_t kDefaultBrightness = 85;
 
     // Six fixed brightness steps used by BrightnessWidget and cycleBrightness().
     // Ordered dim → bright. Adding or reordering levels here is the only change

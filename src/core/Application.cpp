@@ -22,5 +22,5 @@ void Application::run() {
     }
 
     webServerService_.processRequests();
-    vTaskDelay(config_.getTimingMainLoopMs());
+    vTaskDelay(pdMS_TO_TICKS(config_.getTimingMainLoopMs()));
 }

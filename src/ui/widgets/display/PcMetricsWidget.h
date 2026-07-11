@@ -78,9 +78,10 @@ class PcMetricsWidget : public Widget {
     static constexpr uint16_t kDiskReadLineY = kDiskAreaY + kDiskAreaHeight;
 
     // Maximum number of system-fan tiles that can be displayed simultaneously.
-    // Matches PcMetrics::kMaxSystemFans so the widget can always represent every
-    // connected fan without further bounds checks.
-    static constexpr uint8_t kMaxSystemFanWidgets = PcMetrics::kMaxSystemFans;
+    // Fans stack at kRow3, kRow4, kRow5… but kRow5 == kDiskWriteLineY, so only
+    // 2 rows (kRow3, kRow4) are free before the disk activity line — a 3rd
+    // fan tile would collide with the disk row.
+    static constexpr uint8_t kMaxSystemFanWidgets = 2;
 
     // -----------------------------------------------------------------------
     // Fixed tile layout — descriptor table replaces one named unique_ptr
