@@ -9,10 +9,7 @@ SwitchWidget::SwitchWidget(const WidgetInterface::Dimensions& dims, std::string 
       getState_(std::move(getState)),
       setState_(std::move(setState)) {}
 
-void SwitchWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void SwitchWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
@@ -22,9 +19,7 @@ void SwitchWidget::drawStatic() {
     lcd->drawString(label_.c_str(), dimensions_.x, dimensions_.y + 2);
     Fonts::unload(lcd);
 
-    isStaticDrawn_ = true;
     hasDrawnOnce_ = false;  // force full track redraw on next onDraw()
-    clearDirty();
 }
 
 void SwitchWidget::onDraw(bool forceRedraw) {

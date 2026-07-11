@@ -34,9 +34,7 @@ ButtonWidget::ButtonWidget(DisplayContext& context, ButtonIcon icon, const std::
 // drawStatic — background fill + border; called once on init / force repaint
 // ---------------------------------------------------------------------------
 
-void ButtonWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
+void ButtonWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
 
     // Fill background
@@ -46,9 +44,6 @@ void ButtonWidget::drawStatic() {
     // 1 px border — barely visible
     lcd->drawRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        kBorderRadius, kBorderColor);
-
-    isStaticDrawn_ = true;
-    clearDirty();
 }
 
 // ---------------------------------------------------------------------------

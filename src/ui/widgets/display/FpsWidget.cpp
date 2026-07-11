@@ -11,10 +11,7 @@ FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions&
                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics) {}
 
-void FpsWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void FpsWidget::onDrawStatic() {
     clearArea();
 
     LGFX* lcd = getLcd();
@@ -25,9 +22,6 @@ void FpsWidget::drawStatic() {
     lcd->setTextDatum(TC_DATUM);
     lcd->drawString("FPS", dimensions_.x + dimensions_.width / 2, dimensions_.y + 4);
     Fonts::unload(lcd);
-
-    isStaticDrawn_ = true;
-    clearDirty();
 }
 
 void FpsWidget::onDraw(bool forceRedraw) {

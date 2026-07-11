@@ -35,10 +35,7 @@ void IpAddressWidget::computeLayout() {
     layoutReady_ = true;
 }
 
-void IpAddressWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void IpAddressWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, bgColor_);
 
@@ -51,9 +48,6 @@ void IpAddressWidget::drawStatic() {
     lcd->setTextDatum(TL_DATUM);
     lcd->drawString("IP ADDRESS", dimensions_.x, dimensions_.y + 2);
     Fonts::unload(lcd);
-
-    isStaticDrawn_ = true;
-    clearDirty();
 }
 
 void IpAddressWidget::onDraw(bool forceRedraw) {

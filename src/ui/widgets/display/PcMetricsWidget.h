@@ -16,7 +16,6 @@ class PcMetricsWidget : public Widget {
                     uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config,
                     ApplicationMetrics& systemMetrics);
 
-    void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
 
@@ -25,6 +24,7 @@ class PcMetricsWidget : public Widget {
 
  protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     // -----------------------------------------------------------------------

@@ -20,7 +20,6 @@ class MetricWidget : public Widget {
 
     MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
 
-    void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
 
     // Value configuration
@@ -200,6 +199,7 @@ class MetricWidget : public Widget {
 
  protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     // Configuration

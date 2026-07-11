@@ -10,10 +10,9 @@ class MultiWidget : public Widget {
  public:
     MultiWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
 
-    void drawStatic() override;
-
  protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     static constexpr uint16_t kBorderColor = 0x2104;  // dark grey, matches other widgets

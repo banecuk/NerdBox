@@ -46,10 +46,7 @@ void UptimeWidget::computeLayout() {
     layoutReady_ = true;
 }
 
-void UptimeWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void UptimeWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, bgColor_);
 
@@ -72,9 +69,7 @@ void UptimeWidget::drawStatic() {
     lcd->drawString(":", xColon2_, valueY_);
     Fonts::unload(lcd);
 
-    isStaticDrawn_  = true;
     lastRendered_[0] = '\0';
-    clearDirty();
 }
 
 void UptimeWidget::onDraw(bool forceRedraw) {

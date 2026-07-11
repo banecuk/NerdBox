@@ -11,11 +11,11 @@ class IpAddressWidget : public Widget {
     IpAddressWidget(const WidgetInterface::Dimensions& dims, NetworkManager& networkManager,
                     uint16_t textColor = TFT_CYAN, uint16_t bgColor = TFT_BLACK);
 
-    void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
 
  protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     NetworkManager& networkManager_;

@@ -17,9 +17,7 @@ AirQualityWidget::AirQualityWidget(const WidgetInterface::Dimensions& dims,
 // drawStatic
 // ---------------------------------------------------------------------------
 
-void AirQualityWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd()) return;
-
+void AirQualityWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
 
     lcd->fillRect(dimensions_.x, dimensions_.y,
@@ -34,8 +32,6 @@ void AirQualityWidget::drawStatic() {
         lcd->drawFastVLine(sx, dimensions_.y + 2, dimensions_.height - 4, 0x2104);
     }
 
-    isStaticDrawn_ = true;
-
     lastAvail_    = false;
     lastTemp_     = -128;
     lastHumidity_ = 0xFF;
@@ -43,8 +39,6 @@ void AirQualityWidget::drawStatic() {
     lastWindX10_  = 0xFFFF;
     lastAqi_      = 0xFF;
     lastIcon_[0]  = '\0';
-
-    clearDirty();
 }
 
 // ---------------------------------------------------------------------------

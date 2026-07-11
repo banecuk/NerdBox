@@ -32,10 +32,7 @@ void ThreadsWidget::initialize(DisplayContext& context) {
     }
 }
 
-void ThreadsWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void ThreadsWidget::onDrawStatic() {
     // Clear the widget area once
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        TFT_BLACK);
@@ -43,9 +40,6 @@ void ThreadsWidget::drawStatic() {
     // Reset cached state so the next draw treats every bar as changed
     std::fill(previousBarHeights_.begin(), previousBarHeights_.end(), 0);
     std::fill(previousColors_.begin(), previousColors_.end(), 0);
-
-    isStaticDrawn_ = true;
-    clearDirty();
 }
 
 void ThreadsWidget::onDraw(bool forceRedraw) {

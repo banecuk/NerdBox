@@ -23,11 +23,11 @@ class BrightnessWidget : public Widget {
 
     BrightnessWidget(const WidgetInterface::Dimensions& dims, DisplayManager& displayManager);
 
-    void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
 
  protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     struct Segment {

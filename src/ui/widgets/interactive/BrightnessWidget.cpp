@@ -42,10 +42,7 @@ void BrightnessWidget::buildSegments() {
     }
 }
 
-void BrightnessWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void BrightnessWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y,
                   dimensions_.width, dimensions_.height, TFT_BLACK);
@@ -56,9 +53,7 @@ void BrightnessWidget::drawStatic() {
     lcd->drawString("BRIGHTNESS", dimensions_.x, dimensions_.y + 2);
     Fonts::unload(lcd);
 
-    isStaticDrawn_  = true;
     lastDrawnLevel_ = 0;  // force full segment redraw on next onDraw()
-    clearDirty();
 }
 
 void BrightnessWidget::onDraw(bool forceRedraw) {

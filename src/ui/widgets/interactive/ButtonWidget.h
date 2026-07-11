@@ -35,8 +35,8 @@ class ButtonWidget : public Widget {
     void setCallback(ActionCallback callback);
 
  protected:
-    void drawStatic() override;
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     void drawContent(uint16_t bg, uint16_t fg);

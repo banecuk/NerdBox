@@ -12,9 +12,7 @@ NetworkWidget::NetworkWidget(const WidgetInterface::Dimensions& dims, uint32_t u
 // drawStatic — background only; called once on first paint and after wipe
 // ---------------------------------------------------------------------------
 
-void NetworkWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
+void NetworkWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
 
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
@@ -23,7 +21,6 @@ void NetworkWidget::drawStatic() {
     const int16_t sepX = dimensions_.x + kWifiSectionW;
     lcd->drawFastVLine(sepX, dimensions_.y + 3, dimensions_.height - 6, 0x2104);
 
-    isStaticDrawn_ = true;
     // Reset cache so onDraw does a full repaint
     lastConnected_ = false;
     lastRssiBracket_ = -1;
@@ -31,7 +28,6 @@ void NetworkWidget::drawStatic() {
     for (uint8_t i = 0; i < 6; ++i)
         lastEndpointOk_[i] = false;
     lastInitialized_ = false;
-    clearDirty();
 }
 
 // ---------------------------------------------------------------------------

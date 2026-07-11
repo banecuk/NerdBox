@@ -17,12 +17,12 @@ class ThreadsWidget : public Widget {
                   ApplicationMetrics& systemMetrics);
 
     void initialize(DisplayContext& context) override;
-    void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
 
  protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
  private:
     DisplayContext& context_;

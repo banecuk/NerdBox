@@ -12,11 +12,7 @@ MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t upd
     formattedValue_[0] = '\0';
 }
 
-void MetricWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd()) {
-        return;
-    }
-
+void MetricWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
 
     if (dimensionsDirty_) {
@@ -59,12 +55,10 @@ void MetricWidget::drawStatic() {
         Fonts::unload(lcd);
     }
 
-    isStaticDrawn_ = true;
     lastDrawnValue_ = -1;
     hasDrawnOnce_ = false;
     lastTextWidth_ = 0;
     valueAreaDirty_ = true;
-    clearDirty();
 }
 
 void MetricWidget::onDraw(bool forceRedraw) {

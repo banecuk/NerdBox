@@ -22,11 +22,11 @@ public:
                      uint32_t updateIntervalMs,
                      const AirQualityData& airData);
 
-    void drawStatic() override;
     bool handleTouch(uint16_t x, uint16_t y) override;
 
 protected:
     void onDraw(bool forceRedraw) override;
+    void onDrawStatic() override;
 
 private:
     // -----------------------------------------------------------------------

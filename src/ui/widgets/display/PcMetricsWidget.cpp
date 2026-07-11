@@ -499,10 +499,7 @@ void PcMetricsWidget::initAndDrawWidget(MetricWidget& widget) {
     widget.forceRefresh();
 }
 
-void PcMetricsWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void PcMetricsWidget::onDrawStatic() {
     if (hasFreshData()) {
         for (auto& w : fixedWidgets_) {
             if (w)
@@ -521,9 +518,6 @@ void PcMetricsWidget::drawStatic() {
             if (dw)
                 initAndDrawWidget(*dw);
         }
-
-        isStaticDrawn_ = true;
-        clearDirty();
     } else {
         clearAllWidgets();
         drawNoDataMessage();

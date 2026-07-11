@@ -38,10 +38,7 @@ void ClockWidget::computeLayout() {
     layoutReady_ = true;
 }
 
-void ClockWidget::drawStatic() {
-    if (!isInitialized_ || !getLcd())
-        return;
-
+void ClockWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, bgColor_);
 
@@ -59,9 +56,6 @@ void ClockWidget::drawStatic() {
     hours_.lastValue = -1;
     mins_.lastValue  = -1;
     secs_.lastValue  = -1;
-
-    isStaticDrawn_ = true;
-    clearDirty();
 }
 
 void ClockWidget::onDraw(bool forceRedraw) {
