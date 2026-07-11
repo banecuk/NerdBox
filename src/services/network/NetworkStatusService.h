@@ -54,6 +54,12 @@ class NetworkStatusService {
 
     static constexpr uint8_t kNumEndpoints = 6;
 
+    // URL for a given probe slot, matching NetworkStatus::endpoint_ok[]'s
+    // indexing. Returns nullptr if index is out of range.
+    static const char* probeUrl(uint8_t index) {
+        return index < kNumEndpoints ? kProbeUrls[index] : nullptr;
+    }
+
  private:
     // -----------------------------------------------------------------------
     // Probe task

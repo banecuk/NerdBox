@@ -38,6 +38,10 @@ size_t ApplicationMetrics::getScreenDrawCount() const {
     return screenDrawCount_;
 }
 
+size_t ApplicationMetrics::getScreenDrawStartIndex() const {
+    return (screenDrawIndex_ + kDrawTimesCapacity - screenDrawCount_) % kDrawTimesCapacity;
+}
+
 void ApplicationMetrics::getFormattedUptime(char* buf, size_t size) const {
     unsigned long uptimeMs = millis();
     unsigned long seconds = uptimeMs / 1000;

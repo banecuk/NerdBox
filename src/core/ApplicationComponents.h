@@ -132,10 +132,6 @@ class ApplicationComponents : public IInitializationTarget {
     // pcMetrics, systemState, config, networkManager, airQualityData, netStatus.
     UiController uiController;
 
-    // Web server — depends on uiController, systemMetrics.
-    WebServer webServer;
-    WebServerService webServerService;
-
     // Background jobs — one adapter per periodic service, registered with
     // TaskManager below. Adding a new periodic service means adding a job
     // here and appending it to the list passed to taskManager's constructor.
@@ -148,5 +144,11 @@ class ApplicationComponents : public IInitializationTarget {
 
     // Managers — depend on everything above.
     TaskManager taskManager;
+
+    // Web server — depends on uiController, systemMetrics, and taskManager
+    // (stack high-water marks in /api/status), so it's declared after it.
+    WebServer webServer;
+    WebServerService webServerService;
+
     InitializationStateMachine initStateMachine;  // depends on *this; must stay last
 };

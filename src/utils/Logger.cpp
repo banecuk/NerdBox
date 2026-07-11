@@ -10,12 +10,15 @@
 #endif
 
 Logger::Logger(const bool& isTimeSynced)
-    : isTimeSynced_(isTimeSynced), screenQueue_(new LogEntry[MAX_SCREEN_QUEUE_SIZE]()) {
+    : isTimeSynced_(isTimeSynced),
+      screenQueue_(new LogEntry[MAX_SCREEN_QUEUE_SIZE]()),
+      recentLogs_(new LogEntry[kRecentLogCapacity]()) {
     // Serial is initialized by main.cpp using the configured baud rate
 }
 
 Logger::~Logger() {
     vSemaphoreDelete(screenQueueMutex_);
+    vSemaphoreDelete(recentLogsMutex_);
 }
 
 void Logger::getUptimeTimestamp(char* buffer, size_t bufferSize, bool forScreen) {
@@ -87,6 +90,12 @@ void Logger::logMessage(LogLevel level, const char* message, bool forScreen) {
 
     // Send to Serial
     Serial.println(logBuffer);
+
+    if (level != LogLevel::DEBUG) {
+        char recentTimestamp[12];
+        getTimestamp(recentTimestamp, sizeof(recentTimestamp), true);
+        pushRecentLog(recentTimestamp, level, message);
+    }
 
     // For screen messages, use efficient char array approach
     if (forScreen) {
@@ -176,6 +185,12 @@ void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool
 
     // Send to Serial
     Serial.println(completeBuffer);
+
+    if (level != LogLevel::DEBUG) {
+        char recentTimestamp[12];
+        getTimestamp(recentTimestamp, sizeof(recentTimestamp), true);
+        pushRecentLog(recentTimestamp, level, messageBuffer);
+    }
 
     // Screen handling with efficient buffer usage
     if (forScreen) {
@@ -268,4 +283,35 @@ void Logger::clearScreenMessages() {
     screenQueueHead_ = 0;
     screenQueueCount_ = 0;
     xSemaphoreGive(screenQueueMutex_);
+}
+
+void Logger::pushRecentLog(const char* timestamp, LogLevel level, const char* message) {
+    LogEntry entry{};
+    strncpy(entry.timestamp, timestamp, sizeof(entry.timestamp) - 1);
+    entry.level = level;
+    strncpy(entry.message, message, sizeof(entry.message) - 1);
+    entry.forScreen = false;
+
+    xSemaphoreTake(recentLogsMutex_, portMAX_DELAY);
+    size_t index = (recentLogsHead_ + recentLogsCount_) % kRecentLogCapacity;
+    recentLogs_[index] = entry;
+    if (recentLogsCount_ < kRecentLogCapacity) {
+        ++recentLogsCount_;
+    } else {
+        recentLogsHead_ = (recentLogsHead_ + 1) % kRecentLogCapacity;
+    }
+    xSemaphoreGive(recentLogsMutex_);
+}
+
+size_t Logger::copyRecentLogs(LogEntry* outEntries, size_t maxCount) {
+    xSemaphoreTake(recentLogsMutex_, portMAX_DELAY);
+    size_t count = recentLogsCount_ < maxCount ? recentLogsCount_ : maxCount;
+    // If fewer are requested than stored, keep the most recent `count` —
+    // skip over the oldest (recentLogsCount_ - count) entries.
+    size_t start = (recentLogsHead_ + (recentLogsCount_ - count)) % kRecentLogCapacity;
+    for (size_t i = 0; i < count; ++i) {
+        outEntries[i] = recentLogs_[(start + i) % kRecentLogCapacity];
+    }
+    xSemaphoreGive(recentLogsMutex_);
+    return count;
 }

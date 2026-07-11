@@ -39,6 +39,8 @@ class Logger : public LoggerInterface {
     bool popScreenMessage(char* buffer, size_t bufferSize) override;
     void clearScreenMessages() override;
 
+    size_t copyRecentLogs(LogEntry* outEntries, size_t maxCount) override;
+
  private:
     const bool& isTimeSynced_;
 
@@ -56,6 +58,17 @@ class Logger : public LoggerInterface {
     size_t screenQueueCount_ = 0;
     SemaphoreHandle_t screenQueueMutex_ = xSemaphoreCreateMutex();
 
+    // Second, independent ring buffer: every level >= INFO regardless of
+    // forScreen, non-destructively read via copyRecentLogs(). Separate from
+    // screenQueue_ (which is destructively popped by the boot screen and only
+    // ever holds forScreen==true entries) so /logs can see the full recent
+    // history, including boot-time messages the boot screen has already
+    // consumed.
+    std::unique_ptr<LogEntry[]> recentLogs_;
+    size_t recentLogsHead_ = 0;
+    size_t recentLogsCount_ = 0;
+    SemaphoreHandle_t recentLogsMutex_ = xSemaphoreCreateMutex();
+
     // Buffer-based methods
     void getTimestamp(char* buffer, size_t bufferSize, bool forScreen = false);
     void getUptimeTimestamp(char* buffer, size_t bufferSize, bool forScreen);
@@ -65,4 +78,5 @@ class Logger : public LoggerInterface {
     void logMessage(LogLevel level, const char* message, bool forScreen);
     void logFormatted(LogLevel level, const char* format, va_list args, bool forScreen);
     void pushScreenEntry(const char* timestamp, LogLevel level, const char* message);
+    void pushRecentLog(const char* timestamp, LogLevel level, const char* message);
 };

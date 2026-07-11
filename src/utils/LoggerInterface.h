@@ -53,4 +53,16 @@ class LoggerInterface {
 
     // Clear the screen message queue
     virtual void clearScreenMessages() = 0;
+
+    // Capacity of the non-destructive recent-log ring buffer (see
+    // copyRecentLogs) — callers size their copy buffer off this constant
+    // instead of a magic number.
+    static constexpr size_t kRecentLogCapacity = 50;
+
+    // Non-destructively copies up to maxCount of the most recent log entries
+    // (level >= INFO, independent of forScreen/DEBUG_MODE) into outEntries,
+    // oldest-first. Returns the number of entries copied. Unlike
+    // popScreenMessage(), repeated calls see the same entries — this is for
+    // post-mortem inspection (e.g. GET /logs), not the boot screen queue.
+    virtual size_t copyRecentLogs(LogEntry* outEntries, size_t maxCount) = 0;
 };

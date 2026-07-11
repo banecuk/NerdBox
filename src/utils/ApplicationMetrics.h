@@ -24,6 +24,11 @@ class ApplicationMetrics {
     float getAverageScreenDrawTime() const;
     size_t getScreenDrawCount() const;
 
+    // Index into getScreenDrawTimes() of the oldest sample still held — callers
+    // that want to print/emit the buffer in chronological order should start
+    // here and wrap modulo kDrawTimesCapacity, rather than reading slot order.
+    size_t getScreenDrawStartIndex() const;
+
     // Uptime method — writes directly into caller's buffer; zero heap allocation.
     void getFormattedUptime(char* buf, size_t size) const;
 

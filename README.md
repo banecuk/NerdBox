@@ -36,7 +36,7 @@ Real-time PC performance monitoring on a **WT32-SC01-PLUS** (ESP32-S3) touchscre
 | Clock | Real-time HH:MM:SS from NTP, falls back to uptime |
 | FPS Widget | GPU fullscreen FPS counter — shown only when a game is running (bottom-right, above clock) |
 | IP Widget | Device WiFi IP address on the Settings screen |
-| Web UI | `/`, `/app-info`, `/system-info`, `/screen/main`, `/screen/settings` endpoints |
+| Web UI | `/`, `/app-info`, `/system-info`, `/config`, `/logs`, `/api` (endpoint help), `/api/status`, `/api/raw`, `/api/pc`, `/screen/main`, `/screen/settings`, `/restart` |
 
 ---
 

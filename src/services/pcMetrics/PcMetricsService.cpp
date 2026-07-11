@@ -1,5 +1,7 @@
 #include "PcMetricsService.h"
 
+#include <HTTPClient.h>
+
 PcMetricsService::PcMetricsService(NetworkManager& networkManager,
                                    ApplicationMetrics& systemMetrics, LoggerInterface& logger,
                                    const AppSettings& config)
@@ -63,13 +65,40 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
     if (!http.downloadAndParse(LIBRE_HM_API, *doc_, filter_)) {
         if (http.getLastHttpCode() == HTTP_CODE_OK) {
             logger_.errorf("JSON parsing failed: %s", http.getLastParseError().c_str());
+            snprintf(lastError_, sizeof(lastError_), "parse: %s", http.getLastParseError().c_str());
         } else {
             logger_.error("Failed to fetch data from PC metrics API");
+            snprintf(lastError_, sizeof(lastError_), "http: code %d", http.getLastHttpCode());
         }
+        fetchFail_++;
         return false;
     }
 
-    return parseData(outData);
+    const bool ok = parseData(outData);
+    if (ok) {
+        fetchOk_++;
+        lastError_[0] = '\0';
+    } else {
+        fetchFail_++;
+        snprintf(lastError_, sizeof(lastError_), "parse: incomplete Metrics object");
+    }
+    return ok;
+}
+
+bool PcMetricsService::fetchRawJson(String& outRaw) {
+    HTTPClient http;
+    if (!http.begin(LIBRE_HM_API)) {
+        return false;
+    }
+    http.setConnectTimeout(1000);
+    http.setTimeout(2000);
+    const int code = http.GET();
+    const bool ok = (code == HTTP_CODE_OK);
+    if (ok) {
+        outRaw = http.getString();
+    }
+    http.end();
+    return ok;
 }
 
 bool PcMetricsService::parseData(PcMetrics& outData) {

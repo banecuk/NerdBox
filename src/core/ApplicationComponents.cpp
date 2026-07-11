@@ -13,8 +13,6 @@ ApplicationComponents::ApplicationComponents()
       networkStatusService(logger_),
       uiController(displayContext, &displayManager, systemMetrics, pcMetrics, systemState.screen,
                    config, networkManager, airQualityData, netStatus),
-      webServer(80),
-      webServerService(webServer, uiController, systemMetrics),
       wifiReconnectJob(networkManager, systemState.core),
       ntpRetryJob(ntpService, systemState.core, logger_),
       pcMetricsJob(pcMetricsService, pcMetrics, systemState.core, systemState.screen,
@@ -27,4 +25,7 @@ ApplicationComponents::ApplicationComponents()
                   std::vector<BackgroundJob*>{&wifiReconnectJob, &ntpRetryJob, &pcMetricsJob,
                                               &airQualityJob, &networkStatusJob,
                                               &dimAtNightJob}),
+      webServer(80),
+      webServerService(webServer, uiController, systemMetrics, pcMetrics, pcMetricsService,
+                       netStatus, systemState, config, taskManager, logger_),
       initStateMachine(*this) {}

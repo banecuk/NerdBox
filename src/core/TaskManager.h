@@ -25,6 +25,10 @@ class TaskManager {
     static void updateScreenTask(void* parameter);
     static void backgroundTask(void* parameter);
 
+    // Exposed for /api/status — nullptr before createTasks() succeeds.
+    TaskHandle_t getScreenTaskHandle() const { return screenTaskHandle_; }
+    TaskHandle_t getBackgroundTaskHandle() const { return backgroundTaskHandle_; }
+
  private:
     // Constants
     static constexpr const char* SCREEN_TASK_NAME = "ScreenUpdate";
