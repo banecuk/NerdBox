@@ -8,8 +8,8 @@ class ApplicationMetrics {
  public:
     // Capacity of the circular screen-draw-time buffer.
     // Defined here (not pulled from AppConfig) so utils/ remains independent
-    // of config/AppConfig.h.  AppConfigService still exposes the same value
-    // via getMetricsMaxScreenDrawTimes() for runtime queries.
+    // of config/AppConfig.h.  AppSettings still exposes the same value via
+    // metricsMaxScreenDrawTimes for runtime queries.
     static constexpr size_t kDrawTimesCapacity = 30;
 
     ApplicationMetrics() = default;

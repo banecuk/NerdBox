@@ -1,7 +1,7 @@
 #include "MainScreen.h"
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
-                       AppConfigInterface& config, ApplicationMetrics& systemMetrics,
+                       const AppSettings& config, ApplicationMetrics& systemMetrics,
                        const AirQualityData& airQualityData, const NetworkStatus& netStatus)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
@@ -20,7 +20,7 @@ void MainScreen::createWidgets() {
     // Threads
     auto threadsWidget = std::unique_ptr<ThreadsWidget>(new ThreadsWidget(
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480 - 86 * 2, 60},
-        config_.getHardwareMonitorThreadsRefreshMs(), pcMetrics_, config_, systemMetrics_));
+        config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_));
     widgetManager_.addWidget(std::move(threadsWidget));
 
     // Air quality bar

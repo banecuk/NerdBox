@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "core/events/EventBus.h"
 #include "ui/core/UiController.h"
 #include "ui/screens/ScreenInterface.h"
@@ -10,7 +10,7 @@
 class BaseWidgetScreen : public ScreenInterface {
  public:
     BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
-                     AppConfigInterface& config);
+                     const AppSettings& config);
     virtual ~BaseWidgetScreen() override;
 
     void onEnter() override;
@@ -23,7 +23,7 @@ class BaseWidgetScreen : public ScreenInterface {
     void handleAction(EventType action);
 
     LoggerInterface& logger_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
 
     UiController* uiController_;
     WidgetManager widgetManager_;

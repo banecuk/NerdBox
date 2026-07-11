@@ -3,7 +3,7 @@
 #include "ui/widgets/display/IpAddressWidget.h"
 
 SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiController,
-                               AppConfigInterface& config, NetworkManager& networkManager,
+                               const AppSettings& config, NetworkManager& networkManager,
                                ApplicationMetrics& systemMetrics)
     : BaseWidgetScreen(logger, uiController, config),
       networkManager_(networkManager),

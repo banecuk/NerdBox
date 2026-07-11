@@ -4,7 +4,7 @@
 
 #include <climits>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/ScreenTypes.h"
 #include "core/state/SystemState.h"
@@ -21,7 +21,7 @@ class PcMetricsJob : public BackgroundJob {
  public:
     PcMetricsJob(PcMetricsService& service, PcMetrics& metrics, SystemState::CoreState& coreState,
                 SystemState::ScreenState& screenState, NetworkManager& networkManager,
-                AppConfigInterface& config, LoggerInterface& logger)
+                const AppSettings& config, LoggerInterface& logger)
         : service_(service),
           metrics_(metrics),
           coreState_(coreState),
@@ -42,15 +42,15 @@ class PcMetricsJob : public BackgroundJob {
     void run() override {
         if (service_.fetchData(metrics_)) {
             consecutiveFailures_ = 0;
-            coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorRefreshMs();
+            coreState_.nextSync_pcMetrics = millis() + config_.hardwareMonitorRefreshMs;
             return;
         }
 
         consecutiveFailures_++;
-        coreState_.nextSync_pcMetrics = millis() + config_.getHardwareMonitorFailureRefreshMs();
+        coreState_.nextSync_pcMetrics = millis() + config_.hardwareMonitorFailureRefreshMs;
         logger_.debug("PC metrics update failed", true);
 
-        if (consecutiveFailures_ >= config_.getHardwareMonitorMaxRetries()) {
+        if (consecutiveFailures_ >= config_.hardwareMonitorMaxRetries) {
             logger_.warning("Multiple consecutive PC metrics failures detected", true);
             consecutiveFailures_ = 0;
         }
@@ -66,7 +66,7 @@ class PcMetricsJob : public BackgroundJob {
     SystemState::CoreState& coreState_;
     SystemState::ScreenState& screenState_;
     NetworkManager& networkManager_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
     LoggerInterface& logger_;
 
     // Single source of truth for PC-metrics staleness — shared with

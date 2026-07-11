@@ -1,12 +1,12 @@
 #include "TouchManager.h"
 
-TouchManager::TouchManager(LGFX& display, LoggerInterface& logger, AppConfigInterface& config)
+TouchManager::TouchManager(LGFX& display, LoggerInterface& logger, const AppSettings& config)
     : display_(display),
       logger_(logger),
       config_(config),
       lastTouchTime_(0),
       suppressUntilTime_(0),
-      debounceIntervalMs_(config.getUiTouchDebounceIntervalMs()) {}
+      debounceIntervalMs_(config.uiTouchDebounceIntervalMs) {}
 
 TouchManager::TouchPoint TouchManager::readTouch() {
     // Read touch coordinates first — debounce/suppression only matters (and

@@ -5,7 +5,7 @@
 #include <climits>
 
 TaskManager::TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
-                         AppConfigInterface& config, SystemState::ScreenState& screenState,
+                         const AppSettings& config, SystemState::ScreenState& screenState,
                          std::vector<BackgroundJob*> jobs)
     : logger_(logger),
       uiController_(uiController),
@@ -17,16 +17,16 @@ bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
 
     bool success =
-        createTask(updateScreenTask, SCREEN_TASK_NAME, config_.getTasksScreenStack(),
-                   config_.getTasksScreenPriority(), &screenTaskHandle_, ARDUINO_RUNNING_CORE);
+        createTask(updateScreenTask, SCREEN_TASK_NAME, config_.tasksScreenStack,
+                   config_.tasksScreenPriority, &screenTaskHandle_, ARDUINO_RUNNING_CORE);
 
     if (!success) {
         logger_.critical("Failed to create screen update task", true);
         return false;
     }
 
-    success = createTask(backgroundTask, BACKGROUND_TASK_NAME, config_.getTasksBackgroundStack(),
-                         config_.getTasksBackgroundPriority(), &backgroundTaskHandle_, 0);
+    success = createTask(backgroundTask, BACKGROUND_TASK_NAME, config_.tasksBackgroundStack,
+                         config_.tasksBackgroundPriority, &backgroundTaskHandle_, 0);
 
     if (!success) {
         logger_.critical("Failed to create background task", true);
@@ -34,7 +34,7 @@ bool TaskManager::createTasks() {
         return false;
     }
 
-    if (config_.getWatchdogEnableOnBoot()) {
+    if (config_.watchdogEnableOnBoot) {
         initializeWatchdog();
     }
 
@@ -97,7 +97,7 @@ void TaskManager::backgroundTask(void* parameter) {
 }
 
 void TaskManager::executeScreenTask() {
-    const TickType_t frequency = pdMS_TO_TICKS(config_.getTimingScreenTaskMs());
+    const TickType_t frequency = pdMS_TO_TICKS(config_.timingScreenTaskMs);
     TickType_t lastWakeTime = xTaskGetTickCount();
     unsigned long lastStackLogTime = 0;
 
@@ -120,7 +120,7 @@ void TaskManager::executeScreenTask() {
 }
 
 void TaskManager::executeBackgroundTask() {
-    const TickType_t frequency = pdMS_TO_TICKS(config_.getTimingBackgroundTaskMs());
+    const TickType_t frequency = pdMS_TO_TICKS(config_.timingBackgroundTaskMs);
     unsigned long lastStackLogTime = 0;
 
     while (true) {
@@ -154,7 +154,7 @@ void TaskManager::logStackHighWaterMark(const char* taskName) {
 }
 
 void TaskManager::resetWatchdog() {
-    if (config_.getWatchdogEnableOnBoot()) {
+    if (config_.watchdogEnableOnBoot) {
         esp_task_wdt_reset();
     }
 }

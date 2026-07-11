@@ -6,8 +6,7 @@
 
 #include <LovyanGFX.hpp>
 
-#include "config/AppConfig.h"
-#include "config/AppConfigService.h"
+#include "config/AppSettings.h"
 #include "core/IInitializationTarget.h"
 #include "core/InitializationStateMachine.h"
 #include "core/jobs/AirQualityJob.h"
@@ -69,13 +68,11 @@ class ApplicationComponents : public IInitializationTarget {
     void setTimeSynced() override { systemState.core.isTimeSynced = true; }
     void setSystemInitialized() override { systemState.core.isInitialized = true; }
 
-    uint8_t initTimeSyncRetries() const override { return config.getInitTimeSyncRetries(); }
-    uint32_t initTimeSyncBaseDelayMs() const override {
-        return config.getInitTimeSyncBaseDelayMs();
-    }
-    uint16_t initBackoffJitterMs() const override { return config.getInitBackoffJitterMs(); }
-    bool watchdogEnabledOnBoot() const override { return config.getWatchdogEnableOnBoot(); }
-    unsigned long watchdogTimeoutMs() const override { return config.getWatchdogTimeoutMs(); }
+    uint8_t initTimeSyncRetries() const override { return config.initTimeSyncRetries; }
+    uint32_t initTimeSyncBaseDelayMs() const override { return config.initTimeSyncBaseDelayMs; }
+    uint16_t initBackoffJitterMs() const override { return config.initBackoffJitterMs; }
+    bool watchdogEnabledOnBoot() const override { return config.watchdogEnableOnBoot; }
+    unsigned long watchdogTimeoutMs() const override { return config.watchdogTimeoutMs; }
 
     // -----------------------------------------------------------------------
     // Public data — accessed by Application, TaskManager wiring, etc.
@@ -90,7 +87,7 @@ class ApplicationComponents : public IInitializationTarget {
     // -----------------------------------------------------------------------
 
     // Core configuration and state — no dependencies.
-    AppConfigService config;
+    AppSettings config;
     SystemState systemState;
 
     // PC metrics data (standalone; not nested in SystemState to avoid

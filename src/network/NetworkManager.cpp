@@ -1,7 +1,7 @@
 #include "NetworkManager.h"
 
 NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
-                               AppConfigInterface& config)
+                               const AppSettings& config)
     : logger_(logger), httpClient_(httpClient), config_(config) {}
 
 bool NetworkManager::connect() {
@@ -9,8 +9,7 @@ bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     logger_.info("Connecting to WiFi...", true);
 
-    uint32_t timeoutMs =
-        config_.getInitNetworkRetries() * config_.getInitNetworkRetryDelayMs();
+    uint32_t timeoutMs = config_.initNetworkRetries * config_.initNetworkRetryDelayMs;
     wl_status_t status =
         static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
     bool connected = (status == WL_CONNECTED);

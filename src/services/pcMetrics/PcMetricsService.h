@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "config/Environment.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
@@ -13,7 +13,7 @@
 class PcMetricsService {
  public:
     PcMetricsService(NetworkManager& networkManager, ApplicationMetrics& systemMetrics,
-                     LoggerInterface& logger, AppConfigInterface& config);
+                     LoggerInterface& logger, const AppSettings& config);
     ~PcMetricsService() = default;
 
     // Delete copy operations
@@ -35,7 +35,7 @@ class PcMetricsService {
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;
     LoggerInterface& logger_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
 
     // Use heap allocation for JSON document to avoid stack overflow
     std::unique_ptr<JsonDocument> doc_;  // Reused across fetches to avoid heap fragmentation

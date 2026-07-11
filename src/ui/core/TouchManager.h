@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "config/LgfxConfig.h"
 #include "utils/LoggerInterface.h"
 
@@ -17,7 +17,7 @@ class TouchManager {
         TouchPoint(int32_t x_, int32_t y_) : x(x_), y(y_), valid(true) {}
     };
 
-    explicit TouchManager(LGFX& display, LoggerInterface& logger, AppConfigInterface& config);
+    explicit TouchManager(LGFX& display, LoggerInterface& logger, const AppSettings& config);
     ~TouchManager() = default;
 
     // Delete copy/move operations
@@ -38,7 +38,7 @@ class TouchManager {
  private:
     LGFX& display_;
     LoggerInterface& logger_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
 
     unsigned long lastTouchTime_;
     unsigned long suppressUntilTime_;

@@ -4,28 +4,28 @@
 
 ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                             AppConfigInterface& config, ApplicationMetrics& systemMetrics)
+                             const AppSettings& config, ApplicationMetrics& systemMetrics)
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
       freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp),
-      barWidth_(dims.width / config_.getPcMetricsCores()),
-      previousBarHeights_(config_.getPcMetricsCores(), 0),
-      previousColors_(config_.getPcMetricsCores(), 0),
-      smoothedThreadLoads_(config_.getPcMetricsCores(), 0) {
+      barWidth_(dims.width / config_.pcMetricsCores),
+      previousBarHeights_(config_.pcMetricsCores, 0),
+      previousColors_(config_.pcMetricsCores, 0),
+      smoothedThreadLoads_(config_.pcMetricsCores, 0) {
     // Initialize value smoother with configurable parameters
     valueSmoother_ = std::make_unique<ValueSmoother>(
-        config_.getPcMetricsCores(), config_.getHardwareMonitorThreadsUpwardDecay(),
-        config_.getHardwareMonitorThreadsDownwardDecay());
+        config_.pcMetricsCores, config_.hardwareMonitorThreadsUpwardSmoothing,
+        config_.hardwareMonitorThreadsDownwardSmoothing);
 }
 
 void ThreadsWidget::initialize(DisplayContext& context) {
     Widget::initialize(context);
 
     // Set update interval to the faster threads refresh rate for high FPS animation
-    setUpdateInterval(config_.getHardwareMonitorThreadsRefreshMs());
+    setUpdateInterval(config_.hardwareMonitorThreadsRefreshMs);
 
     // Initialize the value smoother with current data if available
     if (freshnessGuard_.isFresh()) {
@@ -66,14 +66,14 @@ void ThreadsWidget::updateSmoothedValues() {
     // this per-tick cadence to produce a fast-attack / slow-decay VU-meter
     // animation. Gating this on pcMetrics_.last_update_timestamp would turn
     // that smooth animation into a hard step every fetch instead.
-    valueSmoother_->update(pcMetrics_.cpu_thread_load, config_.getPcMetricsCores());
-    valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.getPcMetricsCores());
+    valueSmoother_->update(pcMetrics_.cpu_thread_load, config_.pcMetricsCores);
+    valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.pcMetricsCores);
 }
 
 void ThreadsWidget::drawBars() {
     const uint16_t maxBarHeight = dimensions_.height - 1;
     LGFX* lcd = getLcd();
-    const int coreCount = config_.getPcMetricsCores();
+    const int coreCount = config_.pcMetricsCores;
 
     for (int i = 0; i < coreCount; ++i) {
         const uint8_t threadLoad = smoothedThreadLoads_[i];

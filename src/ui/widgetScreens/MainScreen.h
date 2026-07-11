@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BaseWidgetScreen.h"
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
@@ -16,7 +16,7 @@
 class MainScreen : public BaseWidgetScreen {
  public:
     MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
-               AppConfigInterface& config, ApplicationMetrics& systemMetrics,
+               const AppSettings& config, ApplicationMetrics& systemMetrics,
                const AirQualityData& airQualityData,
                const NetworkStatus& netStatus);
     ~MainScreen() override = default;

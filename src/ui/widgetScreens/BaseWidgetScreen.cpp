@@ -1,7 +1,7 @@
 #include "BaseWidgetScreen.h"
 
 BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
-                                   AppConfigInterface& config)
+                                   const AppSettings& config)
     : logger_(logger),
       uiController_(uiController),
       widgetManager_(uiController->getDisplayContext()),

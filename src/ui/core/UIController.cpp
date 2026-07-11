@@ -8,7 +8,7 @@
 
 UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                           SystemState::ScreenState& screenState, AppConfigInterface& config,
+                           SystemState::ScreenState& screenState, const AppSettings& config,
                            NetworkManager& networkManager,
                            const AirQualityData& airQualityData,
                            const NetworkStatus& netStatus)
@@ -72,7 +72,7 @@ void UiController::updateDisplay() {
     if (activeTransition_.isActive) {
         processTransitionPhase();
 
-        if (millis() - activeTransition_.startTime > config_.getUiTransitionTimeoutMs()) {
+        if (millis() - activeTransition_.startTime > config_.uiTransitionTimeoutMs) {
             logger_.error("[UiController] Transition timeout, resetting");
             completeTransition();
         }
@@ -87,7 +87,7 @@ void UiController::updateDisplay() {
 }
 
 bool UiController::tryAcquireDisplayLock() {
-    const TickType_t timeout = pdMS_TO_TICKS(config_.getUiDisplayLockTimeoutMs());
+    const TickType_t timeout = pdMS_TO_TICKS(config_.uiDisplayLockTimeoutMs);
     BaseType_t res = xSemaphoreTake(displayAccessMutex_, timeout);
     if (res != pdTRUE) {
         logger_.error("[UiController] Display lock timeout");
@@ -184,7 +184,7 @@ void UiController::completeTransition() {
 
     // Suppress touches briefly to prevent accidental input / rapid re-triggering
     // right after a screen transition completes.
-    touchManager_->suppressFor(config_.getUiScreenTransitionCooldownMs());
+    touchManager_->suppressFor(config_.uiScreenTransitionCooldownMs);
     logger_.debug("[UiController] Screen transition complete - cooldown active");
 }
 

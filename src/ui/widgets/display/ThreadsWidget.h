@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
@@ -14,7 +14,7 @@
 class ThreadsWidget : public Widget {
  public:
     ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                  uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config,
+                  uint32_t updateIntervalMs, PcMetrics& pcMetrics, const AppSettings& config,
                   ApplicationMetrics& systemMetrics);
 
     void initialize(DisplayContext& context) override;
@@ -28,7 +28,7 @@ class ThreadsWidget : public Widget {
  private:
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
     DataFreshnessGuard freshnessGuard_;
 

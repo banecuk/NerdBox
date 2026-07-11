@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "core/ApplicationComponents.h"
 #include "core/state/SystemState.h"
 #include "services/WebServerService.h"
@@ -29,7 +29,7 @@ class Application {
     // Injected references to the specific runtime dependencies of run().
     // These are extracted from components_ in the constructor so that run()
     // does not need to reach into the composition root on every loop tick.
-    AppConfigInterface&  config_;
+    const AppSettings&   config_;
     SystemState&         systemState_;
     WebServerService&    webServerService_;
 };

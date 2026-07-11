@@ -1,6 +1,5 @@
 #pragma once
 
-#include "config/AppConfigInterface.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"

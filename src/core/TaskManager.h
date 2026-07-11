@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/IScreenUpdater.h"
 #include "core/state/SystemState.h"
@@ -15,7 +15,7 @@ class TaskManager {
     // `jobs` is a flat list of periodic background jobs (see BackgroundJob) —
     // adding a new periodic service means writing a job adapter and appending
     // it here, not adding a constructor parameter.
-    TaskManager(LoggerInterface& logger, IScreenUpdater& uiController, AppConfigInterface& config,
+    TaskManager(LoggerInterface& logger, IScreenUpdater& uiController, const AppSettings& config,
                 SystemState::ScreenState& screenState, std::vector<BackgroundJob*> jobs);
 
     bool createTasks();
@@ -34,7 +34,7 @@ class TaskManager {
     // Dependencies
     LoggerInterface& logger_;
     IScreenUpdater& uiController_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
     SystemState::ScreenState& screenState_;
     std::vector<BackgroundJob*> jobs_;
 

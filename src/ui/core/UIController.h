@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "core/IScreenUpdater.h"
 #include "core/state/SystemState.h"
 #include "DisplayContext.h"
@@ -27,7 +27,7 @@ class UiController : public IScreenUpdater {
  public:
     explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                          SystemState::ScreenState& screenState, AppConfigInterface& config,
+                          SystemState::ScreenState& screenState, const AppSettings& config,
                           NetworkManager& networkManager,
                           const AirQualityData& airQualityData,
                           const NetworkStatus& netStatus);
@@ -82,7 +82,7 @@ class UiController : public IScreenUpdater {
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
     NetworkManager& networkManager_;
     const AirQualityData& airQualityData_;
     const NetworkStatus&  netStatus_;

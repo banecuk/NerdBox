@@ -17,10 +17,10 @@ void Application::run() {
         return;
     }
 
-    if (config_.getWatchdogEnableOnBoot()) {
+    if (config_.watchdogEnableOnBoot) {
         esp_task_wdt_reset();
     }
 
     webServerService_.processRequests();
-    vTaskDelay(pdMS_TO_TICKS(config_.getTimingMainLoopMs()));
+    vTaskDelay(pdMS_TO_TICKS(config_.timingMainLoopMs));
 }

@@ -2,7 +2,7 @@
 #include <array>
 #include <string>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
@@ -13,7 +13,7 @@
 class PcMetricsWidget : public Widget {
  public:
     PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                    uint32_t updateIntervalMs, PcMetrics& pcMetrics, AppConfigInterface& config,
+                    uint32_t updateIntervalMs, PcMetrics& pcMetrics, const AppSettings& config,
                     ApplicationMetrics& systemMetrics);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
@@ -126,7 +126,7 @@ class PcMetricsWidget : public Widget {
     // -----------------------------------------------------------------------
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
 
     // -----------------------------------------------------------------------

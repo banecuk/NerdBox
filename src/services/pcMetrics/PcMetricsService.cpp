@@ -2,7 +2,7 @@
 
 PcMetricsService::PcMetricsService(NetworkManager& networkManager,
                                    ApplicationMetrics& systemMetrics, LoggerInterface& logger,
-                                   AppConfigInterface& config)
+                                   const AppSettings& config)
     : networkManager_(networkManager),
       systemMetrics_(systemMetrics),
       logger_(logger),
@@ -189,7 +189,7 @@ bool PcMetricsService::parseCpuData(JsonObject cpu, PcMetrics& outData) {
 
     JsonArray coreLoads = cpu["CoreLoads"];
     if (!coreLoads.isNull()) {
-        uint8_t coreCount = config_.getPcMetricsCores();
+        uint8_t coreCount = config_.pcMetricsCores;
         actualCores = min(coreCount, static_cast<uint8_t>(coreLoads.size()));
         actualCores = min(actualCores, static_cast<uint8_t>(maxThreads));
 

@@ -98,7 +98,7 @@ uint16_t diskActivityColor(float kbPerSec) {
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                  uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                                 AppConfigInterface& config, ApplicationMetrics& systemMetrics)
+                                 const AppSettings& config, ApplicationMetrics& systemMetrics)
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),

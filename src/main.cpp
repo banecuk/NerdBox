@@ -1,7 +1,7 @@
 #include "core/Application.h"
 #include "core/ApplicationFactory.h"
 
-static AppConfigService config;
+static AppSettings config;
 static Application* app = nullptr;
 
 void waitForSerial(uint32_t timeoutMs) {
@@ -19,10 +19,10 @@ void setup() {
     static_assert(__cplusplus >= 201703L, "Not using C++17 or higher");
 
     // Initialize serial communication
-    Serial.begin(config.getDebugSerialBaudRate());
+    Serial.begin(config.debugSerialBaudRate);
 
-    if (config.getDebugWaitForSerial()) {
-        waitForSerial(config.getDebugSerialTimeoutMs());
+    if (config.debugWaitForSerial) {
+        waitForSerial(config.debugSerialTimeoutMs);
     }
 
     Serial.printf("Total PSRAM: %d bytes\n", ESP.getPsramSize());

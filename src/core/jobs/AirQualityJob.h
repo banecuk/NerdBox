@@ -2,7 +2,7 @@
 
 #include <climits>
 
-#include "config/AppConfigInterface.h"
+#include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
@@ -13,14 +13,14 @@
 
 // Refreshes air quality data whenever it goes stale, once the system is
 // initialized and WiFi is up. Failed fetches back off for
-// AppConfigInterface::getAirQualityFailureBackoffMs() so a wrong/expired API
+// AppSettings::airQualityFailureBackoffMs so a wrong/expired API
 // key or provider outage can't turn into a tight retry loop that starves
 // other background jobs.
 class AirQualityJob : public BackgroundJob {
  public:
     AirQualityJob(AirQualityService& service, AirQualityData& data,
                  SystemState::CoreState& coreState, NetworkManager& networkManager,
-                 AppConfigInterface& config, LoggerInterface& logger)
+                 const AppSettings& config, LoggerInterface& logger)
         : service_(service),
           data_(data),
           coreState_(coreState),
@@ -40,7 +40,7 @@ class AirQualityJob : public BackgroundJob {
         if (service_.fetchData(data_)) {
             logger_.debug("AirQuality data updated");
         } else {
-            nextAttemptMs_ = millis() + config_.getAirQualityFailureBackoffMs();
+            nextAttemptMs_ = millis() + config_.airQualityFailureBackoffMs;
             logger_.warning("AirQuality fetch failed");
         }
     }
@@ -50,7 +50,7 @@ class AirQualityJob : public BackgroundJob {
     AirQualityData& data_;
     SystemState::CoreState& coreState_;
     NetworkManager& networkManager_;
-    AppConfigInterface& config_;
+    const AppSettings& config_;
     LoggerInterface& logger_;
     DataFreshnessGuard freshness_;
     unsigned long nextAttemptMs_ = 0;

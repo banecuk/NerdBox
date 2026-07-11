@@ -11,7 +11,7 @@ class LoggerInterface;
 class DisplayManager;
 class PcMetrics;
 class UiController;
-class AppConfigInterface;
+struct AppSettings;
 class ApplicationMetrics;
 class NetworkManager;
 struct AirQualityData;
@@ -25,7 +25,7 @@ struct ScreenCreationContext {
     DisplayManager*       display;
     PcMetrics&            metrics;
     UiController*         controller;
-    AppConfigInterface&   config;
+    const AppSettings&    config;
     ApplicationMetrics&   systemMetrics;
     NetworkManager&       networkManager;
     const AirQualityData& airQualityData;
