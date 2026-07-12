@@ -7,5 +7,10 @@ constexpr char LIBRE_HM_API[] = "http://192.168.1.11:8086/api/v1/system";
 
 constexpr char AIR_VISUAL_API[] = "http://api.airvisual.com/v2/nearest_city?lat=44.8023831&lon=20.3712837&key=YOUR_KEY";
 
+// Ethernet link speed, in Mbps — used by NetworkTrafficWidget to colour
+// up/down rates by utilisation percentage of the link.
+constexpr float ETH_DOWNLOAD_MBPS = 400.0f;
+constexpr float ETH_UPLOAD_MBPS = 20.0f;
+
 // constexpr char ROUTER_USER[] = "-";
 // constexpr char ROUTER_PASSWORD[] = "-";

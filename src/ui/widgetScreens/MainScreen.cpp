@@ -44,6 +44,13 @@ void MainScreen::createWidgets() {
         WidgetInterface::Dimensions{0, 272, 48, 48}, 0, EventType::SHOW_SETTINGS,
         [this](EventType action) { this->handleAction(action); }, TFT_BLACK, TFT_WHITE)));
 
+    // Network traffic widget — Ethernet up/down rates, right of the settings
+    // button. Fills the full 48px band height (like the button) so its two
+    // rows (upload/download) have room; ends at x=180 where NetworkWidget
+    // begins.
+    widgetManager_.addWidget(std::unique_ptr<NetworkTrafficWidget>(
+        new NetworkTrafficWidget(WidgetInterface::Dimensions{48, 272, 132, 48}, 1000, pcMetrics_)));
+
     // Network widget — compact, right-aligned next to clock, vertically
     // centered in the 48px band (272 + (48-24)/2 = 284).
     // Clock: {328, 280, 150, 40} → network widget ends at x=328

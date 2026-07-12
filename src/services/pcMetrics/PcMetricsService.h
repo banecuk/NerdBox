@@ -45,6 +45,7 @@ class PcMetricsService {
     bool parseGpuData(JsonObject gpu, PcMetrics& outData);
     bool parseMotherboardData(JsonObject motherboard, PcMetrics& outData);
     bool parseDiskData(JsonObject disks, PcMetrics& outData);
+    bool parseNetworkData(JsonObject network, PcMetrics& outData);
 
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;

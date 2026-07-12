@@ -53,6 +53,11 @@ void PcMetricsService::initFilter() {
     JsonObject disks = metrics["Disks"].to<JsonObject>();
     disks["Drives"] = true;
 
+    // Network filters
+    JsonObject network = metrics["Network"].to<JsonObject>();
+    network["UploadSpeed"] = true;
+    network["DownloadSpeed"] = true;
+
     filter["Timestamp"] = true;
 }
 
@@ -155,6 +160,13 @@ bool PcMetricsService::parseData(PcMetrics& outData) {
         }
     } else {
         logger_.debug("No Disks in filtered JSON");
+    }
+
+    JsonObject network = metrics["Network"];
+    if (!network.isNull()) {
+        if (!parseNetworkData(network, outData)) {
+            allComponentsValid = false;
+        }
     }
 
     // Update metrics — sticky on success only: a partial/failed parse leaves
@@ -266,6 +278,14 @@ bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
     outData.gpu_fps = gpu["FullscreenFps"].isNull()
                           ? int16_t(-1)
                           : static_cast<int16_t>(gpu["FullscreenFps"].as<float>());
+    return true;
+}
+
+bool PcMetricsService::parseNetworkData(JsonObject network, PcMetrics& outData) {
+    // NerdWinSense reports both rates in KB/s (1 KB = 1024 bytes), matching
+    // the disk read/write convention above.
+    outData.eth_up = network["UploadSpeed"] | 0.0f;
+    outData.eth_dn = network["DownloadSpeed"] | 0.0f;
     return true;
 }
 
