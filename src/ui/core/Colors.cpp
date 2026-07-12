@@ -53,26 +53,53 @@ void Colors::generateGradient() {
 uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
     if (value > 99) value = 99;
 
-    // GPU gradient: warm near-black → warm grey → amber → dark red
-    // Complements the orange (0xFD20) label colour; stays dark enough
-    // for white text to be legible at all load levels.
-    const uint16_t warmBlack = 0x2102;  // RGB( 32,  32,  16) — near-black, faint warm tint
-    const uint16_t warmGrey  = 0x4A43;  // RGB( 72,  72,  24) — medium warm grey
-    const uint16_t amber     = 0xA340;  // RGB(160, 104,   0) — dark amber
-    const uint16_t red       = 0x7800;  // RGB(120,   0,   0) — dark red
+    // GPU gradient: dark red (idle) → mid red → deep red → bright alert red.
+    // Pure red hue throughout (no green/blue channel) so it never drifts
+    // into the brownish/olive territory a warm-grey/amber ramp produces.
+    // Idle stays dark enough to be clearly distinct from the bright red
+    // used at heavy load.
+    const uint16_t darkRed = 0x2800;  // RGB( 40,   0,   0) — idle, near-black red
+    const uint16_t midRed  = 0x5000;  // RGB( 82,   0,   0)
+    const uint16_t deepRed = 0x8800;  // RGB(140,   0,   0)
+    const uint16_t red     = 0xF800;  // RGB(255,   0,   0) — bright alert red
 
     uint16_t C1, C2;
     uint8_t alpha;
 
     if (value < 40) {
-        C1 = warmBlack; C2 = warmGrey;
+        C1 = darkRed; C2 = midRed;
         alpha = (value * 255) / 39;
     } else if (value < 70) {
-        C1 = warmGrey; C2 = amber;
+        C1 = midRed; C2 = deepRed;
         alpha = ((value - 40) * 255) / 29;
     } else {
-        C1 = amber; C2 = red;
+        C1 = deepRed; C2 = red;
         alpha = ((value - 70) * 255) / 29;
+    }
+
+    return blendRgb565(C1, C2, alpha);
+}
+
+uint16_t Colors::getColorFromPercentRam(uint8_t value) {
+    if (value > 99) value = 99;
+
+    // RAM gradient: dark slate (idle) → steel blue → muted bright blue
+    // (high load). Desaturated (grey-blended) blue rather than a pure blue
+    // channel, so it reads as a cool-toned cousin of the panel's grey/hairline
+    // chrome instead of a saturated neon blue.
+    const uint16_t darkSlate  = 0x10C5;  // RGB( 24,  24,  41) — idle, near-black slate
+    const uint16_t steelBlue  = 0x322D;  // RGB( 48,  70, 107)
+    const uint16_t brightBlue = 0x5C17;  // RGB( 90, 129, 189) — muted alert blue
+
+    uint16_t C1, C2;
+    uint8_t alpha;
+
+    if (value < 50) {
+        C1 = darkSlate; C2 = steelBlue;
+        alpha = (value * 255) / 49;
+    } else {
+        C1 = steelBlue; C2 = brightBlue;
+        alpha = ((value - 50) * 255) / 49;
     }
 
     return blendRgb565(C1, C2, alpha);

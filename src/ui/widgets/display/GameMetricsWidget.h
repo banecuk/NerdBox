@@ -74,6 +74,7 @@ class GameMetricsWidget : public Widget {
         uint16_t labelColor;
         bool useGpuColors;
         bool useDimColors;
+        bool useRamColors;
         float (*getValue)(const PcMetrics&);
     };
 

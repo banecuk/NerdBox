@@ -11,7 +11,7 @@
 
 // CPU + GPU load history strip for the game screen — fixed 0-100% scale dual
 // sparkline. CPU load (0xC618, near-white) is drawn as a filled bar; GPU load
-// (0xAD27, yellow/olive — same GPU accent color used elsewhere in the app) as
+// (0xFC70, light salmon-red — same GPU accent color used elsewhere in the app) as
 // a bright marker line on top of it. One sample recorded per PcMetrics fetch,
 // same timestamp-gated sampling as GameFpsWidget.
 //

@@ -118,6 +118,7 @@ class PcMetricsWidget : public Widget {
         bool useGpuColors;
         bool verticalLabel;
         bool useDimColors;
+        bool useRamColors;
         float (*getValue)(const PcMetrics&);
     };
 

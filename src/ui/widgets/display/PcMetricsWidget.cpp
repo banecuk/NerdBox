@@ -129,6 +129,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              false,
              false,
              false,
+             false,
              valueCpuLoad},
          {{kCol9, kRow1, kTileWidth, kRowH},
              kDegreesC,
@@ -139,6 +140,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              "TMP",
              kLabelWidth,
              0xC618,
+             false,
              false,
              false,
              false,
@@ -155,6 +157,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              false,
              false,
              false,
+             false,
              valueCpuPower},
          {{kCol9, kRow2, kTileWidth, kRowH},
              "",
@@ -168,6 +171,7 @@ PcMetricsWidget::fixedTileDescriptors() {
              false,
              false,
              true,
+             false,
              valueCpuFan},
 
          // GPU rows
@@ -179,8 +183,9 @@ PcMetricsWidget::fixedTileDescriptors() {
              90.0f,
              "GPU",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
+             false,
              false,
              false,
              valueGpuLoad},
@@ -192,8 +197,9 @@ PcMetricsWidget::fixedTileDescriptors() {
              85.0f,
              "TMP",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
+             false,
              false,
              false,
              valueGpuTemperature},
@@ -205,8 +211,9 @@ PcMetricsWidget::fixedTileDescriptors() {
              170.0f,
              "PWR",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
+             false,
              false,
              false,
              valueGpuPower},
@@ -218,8 +225,9 @@ PcMetricsWidget::fixedTileDescriptors() {
              90.0f,
              "3D",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
+             false,
              false,
              false,
              valueGpu3d},
@@ -231,8 +239,9 @@ PcMetricsWidget::fixedTileDescriptors() {
              90.0f,
              "CMP",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
+             false,
              false,
              false,
              valueGpuCompute},
@@ -244,9 +253,10 @@ PcMetricsWidget::fixedTileDescriptors() {
              90.0f,
              "VRAM",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
              true,
+             false,
              false,
              valueGpuMemory},
          {{kCol9, kRow4, kTileWidth, kRowH},
@@ -257,10 +267,11 @@ PcMetricsWidget::fixedTileDescriptors() {
              1400.0f,
              "FAN",
              kLabelWidth,
-             0xAD27,
+             0xFC70,
              true,
              false,
              true,
+             false,
              valueGpuFan},
 
          // RAM — rows 3-4 span (double height), leftmost of the right-side tiles
@@ -272,10 +283,11 @@ PcMetricsWidget::fixedTileDescriptors() {
              90.0f,
              "RAM",
              kLabelWidth,
-             0xC618,
+             0xADFB,
              false,
              true,
              false,
+             true,
              valueMemoryLoad},
          }
     };
@@ -293,6 +305,7 @@ void PcMetricsWidget::buildFixedWidgets() {
                                .labelWidth(d.labelWidth)
                                .labelColor(d.labelColor)
                                .useGpuColors(d.useGpuColors)
+                               .useRamColors(d.useRamColors)
                                .verticalLabel(d.verticalLabel)
                                .useDimColors(d.useDimColors)
                                .build();

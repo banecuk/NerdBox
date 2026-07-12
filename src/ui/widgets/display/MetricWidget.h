@@ -40,6 +40,7 @@ class MetricWidget : public Widget {
     void setUseSmallFont(bool small = true);  // Use 15pt instead of 18pt — for narrow tiles
     void setLabelColor(uint16_t color);
     void setUseGpuColors(bool use = true);
+    void setUseRamColors(bool use = true);
 
     // Called by PcMetricsWidget's batch update: assumes NotoSans18 (metric font)
     // is already loaded by the caller.  Skips loadFont/unloadFont overhead.
@@ -125,6 +126,11 @@ class MetricWidget : public Widget {
             return *this;
         }
 
+        Builder& useRamColors(bool use = true) {
+            useRamColors_ = use;
+            return *this;
+        }
+
         Builder& label(const char* label) {
             if (label) {
                 strncpy(label_, label, sizeof(label_) - 1);
@@ -164,6 +170,7 @@ class MetricWidget : public Widget {
             widget->setUseDimColors(useDimColors_);
             widget->setUseSmallFont(useSmallFont_);
             widget->setUseGpuColors(useGpuColors_);
+            widget->setUseRamColors(useRamColors_);
             widget->setLabelColor(labelColor_);
             widget->setLabel(label_);
             widget->setLabelWidth(labelWidth_);
@@ -189,6 +196,7 @@ class MetricWidget : public Widget {
         bool useDimColors_ = false;
         bool useSmallFont_ = false;
         bool useGpuColors_ = false;
+        bool useRamColors_ = false;
         uint16_t labelColor_ = TFT_WHITE;
         char label_[32] = "";
         uint16_t labelWidth_ = 0;
@@ -213,6 +221,7 @@ class MetricWidget : public Widget {
     bool useDimColors_ = false;
     bool useSmallFont_ = false;  // Use NotoSansDisplay15 instead of NotoSans18
     bool useGpuColors_ = false;
+    bool useRamColors_ = false;
     uint16_t labelColor_ = TFT_WHITE;
     char label_[32] = "";  // Stack-allocated buffer
     uint16_t labelWidth_ = 0;

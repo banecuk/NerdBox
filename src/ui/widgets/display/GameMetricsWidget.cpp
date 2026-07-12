@@ -40,37 +40,37 @@ GameMetricsWidget::fixedTileDescriptors() {
         {
          // CPU row
             {{kCol0, kRow1, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CPU", kLabelWidth,
-             0xC618, false, false, valueCpuLoad},
+             0xC618, false, false, false, valueCpuLoad},
          {{kCol1, kRow1, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-             0xC618, false, false, valueCpuTemperature},
+             0xC618, false, false, false, valueCpuTemperature},
          {{kCol2, kRow1, kTileWidth, kRowH}, " W", 0, 400, 55.0f, 140.0f, "PWR", kLabelWidth,
-             0xC618, false, false, valueCpuPower},
+             0xC618, false, false, false, valueCpuPower},
          {{kCol3, kRow1, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1200.0f, "FAN", kLabelWidth,
-             0xC618, false, true, valueCpuFan},
+             0xC618, false, true, false, valueCpuFan},
 
          // RAM — end of CPU row
             {{kCol4, kRow1, kTileWidth, kRowH}, "%", 0, 100, 60.0f, 90.0f, "RAM", kLabelWidth,
-             0xC618, false, false, valueMemoryLoad},
+             0xADFB, false, false, true, valueMemoryLoad},
 
          // GPU row
             {{kCol0, kRow2, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "GPU", kLabelWidth,
-             0xAD27, true, false, valueGpuLoad},
+             0xFC70, true, false, false, valueGpuLoad},
          {{kCol1, kRow2, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-             0xAD27, true, false, valueGpuTemperature},
+             0xFC70, true, false, false, valueGpuTemperature},
          {{kCol2, kRow2, kTileWidth, kRowH}, " W", 0, 400, 50.0f, 170.0f, "PWR", kLabelWidth,
-             0xAD27, true, false, valueGpuPower},
+             0xFC70, true, false, false, valueGpuPower},
          {{kCol3, kRow2, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1400.0f, "FAN", kLabelWidth,
-             0xAD27, true, true, valueGpuFan},
+             0xFC70, true, true, false, valueGpuFan},
 
          // VRAM — end of GPU row
             {{kCol4, kRow2, kTileWidth, kRowH}, "%", 0, 100, 30.0f, 90.0f, "VRAM", kLabelWidth,
-             0xAD27, true, false, valueGpuMemory},
+             0xFC70, true, false, false, valueGpuMemory},
 
          // Row 3 — 3D / compute (fan slots kCol2/kCol3 are lazily created)
             {{kCol0, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "3D", kLabelWidth,
-             0xAD27, true, false, valueGpu3d},
+             0xFC70, true, false, false, valueGpu3d},
          {{kCol1, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CMP", kLabelWidth,
-             0xAD27, true, false, valueGpuCompute},
+             0xFC70, true, false, false, valueGpuCompute},
          }
     };
     return kTiles;
@@ -88,6 +88,7 @@ void GameMetricsWidget::buildFixedWidgets() {
                                .labelColor(d.labelColor)
                                .useGpuColors(d.useGpuColors)
                                .useDimColors(d.useDimColors)
+                               .useRamColors(d.useRamColors)
                                .build();
     }
 }

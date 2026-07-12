@@ -31,5 +31,6 @@ class Colors {
 
     uint16_t getColorFromPercent(uint8_t value, bool dim = false);
     uint16_t getColorFromPercentGpu(uint8_t value);
+    uint16_t getColorFromPercentRam(uint8_t value);
     uint16_t darken(uint16_t color, uint8_t alpha);
 };

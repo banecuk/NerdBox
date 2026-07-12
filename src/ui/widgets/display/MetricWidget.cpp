@@ -411,6 +411,9 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
     if (useGpuColors_) {
         return getContext().getColors().getColorFromPercentGpu(normalizedValue);
     }
+    if (useRamColors_) {
+        return getContext().getColors().getColorFromPercentRam(normalizedValue);
+    }
     return getContext().getColors().getColorFromPercent(normalizedValue, useDimColors_);
 }
 
@@ -508,6 +511,13 @@ void MetricWidget::setLabelColor(uint16_t color) {
 void MetricWidget::setUseGpuColors(bool use) {
     if (useGpuColors_ != use) {
         useGpuColors_ = use;
+        markDirty();
+    }
+}
+
+void MetricWidget::setUseRamColors(bool use) {
+    if (useRamColors_ != use) {
+        useRamColors_ = use;
         markDirty();
     }
 }
