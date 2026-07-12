@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/resources/FontRegistry.h"
-#include "core/resources/weather_outlines_44.h"
+#include "core/resources/weather_icons_44.h"
 #include "services/airQuality/AirQualityData.h"
 #include "ui/widgets/base/Widget.h"
 
@@ -12,7 +12,7 @@
 //   [icon 44px] | [°C]      | [hu%] | [hPa] | [m/s] | [AQI nnn]
 //     44 px        ~87 px     ~87px   ~87px   ~87px     ~87 px
 //
-// Icon: 44×44 px, full widget height, from weather_outlines_44.h.
+// Icon: 44×44 px, full widget height, from weather_icons_44.h.
 // Remaining 436 px split into 5 equal tiles of 87 px (remainder 1 px on last).
 // Values use loadMetric() — NotoSans 18 pt.
 // "AQI" is a dim inline prefix.
