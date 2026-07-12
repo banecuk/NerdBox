@@ -10,9 +10,12 @@ static constexpr uint16_t kPlaceholderColor = Colors::kHairline;
 static constexpr uint16_t kBorderColor = Colors::kHairline;  // matches MultiWidget's tile border
 
 FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                     uint32_t updateIntervalMs, PcMetrics& pcMetrics)
+                     uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
+                     ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
+      action_(action),
+      callback_(std::move(callback)),
       freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
 
 void FpsWidget::onDrawStatic() {
@@ -125,5 +128,8 @@ void FpsWidget::clearArea() {
 }
 
 bool FpsWidget::handleTouch(uint16_t x, uint16_t y) {
-    return false;
+    if (!callback_)
+        return false;
+    callback_(action_);
+    return true;
 }

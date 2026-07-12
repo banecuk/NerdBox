@@ -20,6 +20,7 @@ void UiEventHandler::registerHandlers() {
     eventBus.subscribe(EventType::CYCLE_BRIGHTNESS, [this]() { cycleBrightness(); });
     eventBus.subscribe(EventType::SHOW_SETTINGS,   [this]() { requestSettingsScreen(); });
     eventBus.subscribe(EventType::SHOW_MAIN,       [this]() { requestMainScreen(); });
+    eventBus.subscribe(EventType::SHOW_GAME,       [this]() { requestGameScreen(); });
 }
 
 void UiEventHandler::resetDevice() {
@@ -43,4 +44,9 @@ void UiEventHandler::requestSettingsScreen() {
 void UiEventHandler::requestMainScreen() {
     logger_.debug("MAIN action received");
     uiController_->requestScreen(ScreenName::MAIN);
+}
+
+void UiEventHandler::requestGameScreen() {
+    logger_.debug("GAME action received");
+    uiController_->requestScreen(ScreenName::GAME);
 }

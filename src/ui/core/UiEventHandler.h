@@ -15,6 +15,7 @@ class DisplayManager;
 //   EventType::CYCLE_BRIGHTNESS → cycleBrightness() — steps through brightness levels & saves to NVS
 //   EventType::SHOW_SETTINGS   → requestSettingsScreen()
 //   EventType::SHOW_MAIN       → requestMainScreen()
+//   EventType::SHOW_GAME       → requestGameScreen()
 class UiEventHandler {
  public:
     UiEventHandler(UiController* uiController, LoggerInterface& logger);
@@ -24,6 +25,7 @@ class UiEventHandler {
     void cycleBrightness();
     void requestSettingsScreen();
     void requestMainScreen();
+    void requestGameScreen();
 
  private:
     UiController* uiController_;

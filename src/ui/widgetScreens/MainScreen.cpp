@@ -32,10 +32,12 @@ void MainScreen::createWidgets() {
         new MultiWidget(WidgetInterface::Dimensions{0, 199, 400, 73}, 1000)));
 
     // FPS widget — closes the seam with MultiWidget (same top edge, fills to
-    // the screen's right edge) and carries a matching border.
-    widgetManager_.addWidget(std::unique_ptr<FpsWidget>(
-        new FpsWidget(uiController_->getDisplayContext(),
-                      WidgetInterface::Dimensions{400, 199, 80, 73}, 250, pcMetrics_)));
+    // the screen's right edge) and carries a matching border. Tappable: opens
+    // the game screen.
+    widgetManager_.addWidget(std::unique_ptr<FpsWidget>(new FpsWidget(
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{400, 199, 80, 73}, 250,
+        pcMetrics_, EventType::SHOW_GAME,
+        [this](EventType action) { this->handleAction(action); })));
 
     // ── Bottom band: y=272..320, unified across gear / network / clock ──────
     // Settings button — gear icon, no label

@@ -45,6 +45,10 @@ void WebServerService::begin() {
         uiController_.requestScreen(ScreenName::SETTINGS);
         server_.send(200, "text/plain", "OK");
     });
+    server_.on("/screen/game", HTTP_POST, [this]() {
+        uiController_.requestScreen(ScreenName::GAME);
+        server_.send(200, "text/plain", "OK");
+    });
     server_.onNotFound([this]() { this->handleNotFound(); });
     server_.begin();
 }
@@ -234,6 +238,7 @@ static constexpr char kDashboardHtml[] =
     "<div class='card'><h2>Screen</h2><div class='btns'>"
     "<button id='btnMain'>Main</button>"
     "<button id='btnSettings'>Settings</button>"
+    "<button id='btnGame'>Game</button>"
     "<button id='btnRestart' class='danger'>Restart</button>"
     "</div></div>"
 
@@ -288,6 +293,7 @@ static constexpr char kDashboardHtml[] =
     "async function post(path){await fetch(path,{method:'POST'});refresh();}"
     "$('btnMain').onclick=function(){post('/screen/main');};"
     "$('btnSettings').onclick=function(){post('/screen/settings');};"
+    "$('btnGame').onclick=function(){post('/screen/game');};"
     "$('btnRestart').onclick=function(){if(confirm('Restart device?'))post('/restart');};"
     "refresh();setInterval(refresh,2000);"
     "</script></body></html>";
@@ -393,6 +399,7 @@ const char* WebServerService::screenNameToString(ScreenName screen) {
         case ScreenName::BOOT: return "BOOT";
         case ScreenName::MAIN: return "MAIN";
         case ScreenName::SETTINGS: return "SETTINGS";
+        case ScreenName::GAME: return "GAME";
         case ScreenName::NONE:
         default: return "NONE";
     }
@@ -515,6 +522,7 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"POST", "/restart", "Reboots the device (ESP.restart()). No confirmation."},
     {"POST", "/screen/main", "Switches the display to the Main screen."},
     {"POST", "/screen/settings", "Switches the display to the Settings screen."},
+    {"POST", "/screen/game", "Switches the display to the Game screen."},
 };
 }  // namespace
 

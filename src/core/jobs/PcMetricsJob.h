@@ -15,9 +15,9 @@
 #include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
 
-// Periodically fetches PC hardware metrics while the main screen is active.
-// Owns the retry/backoff and consecutive-failure bookkeeping that used to
-// live directly in TaskManager.
+// Periodically fetches PC hardware metrics while a screen that displays them
+// (main or game) is active. Owns the retry/backoff and consecutive-failure
+// bookkeeping that used to live directly in TaskManager.
 class PcMetricsJob : public BackgroundJob {
  public:
     PcMetricsJob(PcMetricsService& service, PcMetrics& metrics, SystemState::CoreState& coreState,
@@ -33,8 +33,9 @@ class PcMetricsJob : public BackgroundJob {
           freshness_(metrics_.is_available, metrics_.last_update_timestamp) {}
 
     unsigned long nextDueMs() const override {
-        if (!coreState_.isInitialized || screenState_.activeScreen != ScreenName::MAIN ||
-            !networkManager_.isConnected()) {
+        const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
+                                     screenState_.activeScreen == ScreenName::GAME;
+        if (!coreState_.isInitialized || !onMetricsScreen || !networkManager_.isConnected()) {
             return ULONG_MAX;
         }
         return nextSync_;
