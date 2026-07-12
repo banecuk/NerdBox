@@ -61,6 +61,8 @@ void MainScreen::createWidgets() {
         new NetworkWidget(WidgetInterface::Dimensions{180, 284, 148, 24}, 1000, netStatus_)));
 
     // Clock — taller row (40px) so Mono24 glyphs get vertical padding.
+    // Centered on the same band center as NetworkWidget/NetworkTrafficWidget
+    // (272 + 48/2 = 296): y = 296 - 40/2 = 276.
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{328, 280, 150, 40}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
+        WidgetInterface::Dimensions{328, 276, 150, 40}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
 }

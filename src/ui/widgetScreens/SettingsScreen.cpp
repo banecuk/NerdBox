@@ -23,7 +23,7 @@ void SettingsScreen::createWidgets() {
     static constexpr uint16_t kContentW = kScreenW - 2 * kGutter;  // = 456
 
     // ── Top bar ────────────────────────────────────────────────────────────
-    // Brightness selector — now spans the full width since Reset moved down.
+    // Brightness selector — spans the full width.
     widgetManager_.addWidget(std::unique_ptr<BrightnessWidget>(
         new BrightnessWidget(WidgetInterface::Dimensions{kGutter, 0, kContentW, kBrightnessH},
                              *uiController_->getDisplayManager())));
@@ -32,16 +32,31 @@ void SettingsScreen::createWidgets() {
     // Actual dimming is applied by DimAtNightJob/DisplayManager in the
     // background; this widget just reflects/writes the enabled flag. Sits
     // directly below the brightness selector, moving with its height.
+    // Width matches two BrightnessWidget segments + the gap between them:
+    // segW = (kContentW - kGap*5) / 6 = 73, so 73*2 + kGap(3) = 149.
+    static constexpr uint16_t kSwitchW = 149;
     widgetManager_.addWidget(std::unique_ptr<SwitchWidget>(new SwitchWidget(
-        WidgetInterface::Dimensions{kGutter, kSwitchY, 160, kSwitchH}, "DIM AT NIGHT",
+        WidgetInterface::Dimensions{kGutter, kSwitchY, kSwitchW, kSwitchH}, "DIM AT NIGHT",
         [this]() { return uiController_->getDisplayManager()->isDimAtNightEnabled(); },
         [this](bool enabled) {
             uiController_->getDisplayManager()->setDimAtNightEnabled(enabled);
         })));
 
+    // Reset — same row as DIM AT NIGHT, right-aligned on the gutter. 48px
+    // tall per the touch-target rule, vertically centered in the 64px row.
+    static constexpr uint16_t kResetW = 150;
+    static constexpr uint16_t kResetH = 48;
+    static constexpr uint16_t kResetX = kScreenW - kGutter - kResetW;  // = 318
+    static constexpr uint16_t kResetY = kSwitchY + (kSwitchH - kResetH) / 2;  // = 80
+
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
+        uiController_->getDisplayContext(), "Reset",
+        WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
+        EventType::RESET_DEVICE, [this](EventType action) { this->handleAction(action); },
+        TFT_RED, TFT_WHITE)));
+
     // ── Info widgets ────────────────────────────────────────────────────────
-    // IP address / Uptime — sit below the switch, well clear of the Reset
-    // button now parked just above the clock.
+    // IP address / Uptime — sit below the switch/reset row.
     static constexpr uint16_t kInfoRowY = kSwitchY + kSwitchH + 16;  // = 152
     static constexpr uint16_t kIpWidth = 220;
     static constexpr uint16_t kUptimeX = kGutter + kIpWidth + kGutter;  // = 244
@@ -65,20 +80,11 @@ void SettingsScreen::createWidgets() {
         WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH}, 1000, TFT_YELLOW,
         TFT_BLACK)));
 
-    // Reset — directly above the clock, same right gutter. 48px tall per the
-    // touch-target rule (was 40) — it's the most dangerous action on screen.
-    static constexpr uint16_t kResetH = 48;
-    static constexpr uint16_t kResetY = kClockY - 8 - kResetH;  // = 224
-
+    // Back button — flush with the left screen edge (x=0), same 272..320 band
+    // as MainScreen/GameScreen's bottom-left button (center 296), matching
+    // the clock's center below.
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "Reset",
-        WidgetInterface::Dimensions{kClockX, kResetY, kClockW, kResetH}, 0,
-        EventType::RESET_DEVICE, [this](EventType action) { this->handleAction(action); },
-        TFT_RED, TFT_WHITE)));
-
-    // Back button — bottom-left, same left gutter as everything else.
-    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "<",
-        WidgetInterface::Dimensions{kGutter, 320 - 1 - 48, 48, 48}, 0, EventType::SHOW_MAIN,
-        [this](EventType action) { this->handleAction(action); }, TFT_BLACK, TFT_WHITE)));
+        uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{0, 272, 48, 48}, 0,
+        EventType::SHOW_MAIN, [this](EventType action) { this->handleAction(action); }, TFT_BLACK,
+        TFT_WHITE)));
 }

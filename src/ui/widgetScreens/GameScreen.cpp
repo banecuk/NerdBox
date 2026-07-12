@@ -22,13 +22,15 @@ void GameScreen::createWidgets() {
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 222, 480, 46}, 250,
         pcMetrics_)));
 
-    // Back button — bottom-left, identical to SettingsScreen's back button.
+    // Back button — flush with the left screen edge (x=0), same 272..320
+    // band as MainScreen's settings button (center 296).
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{12, 271, 48, 48}, 0,
+        uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{0, 272, 48, 48}, 0,
         EventType::SHOW_MAIN, [this](EventType action) { this->handleAction(action); }, TFT_BLACK,
         TFT_WHITE)));
 
-    // Clock — same position/colors as the main screen.
+    // Clock — same position/colors as the main screen, centered on the same
+    // band center (296).
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{328, 280, 150, 40}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
+        WidgetInterface::Dimensions{328, 276, 150, 40}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
 }
