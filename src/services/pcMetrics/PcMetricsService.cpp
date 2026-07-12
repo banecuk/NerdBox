@@ -55,8 +55,8 @@ void PcMetricsService::initFilter() {
 
     // Network filters
     JsonObject network = metrics["Network"].to<JsonObject>();
-    network["UploadSpeed"] = true;
-    network["DownloadSpeed"] = true;
+    network["TotalUploadKBPerSec"] = true;
+    network["TotalDownloadKBPerSec"] = true;
 
     filter["Timestamp"] = true;
 }
@@ -283,9 +283,10 @@ bool PcMetricsService::parseGpuData(JsonObject gpu, PcMetrics& outData) {
 
 bool PcMetricsService::parseNetworkData(JsonObject network, PcMetrics& outData) {
     // NerdWinSense reports both rates in KB/s (1 KB = 1024 bytes), matching
-    // the disk read/write convention above.
-    outData.eth_up = network["UploadSpeed"] | 0.0f;
-    outData.eth_dn = network["DownloadSpeed"] | 0.0f;
+    // the disk read/write convention above. TotalUploadKBPerSec/
+    // TotalDownloadKBPerSec are summed across all network adapters.
+    outData.eth_up = network["TotalUploadKBPerSec"] | 0.0f;
+    outData.eth_dn = network["TotalDownloadKBPerSec"] | 0.0f;
     return true;
 }
 
