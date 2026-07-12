@@ -2,6 +2,8 @@
 
 #include <inttypes.h>
 
+#include <cstddef>
+
 namespace AppConfig {
 
 namespace internal {
@@ -73,6 +75,30 @@ struct MetricsImpl {
 // PcMetrics configuration
 struct PcMetricsImpl {
     static constexpr uint8_t kCores = 18;
+};
+
+// PcMetrics SSE streaming configuration — see SSE-PUSH-PLAN.md.
+// kEnabled defaults true as of milestone 6's cutover: confirmed on real
+// hardware against the live NerdWinSense stream endpoint (chunked
+// dechoding, delta-mode field parsing, reconnect-with-backoff after a
+// real NerdWinSense restart, no heap growth over a multi-minute run). A
+// long-duration soak and MaxStreamClients rejection behavior are still
+// unverified — PcMetricsJob (polling) is deliberately kept in the tree as
+// a fallback; set this back to false to revert to it without a code
+// change if streaming misbehaves in the field.
+struct PcMetricsStreamImpl {
+    static constexpr bool kEnabled = true;
+    static constexpr uint32_t kIntervalMs = 500;  // matches HardwareMonitorImpl::kRefreshMs
+    static constexpr bool kDelta = true;
+    static constexpr uint16_t kConnectTimeoutMs = 1000;
+    static constexpr uint16_t kHeaderTimeoutMs = 2000;
+    static constexpr uint32_t kReconnectBackoffMs = 2000;  // mirrors kRefreshAfterFailureMs
+    // Sized for a full report (all sections + a handful of disks) with
+    // headroom — not yet measured against a live payload (see plan's open
+    // questions); revisit once real event sizes are known.
+    static constexpr size_t kMaxEventBufferBytes = 4096;
+    static constexpr uint16_t kMaxBytesPerPoll = 512;
+    static constexpr const char* kStreamPath = "/api/v1/stream";
 };
 
 // UI configuration

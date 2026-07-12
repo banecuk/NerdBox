@@ -39,13 +39,6 @@ class PcMetricsService {
  private:
     bool parseData(PcMetrics& outData);
     void initFilter();
-    bool parseCpuData(JsonObject cpu, PcMetrics& outData);
-    bool parseCpuExtendedData(JsonObject cpuExtended, PcMetrics& outData);
-    bool parseRamData(JsonObject ram, PcMetrics& outData);
-    bool parseGpuData(JsonObject gpu, PcMetrics& outData);
-    bool parseMotherboardData(JsonObject motherboard, PcMetrics& outData);
-    bool parseDiskData(JsonObject disks, PcMetrics& outData);
-    bool parseNetworkData(JsonObject network, PcMetrics& outData);
 
     NetworkManager& networkManager_;
     ApplicationMetrics& systemMetrics_;

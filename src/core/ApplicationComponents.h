@@ -14,6 +14,7 @@
 #include "core/jobs/NetworkStatusJob.h"
 #include "core/jobs/NtpRetryJob.h"
 #include "core/jobs/PcMetricsJob.h"
+#include "core/jobs/PcMetricsStreamJob.h"
 #include "core/jobs/WifiReconnectJob.h"
 #include "core/state/SystemState.h"
 #include "core/TaskManager.h"
@@ -138,6 +139,7 @@ class ApplicationComponents : public IInitializationTarget {
     WifiReconnectJob wifiReconnectJob;
     NtpRetryJob ntpRetryJob;
     PcMetricsJob pcMetricsJob;
+    PcMetricsStreamJob pcMetricsStreamJob;
     AirQualityJob airQualityJob;
     NetworkStatusJob networkStatusJob;
     DimAtNightJob dimAtNightJob;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "AppConfig.h"
@@ -59,6 +60,22 @@ struct AppSettings {
 
     // PcMetrics
     uint8_t pcMetricsCores = AppConfig::internal::PcMetricsImpl::kCores;
+
+    // PcMetrics streaming (SSE) — see SSE-PUSH-PLAN.md
+    bool pcMetricsStreamEnabled = AppConfig::internal::PcMetricsStreamImpl::kEnabled;
+    uint32_t pcMetricsStreamIntervalMs = AppConfig::internal::PcMetricsStreamImpl::kIntervalMs;
+    bool pcMetricsStreamDelta = AppConfig::internal::PcMetricsStreamImpl::kDelta;
+    uint16_t pcMetricsStreamConnectTimeoutMs =
+        AppConfig::internal::PcMetricsStreamImpl::kConnectTimeoutMs;
+    uint16_t pcMetricsStreamHeaderTimeoutMs =
+        AppConfig::internal::PcMetricsStreamImpl::kHeaderTimeoutMs;
+    uint32_t pcMetricsStreamReconnectBackoffMs =
+        AppConfig::internal::PcMetricsStreamImpl::kReconnectBackoffMs;
+    size_t pcMetricsStreamMaxEventBufferBytes =
+        AppConfig::internal::PcMetricsStreamImpl::kMaxEventBufferBytes;
+    uint16_t pcMetricsStreamMaxBytesPerPoll =
+        AppConfig::internal::PcMetricsStreamImpl::kMaxBytesPerPoll;
+    const char* pcMetricsStreamPath = AppConfig::internal::PcMetricsStreamImpl::kStreamPath;
 
     // UI
     uint32_t uiTransitionTimeoutMs = AppConfig::internal::UiImpl::kTransitionTimeoutMs;

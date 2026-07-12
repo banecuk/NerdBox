@@ -9,6 +9,7 @@
 WebServerService::WebServerService(WebServer& server, UiController& uiController,
                                    ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                                    PcMetricsService& pcMetricsService,
+                                   PcMetricsStreamJob& pcMetricsStreamJob,
                                    const NetworkStatus& netStatus, const SystemState& systemState,
                                    const AppSettings& config, const TaskManager& taskManager,
                                    LoggerInterface& logger)
@@ -17,6 +18,7 @@ WebServerService::WebServerService(WebServer& server, UiController& uiController
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       pcMetricsService_(pcMetricsService),
+      pcMetricsStreamJob_(pcMetricsStreamJob),
       netStatus_(netStatus),
       systemState_(systemState),
       config_(config),
@@ -394,6 +396,15 @@ const char* WebServerService::internetStatusToString(NetworkStatus::Internet sta
     }
 }
 
+const char* WebServerService::sseStateToString(SseConnection::State state) {
+    switch (state) {
+        case SseConnection::State::Disconnected: return "DISCONNECTED";
+        case SseConnection::State::Connected: return "CONNECTED";
+        case SseConnection::State::Error: return "ERROR";
+        default: return "UNKNOWN";
+    }
+}
+
 const char* WebServerService::screenNameToString(ScreenName screen) {
     switch (screen) {
         case ScreenName::BOOT: return "BOOT";
@@ -465,6 +476,21 @@ void WebServerService::handleApiStatus() {
              pcMetrics_.is_available ? "true" : "false", freshness.isFresh() ? "true" : "false",
              ageMs, pcMetricsService_.getFetchOkCount(), pcMetricsService_.getFetchFailCount(),
              pcMetricsService_.getLastError());
+    server_.sendContent(buf);
+
+    // pc_stream — SseConnection/PcMetricsStreamJob health, so the streaming
+    // path (still unverified against real hardware — see
+    // SSE-PUSH-PLAN.md) can be observed without a serial monitor. State is
+    // meaningful even when pcMetricsStreamEnabled is false: it just stays
+    // DISCONNECTED since the job's nextDueMs() never returns due.
+    snprintf(buf, sizeof(buf),
+             "\"pc_stream\":{\"enabled\":%s,\"state\":\"%s\",\"reconnect_count\":%lu,"
+             "\"last_event_age_ms\":%lu,\"overflow_count\":%lu},",
+             config_.pcMetricsStreamEnabled ? "true" : "false",
+             sseStateToString(pcMetricsStreamJob_.connectionState()),
+             static_cast<unsigned long>(pcMetricsStreamJob_.reconnectCount()),
+             pcMetricsStreamJob_.lastEventAgeMs(),
+             static_cast<unsigned long>(pcMetricsStreamJob_.overflowCount()));
     server_.sendContent(buf);
 
     snprintf(buf, sizeof(buf), "\"ui\":{\"screen\":\"%s\",\"time_synced\":%s},",
@@ -696,6 +722,15 @@ void WebServerService::handleConfig() {
     SEND_CONFIG_U("airQualityFailureBackoffMs", config_.airQualityFailureBackoffMs);
     SEND_CONFIG_U("metricsMaxScreenDrawTimes", config_.metricsMaxScreenDrawTimes);
     SEND_CONFIG_U("pcMetricsCores", config_.pcMetricsCores);
+    SEND_CONFIG_B("pcMetricsStreamEnabled", config_.pcMetricsStreamEnabled);
+    SEND_CONFIG_U("pcMetricsStreamIntervalMs", config_.pcMetricsStreamIntervalMs);
+    SEND_CONFIG_B("pcMetricsStreamDelta", config_.pcMetricsStreamDelta);
+    SEND_CONFIG_U("pcMetricsStreamConnectTimeoutMs", config_.pcMetricsStreamConnectTimeoutMs);
+    SEND_CONFIG_U("pcMetricsStreamHeaderTimeoutMs", config_.pcMetricsStreamHeaderTimeoutMs);
+    SEND_CONFIG_U("pcMetricsStreamReconnectBackoffMs", config_.pcMetricsStreamReconnectBackoffMs);
+    SEND_CONFIG_U("pcMetricsStreamMaxEventBufferBytes",
+                  config_.pcMetricsStreamMaxEventBufferBytes);
+    SEND_CONFIG_U("pcMetricsStreamMaxBytesPerPoll", config_.pcMetricsStreamMaxBytesPerPoll);
     SEND_CONFIG_U("uiTransitionTimeoutMs", config_.uiTransitionTimeoutMs);
     SEND_CONFIG_U("uiTouchDebounceIntervalMs", config_.uiTouchDebounceIntervalMs);
     SEND_CONFIG_U("uiScreenTransitionCooldownMs", config_.uiScreenTransitionCooldownMs);

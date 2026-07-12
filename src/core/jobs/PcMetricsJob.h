@@ -18,6 +18,14 @@
 // Periodically fetches PC hardware metrics while a screen that displays them
 // (main or game) is active. Owns the retry/backoff and consecutive-failure
 // bookkeeping that used to live directly in TaskManager.
+//
+// As of SSE-PUSH-PLAN.md milestone 6, PcMetricsStreamJob (SSE) is the
+// default data path (AppSettings.pcMetricsStreamEnabled = true) and this
+// job is the deliberately-retained fallback — see nextDueMs() below. Kept
+// in the tree for at least one release in case streaming misbehaves in
+// the field; set pcMetricsStreamEnabled back to false to fall back to
+// this path with no code change. Slated for removal once streaming has
+// proven stable over a longer soak (not yet done — see the plan).
 class PcMetricsJob : public BackgroundJob {
  public:
     PcMetricsJob(PcMetricsService& service, PcMetrics& metrics, SystemState::CoreState& coreState,
@@ -33,6 +41,12 @@ class PcMetricsJob : public BackgroundJob {
           freshness_(metrics_.is_available, metrics_.last_update_timestamp) {}
 
     unsigned long nextDueMs() const override {
+        // Mutually exclusive with PcMetricsStreamJob — when streaming is
+        // enabled it is the sole writer of PcMetrics, so polling never
+        // becomes due (see SSE-PUSH-PLAN.md milestone 4).
+        if (config_.pcMetricsStreamEnabled) {
+            return ULONG_MAX;
+        }
         const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
                                      screenState_.activeScreen == ScreenName::GAME;
         if (!coreState_.isInitialized || !onMetricsScreen || !networkManager_.isConnected()) {

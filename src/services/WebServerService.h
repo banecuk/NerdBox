@@ -3,6 +3,7 @@
 #include <WebServer.h>
 
 #include "config/AppSettings.h"
+#include "core/jobs/PcMetricsStreamJob.h"
 #include "core/state/SystemState.h"
 #include "core/TaskManager.h"
 #include "services/network/NetworkStatus.h"
@@ -15,9 +16,10 @@ class WebServerService {
  public:
     WebServerService(WebServer& server, UiController& uiController,
                      ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                     PcMetricsService& pcMetricsService, const NetworkStatus& netStatus,
-                     const SystemState& systemState, const AppSettings& config,
-                     const TaskManager& taskManager, LoggerInterface& logger);
+                     PcMetricsService& pcMetricsService, PcMetricsStreamJob& pcMetricsStreamJob,
+                     const NetworkStatus& netStatus, const SystemState& systemState,
+                     const AppSettings& config, const TaskManager& taskManager,
+                     LoggerInterface& logger);
     void begin();
     void processRequests();
 
@@ -27,6 +29,7 @@ class WebServerService {
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     PcMetricsService& pcMetricsService_;
+    PcMetricsStreamJob& pcMetricsStreamJob_;
     const NetworkStatus& netStatus_;
     const SystemState& systemState_;
     const AppSettings& config_;
@@ -55,5 +58,6 @@ class WebServerService {
 
     static const char* internetStatusToString(NetworkStatus::Internet status);
     static const char* screenNameToString(ScreenName screen);
+    static const char* sseStateToString(SseConnection::State state);
     static const char* logLevelToString(LoggerInterface::LogLevel level);
 };
