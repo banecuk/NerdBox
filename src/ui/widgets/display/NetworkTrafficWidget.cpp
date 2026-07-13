@@ -52,7 +52,7 @@ void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float ma
     lcd->fillRect(dimensions_.x, rowY, dimensions_.width, rowH, TFT_BLACK);
 
     const float percent = (hasData && maxMbps > 0.0f) ? (mbps / maxMbps) * 100.0f : 0.0f;
-    const uint16_t color = hasData ? trafficColor(percent) : Colors::kHairline;
+    const uint16_t color = hasData ? trafficColor(mbps, percent) : Colors::kHairline;
 
     const int16_t iconCx = dimensions_.x + 9;
     const int16_t iconCy = rowY + rowH / 2;
@@ -90,18 +90,16 @@ void NetworkTrafficWidget::drawArrow(int16_t cx, int16_t cy, bool up, uint16_t c
     }
 }
 
-uint16_t NetworkTrafficWidget::trafficColor(float percent) {
-    if (percent < 5.0f)
-        return Colors::kHairline;  // idle
-    if (percent < 30.0f)
-        return TFT_DARKGREEN;  // light
+uint16_t NetworkTrafficWidget::trafficColor(float mbps, float percent) {
+    if (mbps < 0.2f)
+        return Colors::kInactiveText;  // idle
     if (percent < 60.0f)
-        return TFT_GREEN;  // moderate
+        return TFT_GREEN;  // light/moderate
     if (percent < 85.0f)
         return TFT_YELLOW;  // heavy
     if (percent < 100.0f)
         return TFT_ORANGE;  // near saturation
-    return TFT_RED;         // at/over configured link speed
+    return Colors::blendRgb565(TFT_RED, TFT_WHITE, 90);  // at/over configured link speed
 }
 
 bool NetworkTrafficWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
