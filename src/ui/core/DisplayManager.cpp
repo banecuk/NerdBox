@@ -14,6 +14,13 @@ void DisplayManager::initialize() {
     display_.setRotation(1);  // Landscape
     display_.fillScreen(TFT_BLACK);
 
+    // LGFX's pushImage() fast path assumes raw uint16_t buffers are already
+    // byte-swapped (swap565_t) unless told otherwise. Our PROGMEM icon arrays
+    // (weather_icons_44.h, icon_gear) are plain rgb565_t bit-packed values, so
+    // without this the R/B channels effectively scramble on push — a solid
+    // orange sun icon renders as a noisy purple disc with a speckled edge.
+    display_.setSwapBytes(true);
+
     // Use a safe low brightness during the init splash; postInitialization()
     // will switch to the user's saved level once the full system is up.
     display_.setBrightness(20);
