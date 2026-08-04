@@ -21,6 +21,7 @@ void UiEventHandler::registerHandlers() {
     eventBus.subscribe(EventType::SHOW_SETTINGS,   [this]() { requestSettingsScreen(); });
     eventBus.subscribe(EventType::SHOW_MAIN,       [this]() { requestMainScreen(); });
     eventBus.subscribe(EventType::SHOW_GAME,       [this]() { requestGameScreen(); });
+    eventBus.subscribe(EventType::SHOW_DISKS,      [this]() { requestDisksScreen(); });
 }
 
 void UiEventHandler::resetDevice() {
@@ -49,4 +50,9 @@ void UiEventHandler::requestMainScreen() {
 void UiEventHandler::requestGameScreen() {
     logger_.debug("GAME action received");
     uiController_->requestScreen(ScreenName::GAME);
+}
+
+void UiEventHandler::requestDisksScreen() {
+    logger_.debug("DISKS action received");
+    uiController_->requestScreen(ScreenName::DISKS);
 }

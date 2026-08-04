@@ -13,7 +13,8 @@ void MainScreen::createWidgets() {
     // PcMetrics
     auto pcMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 155}, 100,
-        pcMetrics_, config_, systemMetrics_));
+        pcMetrics_, config_, systemMetrics_, EventType::SHOW_DISKS,
+        [this](EventType action) { this->handleAction(action); }));
     pcMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(pcMetricsWidget));
 

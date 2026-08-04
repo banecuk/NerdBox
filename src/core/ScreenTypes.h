@@ -7,5 +7,6 @@ enum class ScreenName : uint8_t {
     BOOT,
     MAIN,
     SETTINGS,
-    GAME
+    GAME,
+    DISKS
 };

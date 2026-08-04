@@ -29,6 +29,14 @@ class Colors {
     // Alpha-weighted blend between two RGB565 colors (alpha=0 -> a, alpha=255 -> b).
     static uint16_t blendRgb565(uint16_t a, uint16_t b, uint8_t alpha);
 
+    // Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
+    // gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
+    // yellow, >75.5 MB/s orange (capped -- everything above kSaturated stays
+    // orange), with a blended intermediate shade inserted at the midpoint of
+    // each band below kSaturated for finer gradation. Shared by PcMetricsWidget
+    // (main-screen activity lines) and DiskInfoWidget (disk-screen rates).
+    static uint16_t diskActivityColor(float kbPerSec);
+
     uint16_t getColorFromPercent(uint8_t value, bool dim = false);
     uint16_t getColorFromPercentGpu(uint8_t value);
     uint16_t getColorFromPercentRam(uint8_t value);

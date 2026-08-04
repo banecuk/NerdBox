@@ -1,5 +1,7 @@
 #include "Colors.h"
 
+#include "config/LgfxConfig.h"  // TFT_* color constants
+
 Colors::Colors() {
     generateGradient();
 }
@@ -103,6 +105,41 @@ uint16_t Colors::getColorFromPercentRam(uint8_t value) {
     }
 
     return blendRgb565(C1, C2, alpha);
+}
+
+// Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
+// gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
+// yellow, >75.5 MB/s orange (capped -- everything above kSaturated stays
+// orange), with a blended intermediate shade inserted at the midpoint of
+// each band below kSaturated for finer gradation.
+/* static */ uint16_t Colors::diskActivityColor(float kbPerSec) {
+    constexpr float kIdle = 2.0f * 1024.0f;
+    constexpr float kIdleModerateMid = 13.5f * 1024.0f;
+    constexpr float kModerate = 25.0f * 1024.0f;
+    constexpr float kModerateHighMid = 37.5f * 1024.0f;
+    constexpr float kHigh = 50.0f * 1024.0f;
+    constexpr float kHighElevatedMid = 62.75f * 1024.0f;
+    constexpr float kElevated = 75.5f * 1024.0f;
+    constexpr float kElevatedSaturatedMid = 87.75f * 1024.0f;
+    constexpr float kSaturated = 100.0f * 1024.0f;
+
+    if (kbPerSec < kIdle)
+        return kHairline;
+    if (kbPerSec < kIdleModerateMid)
+        return blendRgb565(kHairline, TFT_DARKGREEN, 128);
+    if (kbPerSec < kModerate)
+        return TFT_DARKGREEN;
+    if (kbPerSec < kModerateHighMid)
+        return blendRgb565(TFT_DARKGREEN, TFT_GREEN, 128);
+    if (kbPerSec < kHigh)
+        return TFT_GREEN;
+    if (kbPerSec < kHighElevatedMid)
+        return blendRgb565(TFT_GREEN, TFT_YELLOW, 128);
+    if (kbPerSec < kElevated)
+        return TFT_YELLOW;
+    if (kbPerSec < kElevatedSaturatedMid)
+        return blendRgb565(TFT_YELLOW, TFT_ORANGE, 128);
+    return TFT_ORANGE;
 }
 
 #define MAKE_RGB565(r, g, b) (((r) << 11) | ((g) << 5) | (b))

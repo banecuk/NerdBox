@@ -1,9 +1,11 @@
 #pragma once
 #include <array>
 #include <atomic>
+#include <functional>
 #include <string>
 
 #include "config/AppSettings.h"
+#include "core/events/EventTypes.h"
 #include "MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
@@ -13,9 +15,12 @@
 
 class PcMetricsWidget : public Widget {
  public:
+    using ActionCallback = std::function<void(EventType)>;
+
     PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                     uint32_t updateIntervalMs, PcMetrics& pcMetrics, const AppSettings& config,
-                    ApplicationMetrics& systemMetrics);
+                    ApplicationMetrics& systemMetrics, EventType action = EventType::NONE,
+                    ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
@@ -132,6 +137,11 @@ class PcMetricsWidget : public Widget {
     const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
 
+    // Optional tap target for the disk band: a tap in the disk row publishes
+    // action_ via callback_ (mirrors FpsWidget), e.g. to open the disk screen.
+    EventType action_ = EventType::NONE;
+    ActionCallback callback_;
+
     // -----------------------------------------------------------------------
     // State
     // -----------------------------------------------------------------------
@@ -195,6 +205,11 @@ class PcMetricsWidget : public Widget {
 
     void ensureDiskWidgetsCreated();
     void updateDiskDriveWidgets();
+
+    // Draws the ">" chevron hint at the right edge of the disk band, marking
+    // the area as tappable (opens the disk screen). Drawn after the disk
+    // tiles so it layers on top; no-op when no disk tiles exist.
+    void drawDiskChevron();
 
     // Runs the standard initialize → drawStatic → forceRefresh → draw(true)
     // sequence that every MetricWidget needs on first paint.  Used by

@@ -3,6 +3,7 @@
 #include "BootScreen.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/network/NetworkStatus.h"
+#include "ui/widgetScreens/DiskScreen.h"
 #include "ui/widgetScreens/GameScreen.h"
 #include "ui/widgetScreens/MainScreen.h"
 #include "ui/widgetScreens/SettingsScreen.h"
@@ -21,6 +22,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                                                     ctx.networkManager, ctx.systemMetrics);
         case ScreenName::GAME:
             return std::make_unique<GameScreen>(ctx.logger, ctx.metrics, ctx.controller,
+                                                ctx.config);
+        case ScreenName::DISKS:
+            return std::make_unique<DiskScreen>(ctx.logger, ctx.metrics, ctx.controller,
                                                 ctx.config);
         default:
             return nullptr;

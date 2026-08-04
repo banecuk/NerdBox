@@ -48,7 +48,8 @@ class PcMetricsJob : public BackgroundJob {
             return ULONG_MAX;
         }
         const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
-                                     screenState_.activeScreen == ScreenName::GAME;
+                                     screenState_.activeScreen == ScreenName::GAME ||
+                                     screenState_.activeScreen == ScreenName::DISKS;
         if (!coreState_.isInitialized || !onMetricsScreen || !networkManager_.isConnected()) {
             return ULONG_MAX;
         }

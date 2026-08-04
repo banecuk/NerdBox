@@ -46,48 +46,6 @@ float valueGpuFan(const PcMetrics& m) {
 float valueMemoryLoad(const PcMetrics& m) {
     return m.mem_load;
 }
-
-// Midpoint blend between two colors (~50/50), using the shared Colors blender.
-uint16_t blendColor565(uint16_t a, uint16_t b) {
-    return Colors::blendRgb565(a, b, 128);
-}
-
-constexpr uint16_t kDiskIdleColor = Colors::kHairline;
-
-// Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
-// gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
-// yellow, >75.5 MB/s orange (capped -- everything above kSaturated stays
-// orange), with a blended intermediate shade inserted at the midpoint of
-// each band below kSaturated for finer gradation.
-uint16_t diskActivityColor(float kbPerSec) {
-    constexpr float kIdle = 2.0f * 1024.0f;
-    constexpr float kIdleModerateMid = 13.5f * 1024.0f;
-    constexpr float kModerate = 25.0f * 1024.0f;
-    constexpr float kModerateHighMid = 37.5f * 1024.0f;
-    constexpr float kHigh = 50.0f * 1024.0f;
-    constexpr float kHighElevatedMid = 62.75f * 1024.0f;
-    constexpr float kElevated = 75.5f * 1024.0f;
-    constexpr float kElevatedSaturatedMid = 87.75f * 1024.0f;
-    constexpr float kSaturated = 100.0f * 1024.0f;
-
-    if (kbPerSec < kIdle)
-        return kDiskIdleColor;
-    if (kbPerSec < kIdleModerateMid)
-        return blendColor565(kDiskIdleColor, TFT_DARKGREEN);
-    if (kbPerSec < kModerate)
-        return TFT_DARKGREEN;
-    if (kbPerSec < kModerateHighMid)
-        return blendColor565(TFT_DARKGREEN, TFT_GREEN);
-    if (kbPerSec < kHigh)
-        return TFT_GREEN;
-    if (kbPerSec < kHighElevatedMid)
-        return blendColor565(TFT_GREEN, TFT_YELLOW);
-    if (kbPerSec < kElevated)
-        return TFT_YELLOW;
-    if (kbPerSec < kElevatedSaturatedMid)
-        return blendColor565(TFT_YELLOW, TFT_ORANGE);
-    return TFT_ORANGE;
-}
 }  // namespace
 
 // ---------------------------------------------------------------------------
@@ -96,12 +54,15 @@ uint16_t diskActivityColor(float kbPerSec) {
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                  uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                                 const AppSettings& config, ApplicationMetrics& systemMetrics)
+                                 const AppSettings& config, ApplicationMetrics& systemMetrics,
+                                 EventType action, ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
+      action_(action),
+      callback_(std::move(callback)),
       freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {
     buildFixedWidgets();
     // System fan widgets are built lazily in ensureSystemFanWidgetsCreated()
@@ -494,7 +455,7 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
         diskDriveWidgets_[i]->draw(false);
 
         const auto dims = diskDriveWidgets_[i]->getDimensions();
-        const uint16_t writeColor = diskActivityColor(writeSnapshot[i]);
+        const uint16_t writeColor = Colors::diskActivityColor(writeSnapshot[i]);
         if (i >= diskWriteLineColor_.size())
             continue;
         if (diskWriteLineColor_[i] != writeColor) {
@@ -503,7 +464,7 @@ void PcMetricsWidget::updateDiskDriveWidgets() {
             diskWriteLineColor_[i] = writeColor;
         }
 
-        const uint16_t readColor = diskActivityColor(readSnapshot[i]);
+        const uint16_t readColor = Colors::diskActivityColor(readSnapshot[i]);
         if (diskReadLineColor_[i] != readColor) {
             getLcd()->fillRect(dims.x, kDiskReadLineY, dims.width, kDiskActivityLineHeight,
                                readColor);
@@ -543,6 +504,8 @@ void PcMetricsWidget::onDrawStatic() {
             if (dw)
                 initAndDrawWidget(*dw);
         }
+
+        drawDiskChevron();
     } else {
         clearAllWidgets();
         drawNoDataMessage();
@@ -650,6 +613,9 @@ void PcMetricsWidget::drawDynamicData() {
     // Disk drives keep their own draw() call — they use a different update path.
     updateDiskDriveWidgets();
 
+    // Keep the chevron on top — disk value redraws can cover it.
+    drawDiskChevron();
+
     lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
 }
 
@@ -660,6 +626,20 @@ void PcMetricsWidget::drawNoDataMessage() {
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString("No Data", dimensions_.x + dimensions_.width / 2,
                     dimensions_.y + dimensions_.height / 2);
+    Fonts::unload(lcd);
+}
+
+void PcMetricsWidget::drawDiskChevron() {
+    if (diskDriveWidgets_.empty())
+        return;
+    LGFX* lcd = getLcd();
+    if (!lcd)
+        return;
+    Fonts::loadLabel(lcd);
+    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString(">", static_cast<int32_t>(kScreenWidth - 10),
+                    (kDiskWriteLineY + kDiskReadLineY) / 2);
     Fonts::unload(lcd);
 }
 
@@ -706,5 +686,18 @@ bool PcMetricsWidget::needsUpdate() const {
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
+    if (!callback_ || diskDriveWidgets_.empty()) {
+        return false;
+    }
+
+    // Disk band: rows 120-152 (write line .. read line + its height). The disk
+    // tiles span the widget's full width (not just the left column), so the
+    // whole row is tappable. System fans stack above (rows 60-120) and the
+    // fixed CPU/GPU/RAM tiles end at row 120, so nothing else occupies this
+    // band — no conflict.
+    if (y >= kDiskWriteLineY && y < kDiskReadLineY + kDiskActivityLineHeight) {
+        callback_(action_);
+        return true;
+    }
     return false;
 }

@@ -49,7 +49,8 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
 
 unsigned long PcMetricsStreamJob::nextDueMs() const {
     const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
-                                 screenState_.activeScreen == ScreenName::GAME;
+                                 screenState_.activeScreen == ScreenName::GAME ||
+                                 screenState_.activeScreen == ScreenName::DISKS;
     if (!config_.pcMetricsStreamEnabled || !coreState_.isInitialized || !onMetricsScreen ||
         !networkManager_.isConnected()) {
         return ULONG_MAX;
