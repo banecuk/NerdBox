@@ -5,7 +5,7 @@
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = 0xC618;
-static constexpr uint16_t kGpuColor = 0xFC70;
+static constexpr uint16_t kGpuColor = 0xB471;
 
 LoadHistoryWidget::LoadHistoryWidget(DisplayContext& context,
                                      const WidgetInterface::Dimensions& dims,

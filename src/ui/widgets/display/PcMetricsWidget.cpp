@@ -54,23 +54,23 @@ PcMetricsWidget::fixedTileDescriptors() {
 
          // GPU row
             {{kCol0, kRow2, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "GPU", kLabelWidth,
-             0xFC70, true, false, false, valueGpuLoad},
+             0xB471, true, false, false, valueGpuLoad},
          {{kCol1, kRow2, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-             0xFC70, true, false, false, valueGpuTemperature},
+             0xB471, true, false, false, valueGpuTemperature},
          {{kCol2, kRow2, kTileWidth, kRowH}, " W", 0, 400, 50.0f, 170.0f, "PWR", kLabelWidth,
-             0xFC70, true, false, false, valueGpuPower},
+             0xB471, true, false, false, valueGpuPower},
          {{kCol3, kRow2, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1400.0f, "FAN", kLabelWidth,
-             0xFC70, true, true, false, valueGpuFan},
+             0xB471, true, true, false, valueGpuFan},
 
          // VRAM — end of GPU row
             {{kCol4, kRow2, kTileWidth, kRowH}, "%", 0, 100, 30.0f, 90.0f, "VRM", kLabelWidth,
-             0xFC70, true, false, false, valueGpuMemory},
+             0xB471, true, false, false, valueGpuMemory},
 
          // Row 3 — 3D / compute (fan slots kCol2/kCol3 are lazily created)
             {{kCol0, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "3D", kLabelWidth,
-             0xFC70, true, false, false, valueGpu3d},
+             0xB471, true, false, false, valueGpu3d},
          {{kCol1, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CMP", kLabelWidth,
-             0xFC70, true, false, false, valueGpuCompute},
+             0xB471, true, false, false, valueGpuCompute},
          }
     };
     return kTiles;

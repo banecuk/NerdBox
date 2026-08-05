@@ -17,7 +17,7 @@ uint16_t Colors::getColorFromPercent(uint8_t value, bool dim) {
 
 uint16_t Colors::generateColorFromPercent(uint8_t value) {
     // Define colors in RGB565 format
-    const uint16_t blue = 0x09EA;    // RGB(0, 62, 255)
+    const uint16_t blue = 0x0947;    // RGB(8, 40, 56) — dark, muted blue (base)
     const uint16_t green = 0x3BA2;   // RGB(7, 180, 2)
     const uint16_t yellow = 0x9CC0;  // RGB(19, 248, 0) - actually more green-yellow
     const uint16_t red = 0xF800;     // RGB(31, 0, 0)
@@ -60,8 +60,8 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
     // into the brownish/olive territory a warm-grey/amber ramp produces.
     // Idle stays dark enough to be clearly distinct from the bright red
     // used at heavy load.
-    const uint16_t darkRed = 0x2800;  // RGB( 40,   0,   0) — idle, near-black red
-    const uint16_t midRed  = 0x5000;  // RGB( 82,   0,   0)
+    const uint16_t darkRed = 0x1041;  // RGB(16,  8,  8) — idle, dark desaturated red
+    const uint16_t midRed  = 0x5000;  // RGB(82,   0,   0)
     const uint16_t deepRed = 0x8800;  // RGB(140,   0,   0)
     const uint16_t red     = 0xF800;  // RGB(255,   0,   0) — bright alert red
 
@@ -85,22 +85,22 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
 uint16_t Colors::getColorFromPercentRam(uint8_t value) {
     if (value > 99) value = 99;
 
-    // RAM gradient: dark slate (idle) → steel blue → muted bright blue
-    // (high load). Desaturated (grey-blended) blue rather than a pure blue
-    // channel, so it reads as a cool-toned cousin of the panel's grey/hairline
-    // chrome instead of a saturated neon blue.
-    const uint16_t darkSlate  = 0x10C5;  // RGB( 24,  24,  41) — idle, near-black slate
-    const uint16_t steelBlue  = 0x322D;  // RGB( 48,  70, 107)
-    const uint16_t brightBlue = 0x5C17;  // RGB( 90, 129, 189) — muted alert blue
+    // RAM gradient: dark teal (idle) → muted teal → bright cyan (high load).
+    // Teal keeps the cool blue family of the old slate/steel RAM ramp but is
+    // far enough from the CPU's muted blue and the GPU's red to be told apart
+    // at a glance. Idle stays near-black so it never reads as "active".
+    const uint16_t darkTeal = 0x08C3;  // RGB(  8,  24,  25) — idle, near-black teal
+    const uint16_t midTeal  = 0x11E7;  // RGB( 16,  61,  58) — low-moderate load
+    const uint16_t brightCyan = 0x4C71;  // RGB( 74, 142, 140) — bright alert cyan
 
     uint16_t C1, C2;
     uint8_t alpha;
 
     if (value < 50) {
-        C1 = darkSlate; C2 = steelBlue;
+        C1 = darkTeal; C2 = midTeal;
         alpha = (value * 255) / 49;
     } else {
-        C1 = steelBlue; C2 = brightBlue;
+        C1 = midTeal; C2 = brightCyan;
         alpha = ((value - 50) * 255) / 49;
     }
 
