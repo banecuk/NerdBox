@@ -29,9 +29,9 @@ class GameMetricsWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    // Absolute layout constants — this widget is always placed at
-    // {0, 130, 480, 90} on the game screen, so tile positions are hardcoded
-    // absolute pixels (matching PcMetricsWidget's own convention).
+    // Layout constants — tile columns/rows are relative offsets from this
+    // widget's own origin (dims_.x / dims_.y), so the grid renders correctly
+    // at any position. Absolute screen pixels are computed via toScreenSpace().
     static constexpr uint16_t kTileWidth = 96;
     static constexpr uint16_t kRowH = 30;
     static constexpr uint16_t kCol0 = 0;
@@ -39,9 +39,9 @@ class GameMetricsWidget : public Widget {
     static constexpr uint16_t kCol2 = kTileWidth * 2;
     static constexpr uint16_t kCol3 = kTileWidth * 3;
     static constexpr uint16_t kCol4 = kTileWidth * 4;
-    static constexpr uint16_t kRow1 = 130;
-    static constexpr uint16_t kRow2 = kRow1 + kRowH;
-    static constexpr uint16_t kRow3 = kRow2 + kRowH;
+    static constexpr uint16_t kRow1 = 0;
+    static constexpr uint16_t kRow2 = kRowH;
+    static constexpr uint16_t kRow3 = 2 * kRowH;
     static constexpr uint8_t kLabelWidth = 26;
     static constexpr uint8_t kFanLabelWidth = 14;
     static constexpr uint8_t kMaxSystemFanWidgets = 2;
@@ -90,6 +90,13 @@ class GameMetricsWidget : public Widget {
 
     std::array<std::unique_ptr<MetricWidget>, kFixedTileCount> fixedWidgets_;
     std::vector<std::unique_ptr<MetricWidget>> systemFanWidgets_;
+
+    // Translates a tile position relative to this widget's origin into
+    // absolute screen coordinates.
+    WidgetInterface::Dimensions toScreenSpace(const WidgetInterface::Dimensions& relative) const {
+        return {static_cast<uint16_t>(dimensions_.x + relative.x),
+                static_cast<uint16_t>(dimensions_.y + relative.y), relative.width, relative.height};
+    }
 
     void buildFixedWidgets();
     void ensureSystemFanWidgetsCreated();

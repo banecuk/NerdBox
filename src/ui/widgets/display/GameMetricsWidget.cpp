@@ -79,7 +79,7 @@ GameMetricsWidget::fixedTileDescriptors() {
 void GameMetricsWidget::buildFixedWidgets() {
     for (uint8_t i = 0; i < kFixedTileCount; ++i) {
         const FixedTileDescriptor& d = fixedTileDescriptors()[i];
-        fixedWidgets_[i] = MetricWidget::Builder(d.dims, updateIntervalMs_)
+        fixedWidgets_[i] = MetricWidget::Builder(toScreenSpace(d.dims), updateIntervalMs_)
                                .unit(d.unit)
                                .range(d.rangeMin, d.rangeMax)
                                .colorThresholds(d.thresholdLow, d.thresholdHigh)
@@ -123,7 +123,7 @@ void GameMetricsWidget::ensureSystemFanWidgetsCreated() {
         snprintf(label, sizeof(label), "F%u", static_cast<unsigned>(i + 1));
 
         auto w = MetricWidget::Builder(
-                     WidgetInterface::Dimensions{kFanX[i], kRow3, kTileWidth, kRowH},
+                     toScreenSpace(WidgetInterface::Dimensions{kFanX[i], kRow3, kTileWidth, kRowH}),
                      updateIntervalMs_)
                      .unit("")
                      .range(0, 1500)
