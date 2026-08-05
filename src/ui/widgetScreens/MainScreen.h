@@ -7,19 +7,20 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/display/AirQualityWidget.h"
 #include "ui/widgets/display/ClockWidget.h"
+#include "ui/widgets/display/DiskBandWidget.h"
 #include "ui/widgets/display/FpsWidget.h"
+#include "ui/widgets/display/GameMetricsWidget.h"
 #include "ui/widgets/display/MultiWidget.h"
 #include "ui/widgets/display/NetworkTrafficWidget.h"
 #include "ui/widgets/display/NetworkWidget.h"
-#include "ui/widgets/display/PcMetricsWidget.h"
+#include "ui/widgets/display/ThreadsWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 
 class MainScreen : public BaseWidgetScreen {
  public:
     MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                const AppSettings& config, ApplicationMetrics& systemMetrics,
-               const AirQualityData& airQualityData,
-               const NetworkStatus& netStatus);
+               const AirQualityData& airQualityData, const NetworkStatus& netStatus);
     ~MainScreen() override = default;
 
  private:
@@ -27,5 +28,5 @@ class MainScreen : public BaseWidgetScreen {
     PcMetrics& pcMetrics_;
     ApplicationMetrics& systemMetrics_;
     const AirQualityData& airQualityData_;
-    const NetworkStatus&  netStatus_;
+    const NetworkStatus& netStatus_;
 };

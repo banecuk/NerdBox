@@ -10,35 +10,38 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
       netStatus_(netStatus) {}
 
 void MainScreen::createWidgets() {
-    // PcMetrics
-    auto pcMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 155}, 100,
-        pcMetrics_, config_, systemMetrics_, EventType::SHOW_DISKS,
-        [this](EventType action) { this->handleAction(action); }));
-    pcMetricsWidget->setStaleTimeout(5000);
-    widgetManager_.addWidget(std::move(pcMetricsWidget));
-
-    // Threads
+    // Threads — top-left, unchanged
     auto threadsWidget = std::unique_ptr<ThreadsWidget>(new ThreadsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480 - 86 * 2, 60},
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 308, 60},
         config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_));
     widgetManager_.addWidget(std::move(threadsWidget));
 
-    // Air quality bar
-    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
-        new AirQualityWidget(WidgetInterface::Dimensions{0, 155, 480, 44}, 5000, airQualityData_)));
-
-    // Multifunctional widget — below weather, left of FPS, above the bottom band
-    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 199, 400, 73}, 1000)));
-
-    // FPS widget — closes the seam with MultiWidget (same top edge, fills to
-    // the screen's right edge) and carries a matching border. Tappable: opens
-    // the game screen.
+    // FPS widget — top-right corner, tappable to the game screen
     widgetManager_.addWidget(std::unique_ptr<FpsWidget>(new FpsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{400, 199, 80, 73}, 250,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{308, 0, 172, 60}, 250,
         pcMetrics_, EventType::SHOW_GAME,
         [this](EventType action) { this->handleAction(action); })));
+
+    // Game metrics grid — replaces PcMetricsWidget, directly below threads
+    auto gameMetricsWidget = std::unique_ptr<GameMetricsWidget>(
+        new GameMetricsWidget(uiController_->getDisplayContext(),
+                              WidgetInterface::Dimensions{0, 60, 480, 90}, 100, pcMetrics_));
+    gameMetricsWidget->setStaleTimeout(5000);
+    widgetManager_.addWidget(std::move(gameMetricsWidget));
+
+    // Disk band — slim strip, tappable to the disk screen
+    widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 150, 480, 36}, 100,
+        pcMetrics_, EventType::SHOW_DISKS,
+        [this](EventType action) { this->handleAction(action); })));
+
+    // Air quality bar
+    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
+        new AirQualityWidget(WidgetInterface::Dimensions{0, 186, 480, 44}, 5000, airQualityData_)));
+
+    // Multifunctional widget — full width, fills the bottom of the content area
+    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
+        new MultiWidget(WidgetInterface::Dimensions{0, 230, 480, 42}, 1000)));
 
     // ── Bottom band: y=272..320, unified across gear / network / clock ──────
     // Settings button — gear icon, no label
