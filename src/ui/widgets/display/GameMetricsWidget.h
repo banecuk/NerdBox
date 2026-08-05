@@ -3,8 +3,8 @@
 #include <atomic>
 #include <vector>
 
-#include "MetricWidget.h"
 #include "config/AppSettings.h"
+#include "MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
@@ -32,8 +32,12 @@ class GameMetricsWidget : public Widget {
     // Layout constants — tile columns/rows are relative offsets from this
     // widget's own origin (dims_.x / dims_.y), so the grid renders correctly
     // at any position. Absolute screen pixels are computed via toScreenSpace().
+    // kRowH is the reference tile height for a 3-row grid at a 90px widget
+    // height; rowHeight() rescales it from the widget's actual dimensions_, so
+    // shorter instances (e.g. MainScreen's 72px) get tighter 24px rows.
     static constexpr uint16_t kTileWidth = 96;
     static constexpr uint16_t kRowH = 30;
+    static constexpr uint8_t kRowCount = 3;
     static constexpr uint16_t kCol0 = 0;
     static constexpr uint16_t kCol1 = kTileWidth;
     static constexpr uint16_t kCol2 = kTileWidth * 2;
@@ -91,11 +95,20 @@ class GameMetricsWidget : public Widget {
     std::array<std::unique_ptr<MetricWidget>, kFixedTileCount> fixedWidgets_;
     std::vector<std::unique_ptr<MetricWidget>> systemFanWidgets_;
 
+    // Row height derived from this widget's actual height (3-row grid). At the
+    // nominal 90px instance this equals kRowH (30px); a shorter instance yields
+    // a proportionally shorter tile row so tiles never clip.
+    uint16_t rowHeight() const { return dimensions_.height / kRowCount; }
+
     // Translates a tile position relative to this widget's origin into
-    // absolute screen coordinates.
+    // absolute screen coordinates. Column offsets are added directly; row
+    // offsets and tile heights are rescaled from the nominal kRowH reference
+    // to this widget's actual rowHeight() so the grid always fills dimensions_.
     WidgetInterface::Dimensions toScreenSpace(const WidgetInterface::Dimensions& relative) const {
+        const uint16_t rh = rowHeight();
         return {static_cast<uint16_t>(dimensions_.x + relative.x),
-                static_cast<uint16_t>(dimensions_.y + relative.y), relative.width, relative.height};
+                static_cast<uint16_t>(dimensions_.y + (relative.y * rh) / kRowH), relative.width,
+                rh};
     }
 
     void buildFixedWidgets();

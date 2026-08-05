@@ -6,6 +6,20 @@
 #include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
 
+namespace {
+// The shared diskActivityColor() scale treats anything below 2 MB/s as idle
+// (dark grey kHairline), which is indistinguishable from the background on the
+// band's thin activity lines. On the band, any nonzero rate is real activity,
+// so clamp the base scale up to its lowest visible level (dark green) and then
+// use the full scale once it starts climbing.
+uint16_t bandActivityColor(float kbPerSec) {
+    if (kbPerSec <= 0.0f)
+        return Colors::kHairline;
+    const uint16_t color = Colors::diskActivityColor(kbPerSec);
+    return (color == Colors::kHairline) ? TFT_DARKGREEN : color;
+}
+}  // namespace
+
 DiskBandWidget::DiskBandWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                uint32_t updateIntervalMs, PcMetrics& pcMetrics,
                                EventType action, ActionCallback callback)
@@ -74,6 +88,7 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
                      .colorThresholds(0.0f, 95.0f)
                      .reverseThresholds(true)
                      .useDimColors(true)
+                     .smallFont()
                      .label(snapshot[i].name)
                      .labelWidth(14)  // narrow: the label is a single drive letter
                      .value(snapshot[i].freeSpacePercent)
@@ -140,7 +155,7 @@ void DiskBandWidget::updateDiskDriveWidgets() {
         diskDriveWidgets_[i]->draw(false);
 
         const auto dims = diskDriveWidgets_[i]->getDimensions();
-        const uint16_t writeColor = Colors::diskActivityColor(writeSnapshot[i]);
+        const uint16_t writeColor = bandActivityColor(writeSnapshot[i]);
         if (i >= diskWriteLineColor_.size())
             continue;
         if (diskWriteLineColor_[i] != writeColor) {
@@ -149,7 +164,7 @@ void DiskBandWidget::updateDiskDriveWidgets() {
             diskWriteLineColor_[i] = writeColor;
         }
 
-        const uint16_t readColor = Colors::diskActivityColor(readSnapshot[i]);
+        const uint16_t readColor = bandActivityColor(readSnapshot[i]);
         if (diskReadLineColor_[i] != readColor) {
             getLcd()->fillRect(dims.x, dimensions_.y + readLineYRelative(), dims.width, kReadLineHeight,
                                readColor);

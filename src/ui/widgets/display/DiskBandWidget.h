@@ -20,11 +20,11 @@
 // pixels, so the strip renders correctly at any origin.
 //
 // Strip anatomy (top to bottom):
-//   kWriteLineY            → 2px read-rate line
+//   kWriteLineY            → 4px read-rate line
 //   kDiskGap               → 1px
 //   kDiskAreaY             → per-drive MetricWidget tiles (fill remaining height)
 //   kReadLineGap           → 1px
-//   kReadLineHeight        → 2px write-rate line (flush to widget bottom)
+//   kReadLineHeight        → 4px write-rate line (flush to widget bottom)
 class DiskBandWidget : public Widget {
  public:
     using ActionCallback = std::function<void(EventType)>;
@@ -43,9 +43,10 @@ class DiskBandWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    // Activity-line heights (px)
-    static constexpr uint16_t kWriteLineHeight = 2;
-    static constexpr uint16_t kReadLineHeight = 2;
+    // Activity-line heights (px) — read/write activity monitors. Doubled from
+    // 2px to 4px so the activity state is more visible.
+    static constexpr uint16_t kWriteLineHeight = 4;
+    static constexpr uint16_t kReadLineHeight = 4;
 
     // 1px gap between the write line and the tiles.
     static constexpr uint16_t kDiskGap = 1;

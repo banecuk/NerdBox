@@ -22,26 +22,30 @@ void MainScreen::createWidgets() {
         pcMetrics_, EventType::SHOW_GAME,
         [this](EventType action) { this->handleAction(action); })));
 
-    // Game metrics grid — replaces PcMetricsWidget, directly below threads
+    // Game metrics grid — replaces PcMetricsWidget, directly below threads.
+    // 78px tall → 26px tile rows (1px more top and bottom per tile vs
+    // GameScreen's 90px → 30px) via GameMetricsWidget::rowHeight() rescaling.
     auto gameMetricsWidget = std::unique_ptr<GameMetricsWidget>(
         new GameMetricsWidget(uiController_->getDisplayContext(),
-                              WidgetInterface::Dimensions{0, 60, 480, 90}, 100, pcMetrics_));
+                              WidgetInterface::Dimensions{0, 60, 480, 78}, 100, pcMetrics_));
     gameMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(gameMetricsWidget));
 
-    // Disk band — slim strip, tappable to the disk screen
+    // Disk band — slim strip, tappable to the disk screen. 30px tall: 4px
+    // read/write activity lines (doubled from 2px) + a ~21px per-drive tile
+    // area that fits the NotoSans18 value font.
     widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 150, 480, 36}, 100,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 138, 480, 30}, 100,
         pcMetrics_, EventType::SHOW_DISKS,
         [this](EventType action) { this->handleAction(action); })));
 
     // Air quality bar
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
-        new AirQualityWidget(WidgetInterface::Dimensions{0, 186, 480, 44}, 5000, airQualityData_)));
+        new AirQualityWidget(WidgetInterface::Dimensions{0, 168, 480, 44}, 5000, airQualityData_)));
 
     // Multifunctional widget — full width, fills the bottom of the content area
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 230, 480, 42}, 1000)));
+        new MultiWidget(WidgetInterface::Dimensions{0, 212, 480, 60}, 1000)));
 
     // ── Bottom band: y=272..320, unified across gear / network / clock ──────
     // Settings button — gear icon, no label
