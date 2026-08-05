@@ -11,7 +11,7 @@ void GameScreen::createWidgets() {
         pcMetrics_)));
 
     // CPU/GPU/RAM/VRAM/fan tile grid
-    auto metricsWidget = std::unique_ptr<GameMetricsWidget>(new GameMetricsWidget(
+    auto metricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 130, 480, 90}, 100,
         pcMetrics_));
     metricsWidget->setStaleTimeout(5000);

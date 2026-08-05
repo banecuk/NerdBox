@@ -10,18 +10,25 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
       netStatus_(netStatus) {}
 
 void MainScreen::createWidgets() {
-    // Threads — full-width top row (FPS moved down beside MultiWidget)
+    // Threads — reduced-width row filling the left side of the top band.
+    // AirQualityWidget sits to its right at the same height. Both kept short
+    // (56px) so downstream rows get more room.
     auto threadsWidget = std::unique_ptr<ThreadsWidget>(new ThreadsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 480, 60},
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 240, 56},
         config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_));
     widgetManager_.addWidget(std::move(threadsWidget));
 
+    // Air quality block — right of the threads, same top band. Reorganized
+    // into four compact columns (icon | temp+humidity | pressure+wind | AQI).
+    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
+        new AirQualityWidget(WidgetInterface::Dimensions{240, 0, 240, 56}, 5000,
+                             airQualityData_)));
+
     // Game metrics grid — replaces PcMetricsWidget, directly below threads.
-    // 78px tall → 26px tile rows (1px more top and bottom per tile vs
-    // GameScreen's 90px → 30px) via GameMetricsWidget::rowHeight() rescaling.
-    auto gameMetricsWidget = std::unique_ptr<GameMetricsWidget>(
-        new GameMetricsWidget(uiController_->getDisplayContext(),
-                              WidgetInterface::Dimensions{0, 60, 480, 78}, 100, pcMetrics_));
+    // Moved up (y=56) since the top band got shorter.
+    auto gameMetricsWidget = std::unique_ptr<PcMetricsWidget>(
+        new PcMetricsWidget(uiController_->getDisplayContext(),
+                              WidgetInterface::Dimensions{0, 56, 480, 106}, 100, pcMetrics_));
     gameMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(gameMetricsWidget));
 
@@ -29,28 +36,25 @@ void MainScreen::createWidgets() {
     // read/write activity lines + a ~19px borderless per-drive tile area that
     // fits the NotoSans15 value font and runs flush against both lines.
     widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 138, 480, 27}, 100,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 162, 480, 27}, 100,
         pcMetrics_, EventType::SHOW_DISKS,
         [this](EventType action) { this->handleAction(action); })));
 
-    // Air quality bar
-    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
-        new AirQualityWidget(WidgetInterface::Dimensions{0, 165, 480, 44}, 5000, airQualityData_)));
-
     // Multifunctional widget — left of the FPS display; width trimmed from the
     // right to make room for a minimal-width FPS tile beside it.
+    // Taller now (y=189..269) to fill the space freed by the shorter top rows.
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 209, 430, 60}, 1000)));
+        new MultiWidget(WidgetInterface::Dimensions{0, 189, 430, 80}, 1000)));
 
-    // FPS widget — bottom-right, beside the MultiWidget, tappable to the game
-    // screen. Narrow: 50px just fits three NotoSansMono24 digits (14px advance
-    // each) plus the border.
+    // FPS widget — bottom-right, beside the MultiWidget, tappable to the
+    // game screen. Narrow: 50px just fits three NotoSansMono24 digits (14px
+    // advance each) plus the border. Grown to match the MultiWidget height.
     widgetManager_.addWidget(std::unique_ptr<FpsWidget>(new FpsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{430, 209, 50, 60}, 250,
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{430, 189, 50, 80}, 250,
         pcMetrics_, EventType::SHOW_GAME,
         [this](EventType action) { this->handleAction(action); })));
 
-    // ── Bottom band: y=269..317, unified across gear / network / clock ──────
+    // ── Bottom band is unchanged below this point ──────────────────────────────
     // Settings button — gear icon, no label
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",

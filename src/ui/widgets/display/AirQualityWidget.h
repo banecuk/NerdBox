@@ -5,17 +5,21 @@
 #include "services/airQuality/AirQualityData.h"
 #include "ui/widgets/base/Widget.h"
 
-// Full-width bar displayed below PcMetricsWidget on the main screen.
+// Four-column block shown to the right of ThreadsWidget on the main screen.
 //
-// Layout (480 px wide, 44 px tall):
+// Layout (right-aligned band, 240 px wide):
 //
-//   [icon 44px] | [°C]      | [hu%] | [hPa] | [m/s] | [AQI nnn]
-//     44 px        ~87 px     ~87px   ~87px   ~87px     ~87 px
+//   col 1        col 2        col 3       col 4
+//  [icon 44px]  [ 22 °C ]    [1013 hPa]   [  AQI ]
+//               [ 55 %  ]    [ 3.4 m/s]   [  42  ]
 //
-// Icon: 44×44 px, full widget height, from weather_icons_44.h.
-// Remaining 436 px split into 5 equal tiles of 87 px (remainder 1 px on last).
-// Values use loadMetric() — NotoSans 18 pt.
-// "AQI" is a dim inline prefix.
+// Column 1: 44×44 weather symbol, vertically centred.
+// Columns 2–4: two rows each — temperature/humidity, pressure/wind speed, and
+// a fixed "AQI" label over its dynamically coloured value.
+// No separators between columns and no border around the widget.
+// Numeric values use loadMetric() — NotoSans 18 pt; units ("°C", "%", " hPa",
+// " m/s") are drawn in a darker shade than their value, and the "AQI" label
+// uses loadLabel() — NotoSansDisplay 12 pt.
 class AirQualityWidget : public Widget {
 public:
     AirQualityWidget(const WidgetInterface::Dimensions& dims,
@@ -32,10 +36,23 @@ private:
     // -----------------------------------------------------------------------
     // Layout
     // -----------------------------------------------------------------------
-    static constexpr uint16_t kIconW     = 44;
-    static constexpr uint8_t  kTileCount = 5;
-    static constexpr uint16_t kTileArea  = 480 - kIconW;           // 436
-    static constexpr uint16_t kTileW     = kTileArea / kTileCount; // 87
+    static constexpr uint16_t kColWidth[4] = {44, 52, 88, 56};
+
+    static constexpr uint16_t kIconW = kColWidth[0];
+
+    // Column 1 x-offset; column 2 starts after column 1, etc.
+    static constexpr uint16_t kCol2X = kColWidth[0];
+    static constexpr uint16_t kCol3X = kColWidth[0] + kColWidth[1];
+    static constexpr uint16_t kCol4X = kColWidth[0] + kColWidth[1] + kColWidth[2];
+
+    static constexpr uint16_t kColCenter[4] = {kColWidth[0] / 2,
+                                               kCol2X + kColWidth[1] / 2,
+                                               kCol3X + kColWidth[2] / 2,
+                                               kCol4X + kColWidth[3] / 2};
+
+    // Unit text colour — same as the "AQI" label (0x8410) so every unit/label
+    // on the widget shares one dim shade beneath its value.
+    static constexpr uint16_t kUnitColor = 0x8410;
 
     // -----------------------------------------------------------------------
     const AirQualityData& airData_;
@@ -53,21 +70,20 @@ private:
     // Helpers
     // -----------------------------------------------------------------------
 
-    // One display tile: prefix XOR unit (never both) — matching drawTiles()'s
-    // three layout branches (prefix+value, value+unit, or value alone).
-    struct TileSpec {
-        const char* prefix;
-        const char* value;
-        uint16_t    valueColor;
-        const char* unit;
-    };
+    // Centre Y (widget-relative) of the top / bottom row of a two-row column.
+    int16_t rowCenterY(bool bottomRow) const;
 
-    // Draws all kTileCount tiles per refresh. Widths are measured with each
-    // font loaded once across every tile, then values and labels are each
-    // drawn with a single font load — a flat 4 font loads total instead of
-    // up to 4 per tile (20 for all 5) from loading/unloading inside a
-    // per-tile drawTile() call.
-    void drawTiles(const TileSpec (&tiles)[kTileCount], const bool (&changed)[kTileCount]);
+    // Draws a centred string at the given column's centre on a row centre.
+    // Numeric cells use the metric font, the "AQI" label the label font.
+    void drawCellText(uint8_t col, bool bottomRow, const char* text, uint16_t color,
+                      bool labelFont);
+
+    // Draws a value followed by its unit, centred as a pair in the cell. The
+    // value uses the metric font in `valueColor`; the unit uses the label font
+    // in kUnitColor. A null/empty unit draws just the value.
+    void drawValueWithUnit(uint8_t col, bool bottomRow, const char* value, const char* unit,
+                           uint16_t valueColor);
+
     void drawIcon(const char* code);
     void drawNoData();
     const uint16_t* iconForCode(const char* code) const;

@@ -14,10 +14,10 @@
 // up to two system-fan tiles, in a 5-column x 3-row, 96px-wide tile grid.
 // Modeled on PcMetricsWidget but without disk drives, and using a wider tile
 // (96px vs 86px) since there's no left-side disk/fan column to reserve here.
-class GameMetricsWidget : public Widget {
+class PcMetricsWidget : public Widget {
  public:
-    GameMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                      uint32_t updateIntervalMs, PcMetrics& pcMetrics);
+    PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
+                    uint32_t updateIntervalMs, PcMetrics& pcMetrics);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
     bool needsUpdate() const override;
@@ -82,7 +82,8 @@ class GameMetricsWidget : public Widget {
         float (*getValue)(const PcMetrics&);
     };
 
-    static const std::array<FixedTileDescriptor, kFixedTileCount>& fixedTileDescriptors();
+    static const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
+    fixedTileDescriptors();
 
     DisplayContext& context_;
     PcMetrics& pcMetrics_;

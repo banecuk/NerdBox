@@ -1,4 +1,4 @@
-#include "GameMetricsWidget.h"
+#include "PcMetricsWidget.h"
 
 #include <cstdio>
 
@@ -24,7 +24,7 @@ float valueGpuFan(const PcMetrics& m) { return m.gpu_fan; }
 float valueMemoryLoad(const PcMetrics& m) { return m.mem_load; }
 }  // namespace
 
-GameMetricsWidget::GameMetricsWidget(DisplayContext& context,
+PcMetricsWidget::PcMetricsWidget(DisplayContext& context,
                                      const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs),
@@ -34,8 +34,8 @@ GameMetricsWidget::GameMetricsWidget(DisplayContext& context,
     buildFixedWidgets();
 }
 
-const std::array<GameMetricsWidget::FixedTileDescriptor, GameMetricsWidget::kFixedTileCount>&
-GameMetricsWidget::fixedTileDescriptors() {
+const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
+PcMetricsWidget::fixedTileDescriptors() {
     static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = {
         {
          // CPU row
@@ -46,7 +46,7 @@ GameMetricsWidget::fixedTileDescriptors() {
          {{kCol2, kRow1, kTileWidth, kRowH}, " W", 0, 400, 55.0f, 140.0f, "PWR", kLabelWidth,
              0xC618, false, false, false, valueCpuPower},
          {{kCol3, kRow1, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1200.0f, "FAN", kLabelWidth,
-             0xC618, false, true, false, valueCpuFan},
+             0xC618, false, false, false, valueCpuFan},
 
          // RAM — end of CPU row
             {{kCol4, kRow1, kTileWidth, kRowH}, "%", 0, 100, 60.0f, 90.0f, "RAM", kLabelWidth,
@@ -63,7 +63,7 @@ GameMetricsWidget::fixedTileDescriptors() {
              0xFC70, true, true, false, valueGpuFan},
 
          // VRAM — end of GPU row
-            {{kCol4, kRow2, kTileWidth, kRowH}, "%", 0, 100, 30.0f, 90.0f, "VRAM", kLabelWidth,
+            {{kCol4, kRow2, kTileWidth, kRowH}, "%", 0, 100, 30.0f, 90.0f, "VRM", kLabelWidth,
              0xFC70, true, false, false, valueGpuMemory},
 
          // Row 3 — 3D / compute (fan slots kCol2/kCol3 are lazily created)
@@ -76,7 +76,7 @@ GameMetricsWidget::fixedTileDescriptors() {
     return kTiles;
 }
 
-void GameMetricsWidget::buildFixedWidgets() {
+void PcMetricsWidget::buildFixedWidgets() {
     for (uint8_t i = 0; i < kFixedTileCount; ++i) {
         const FixedTileDescriptor& d = fixedTileDescriptors()[i];
         fixedWidgets_[i] = MetricWidget::Builder(toScreenSpace(d.dims), updateIntervalMs_)
@@ -93,7 +93,7 @@ void GameMetricsWidget::buildFixedWidgets() {
     }
 }
 
-void GameMetricsWidget::ensureSystemFanWidgetsCreated() {
+void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
     const uint8_t fanCount = pcMetrics_.system_fan_count;
     if (fanCount == lastSystemFanCount_)
         return;
@@ -141,13 +141,13 @@ void GameMetricsWidget::ensureSystemFanWidgetsCreated() {
     }
 }
 
-void GameMetricsWidget::initAndDrawWidget(MetricWidget& widget) {
+void PcMetricsWidget::initAndDrawWidget(MetricWidget& widget) {
     widget.initialize(context_);
     widget.drawStatic();
     widget.forceRefresh();
 }
 
-void GameMetricsWidget::onDrawStatic() {
+void PcMetricsWidget::onDrawStatic() {
     if (hasFreshData()) {
         for (auto& w : fixedWidgets_) {
             if (w)
@@ -164,7 +164,7 @@ void GameMetricsWidget::onDrawStatic() {
     }
 }
 
-void GameMetricsWidget::onDraw(bool forceRedraw) {
+void PcMetricsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
@@ -196,7 +196,7 @@ void GameMetricsWidget::onDraw(bool forceRedraw) {
     lastUpdateTimeMs_ = millis();
 }
 
-void GameMetricsWidget::drawDynamicData() {
+void PcMetricsWidget::drawDynamicData() {
     if (!isStaticDrawn_)
         return;
 
@@ -233,7 +233,7 @@ void GameMetricsWidget::drawDynamicData() {
     lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
 }
 
-void GameMetricsWidget::drawNoDataMessage() {
+void PcMetricsWidget::drawNoDataMessage() {
     LGFX* lcd = getLcd();
     Fonts::loadMetric(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
@@ -243,7 +243,7 @@ void GameMetricsWidget::drawNoDataMessage() {
     Fonts::unload(lcd);
 }
 
-void GameMetricsWidget::clearAllWidgets() {
+void PcMetricsWidget::clearAllWidgets() {
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        TFT_BLACK);
     systemFanWidgets_.clear();
@@ -252,12 +252,12 @@ void GameMetricsWidget::clearAllWidgets() {
     isStaticDrawn_ = false;
 }
 
-void GameMetricsWidget::restoreStaticDisplay() {
+void PcMetricsWidget::restoreStaticDisplay() {
     clearAllWidgets();
     drawStatic();
 }
 
-bool GameMetricsWidget::needsUpdate() const {
+bool PcMetricsWidget::needsUpdate() const {
     if (!isInitialized_)
         return false;
     if (hasFreshData() != wasFreshData_)
@@ -266,6 +266,6 @@ bool GameMetricsWidget::needsUpdate() const {
            (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
-bool GameMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
+bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
     return false;
 }

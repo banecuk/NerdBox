@@ -25,15 +25,6 @@ void AirQualityWidget::onDrawStatic() {
     lcd->fillRect(dimensions_.x, dimensions_.y,
                   dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    lcd->drawFastHLine(dimensions_.x, dimensions_.y,
-                       dimensions_.width, Colors::kHairline);
-
-    // Tile separators (no separator between icon and first tile)
-    for (uint8_t i = 1; i < kTileCount; ++i) {
-        const int16_t sx = dimensions_.x + kIconW + i * kTileW;
-        lcd->drawFastVLine(sx, dimensions_.y + 2, dimensions_.height - 4, Colors::kHairline);
-    }
-
     lastAvail_    = false;
     lastTemp_     = -128;
     lastHumidity_ = 0xFF;
@@ -80,7 +71,6 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
 
     if (becomingAvailable) drawStatic();
 
-    // Icon
     if (forceRedraw || becomingAvailable || iconChanged) {
         drawIcon(airData_.icon_code);
     }
@@ -93,17 +83,18 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
              airData_.wind_speed_x10 % 10);
     snprintf(bufAqi, sizeof(bufAqi), "%d", static_cast<int>(airData_.aqi_us));
 
-    const TileSpec tiles[kTileCount] = {
-        {nullptr, bufTemp, TFT_WHITE, "\xc2\xb0""C"},
-        {nullptr, bufHumidity, 0x867F, "%"},
-        {nullptr, bufPressure, TFT_LIGHTGREY, " hPa"},
-        {nullptr, bufWind, TFT_LIGHTGREY, " m/s"},
-        {"AQI ", bufAqi, aqiColor(airData_.aqi_us), nullptr},
-    };
-    const bool tileChanged[kTileCount] = {
-        tempChanged, humidityChanged, pressureChanged, windChanged, aqiChanged,
-    };
-    drawTiles(tiles, tileChanged);
+    if (tempChanged)
+        drawValueWithUnit(1, false, bufTemp, "\xc2\xb0" "C", TFT_WHITE);
+    if (humidityChanged)
+        drawValueWithUnit(1, true, bufHumidity, "%", 0x867F);
+    if (pressureChanged)
+        drawValueWithUnit(2, false, bufPressure, " hPa", TFT_LIGHTGREY);
+    if (windChanged)
+        drawValueWithUnit(2, true, bufWind, " m/s", TFT_LIGHTGREY);
+
+    drawCellText(3, false, "AQI", 0x8410, true);
+    if (aqiChanged)
+        drawValueWithUnit(3, true, bufAqi, "", aqiColor(airData_.aqi_us));
 
     // Cache
     lastAvail_    = true;
@@ -114,6 +105,83 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
     lastAqi_      = airData_.aqi_us;
     strncpy(lastIcon_, airData_.icon_code, sizeof(lastIcon_) - 1);
     lastIcon_[sizeof(lastIcon_) - 1] = '\0';
+}
+
+// ---------------------------------------------------------------------------
+// Layout helpers
+// ---------------------------------------------------------------------------
+
+int16_t AirQualityWidget::rowCenterY(bool bottomRow) const {
+    // Compact, top-anchored rows: no top padding, a small bottom inset, and a
+    // tighter gap than the old fraction-based (30% / 72%) placement.
+    if (bottomRow) {
+        return dimensions_.y + dimensions_.height - 20;
+    }
+    return dimensions_.y + 10;
+}
+
+void AirQualityWidget::drawCellText(uint8_t col, bool bottomRow, const char* text,
+                                    uint16_t color, bool labelFont) {
+    LGFX* lcd = getLcd();
+    if (!lcd) return;
+
+    if (labelFont) {
+        Fonts::loadLabel(lcd);
+    } else {
+        Fonts::loadMetric(lcd);
+    }
+
+    const int16_t cx = dimensions_.x + kColCenter[col];
+    lcd->setTextColor(color, TFT_BLACK);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString(text, cx, rowCenterY(bottomRow));
+
+    Fonts::unload(lcd);
+}
+
+void AirQualityWidget::drawValueWithUnit(uint8_t col, bool bottomRow, const char* value,
+                                         const char* unit, uint16_t valueColor) {
+    LGFX* lcd = getLcd();
+    if (!lcd) return;
+
+    const int16_t cx = dimensions_.x + kColCenter[col];
+    const int16_t cy = rowCenterY(bottomRow);
+
+    if (!unit || unit[0] == '\0') {
+        Fonts::loadMetric(lcd);
+        lcd->setTextColor(valueColor, TFT_BLACK);
+        lcd->setTextDatum(MC_DATUM);
+        lcd->drawString(value, cx, cy);
+        Fonts::unload(lcd);
+        return;
+    }
+
+    int16_t valueW, valueH, unitW;
+    Fonts::loadMetric(lcd);
+    valueW = static_cast<int16_t>(lcd->textWidth(value));
+    valueH = static_cast<int16_t>(lcd->fontHeight());
+    Fonts::unload(lcd);
+    Fonts::loadLabel(lcd);
+    unitW = static_cast<int16_t>(lcd->textWidth(unit));
+    Fonts::unload(lcd);
+
+    const int16_t startX = cx - (valueW + unitW) / 2;
+    // Draw both on the same baseline so the unit sits at the bottom of the
+    // value digits. The baseline of a MC_DATUM draw is ~half the value's own
+    // glyph height below its vertical centre.
+    const int16_t baselineY = cy + valueH / 2;
+
+    Fonts::loadMetric(lcd);
+    lcd->setTextColor(valueColor, TFT_BLACK);
+    lcd->setTextDatum(L_BASELINE);
+    lcd->drawString(value, startX, baselineY);
+    Fonts::unload(lcd);
+
+    Fonts::loadLabel(lcd);
+    lcd->setTextColor(kUnitColor, TFT_BLACK);
+    lcd->setTextDatum(L_BASELINE);
+    lcd->drawString(unit, startX + valueW, baselineY);
+    Fonts::unload(lcd);
 }
 
 // ---------------------------------------------------------------------------
@@ -128,104 +196,9 @@ void AirQualityWidget::drawIcon(const char* code) {
 
     const uint16_t* data = iconForCode(code);
     if (data) {
-        lcd->pushImage(dimensions_.x, dimensions_.y,
-                       kIconW, kIconW, data);
+        const int16_t y = dimensions_.y + (dimensions_.height - kIconW) / 2;
+        lcd->pushImage(dimensions_.x, y, kIconW, kIconW, data);
     }
-}
-
-// ---------------------------------------------------------------------------
-// drawTiles
-// Values use loadMetric() — NotoSans 18 pt.
-// prefix/unit use loadLabel() — NotoSansDisplay 12 pt, dimmed to de-emphasise.
-//
-// Two passes across all tiles per font (measure, then draw) instead of
-// loading/unloading per tile — loadFont() streams the font from PROGMEM into
-// a fresh heap buffer each time, so this keeps font swaps at a flat 4
-// (2 measure + 2 draw) regardless of tile count, instead of up to 4 per tile.
-// ---------------------------------------------------------------------------
-
-void AirQualityWidget::drawTiles(const TileSpec (&tiles)[kTileCount],
-                                 const bool (&changed)[kTileCount]) {
-    LGFX* lcd = getLcd();
-    if (!lcd) return;
-
-    const int16_t ty = dimensions_.y;
-    const int16_t h  = dimensions_.height;
-    const int16_t midY = ty + h / 2;
-
-    for (uint8_t i = 0; i < kTileCount; ++i) {
-        if (!changed[i]) continue;
-        const int16_t tx = dimensions_.x + kIconW + i * kTileW;
-        lcd->fillRect(tx + 1, ty + 1, kTileW - 2, h - 2, TFT_BLACK);
-    }
-
-    int16_t valW[kTileCount]  = {0};
-    int16_t textW[kTileCount] = {0};
-
-    // Pass 1 — measure values (needed for every branch except value-only,
-    // which uses MC_DATUM and doesn't need a pre-measured width).
-    Fonts::loadMetric(lcd);
-    for (uint8_t i = 0; i < kTileCount; ++i) {
-        if (!changed[i]) continue;
-        if (tiles[i].prefix != nullptr || tiles[i].unit != nullptr) {
-            valW[i] = static_cast<int16_t>(lcd->textWidth(tiles[i].value));
-        }
-    }
-    Fonts::unload(lcd);
-
-    // Pass 2 — measure prefix/unit text.
-    Fonts::loadLabel(lcd);
-    for (uint8_t i = 0; i < kTileCount; ++i) {
-        if (!changed[i]) continue;
-        const char* text = tiles[i].prefix != nullptr ? tiles[i].prefix : tiles[i].unit;
-        if (text != nullptr) {
-            textW[i] = static_cast<int16_t>(lcd->textWidth(text));
-        }
-    }
-    Fonts::unload(lcd);
-
-    // Pass 3 — draw values.
-    Fonts::loadMetric(lcd);
-    for (uint8_t i = 0; i < kTileCount; ++i) {
-        if (!changed[i]) continue;
-        const int16_t tx = dimensions_.x + kIconW + i * kTileW;
-        const int16_t cx = tx + kTileW / 2;
-        lcd->setTextColor(tiles[i].valueColor, TFT_BLACK);
-
-        if (tiles[i].prefix != nullptr) {
-            const int16_t startX = cx - (textW[i] + valW[i]) / 2;
-            lcd->setTextDatum(ML_DATUM);
-            lcd->drawString(tiles[i].value, startX + textW[i], midY);
-        } else if (tiles[i].unit != nullptr) {
-            const int16_t startX = cx - (valW[i] + textW[i]) / 2;
-            lcd->setTextDatum(ML_DATUM);
-            lcd->drawString(tiles[i].value, startX, midY);
-        } else {
-            lcd->setTextDatum(MC_DATUM);
-            lcd->drawString(tiles[i].value, cx, midY);
-        }
-    }
-    Fonts::unload(lcd);
-
-    // Pass 4 — draw prefix/unit text.
-    Fonts::loadLabel(lcd);
-    lcd->setTextDatum(ML_DATUM);
-    for (uint8_t i = 0; i < kTileCount; ++i) {
-        if (!changed[i]) continue;
-        const int16_t tx = dimensions_.x + kIconW + i * kTileW;
-        const int16_t cx = tx + kTileW / 2;
-
-        if (tiles[i].prefix != nullptr) {
-            const int16_t startX = cx - (textW[i] + valW[i]) / 2;
-            lcd->setTextColor(0x8410, TFT_BLACK);
-            lcd->drawString(tiles[i].prefix, startX, midY);
-        } else if (tiles[i].unit != nullptr) {
-            const int16_t startX = cx - (valW[i] + textW[i]) / 2;
-            lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-            lcd->drawString(tiles[i].unit, startX + valW[i], midY);
-        }
-    }
-    Fonts::unload(lcd);
 }
 
 // ---------------------------------------------------------------------------
