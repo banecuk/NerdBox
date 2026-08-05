@@ -103,14 +103,14 @@ void MetricWidget::renderValueArea() {
     int16_t areaX, areaY, areaWidth, areaHeight;
     if (hasLabel_) {
         areaX = valueX_;
-        areaY = dimensions_.y + BORDER_MARGIN;
+        areaY = dimensions_.y + borderMargin_;
         areaWidth = valueWidth_;
-        areaHeight = dimensions_.height - (2 * BORDER_MARGIN);
+        areaHeight = dimensions_.height - (2 * borderMargin_);
     } else {
-        areaX = dimensions_.x + BORDER_MARGIN;
-        areaY = dimensions_.y + BORDER_MARGIN;
-        areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
-        areaHeight = dimensions_.height - (2 * BORDER_MARGIN);
+        areaX = dimensions_.x + borderMargin_;
+        areaY = dimensions_.y + borderMargin_;
+        areaWidth = dimensions_.width - (2 * borderMargin_);
+        areaHeight = dimensions_.height - (2 * borderMargin_);
     }
 
     // Clear value area with background color
@@ -169,8 +169,8 @@ void MetricWidget::renderValueTextOnly() {
         areaX    = valueX_;
         areaWidth = valueWidth_;
     } else {
-        areaX    = dimensions_.x + BORDER_MARGIN;
-        areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
+        areaX    = dimensions_.x + borderMargin_;
+        areaWidth = dimensions_.width - (2 * borderMargin_);
     }
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
@@ -186,8 +186,8 @@ void MetricWidget::renderValueTextOnly() {
     // leaving stale unit pixels behind at the old position.
     const bool shifted = layoutShifted(newTextW, unitW);
     if (shifted) {
-        const int16_t areaY = dimensions_.y + BORDER_MARGIN;
-        const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
+        const int16_t areaY = dimensions_.y + borderMargin_;
+        const int16_t areaH = dimensions_.height - (2 * borderMargin_);
         lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
     }
     lastTextWidth_ = newTextW;
@@ -239,13 +239,13 @@ void MetricWidget::drawValueWithLoadedFont() {
         areaX    = valueX_;
         areaWidth = valueWidth_;
     } else {
-        areaX    = dimensions_.x + BORDER_MARGIN;
-        areaWidth = dimensions_.width - (2 * BORDER_MARGIN);
+        areaX    = dimensions_.x + borderMargin_;
+        areaWidth = dimensions_.width - (2 * borderMargin_);
     }
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
-    const int16_t areaY = dimensions_.y + BORDER_MARGIN;
-    const int16_t areaH = dimensions_.height - (2 * BORDER_MARGIN);
+    const int16_t areaY = dimensions_.y + borderMargin_;
+    const int16_t areaH = dimensions_.height - (2 * borderMargin_);
 
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
     const bool bgChanged = (newBgColor != lastBgColor_);
@@ -315,9 +315,9 @@ void MetricWidget::unloadValueFont() const {
 
 void MetricWidget::updateDimensionCache() {
     valueX_ =
-        hasLabel_ ? dimensions_.x + labelWidth_ + SEPARATOR_WIDTH : dimensions_.x + BORDER_MARGIN;
-    valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - SEPARATOR_WIDTH - BORDER_MARGIN
-                            : dimensions_.width - (2 * BORDER_MARGIN);
+        hasLabel_ ? dimensions_.x + labelWidth_ + SEPARATOR_WIDTH : dimensions_.x + borderMargin_;
+    valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - SEPARATOR_WIDTH - borderMargin_
+                            : dimensions_.width - (2 * borderMargin_);
     dimensionsDirty_ = false;
     valueAreaDirty_ = true;
 }
@@ -555,6 +555,14 @@ void MetricWidget::setVerticalLabel(bool vertical) {
 void MetricWidget::setTextAlignment(uint8_t alignment) {
     if (textAlignment_ != alignment) {
         textAlignment_ = alignment;
+        markDirty();
+    }
+}
+
+void MetricWidget::setBorderMargin(uint16_t margin) {
+    if (borderMargin_ != margin) {
+        borderMargin_ = margin;
+        valueAreaDirty_ = true;
         markDirty();
     }
 }

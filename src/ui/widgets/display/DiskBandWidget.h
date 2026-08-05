@@ -11,19 +11,20 @@
 #include "utils/DataFreshnessGuard.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
-// free-space tiles, each with a solid 2px write line above and read line below
+// free-space tiles, each with a solid 4px write line above and read line below
 // colour-coded by activity rate, plus a ">" chevron at the right edge marking
 // the band tappable (default SHOW_DISKS action, mirroring FpsWidget).
 //
 // Extracted from PcMetricsWidget so it can be placed anywhere on a screen. All
 // tile/line positions derive from dimensions_ rather than hardcoded absolute
-// pixels, so the strip renders correctly at any origin.
+// pixels, so the strip renders correctly at any origin. The tiles render
+// borderless (MetricWidget::setBorderMargin(0)) so their coloured area runs
+// flush against both activity lines — no wasted pixels at the strip edges.
 //
 // Strip anatomy (top to bottom):
 //   kWriteLineY            → 4px read-rate line
-//   kDiskGap               → 1px
-//   kDiskAreaY             → per-drive MetricWidget tiles (fill remaining height)
-//   kReadLineGap           → 1px
+//   kDiskAreaY             → per-drive MetricWidget tiles (borderless, fill
+//                            the space down to the read line)
 //   kReadLineHeight        → 4px write-rate line (flush to widget bottom)
 class DiskBandWidget : public Widget {
  public:
@@ -48,13 +49,12 @@ class DiskBandWidget : public Widget {
     static constexpr uint16_t kWriteLineHeight = 4;
     static constexpr uint16_t kReadLineHeight = 4;
 
-    // 1px gap between the write line and the tiles.
-    static constexpr uint16_t kDiskGap = 1;
-
     // Horizontal line positions (vertical offsets from the widget's origin).
     static constexpr uint16_t kWriteLineY = 0;
-    // Tile area top: write line + gap.
-    static constexpr uint16_t kDiskAreaY = kWriteLineY + kWriteLineHeight + kDiskGap;
+    // Tile area top: the write line. The tile's own border is disabled
+    // (borderMargin 0), so the tile fill starts immediately below the line —
+    // no explicit gap needed between them.
+    static constexpr uint16_t kDiskAreaY = kWriteLineY + kWriteLineHeight;
 
     // Maximum number of disk-drive tiles that can be displayed simultaneously
     static constexpr size_t kMaxDiskWidgets = 10;

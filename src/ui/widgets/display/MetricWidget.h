@@ -57,6 +57,12 @@ class MetricWidget : public Widget {
 
     void forceRefresh();
 
+    // Sets the inset of the coloured value area from the widget's edges.
+    // A zero margin makes the fill run flush to the widget bounds (used by
+    // DiskBandWidget so its metric tiles sit immediately against the activity
+    // lines). Defaults to BORDER_MARGIN (1px).
+    void setBorderMargin(uint16_t margin);
+
     // Getters
     int getValue() const { return value_; }
     int getMinValue() const { return minValue_; }
@@ -159,6 +165,11 @@ class MetricWidget : public Widget {
             return *this;
         }
 
+        Builder& borderMargin(uint16_t margin) {
+            borderMargin_ = margin;
+            return *this;
+        }
+
         std::unique_ptr<MetricWidget> build() {
             auto widget = std::make_unique<MetricWidget>(dims_, updateIntervalMs_);
 
@@ -203,6 +214,7 @@ class MetricWidget : public Widget {
         bool verticalLabel_ = false;
         uint8_t textAlignment_ = MC_DATUM;
         ValueFormat valueFormat_ = ValueFormat::kDefault;
+        uint16_t borderMargin_ = BORDER_MARGIN;
     };
 
  protected:
@@ -227,6 +239,8 @@ class MetricWidget : public Widget {
     uint16_t labelWidth_ = 0;
     uint8_t textAlignment_ = MC_DATUM;
     ValueFormat valueFormat_ = ValueFormat::kDefault;
+
+    uint16_t borderMargin_ = BORDER_MARGIN;
 
     // State
     bool hasLabel_ = false;

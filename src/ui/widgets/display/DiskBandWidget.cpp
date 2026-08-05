@@ -9,11 +9,12 @@
 namespace {
 // The shared diskActivityColor() scale treats anything below 2 MB/s as idle
 // (dark grey kHairline), which is indistinguishable from the background on the
-// band's thin activity lines. On the band, any nonzero rate is real activity,
-// so clamp the base scale up to its lowest visible level (dark green) and then
-// use the full scale once it starts climbing.
+// band's thin activity lines. On the band we only want to light up when there
+// is real traffic, so treat rates up to 1 MB/s as idle and clamp the base
+// scale up to its lowest visible level (dark green) once it starts climbing.
 uint16_t bandActivityColor(float kbPerSec) {
-    if (kbPerSec <= 0.0f)
+    constexpr float kIdleThresholdKbPerSec = 1.0f * 1024.0f;
+    if (kbPerSec <= kIdleThresholdKbPerSec)
         return Colors::kHairline;
     const uint16_t color = Colors::diskActivityColor(kbPerSec);
     return (color == Colors::kHairline) ? TFT_DARKGREEN : color;
@@ -92,6 +93,7 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
                      .label(snapshot[i].name)
                      .labelWidth(14)  // narrow: the label is a single drive letter
                      .value(snapshot[i].freeSpacePercent)
+                     .borderMargin(0)  // flush against the activity lines — no edge gaps
                      .build();
 
         if (w) {
@@ -246,7 +248,12 @@ void DiskBandWidget::drawDiskChevron() {
 }
 
 void DiskBandWidget::clearDiskWidgets() {
-    getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
+    // The widget's static content never overlaps its write line (draws at the
+    // very top) or read line (draws at the very bottom). To make sure nothing
+    // bleeds above/below the band, clear a background 2px taller and 1px up
+    // from the widget's own bounds (widget size itself is unchanged).
+    getLcd()->fillRect(dimensions_.x, dimensions_.y - 1, dimensions_.width,
+                       dimensions_.height + 2, TFT_BLACK);
 
     diskDriveWidgets_.clear();
     diskWriteLineColor_.clear();
