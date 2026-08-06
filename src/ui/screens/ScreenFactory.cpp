@@ -7,6 +7,7 @@
 #include "ui/widgetScreens/GameScreen.h"
 #include "ui/widgetScreens/MainScreen.h"
 #include "ui/widgetScreens/SettingsScreen.h"
+#include "ui/widgetScreens/WeatherScreen.h"
 
 std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                                                              const ScreenCreationContext& ctx) {
@@ -26,6 +27,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::DISKS:
             return std::make_unique<DiskScreen>(ctx.logger, ctx.metrics, ctx.controller,
                                                 ctx.config);
+        case ScreenName::WEATHER:
+            return std::make_unique<WeatherScreen>(ctx.logger, ctx.controller, ctx.config,
+                                                   ctx.weatherData);
         default:
             return nullptr;
     }

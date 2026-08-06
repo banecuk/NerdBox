@@ -15,6 +15,7 @@
 #include "core/jobs/NtpRetryJob.h"
 #include "core/jobs/PcMetricsJob.h"
 #include "core/jobs/PcMetricsStreamJob.h"
+#include "core/jobs/WeatherJob.h"
 #include "core/jobs/WifiReconnectJob.h"
 #include "core/state/SystemState.h"
 #include "core/TaskManager.h"
@@ -24,6 +25,8 @@
 #include "services/airQuality/AirQualityService.h"
 #include "services/network/NetworkStatus.h"
 #include "services/network/NetworkStatusService.h"
+#include "services/weather/WeatherData.h"
+#include "services/weather/WeatherService.h"
 #include "services/NtpService.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
@@ -105,6 +108,12 @@ class ApplicationComponents : public IInitializationTarget {
     // read by NetworkWidget (screen task). All scalar fields — no mutex needed.
     NetworkStatus netStatus;
 
+    // Weather forecast data — written by WeatherService in the background task
+    // only while the Weather screen is active, read by the (future) WeatherWidget
+    // in the screen task. Scalars plus a fixed day array (no heap); only the
+    // refreshRequested flag is shared cross-task and so is atomic.
+    WeatherData weatherData;
+
     // Hardware — no dependencies.
     LGFX display;
     Colors colors;
@@ -127,10 +136,12 @@ class ApplicationComponents : public IInitializationTarget {
     // Services — depend on networkManager/logger_/config/systemMetrics above.
     PcMetricsService pcMetricsService;
     AirQualityService airQualityService;
+    WeatherService weatherService;
     NetworkStatusService networkStatusService;
 
     // UI controller — depends on displayContext, displayManager, systemMetrics,
-    // pcMetrics, systemState, config, networkManager, airQualityData, netStatus.
+    // pcMetrics, systemState, config, networkManager, airQualityData, netStatus,
+    // weatherData.
     UiController uiController;
 
     // Background jobs — one adapter per periodic service, registered with
@@ -143,6 +154,7 @@ class ApplicationComponents : public IInitializationTarget {
     AirQualityJob airQualityJob;
     NetworkStatusJob networkStatusJob;
     DimAtNightJob dimAtNightJob;
+    WeatherJob weatherJob;
 
     // Managers — depend on everything above.
     TaskManager taskManager;

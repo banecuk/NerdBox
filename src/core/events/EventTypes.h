@@ -11,5 +11,6 @@ enum class EventType : uint8_t {
     SHOW_ABOUT,
     SHOW_GAME,
     SHOW_DISKS,
+    SHOW_WEATHER,
     COUNT  // ← always last; do not use directly
 };

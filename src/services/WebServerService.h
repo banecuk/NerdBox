@@ -9,6 +9,7 @@
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
+#include "services/weather/WeatherData.h"
 #include "ui/core/UiController.h"
 #include "utils/LoggerInterface.h"
 
@@ -18,8 +19,8 @@ class WebServerService {
                      ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                      PcMetricsService& pcMetricsService, PcMetricsStreamJob& pcMetricsStreamJob,
                      const NetworkStatus& netStatus, const SystemState& systemState,
-                     const AppSettings& config, const TaskManager& taskManager,
-                     LoggerInterface& logger);
+                     const WeatherData& weatherData, const AppSettings& config,
+                     const TaskManager& taskManager, LoggerInterface& logger);
     void begin();
     void processRequests();
 
@@ -32,6 +33,7 @@ class WebServerService {
     PcMetricsStreamJob& pcMetricsStreamJob_;
     const NetworkStatus& netStatus_;
     const SystemState& systemState_;
+    const WeatherData& weatherData_;
     const AppSettings& config_;
     const TaskManager& taskManager_;
     LoggerInterface& logger_;

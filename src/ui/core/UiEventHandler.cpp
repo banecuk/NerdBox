@@ -22,6 +22,7 @@ void UiEventHandler::registerHandlers() {
     eventBus.subscribe(EventType::SHOW_MAIN,       [this]() { requestMainScreen(); });
     eventBus.subscribe(EventType::SHOW_GAME,       [this]() { requestGameScreen(); });
     eventBus.subscribe(EventType::SHOW_DISKS,      [this]() { requestDisksScreen(); });
+    eventBus.subscribe(EventType::SHOW_WEATHER,    [this]() { requestWeatherScreen(); });
 }
 
 void UiEventHandler::resetDevice() {
@@ -55,4 +56,9 @@ void UiEventHandler::requestGameScreen() {
 void UiEventHandler::requestDisksScreen() {
     logger_.debug("DISKS action received");
     uiController_->requestScreen(ScreenName::DISKS);
+}
+
+void UiEventHandler::requestWeatherScreen() {
+    logger_.debug("WEATHER action received");
+    uiController_->requestScreen(ScreenName::WEATHER);
 }

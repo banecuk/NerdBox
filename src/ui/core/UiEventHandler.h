@@ -17,6 +17,7 @@ class DisplayManager;
 //   EventType::SHOW_MAIN       → requestMainScreen()
 //   EventType::SHOW_GAME       → requestGameScreen()
 //   EventType::SHOW_DISKS      → requestDisksScreen()
+//   EventType::SHOW_WEATHER    → requestWeatherScreen()
 class UiEventHandler {
  public:
     UiEventHandler(UiController* uiController, LoggerInterface& logger);
@@ -28,6 +29,7 @@ class UiEventHandler {
     void requestMainScreen();
     void requestGameScreen();
     void requestDisksScreen();
+    void requestWeatherScreen();
 
  private:
     UiController* uiController_;

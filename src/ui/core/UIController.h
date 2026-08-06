@@ -10,6 +10,7 @@
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/airQuality/AirQualityData.h"
+#include "services/weather/WeatherData.h"
 #include "services/network/NetworkStatus.h"
 #include "ui/core/TouchManager.h"
 #include "ui/screens/ScreenInterface.h"
@@ -28,9 +29,10 @@ class UiController : public IScreenUpdater {
     explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                           SystemState::ScreenState& screenState, const AppSettings& config,
-                          NetworkManager& networkManager,
-                          const AirQualityData& airQualityData,
-                          const NetworkStatus& netStatus);
+NetworkManager& networkManager,
+                           const AirQualityData& airQualityData,
+                           const NetworkStatus& netStatus,
+                           WeatherData& weatherData);
     ~UiController();
 
     // Lifecycle methods
@@ -86,6 +88,7 @@ class UiController : public IScreenUpdater {
     NetworkManager& networkManager_;
     const AirQualityData& airQualityData_;
     const NetworkStatus&  netStatus_;
+    WeatherData&          weatherData_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<UiEventHandler> actionHandler_;

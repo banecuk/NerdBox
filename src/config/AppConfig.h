@@ -67,6 +67,20 @@ struct AirQualityImpl {
     static constexpr uint32_t kFailureBackoffMs = 60000;
 };
 
+// Weather (open-meteo forecast) configuration
+struct WeatherImpl {
+    // Forecast columns to render: 7 if the layout fits, otherwise drop to 5.
+    static constexpr uint8_t kForecastDays = 7;
+    // How often to re-fetch while the Weather screen is displayed.
+    static constexpr uint32_t kRefreshIntervalMs = 2ul * 60ul * 60ul * 1000ul;  // 2 h
+    // Cheap per-minute check while displayed so the forecast rolls over at
+    // local midnight and shows the new day's data.
+    static constexpr uint32_t kTimeCheckIntervalMs = 60ul * 1000ul;
+    // Backoff after a failed fetch — mirrors AirQualityImpl::kFailureBackoffMs.
+    static constexpr uint32_t kFailureBackoffMs = 60000;
+    static constexpr uint8_t kIconSize = 44;
+};
+
 // Metrics configuration
 struct MetricsImpl {
     static constexpr uint8_t kMaxScreenDrawTimes = 30;

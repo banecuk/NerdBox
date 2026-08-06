@@ -11,14 +11,7 @@ bool isRetryable(int httpCode) {
 }  // namespace
 
 HttpClient::HttpClient() {
-    // Keeps the TCP connection open across requests to the same host (sends
-    // "Connection: keep-alive" and skips the handshake on the next begin()
-    // if the socket is still connected) instead of reconnecting on every
-    // poll. download() still calls end() after every request as before —
-    // with reuse enabled, end() only closes the socket when the server
-    // actually asked for it (HTTP/1.0 or "Connection: close") or the
-    // request failed, so no other code needs to change.
-    http_.setReuse(true);
+    http_.setReuse(true);  // keep-alive across the same host; begin() reconnects when the host changes
 }
 
 HttpClient::~HttpClient() {
@@ -92,6 +85,7 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
         lastHttpCode_ = http_.GET();
 
         if (lastHttpCode_ == HTTP_CODE_OK) {
+            lastErrorBody_.clear();
             lastParseError_ =
                 deserializeJson(doc, http_.getStream(), DeserializationOption::Filter(filter));
             success = !lastParseError_;
@@ -102,6 +96,12 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
                      // malformed 200 response.
         }
 
+        // Non-200: grab the body for diagnostics before end() closes the
+        // socket (unread body on keep-alive would desync the next request).
+        lastErrorBody_ = http_.getString();
+        if (lastErrorBody_.length() > kMaxErrorBodyChars) {
+            lastErrorBody_.remove(kMaxErrorBodyChars);
+        }
         http_.end();
         if (!isRetryable(lastHttpCode_)) {
             break;  // Non-retryable HTTP error (e.g. 4xx) — retrying won't help

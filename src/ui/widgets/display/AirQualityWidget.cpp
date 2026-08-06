@@ -11,9 +11,13 @@
 
 AirQualityWidget::AirQualityWidget(const WidgetInterface::Dimensions& dims,
                                    uint32_t updateIntervalMs,
-                                   const AirQualityData& airData)
+                                   const AirQualityData& airData,
+                                   EventType action,
+                                   ActionCallback callback)
     : Widget(dims, updateIntervalMs),
-      airData_(airData) {}
+      airData_(airData),
+      action_(action),
+      callback_(std::move(callback)) {}
 
 // ---------------------------------------------------------------------------
 // drawStatic
@@ -261,5 +265,9 @@ uint16_t AirQualityWidget::aqiColor(uint16_t aqi) const {
 }
 
 bool AirQualityWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
-    return false;
+    if (!callback_) {
+        return false;
+    }
+    callback_(action_);
+    return true;
 }

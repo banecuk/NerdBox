@@ -11,8 +11,8 @@ WebServerService::WebServerService(WebServer& server, UiController& uiController
                                    PcMetricsService& pcMetricsService,
                                    PcMetricsStreamJob& pcMetricsStreamJob,
                                    const NetworkStatus& netStatus, const SystemState& systemState,
-                                   const AppSettings& config, const TaskManager& taskManager,
-                                   LoggerInterface& logger)
+                                   const WeatherData& weatherData, const AppSettings& config,
+                                   const TaskManager& taskManager, LoggerInterface& logger)
     : server_(server),
       uiController_(uiController),
       systemMetrics_(systemMetrics),
@@ -21,6 +21,7 @@ WebServerService::WebServerService(WebServer& server, UiController& uiController
       pcMetricsStreamJob_(pcMetricsStreamJob),
       netStatus_(netStatus),
       systemState_(systemState),
+      weatherData_(weatherData),
       config_(config),
       taskManager_(taskManager),
       logger_(logger) {}
@@ -49,6 +50,10 @@ void WebServerService::begin() {
     });
     server_.on("/screen/game", HTTP_POST, [this]() {
         uiController_.requestScreen(ScreenName::GAME);
+        server_.send(200, "text/plain", "OK");
+    });
+    server_.on("/screen/weather", HTTP_POST, [this]() {
+        uiController_.requestScreen(ScreenName::WEATHER);
         server_.send(200, "text/plain", "OK");
     });
     server_.onNotFound([this]() { this->handleNotFound(); });
@@ -411,6 +416,7 @@ const char* WebServerService::screenNameToString(ScreenName screen) {
         case ScreenName::MAIN: return "MAIN";
         case ScreenName::SETTINGS: return "SETTINGS";
         case ScreenName::GAME: return "GAME";
+        case ScreenName::WEATHER: return "WEATHER";
         case ScreenName::NONE:
         default: return "NONE";
     }
@@ -498,6 +504,18 @@ void WebServerService::handleApiStatus() {
              systemState_.core.isTimeSynced ? "true" : "false");
     server_.sendContent(buf);
 
+    // weather — open-meteo forecast feed freshness, so the "fetch only while
+    // displayed" gating can be observed without a serial monitor. refresh_pending
+    // reflects WeatherWidget's midnight-rollover signal awaiting the background job.
+    const unsigned long weatherAgeMs =
+        weatherData_.is_available ? millis() - weatherData_.last_update : 0;
+    snprintf(buf, sizeof(buf),
+             "\"weather\":{\"available\":%s,\"age_ms\":%lu,\"days\":%u,"
+             "\"refresh_pending\":%s},",
+             weatherData_.is_available ? "true" : "false", weatherAgeMs,
+             weatherData_.dayCount, weatherData_.refreshRequested.load() ? "true" : "false");
+    server_.sendContent(buf);
+
     // Stack high-water marks — early warning before a tight task stack
     // (6144/8192 B) overflows and reboots the device. 0 means the task
     // hasn't been created yet.
@@ -549,6 +567,7 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"POST", "/screen/main", "Switches the display to the Main screen."},
     {"POST", "/screen/settings", "Switches the display to the Settings screen."},
     {"POST", "/screen/game", "Switches the display to the Game screen."},
+    {"POST", "/screen/weather", "Switches the display to the Weather screen."},
 };
 }  // namespace
 
@@ -720,6 +739,10 @@ void WebServerService::handleConfig() {
     SEND_CONFIG_F("hardwareMonitorThreadsDownwardSmoothing",
                   config_.hardwareMonitorThreadsDownwardSmoothing);
     SEND_CONFIG_U("airQualityFailureBackoffMs", config_.airQualityFailureBackoffMs);
+    SEND_CONFIG_U("weatherRefreshIntervalMs", config_.weatherRefreshIntervalMs);
+    SEND_CONFIG_U("weatherTimeCheckIntervalMs", config_.weatherTimeCheckIntervalMs);
+    SEND_CONFIG_U("weatherFailureBackoffMs", config_.weatherFailureBackoffMs);
+    SEND_CONFIG_U("weatherForecastDays", config_.weatherForecastDays);
     SEND_CONFIG_U("metricsMaxScreenDrawTimes", config_.metricsMaxScreenDrawTimes);
     SEND_CONFIG_U("pcMetricsCores", config_.pcMetricsCores);
     SEND_CONFIG_B("pcMetricsStreamEnabled", config_.pcMetricsStreamEnabled);

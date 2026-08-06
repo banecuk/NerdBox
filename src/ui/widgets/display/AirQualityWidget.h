@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+
+#include "core/events/EventTypes.h"
 #include "core/resources/FontRegistry.h"
 #include "core/resources/weather_icons_44.h"
 #include "services/airQuality/AirQualityData.h"
@@ -22,9 +25,13 @@
 // uses loadLabel() — NotoSansDisplay 12 pt.
 class AirQualityWidget : public Widget {
 public:
+    using ActionCallback = std::function<void(EventType)>;
+
     AirQualityWidget(const WidgetInterface::Dimensions& dims,
                      uint32_t updateIntervalMs,
-                     const AirQualityData& airData);
+                     const AirQualityData& airData,
+                     EventType action = EventType::NONE,
+                     ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -56,6 +63,11 @@ private:
 
     // -----------------------------------------------------------------------
     const AirQualityData& airData_;
+
+    // Optional tap action (mirrors FpsWidget/ButtonWidget): when a callback
+    // is set, a tap publishes `action_`, e.g. to open the Weather screen.
+    EventType action_;
+    ActionCallback callback_;
 
     // Cached values for dirty detection
     int8_t   lastTemp_     = -128;

@@ -20,9 +20,11 @@ void MainScreen::createWidgets() {
 
     // Air quality block — right of the threads, same top band. Reorganized
     // into four compact columns (icon | temp+humidity | pressure+wind | AQI).
+    // Tappable to the weather forecast screen.
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
         new AirQualityWidget(WidgetInterface::Dimensions{240, 0, 240, 56}, 5000,
-                             airQualityData_)));
+                             airQualityData_, EventType::SHOW_WEATHER,
+                             [this](EventType action) { this->handleAction(action); })));
 
     // Game metrics grid — replaces PcMetricsWidget, directly below threads.
     // Moved up (y=56) since the top band got shorter.

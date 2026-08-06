@@ -29,6 +29,9 @@ class HttpClient {
 
     int getLastHttpCode() const { return lastHttpCode_; }
     DeserializationError getLastParseError() const { return lastParseError_; }
+    // First kMaxErrorBodyChars of the response body on a non-200 (typically an
+    // API's error JSON) — populated for diagnostics, empty after a 200.
+    const String& getLastErrorBody() const { return lastErrorBody_; }
 
  private:
     // LAN-appropriate defaults — NerdWinSense is on the same network, so a
@@ -41,4 +44,6 @@ class HttpClient {
     HTTPClient http_;
     int lastHttpCode_ = 0;
     DeserializationError lastParseError_ = DeserializationError::Ok;
+    String lastErrorBody_;
+    static constexpr size_t kMaxErrorBodyChars = 200;
 };

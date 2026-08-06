@@ -8,5 +8,6 @@ enum class ScreenName : uint8_t {
     MAIN,
     SETTINGS,
     GAME,
-    DISKS
+    DISKS,
+    WEATHER
 };
