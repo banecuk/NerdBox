@@ -15,6 +15,14 @@ static constexpr uint16_t kRainColor    = 0x867F;  // light blue, matches AirQua
 // Abbreviated day names indexed by tm_wday (0 = Sunday).
 static const char* const kDayNames[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 
+// Converts a *10-scaled temperature to whole degrees, rounding to the nearest
+// integer (half away from zero) instead of truncating — plain integer
+// division on a negative X10 value truncates toward zero and displays up to
+// 1° too warm.
+static int16_t roundX10ToWhole(int16_t x10) {
+    return static_cast<int16_t>(x10 >= 0 ? (x10 + 5) / 10 : (x10 - 5) / 10);
+}
+
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
@@ -46,7 +54,7 @@ void WeatherWidget::onDraw(bool forceRedraw) {
 
     checkMidnightRollover();
 
-    if (!weatherData_.is_available || weatherData_.dayCount == 0) {
+    if (!freshness_.isFresh() || weatherData_.dayCount == 0) {
         if (forceRedraw || lastHasData_) {
             drawNoData();
             lastHasData_ = false;
@@ -70,8 +78,12 @@ void WeatherWidget::onDraw(bool forceRedraw) {
     }
 
     for (uint8_t i = 0; i < count; ++i) {
-        const WeatherForecastDay& day   = weatherData_.days[i];
-        ColumnCache&              cache = lastColumns_[i];
+        WeatherForecastDay day;
+        {
+            WeatherDataLock lock(weatherData_);
+            day = weatherData_.days[i];
+        }
+        ColumnCache& cache = lastColumns_[i];
 
         struct tm ltm;
         localtime_r(&day.dayStart, &ltm);
@@ -82,9 +94,9 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         snprintf(date, sizeof(date), "%02u.%02u", ltm.tm_mday, ltm.tm_mon + 1);
 
         char tempMax[8];
-        snprintf(tempMax, sizeof(tempMax), "%d\xc2\xb0", day.tempMaxX10 / 10);
+        snprintf(tempMax, sizeof(tempMax), "%d\xc2\xb0", roundX10ToWhole(day.tempMaxX10));
         char tempMin[8];
-        snprintf(tempMin, sizeof(tempMin), "%d\xc2\xb0", day.tempMinX10 / 10);
+        snprintf(tempMin, sizeof(tempMin), "%d\xc2\xb0", roundX10ToWhole(day.tempMinX10));
 
         char rain[8];
         snprintf(rain, sizeof(rain), "%d.%d", day.rainX10 / 10, day.rainX10 % 10);
@@ -159,7 +171,13 @@ void WeatherWidget::checkMidnightRollover() {
     timeinfo.tm_sec  = 0;
     const time_t localMidnight = mktime(&timeinfo);
 
-    if (weatherData_.dayCount > 0 && localMidnight != weatherData_.days[0].dayStart) {
+    time_t firstDayStart;
+    {
+        WeatherDataLock lock(weatherData_);
+        firstDayStart = weatherData_.days[0].dayStart;
+    }
+
+    if (weatherData_.dayCount > 0 && localMidnight != firstDayStart) {
         weatherData_.refreshRequested.store(true);
     }
 }

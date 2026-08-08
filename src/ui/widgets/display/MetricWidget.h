@@ -188,6 +188,7 @@ class MetricWidget : public Widget {
             widget->setVerticalLabel(verticalLabel_);
             widget->setTextAlignment(textAlignment_);
             widget->setValueFormat(valueFormat_);
+            widget->setBorderMargin(borderMargin_);
 
             return widget;
         }

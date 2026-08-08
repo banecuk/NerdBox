@@ -6,7 +6,9 @@
 #include "core/resources/FontRegistry.h"
 #include "core/resources/weather_icons_44.h"
 #include "services/airQuality/AirQualityData.h"
+#include "services/airQuality/AirQualityService.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/DataFreshnessGuard.h"
 
 // Four-column block shown to the right of ThreadsWidget on the main screen.
 //
@@ -63,6 +65,12 @@ private:
 
     // -----------------------------------------------------------------------
     const AirQualityData& airData_;
+
+    // Data is sticky-available (AirQualityService never clears is_available
+    // on fetch failure) — freshness must be checked by age too, or a stale
+    // outage-era reading displays forever with no indication.
+    DataFreshnessGuard<bool, unsigned long> freshness_{airData_.is_available, airData_.last_update,
+                                                        AirQualityService::kRefreshIntervalMs};
 
     // Optional tap action (mirrors FpsWidget/ButtonWidget): when a callback
     // is set, a tap publishes `action_`, e.g. to open the Weather screen.

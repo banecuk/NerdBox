@@ -49,8 +49,10 @@ int16_t WeatherService::extractX10(const JsonArray& array, size_t index) {
         return 0;
     }
     // Extract as float first — an integer cast on the raw node would fail on a
-    // float and silently return 0.
-    return static_cast<int16_t>(array[index].as<float>() * 10.0f + 0.5f);
+    // float and silently return 0. Round half-away-from-zero so negative
+    // values (below-freezing forecasts) round correctly too.
+    const float scaled = array[index].as<float>() * 10.0f;
+    return static_cast<int16_t>(scaled >= 0.0f ? scaled + 0.5f : scaled - 0.5f);
 }
 
 bool WeatherService::parseData(WeatherData& outData) {
@@ -75,14 +77,17 @@ bool WeatherService::parseData(WeatherData& outData) {
     const uint8_t count = static_cast<uint8_t>(
         (timeArray.size() > kMaxForecastDays) ? kMaxForecastDays : timeArray.size());
 
-    for (uint8_t i = 0; i < count; ++i) {
-        WeatherForecastDay& day = outData.days[i];
-        day.weatherCode         = static_cast<int16_t>(weatherCode[i] | 0);
-        day.tempMaxX10          = extractX10(tempMax, i);
-        day.tempMinX10          = extractX10(tempMin, i);
-        day.rainX10             = extractX10(rainSum, i);
-        day.windMaxX10          = extractX10(windMax, i);
-        day.dayStart            = static_cast<time_t>(timeArray[i].as<int64_t>());
+    {
+        WeatherDataLock lock(outData);
+        for (uint8_t i = 0; i < count; ++i) {
+            WeatherForecastDay& day = outData.days[i];
+            day.weatherCode         = static_cast<int16_t>(weatherCode[i] | 0);
+            day.tempMaxX10          = extractX10(tempMax, i);
+            day.tempMinX10          = extractX10(tempMin, i);
+            day.rainX10             = extractX10(rainSum, i);
+            day.windMaxX10          = extractX10(windMax, i);
+            day.dayStart            = static_cast<time_t>(timeArray[i].as<int64_t>());
+        }
     }
 
     outData.dayCount     = count;

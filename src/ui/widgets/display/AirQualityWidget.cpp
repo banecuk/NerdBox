@@ -45,7 +45,7 @@ void AirQualityWidget::onDrawStatic() {
 void AirQualityWidget::onDraw(bool forceRedraw) {
     if (!getLcd()) return;
 
-    if (!airData_.is_available) {
+    if (!freshness_.isFresh()) {
         if (forceRedraw || lastAvail_) {
             drawNoData();
             lastAvail_ = false;

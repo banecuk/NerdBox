@@ -99,7 +99,8 @@ bool InitializationStateMachine::handleNetworkInit() {
 bool InitializationStateMachine::handleTimeInit() {
     target_.logger().info("Syncing time", true);
 
-    for (uint8_t attempt = 1; attempt <= target_.initTimeSyncRetries(); ++attempt) {
+    const uint8_t maxRetries = target_.initTimeSyncRetries();
+    for (uint8_t attempt = 1; attempt <= maxRetries; ++attempt) {
         if (target_.syncTime()) {
             target_.logger().info("Time synchronized successfully", true);
             target_.setTimeSynced();
@@ -108,7 +109,11 @@ bool InitializationStateMachine::handleTimeInit() {
             return true;
         }
 
-        delay(calculateBackoffDelay(attempt, target_.initTimeSyncBaseDelayMs()));
+        // Skip the backoff after the final attempt — there's nothing left to
+        // wait for before falling through to "give up and use local time".
+        if (attempt < maxRetries) {
+            delay(calculateBackoffDelay(attempt, target_.initTimeSyncBaseDelayMs()));
+        }
     }
 
     target_.logger().warning("Time sync failed, using local time", true);

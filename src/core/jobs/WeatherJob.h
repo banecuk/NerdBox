@@ -36,8 +36,8 @@ class WeatherJob : public BackgroundJob {
             || screenState_.activeScreen != ScreenName::WEATHER) {
             return ULONG_MAX;  // not displayed → never due
         }
-        if (data_.refreshRequested.load()) {
-            return 0;  // midnight rollover → fire now
+        if (data_.refreshRequested.load() && millis() >= nextAttemptMs_) {
+            return 0;  // midnight rollover → fire now (still honours failure backoff)
         }
         if (freshness_.isFresh()) {
             return ULONG_MAX;  // fetched < 2 h ago → skip

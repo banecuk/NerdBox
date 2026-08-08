@@ -3,7 +3,6 @@
 #include "core/Application.h"
 #include "core/ApplicationComponents.h"
 
-static AppSettings config;
 static std::unique_ptr<Application> app;
 
 void waitForSerial(uint32_t timeoutMs) {
@@ -19,6 +18,13 @@ void setup() {
     delay(10);  // Brief delay for stability
 
     static_assert(__cplusplus >= 201703L, "Not using C++17 or higher");
+
+    // Construct the application first so its AppSettings is the only
+    // instance — main.cpp reads from it here (before initialize()) rather
+    // than keeping a second, independently-constructed AppSettings alive
+    // just for the pre-init serial setup below.
+    app = std::make_unique<Application>(std::make_unique<ApplicationComponents>());
+    const AppSettings& config = app->config();
 
     // Initialize serial communication
     Serial.begin(config.debugSerialBaudRate);
@@ -42,9 +48,6 @@ void setup() {
             Serial.println("Panic occurred. Check backtrace in debugger.");
         }
     }
-
-    // Create application instance
-    app = std::make_unique<Application>(std::make_unique<ApplicationComponents>());
 
     if (!app->initialize()) {
         app.reset();

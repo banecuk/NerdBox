@@ -22,6 +22,11 @@ class Application {
     bool initialize();
     void run();
 
+    // Lets main.cpp read config (e.g. debug serial settings) after
+    // constructing Application, instead of keeping a second AppSettings
+    // instance alive at file scope just for pre-initialize() use.
+    const AppSettings& config() const { return config_; }
+
  private:
     std::unique_ptr<ApplicationComponents> components_;
 

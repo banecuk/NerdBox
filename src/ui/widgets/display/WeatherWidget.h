@@ -11,6 +11,7 @@
 #include "core/resources/weather_icons_44.h"
 #include "services/weather/WeatherData.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/DataFreshnessGuard.h"
 
 // Full-width daily forecast column strip, covering the whole weather screen
 // above the bottom back-button band.
@@ -75,6 +76,15 @@ class WeatherWidget : public Widget {
 
     WeatherData& weatherData_;
     const AppSettings& config_;
+
+    // WeatherData is sticky-available (WeatherService never clears
+    // is_available on fetch failure) — freshness must be checked by age too,
+    // or a stale outage-era forecast displays forever with no indication.
+    // Timeout mirrors WeatherJob's own refetch threshold: once a refetch was
+    // already due but hasn't landed, the display should say so.
+    DataFreshnessGuard<bool, unsigned long> freshness_{weatherData_.is_available,
+                                                        weatherData_.last_update,
+                                                        config_.weatherRefreshIntervalMs};
 
     ColumnCache lastColumns_[kMaxColumns];
     uint8_t columns_ = 0;
