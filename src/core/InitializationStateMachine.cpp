@@ -83,6 +83,16 @@ bool InitializationStateMachine::handleTasksInit() {
         transitionTo(State::FAILED);
         return false;
     }
+
+    // The screen task only draws once isInitialized is set. Set it now, right
+    // after the task exists, so it can actually process the BOOT transition
+    // requested back in handleDisplayInit() and render the log lines queued
+    // by the network/time steps below. Setting this later (e.g. alongside
+    // requestScreen(MAIN) in handleFinalSetup) means the BOOT transition
+    // never gets processed before MAIN supersedes it — the boot screen is
+    // skipped entirely.
+    target_.setScreenInitialized();
+
     transitionTo(State::NETWORK_INIT);
     return true;
 }
@@ -168,7 +178,6 @@ bool InitializationStateMachine::handleFinalSetup() {
 
     target_.logger().debugf("Free heap post-init: %u", ESP.getFreeHeap());
     target_.requestScreen(ScreenName::MAIN);
-    target_.setScreenInitialized();
     target_.setSystemInitialized();
 
     transitionTo(State::COMPLETE);
