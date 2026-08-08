@@ -7,18 +7,37 @@
 
 class MetricWidget : public Widget {
  public:
-    // Format modes — select which unit suffix is drawn (smaller font, same
-    // colour as the value) next to it. See getUnitText() in the .cpp.
-    enum class ValueFormat : uint8_t {
-        kDefault,  // unit_ field (same as no formatter)
-        kPercent,  // "%"
-        kRpm,      // "RPM"
-        kWatts,    // "W"
-        kCelsius,  // "°C"
-        kMB,       // "MB"
+    // Every tunable knob in one place, with default member initializers
+    // matching MetricWidget's own historical defaults. Passed to the
+    // constructor once instead of chained through per-field setters, so the
+    // "defaults must mirror" duplication between a builder and the widget's
+    // own fields can't happen.
+    struct Config {
+        int value = 0;
+        const char* unit = "%";  // copied into a fixed buffer by the constructor
+        int minValue = 0;
+        int maxValue = 100;
+        float lowerThreshold = 50.0f;
+        float upperThreshold = 90.0f;
+        bool reverseThresholds = false;
+        bool useDimColors = false;
+        bool useSmallFont = false;  // Use NotoSansDisplay15 instead of NotoSans18
+        bool useGpuColors = false;
+        bool useRamColors = false;
+        uint16_t labelColor = TFT_WHITE;
+        const char* label = "";  // copied into a fixed buffer by the constructor
+        uint16_t labelWidth = 0;
+        bool verticalLabel = false;  // stack label chars top-to-bottom — for tall tiles
+        uint8_t textAlignment = MC_DATUM;  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
+        // Inset of the coloured value area from the widget's edges. A zero
+        // margin makes the fill run flush to the widget bounds (used by
+        // DiskBandWidget so its metric tiles sit immediately against the
+        // activity lines).
+        uint16_t borderMargin = 1;
     };
 
-    MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
+    MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                 const Config& config);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -36,7 +55,6 @@ class MetricWidget : public Widget {
 
     // Display configuration
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
-    void setValueFormat(ValueFormat format);
     void setReverseThresholds(bool reverse = true);
     void setUseSmallFont(bool small = true);  // Use 15pt instead of 18pt — for narrow tiles
     void setLabelColor(uint16_t color);
@@ -61,7 +79,7 @@ class MetricWidget : public Widget {
     // Sets the inset of the coloured value area from the widget's edges.
     // A zero margin makes the fill run flush to the widget bounds (used by
     // DiskBandWidget so its metric tiles sit immediately against the activity
-    // lines). Defaults to BORDER_MARGIN (1px).
+    // lines). Defaults to Config::borderMargin (1px).
     void setBorderMargin(uint16_t margin);
 
     // Getters
@@ -74,179 +92,32 @@ class MetricWidget : public Widget {
     bool getUseDimColors() const { return useDimColors_; }
     bool isSmallFont() const { return useSmallFont_; }
 
-    // Builder pattern for fluent configuration. Each setter's default here
-    // matches the widget's own default member initializer, so build() can
-    // apply every field unconditionally instead of tracking a hasX_ flag
-    // per field.
-    class Builder {
-     public:
-        Builder(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs)
-            : dims_(dims), updateIntervalMs_(updateIntervalMs) {}
-
-        Builder& value(int value) {
-            value_ = value;
-            return *this;
-        }
-
-        Builder& unit(const char* unit) {
-            if (unit) {
-                strncpy(unit_, unit, sizeof(unit_) - 1);
-                unit_[sizeof(unit_) - 1] = '\0';
-            }
-            return *this;
-        }
-
-        Builder& range(int minVal, int maxVal) {
-            minValue_ = minVal;
-            maxValue_ = maxVal;
-            return *this;
-        }
-
-        Builder& colorThresholds(float lower, float upper) {
-            lowerThreshold_ = lower;
-            upperThreshold_ = upper;
-            return *this;
-        }
-
-        Builder& reverseThresholds(bool reverse = true) {
-            reverseThresholds_ = reverse;
-            return *this;
-        }
-
-        Builder& smallFont(bool small = true) {
-            useSmallFont_ = small;
-            return *this;
-        }
-
-        Builder& useDimColors(bool useDim = true) {
-            useDimColors_ = useDim;
-            return *this;
-        }
-
-        Builder& labelColor(uint16_t color) {
-            labelColor_ = color;
-            return *this;
-        }
-
-        Builder& useGpuColors(bool use = true) {
-            useGpuColors_ = use;
-            return *this;
-        }
-
-        Builder& useRamColors(bool use = true) {
-            useRamColors_ = use;
-            return *this;
-        }
-
-        Builder& label(const char* label) {
-            if (label) {
-                strncpy(label_, label, sizeof(label_) - 1);
-                label_[sizeof(label_) - 1] = '\0';
-            }
-            return *this;
-        }
-
-        Builder& labelWidth(uint16_t width) {
-            labelWidth_ = width;
-            return *this;
-        }
-
-        Builder& verticalLabel(bool vertical = true) {
-            verticalLabel_ = vertical;
-            return *this;
-        }
-
-        Builder& textAlignment(uint8_t alignment) {
-            textAlignment_ = alignment;
-            return *this;
-        }
-
-        Builder& valueFormat(ValueFormat format) {
-            valueFormat_ = format;
-            return *this;
-        }
-
-        Builder& borderMargin(uint16_t margin) {
-            borderMargin_ = margin;
-            return *this;
-        }
-
-        std::unique_ptr<MetricWidget> build() {
-            auto widget = std::make_unique<MetricWidget>(dims_, updateIntervalMs_);
-
-            widget->setValue(value_);
-            widget->setUnit(unit_);
-            widget->setRange(minValue_, maxValue_);
-            widget->setColorThresholds(lowerThreshold_, upperThreshold_);
-            widget->setReverseThresholds(reverseThresholds_);
-            widget->setUseDimColors(useDimColors_);
-            widget->setUseSmallFont(useSmallFont_);
-            widget->setUseGpuColors(useGpuColors_);
-            widget->setUseRamColors(useRamColors_);
-            widget->setLabelColor(labelColor_);
-            widget->setLabel(label_);
-            widget->setLabelWidth(labelWidth_);
-            widget->setVerticalLabel(verticalLabel_);
-            widget->setTextAlignment(textAlignment_);
-            widget->setValueFormat(valueFormat_);
-            widget->setBorderMargin(borderMargin_);
-
-            return widget;
-        }
-
-     private:
-        WidgetInterface::Dimensions dims_;
-        uint32_t updateIntervalMs_;
-
-        // Configuration parameters — defaults mirror MetricWidget's own.
-        int value_ = 0;
-        char unit_[8] = "%";
-        int minValue_ = 0;
-        int maxValue_ = 100;
-        float lowerThreshold_ = 50.0f;
-        float upperThreshold_ = 90.0f;
-        bool reverseThresholds_ = false;
-        bool useDimColors_ = false;
-        bool useSmallFont_ = false;
-        bool useGpuColors_ = false;
-        bool useRamColors_ = false;
-        uint16_t labelColor_ = TFT_WHITE;
-        char label_[32] = "";
-        uint16_t labelWidth_ = 0;
-        bool verticalLabel_ = false;
-        uint8_t textAlignment_ = MC_DATUM;
-        ValueFormat valueFormat_ = ValueFormat::kDefault;
-        uint16_t borderMargin_ = BORDER_MARGIN;
-    };
-
  protected:
     void onDraw(bool forceRedraw) override;
     void onDrawStatic() override;
 
  private:
     // Configuration
-    int value_ = 0;
-    int minValue_ = 0;
-    int maxValue_ = 100;
-    char unit_[8] = "%";  // Stack-allocated buffer
-    float lowerThreshold_ = 50.0f;
-    float upperThreshold_ = 90.0f;
-    bool reverseThresholds_ = false;
-    bool useDimColors_ = false;
-    bool useSmallFont_ = false;  // Use NotoSansDisplay15 instead of NotoSans18
-    bool useGpuColors_ = false;
-    bool useRamColors_ = false;
-    uint16_t labelColor_ = TFT_WHITE;
-    char label_[32] = "";  // Stack-allocated buffer
-    uint16_t labelWidth_ = 0;
-    uint8_t textAlignment_ = MC_DATUM;
-    ValueFormat valueFormat_ = ValueFormat::kDefault;
-
-    uint16_t borderMargin_ = BORDER_MARGIN;
+    int value_;
+    int minValue_;
+    int maxValue_;
+    char unit_[8];  // Stack-allocated buffer
+    float lowerThreshold_;
+    float upperThreshold_;
+    bool reverseThresholds_;
+    bool useDimColors_;
+    bool useSmallFont_;
+    bool useGpuColors_;
+    bool useRamColors_;
+    uint16_t labelColor_;
+    char label_[32];  // Stack-allocated buffer
+    uint16_t labelWidth_;
+    uint8_t textAlignment_;
+    uint16_t borderMargin_;
+    bool hasLabel_;
+    bool verticalLabel_;
 
     // State
-    bool hasLabel_ = false;
-    bool verticalLabel_ = false;
     int16_t valueX_ = 0;
     uint16_t valueWidth_ = 0;
     bool dimensionsDirty_ = true;
@@ -281,7 +152,6 @@ class MetricWidget : public Widget {
     // Constants
     static constexpr uint16_t TEXT_MARGIN = 10;
     static constexpr uint16_t SEPARATOR_WIDTH = 1;
-    static constexpr uint16_t BORDER_MARGIN = 1;
 
     // Load/unload the correct value font based on useSmallFont_.
     // All three render paths (renderValueArea, renderValueTextOnly,
@@ -292,13 +162,11 @@ class MetricWidget : public Widget {
     // Rendering methods
     void renderValueArea();
     void renderValueTextOnly();
-    void drawDebugPixel(int16_t startX, int16_t textY, int16_t width);
 
     // Helper methods
     uint16_t calculateBackgroundColor() const;
     void updateDimensionCache();
     const char* getFormattedValueText() const;
-    const char* getUnitText() const;
     void refreshUnitWidthIfNeeded() const;
     void safeStringCopy(char* dest, const char* src, size_t destSize) const;
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "core/events/EventBus.h"
 #include "utils/Logger.h"
 
@@ -19,6 +21,7 @@ class DisplayManager;
 class UiEventHandler {
  public:
     UiEventHandler(UiController* uiController, LoggerInterface& logger);
+    ~UiEventHandler();
 
     void registerHandlers();
     void resetDevice();
@@ -32,4 +35,11 @@ class UiEventHandler {
  private:
     UiController* uiController_;
     LoggerInterface& logger_;
+
+    struct Subscription {
+        EventType type;
+        EventBus::SubscriptionId id;
+    };
+    static constexpr size_t kSubscriptionCount = 8;
+    std::array<Subscription, kSubscriptionCount> subscriptions_{};
 };

@@ -6,8 +6,27 @@
 
 #include "core/resources/FontRegistry.h"
 
-MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs)
-    : Widget(dims, updateIntervalMs), useDimColors_(false) {
+MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                           const Config& config)
+    : Widget(dims, updateIntervalMs),
+      value_(config.value),
+      minValue_(config.minValue),
+      maxValue_(config.maxValue),
+      lowerThreshold_(std::min(config.lowerThreshold, config.upperThreshold)),
+      upperThreshold_(std::max(config.lowerThreshold, config.upperThreshold)),
+      reverseThresholds_(config.reverseThresholds),
+      useDimColors_(config.useDimColors),
+      useSmallFont_(config.useSmallFont),
+      useGpuColors_(config.useGpuColors),
+      useRamColors_(config.useRamColors),
+      labelColor_(config.labelColor),
+      labelWidth_(config.labelWidth),
+      textAlignment_(config.textAlignment),
+      borderMargin_(config.borderMargin),
+      hasLabel_(config.label[0] != '\0'),
+      verticalLabel_(config.verticalLabel) {
+    safeStringCopy(unit_, config.unit, sizeof(unit_));
+    safeStringCopy(label_, config.label, sizeof(label_));
     updateDimensionCache();
     formattedValue_[0] = '\0';
 }
@@ -142,7 +161,7 @@ void MetricWidget::renderValueArea() {
         Fonts::loadLabel(lcd);
         lcd->setTextColor(TFT_WHITE, lastBgColor_);
         lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(getUnitText(), startX + valW, textY);
+        lcd->drawString(unit_, startX + valW, textY);
         Fonts::unload(lcd);
     }
 
@@ -207,7 +226,7 @@ void MetricWidget::renderValueTextOnly() {
         Fonts::loadLabel(lcd);
         lcd->setTextColor(TFT_WHITE, newBgColor);
         lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(getUnitText(), startX + newTextW, textY);
+        lcd->drawString(unit_, startX + newTextW, textY);
         Fonts::unload(lcd);
     }
 }
@@ -297,7 +316,7 @@ void MetricWidget::drawUnitWithLoadedFont() {
 
     lcd->setTextColor(TFT_WHITE, unitBgColor_);
     lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(getUnitText(), unitDrawX_, unitDrawY_);
+    lcd->drawString(unit_, unitDrawX_, unitDrawY_);
 
     unitNeedsRedraw_ = false;
 }
@@ -330,32 +349,12 @@ void MetricWidget::updateDimensionCache() {
 
 const char* MetricWidget::getFormattedValueText() const {
     // The unit suffix is drawn separately (smaller, dimmed font) — see
-    // getUnitText() and refreshUnitWidthIfNeeded() — so this only formats
-    // the bare number.
+    // refreshUnitWidthIfNeeded() — so this only formats the bare number.
     if (formatCacheDirty_) {
         snprintf(formattedValue_, sizeof(formattedValue_), "%d", value_);
         formatCacheDirty_ = false;
     }
     return formattedValue_;
-}
-
-const char* MetricWidget::getUnitText() const {
-    switch (valueFormat_) {
-        case ValueFormat::kPercent:
-            return "%";
-        case ValueFormat::kRpm:
-            return " RPM";
-        case ValueFormat::kWatts:
-            return "W";
-        case ValueFormat::kCelsius:
-            return "\xC2\xB0"
-                   "C";
-        case ValueFormat::kMB:
-            return " MB";
-        case ValueFormat::kDefault:
-        default:
-            return unit_;
-    }
 }
 
 void MetricWidget::refreshUnitWidthIfNeeded() const {
@@ -366,10 +365,9 @@ void MetricWidget::refreshUnitWidthIfNeeded() const {
     if (!lcd)
         return;
 
-    const char* unit = getUnitText();
-    if (unit[0] != '\0') {
+    if (unit_[0] != '\0') {
         Fonts::loadLabel(lcd);
-        unitWidthCache_ = static_cast<uint16_t>(lcd->textWidth(unit));
+        unitWidthCache_ = static_cast<uint16_t>(lcd->textWidth(unit_));
         Fonts::unload(lcd);
     } else {
         unitWidthCache_ = 0;
@@ -571,15 +569,6 @@ void MetricWidget::setBorderMargin(uint16_t margin) {
     if (borderMargin_ != margin) {
         borderMargin_ = margin;
         valueAreaDirty_ = true;
-        markDirty();
-    }
-}
-
-void MetricWidget::setValueFormat(ValueFormat format) {
-    if (valueFormat_ != format) {
-        valueFormat_ = format;
-        formatCacheDirty_ = true;
-        unitWidthDirty_ = true;
         markDirty();
     }
 }

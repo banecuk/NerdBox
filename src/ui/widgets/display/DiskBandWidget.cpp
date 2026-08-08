@@ -94,22 +94,22 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     for (size_t i = 0; i < snapshot.size(); ++i) {
         uint16_t xPos = static_cast<uint16_t>(dimensions_.x + i * widgetWidth);
 
-        auto w =
-            MetricWidget::Builder(
-                WidgetInterface::Dimensions{xPos, static_cast<uint16_t>(dimensions_.y + kDiskAreaY),
-                                            widgetWidth, static_cast<uint16_t>(diskAreaHeight)},
-                updateIntervalMs_)
-                .unit("")
-                .range(0, 100)
-                .colorThresholds(0.0f, 95.0f)
-                .reverseThresholds(true)
-                .useDimColors(true)
-                .smallFont()
-                .label(snapshot[i].name)
-                .labelWidth(14)  // narrow: the label is a single drive letter
-                .value(snapshot[i].freeSpacePercent)
-                .borderMargin(0)  // flush against the activity lines — no edge gaps
-                .build();
+        MetricWidget::Config config;
+        config.value = snapshot[i].freeSpacePercent;
+        config.unit = "";
+        config.reverseThresholds = true;
+        config.useDimColors = true;
+        config.useSmallFont = true;
+        config.label = snapshot[i].name;
+        config.labelWidth = 14;  // narrow: the label is a single drive letter
+        config.borderMargin = 0;  // flush against the activity lines — no edge gaps
+        config.lowerThreshold = 0.0f;
+        config.upperThreshold = 95.0f;
+
+        auto w = std::make_unique<MetricWidget>(
+            WidgetInterface::Dimensions{xPos, static_cast<uint16_t>(dimensions_.y + kDiskAreaY),
+                                        widgetWidth, static_cast<uint16_t>(diskAreaHeight)},
+            updateIntervalMs_, config);
 
         if (w) {
             if (!w->isInitialized())

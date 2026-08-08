@@ -2,14 +2,11 @@
 
 #include <cstdio>
 
+#include "config/PcMetricsTilesConfig.h"
 #include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
 
 namespace {
-constexpr const char* kDegreesC =
-    "\xC2\xB0"
-    "C";
-
 float valueCpuLoad(const PcMetrics& m) {
     return m.cpu_load;
 }
@@ -59,192 +56,63 @@ PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface:
 
 const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
 PcMetricsWidget::fixedTileDescriptors() {
-    static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = {
-        {
-         // CPU row
-            {{kCol0, kRow1, kTileWidth, kRowH},
-             "%",
-             0,
-             100,
-             10.0f,
-             90.0f,
-             "CPU",
-             kLabelWidth,
-             0xC618,
-             false,
-             false,
-             false,
-             valueCpuLoad},
-         {{kCol1, kRow1, kTileWidth, kRowH},
-             kDegreesC,
-             0,
-             100,
-             55.0f,
-             85.0f,
-             "TMP",
-             kLabelWidth,
-             0xC618,
-             false,
-             false,
-             false,
-             valueCpuTemperature},
-         {{kCol2, kRow1, kTileWidth, kRowH},
-             " W",
-             0,
-             400,
-             55.0f,
-             140.0f,
-             "PWR",
-             kLabelWidth,
-             0xC618,
-             false,
-             false,
-             false,
-             valueCpuPower},
-         {{kCol3, kRow1, kTileWidth, kRowH},
-             "",
-             0,
-             1500,
-             800.0f,
-             1200.0f,
-             "FAN",
-             kLabelWidth,
-             0xC618,
-             false,
-             false,
-             false,
-             valueCpuFan},
+    static_assert(sizeof(PcMetricsTilesConfig::kTiles) / sizeof(PcMetricsTilesConfig::kTiles[0]) ==
+                      kFixedTileCount,
+                  "PcMetricsTilesConfig::kTiles must have one entry per FixedTile");
 
-         // RAM — end of CPU row
-            {{kCol4, kRow1, kTileWidth, kRowH},
-             "%",
-             0,
-             100,
-             60.0f,
-             90.0f,
-             "RAM",
-             kLabelWidth,
-             0xADFB,
-             false,
-             false,
-             true,
-             valueMemoryLoad},
-
-         // GPU row
-            {{kCol0, kRow2, kTileWidth, kRowH},
-             "%",
-             0,
-             100,
-             10.0f,
-             90.0f,
-             "GPU",
-             kLabelWidth,
-             0xB471,
-             true,
-             false,
-             false,
-             valueGpuLoad},
-         {{kCol1, kRow2, kTileWidth, kRowH},
-             kDegreesC,
-             0,
-             100,
-             55.0f,
-             85.0f,
-             "TMP",
-             kLabelWidth,
-             0xB471,
-             true,
-             false,
-             false,
-             valueGpuTemperature},
-         {{kCol2, kRow2, kTileWidth, kRowH},
-             " W",
-             0,
-             400,
-             50.0f,
-             170.0f,
-             "PWR",
-             kLabelWidth,
-             0xB471,
-             true,
-             false,
-             false,
-             valueGpuPower},
-         {{kCol3, kRow2, kTileWidth, kRowH},
-             "",
-             0,
-             1500,
-             800.0f,
-             1400.0f,
-             "FAN",
-             kLabelWidth,
-             0xB471,
-             true,
-             true,
-             false,
-             valueGpuFan},
-
-         // VRAM — end of GPU row
-            {{kCol4, kRow2, kTileWidth, kRowH},
-             "%",
-             0,
-             100,
-             30.0f,
-             90.0f,
-             "VRM",
-             kLabelWidth,
-             0xB471,
-             true,
-             false,
-             false,
-             valueGpuMemory},
-
-         // Row 3 — 3D / compute (fan slots kCol2/kCol3 are lazily created)
-            {{kCol0, kRow3, kTileWidth, kRowH},
-             "%",
-             0,
-             100,
-             10.0f,
-             90.0f,
-             "3D",
-             kLabelWidth,
-             0xB471,
-             true,
-             false,
-             false,
-             valueGpu3d},
-         {{kCol1, kRow3, kTileWidth, kRowH},
-             "%",
-             0,
-             100,
-             10.0f,
-             90.0f,
-             "CMP",
-             kLabelWidth,
-             0xB471,
-             true,
-             false,
-             false,
-             valueGpuCompute},
-         }
+    // Layout (dims) and the PcMetrics field each tile reads (getValue) are
+    // structural and live here; thresholds/colors/labels are data — see
+    // config/PcMetricsTilesConfig.h. Position in each array must match: both
+    // are ordered CPU row, RAM, GPU row, VRAM, 3D/compute.
+    static const std::array<WidgetInterface::Dimensions, kFixedTileCount> kDims = {
+        WidgetInterface::Dimensions{kCol0, kRow1, kTileWidth, kRowH},
+        {kCol1, kRow1, kTileWidth, kRowH},
+        {kCol2, kRow1, kTileWidth, kRowH},
+        {kCol3, kRow1, kTileWidth, kRowH},
+        {kCol4, kRow1, kTileWidth, kRowH},
+        {kCol0, kRow2, kTileWidth, kRowH},
+        {kCol1, kRow2, kTileWidth, kRowH},
+        {kCol2, kRow2, kTileWidth, kRowH},
+        {kCol3, kRow2, kTileWidth, kRowH},
+        {kCol4, kRow2, kTileWidth, kRowH},
+        {kCol0, kRow3, kTileWidth, kRowH},
+        {kCol1, kRow3, kTileWidth, kRowH},
     };
+    static const std::array<float (*)(const PcMetrics&), kFixedTileCount> kGetters = {
+        valueCpuLoad,        valueCpuTemperature, valueCpuPower, valueCpuFan,
+        valueMemoryLoad,     valueGpuLoad,        valueGpuTemperature,
+        valueGpuPower,       valueGpuFan,         valueGpuMemory,
+        valueGpu3d,          valueGpuCompute,
+    };
+
+    static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = [] {
+        std::array<FixedTileDescriptor, kFixedTileCount> tiles{};
+        for (uint8_t i = 0; i < kFixedTileCount; ++i) {
+            const PcMetricsTilesConfig::TileData& t = PcMetricsTilesConfig::kTiles[i];
+            MetricWidget::Config config;
+            config.unit = t.unit;
+            config.minValue = t.rangeMin;
+            config.maxValue = t.rangeMax;
+            config.lowerThreshold = t.thresholdLow;
+            config.upperThreshold = t.thresholdHigh;
+            config.label = t.label;
+            config.labelWidth = kLabelWidth;
+            config.labelColor = t.labelColor;
+            config.useGpuColors = t.useGpuColors;
+            config.useDimColors = t.useDimColors;
+            config.useRamColors = t.useRamColors;
+            tiles[i] = {kDims[i], config, kGetters[i]};
+        }
+        return tiles;
+    }();
     return kTiles;
 }
 
 void PcMetricsWidget::buildFixedWidgets() {
     for (uint8_t i = 0; i < kFixedTileCount; ++i) {
         const FixedTileDescriptor& d = fixedTileDescriptors()[i];
-        fixedWidgets_[i] = MetricWidget::Builder(toScreenSpace(d.dims), updateIntervalMs_)
-                               .unit(d.unit)
-                               .range(d.rangeMin, d.rangeMax)
-                               .colorThresholds(d.thresholdLow, d.thresholdHigh)
-                               .label(d.label)
-                               .labelWidth(d.labelWidth)
-                               .labelColor(d.labelColor)
-                               .useGpuColors(d.useGpuColors)
-                               .useDimColors(d.useDimColors)
-                               .useRamColors(d.useRamColors)
-                               .build();
+        fixedWidgets_[i] = std::make_unique<MetricWidget>(toScreenSpace(d.dims),
+                                                          updateIntervalMs_, d.config);
     }
 }
 
@@ -277,17 +145,19 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
     for (uint8_t i = 0; i < slots; ++i) {
         snprintf(label, sizeof(label), "F%u", static_cast<unsigned>(i + 1));
 
-        auto w = MetricWidget::Builder(
-                     toScreenSpace(WidgetInterface::Dimensions{kFanX[i], kRow3, kTileWidth, kRowH}),
-                     updateIntervalMs_)
-                     .unit("")
-                     .range(0, 1500)
-                     .colorThresholds(750.0f, 1200.0f)
-                     .label(label)
-                     .labelWidth(kFanLabelWidth)
-                     .labelColor(0xC618)
-                     .useDimColors(true)
-                     .build();
+        MetricWidget::Config config;
+        config.unit = "";
+        config.maxValue = 1500;
+        config.lowerThreshold = 750.0f;
+        config.upperThreshold = 1200.0f;
+        config.label = label;
+        config.labelWidth = kFanLabelWidth;
+        config.labelColor = 0xC618;
+        config.useDimColors = true;
+
+        auto w = std::make_unique<MetricWidget>(
+            toScreenSpace(WidgetInterface::Dimensions{kFanX[i], kRow3, kTileWidth, kRowH}),
+            updateIntervalMs_, config);
 
         if (w) {
             initAndDrawWidget(*w);

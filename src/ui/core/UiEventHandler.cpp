@@ -10,19 +10,42 @@ UiEventHandler::UiEventHandler(UiController* uiController, LoggerInterface& logg
     registerHandlers();
 }
 
+UiEventHandler::~UiEventHandler() {
+    auto& eventBus = EventBus::getInstance();
+    for (const auto& sub : subscriptions_) {
+        eventBus.unsubscribe(sub.type, sub.id);
+    }
+}
+
 void UiEventHandler::registerHandlers() {
     auto& eventBus = EventBus::getInstance();
 
-    eventBus.subscribe(EventType::NONE,
-                       [this]() { logger_.info("UiEventHandler: EventType::NONE received"); });
-
-    eventBus.subscribe(EventType::RESET_DEVICE, [this]() { resetDevice(); });
-    eventBus.subscribe(EventType::CYCLE_BRIGHTNESS, [this]() { cycleBrightness(); });
-    eventBus.subscribe(EventType::SHOW_SETTINGS, [this]() { requestSettingsScreen(); });
-    eventBus.subscribe(EventType::SHOW_MAIN, [this]() { requestMainScreen(); });
-    eventBus.subscribe(EventType::SHOW_GAME, [this]() { requestGameScreen(); });
-    eventBus.subscribe(EventType::SHOW_DISKS, [this]() { requestDisksScreen(); });
-    eventBus.subscribe(EventType::SHOW_WEATHER, [this]() { requestWeatherScreen(); });
+    size_t i = 0;
+    subscriptions_[i++] = {
+        EventType::NONE, eventBus.subscribe(EventType::NONE, [this]() {
+            logger_.info("UiEventHandler: EventType::NONE received");
+        })};
+    subscriptions_[i++] = {EventType::RESET_DEVICE,
+                           eventBus.subscribe(EventType::RESET_DEVICE,
+                                              [this]() { resetDevice(); })};
+    subscriptions_[i++] = {EventType::CYCLE_BRIGHTNESS,
+                           eventBus.subscribe(EventType::CYCLE_BRIGHTNESS,
+                                              [this]() { cycleBrightness(); })};
+    subscriptions_[i++] = {EventType::SHOW_SETTINGS,
+                           eventBus.subscribe(EventType::SHOW_SETTINGS,
+                                              [this]() { requestSettingsScreen(); })};
+    subscriptions_[i++] = {EventType::SHOW_MAIN,
+                           eventBus.subscribe(EventType::SHOW_MAIN,
+                                              [this]() { requestMainScreen(); })};
+    subscriptions_[i++] = {EventType::SHOW_GAME,
+                           eventBus.subscribe(EventType::SHOW_GAME,
+                                              [this]() { requestGameScreen(); })};
+    subscriptions_[i++] = {EventType::SHOW_DISKS,
+                           eventBus.subscribe(EventType::SHOW_DISKS,
+                                              [this]() { requestDisksScreen(); })};
+    subscriptions_[i++] = {EventType::SHOW_WEATHER,
+                           eventBus.subscribe(EventType::SHOW_WEATHER,
+                                              [this]() { requestWeatherScreen(); })};
 }
 
 void UiEventHandler::resetDevice() {

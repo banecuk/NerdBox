@@ -10,10 +10,9 @@
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 
-// Composite metrics grid for the game screen: CPU + GPU + RAM/VRAM tiles plus
-// up to two system-fan tiles, in a 5-column x 3-row, 96px-wide tile grid.
-// Modeled on PcMetricsWidget but without disk drives, and using a wider tile
-// (96px vs 86px) since there's no left-side disk/fan column to reserve here.
+// Composite CPU + GPU + RAM/VRAM tile grid plus up to two system-fan tiles,
+// in a 5-column x 3-row, 96px-wide grid. Shared by MainScreen (106px tall)
+// and GameScreen (130px tall) via the rowHeight() rescale in toScreenSpace().
 class PcMetricsWidget : public Widget {
  public:
     PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
@@ -68,17 +67,7 @@ class PcMetricsWidget : public Widget {
 
     struct FixedTileDescriptor {
         WidgetInterface::Dimensions dims;
-        const char* unit;
-        int rangeMin;
-        int rangeMax;
-        float thresholdLow;
-        float thresholdHigh;
-        const char* label;
-        uint8_t labelWidth;
-        uint16_t labelColor;
-        bool useGpuColors;
-        bool useDimColors;
-        bool useRamColors;
+        MetricWidget::Config config;
         float (*getValue)(const PcMetrics&);
     };
 
