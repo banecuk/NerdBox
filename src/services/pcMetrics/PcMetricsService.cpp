@@ -73,58 +73,14 @@ bool PcMetricsService::parseData(PcMetrics& outData) {
         return false;
     }
 
-    bool allComponentsValid = true;
+    // Parse individual components with error isolation. This is a full report,
+    // so the publish rule is "no present section failed".
+    const PcMetricsParser::SectionResult sections =
+        PcMetricsParser::parseAllSections(metrics, outData, config_.pcMetricsCores, logger_);
+    const bool allComponentsValid = sections.allSeenValid();
 
-    // Parse individual components with error isolation
-    JsonObject cpu = metrics["Cpu"];
-    if (!cpu.isNull()) {
-        if (!PcMetricsParser::parseCpuData(cpu, outData, config_.pcMetricsCores, logger_)) {
-            allComponentsValid = false;
-        }
-    }
-
-    JsonObject cpuExtended = metrics["CpuExtended"];
-    if (!cpuExtended.isNull()) {
-        if (!PcMetricsParser::parseCpuExtendedData(cpuExtended, outData)) {
-            allComponentsValid = false;
-        }
-    }
-
-    JsonObject ram = metrics["Ram"];
-    if (!ram.isNull()) {
-        if (!PcMetricsParser::parseRamData(ram, outData)) {
-            allComponentsValid = false;
-        }
-    }
-
-    JsonObject gpu = metrics["Gpu"];
-    if (!gpu.isNull()) {
-        if (!PcMetricsParser::parseGpuData(gpu, outData)) {
-            allComponentsValid = false;
-        }
-    }
-
-    JsonObject motherboard = metrics["Motherboard"];
-    if (!motherboard.isNull()) {
-        if (!PcMetricsParser::parseMotherboardData(motherboard, outData)) {
-            allComponentsValid = false;
-        }
-    }
-
-    JsonObject disks = metrics["Disks"];
-    if (!disks.isNull()) {
-        if (!PcMetricsParser::parseDiskData(disks, outData)) {
-            allComponentsValid = false;
-        }
-    } else {
+    if (!sections.seen(PcMetricsParser::kDisks)) {
         logger_.debug("No Disks in filtered JSON");
-    }
-
-    JsonObject network = metrics["Network"];
-    if (!network.isNull()) {
-        if (!PcMetricsParser::parseNetworkData(network, outData)) {
-            allComponentsValid = false;
-        }
     }
 
     // Update metrics — sticky on success only: a partial/failed parse leaves

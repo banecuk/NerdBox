@@ -30,4 +30,33 @@ bool parseMotherboardData(JsonObjectConst motherboard, PcMetrics& outData);
 bool parseDiskData(JsonObjectConst disks, PcMetrics& outData);
 bool parseNetworkData(JsonObjectConst network, PcMetrics& outData);
 
+// One bit per top-level section under "Metrics".
+enum Section : uint8_t {
+    kCpu = 1 << 0,
+    kCpuExtended = 1 << 1,
+    kRam = 1 << 2,
+    kGpu = 1 << 3,
+    kMotherboard = 1 << 4,
+    kDisks = 1 << 5,
+    kNetwork = 1 << 6,
+};
+
+struct SectionResult {
+    uint8_t sectionsSeen = 0;    // bitmask of Section: key present in the JSON
+    uint8_t sectionsFailed = 0;  // bitmask of Section: present but parse returned false
+
+    bool anySeen() const { return sectionsSeen != 0; }
+    bool allSeenValid() const { return sectionsFailed == 0; }
+    bool seen(Section s) const { return (sectionsSeen & s) != 0; }
+};
+
+// Walks every section of a "Metrics" object and dispatches each present one to
+// its parse function above. Absent sections are skipped, never zeroed — the
+// delta-mode contract. This function deliberately applies no publish rule: it
+// only reports what was seen and what failed, so the full-report caller can
+// demand "nothing failed" while the delta caller settles for "something was
+// seen". Adding an 8th section is a one-line change here and nowhere else.
+SectionResult parseAllSections(JsonObjectConst metrics, PcMetrics& outData,
+                               uint8_t configuredCoreCount, LoggerInterface& logger);
+
 }  // namespace PcMetricsParser

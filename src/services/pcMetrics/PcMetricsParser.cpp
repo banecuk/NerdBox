@@ -44,6 +44,41 @@ void buildFilter(JsonDocument& filter) {
     root["Timestamp"] = true;
 }
 
+SectionResult parseAllSections(JsonObjectConst metrics, PcMetrics& outData,
+                               uint8_t configuredCoreCount, LoggerInterface& logger) {
+    SectionResult result;
+
+    auto dispatch = [&](Section bit, const char* key, bool (*parse)(JsonObjectConst, PcMetrics&)) {
+        JsonObjectConst section = metrics[key];
+        if (section.isNull()) {
+            return;
+        }
+        result.sectionsSeen |= bit;
+        if (!parse(section, outData)) {
+            result.sectionsFailed |= bit;
+        }
+    };
+
+    // Cpu takes the extra core-count/logger arguments, so it can't go through
+    // the uniform dispatch above.
+    JsonObjectConst cpu = metrics["Cpu"];
+    if (!cpu.isNull()) {
+        result.sectionsSeen |= kCpu;
+        if (!parseCpuData(cpu, outData, configuredCoreCount, logger)) {
+            result.sectionsFailed |= kCpu;
+        }
+    }
+
+    dispatch(kCpuExtended, "CpuExtended", &parseCpuExtendedData);
+    dispatch(kRam, "Ram", &parseRamData);
+    dispatch(kGpu, "Gpu", &parseGpuData);
+    dispatch(kMotherboard, "Motherboard", &parseMotherboardData);
+    dispatch(kDisks, "Disks", &parseDiskData);
+    dispatch(kNetwork, "Network", &parseNetworkData);
+
+    return result;
+}
+
 bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCoreCount,
                    LoggerInterface& logger) {
     // Parse core loads into a local buffer first — ThreadsWidget reads

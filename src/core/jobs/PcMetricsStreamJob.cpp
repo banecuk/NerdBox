@@ -118,51 +118,10 @@ void PcMetricsStreamJob::handleEvent(const SseEventParser::Event& event) {
     // full report to parse OK before publishing), delta mode means most
     // events only carry a subset of sections — so any section present is
     // enough to count as a fresh update.
-    bool anyParsed = false;
+    const PcMetricsParser::SectionResult sections =
+        PcMetricsParser::parseAllSections(metricsObj, metrics_, config_.pcMetricsCores, logger_);
 
-    JsonObject cpu = metricsObj["Cpu"];
-    if (!cpu.isNull()) {
-        PcMetricsParser::parseCpuData(cpu, metrics_, config_.pcMetricsCores, logger_);
-        anyParsed = true;
-    }
-
-    JsonObject cpuExtended = metricsObj["CpuExtended"];
-    if (!cpuExtended.isNull()) {
-        PcMetricsParser::parseCpuExtendedData(cpuExtended, metrics_);
-        anyParsed = true;
-    }
-
-    JsonObject ram = metricsObj["Ram"];
-    if (!ram.isNull()) {
-        PcMetricsParser::parseRamData(ram, metrics_);
-        anyParsed = true;
-    }
-
-    JsonObject gpu = metricsObj["Gpu"];
-    if (!gpu.isNull()) {
-        PcMetricsParser::parseGpuData(gpu, metrics_);
-        anyParsed = true;
-    }
-
-    JsonObject motherboard = metricsObj["Motherboard"];
-    if (!motherboard.isNull()) {
-        PcMetricsParser::parseMotherboardData(motherboard, metrics_);
-        anyParsed = true;
-    }
-
-    JsonObject disks = metricsObj["Disks"];
-    if (!disks.isNull()) {
-        PcMetricsParser::parseDiskData(disks, metrics_);
-        anyParsed = true;
-    }
-
-    JsonObject network = metricsObj["Network"];
-    if (!network.isNull()) {
-        PcMetricsParser::parseNetworkData(network, metrics_);
-        anyParsed = true;
-    }
-
-    if (anyParsed) {
+    if (sections.anySeen()) {
         metrics_.last_update_timestamp = millis();
         metrics_.is_available = true;
     }

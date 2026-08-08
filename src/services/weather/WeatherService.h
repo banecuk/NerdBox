@@ -2,41 +2,33 @@
 
 #include <ArduinoJson.h>
 
+#include "config/AppConfig.h"
 #include "config/Environment.h"
 #include "network/NetworkManager.h"
+#include "services/JsonHttpService.h"
 #include "services/weather/WeatherData.h"
 #include "utils/LoggerInterface.h"
 
 // Fetches and parses the open-meteo daily forecast response.
 // Call fetchData() from the background task — it writes results directly into
-// the shared WeatherData struct. A clone of AirQualityService.
+// the shared WeatherData struct. fetchData() itself lives in JsonHttpService;
+// only the filter and the parse are specific to this endpoint.
 //
 // Refresh cadence: while the Weather screen is displayed (see WeatherJob);
 // this class itself just does a single bounded fetch per call.
-class WeatherService {
+class WeatherService : public JsonHttpService<WeatherData, WeatherService> {
 public:
     WeatherService(NetworkManager& networkManager, LoggerInterface& logger);
     ~WeatherService() = default;
-
-    WeatherService(const WeatherService&)            = delete;
-    WeatherService& operator=(const WeatherService&) = delete;
-
-    // Fetches fresh data and writes it into outData.  Returns true on success.
-    bool fetchData(WeatherData& outData);
 
     static constexpr unsigned long kRefreshIntervalMs =
         AppConfig::internal::WeatherImpl::kRefreshIntervalMs;
 
 private:
+    friend class JsonHttpService<WeatherData, WeatherService>;
+
+    void initFilter(JsonDocument& filter);
     bool parseData(WeatherData& outData);
-    void initFilter();
-
-    NetworkManager&  networkManager_;
-    LoggerInterface& logger_;
-
-    // Reused across fetches to avoid heap fragmentation.
-    std::unique_ptr<JsonDocument> doc_;
-    JsonDocument filter_;  // Filter built once (small size)
 
     static constexpr uint8_t kMaxForecastDays = AppConfig::internal::WeatherImpl::kForecastDays;
 

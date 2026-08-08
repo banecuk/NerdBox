@@ -1,16 +1,12 @@
 #include "WeatherService.h"
 
-#include "config/AppConfig.h"
-
 WeatherService::WeatherService(NetworkManager& networkManager, LoggerInterface& logger)
-    : networkManager_(networkManager),
-      logger_(logger),
-      doc_(std::make_unique<JsonDocument>()) {
-    initFilter();
+    : JsonHttpService(networkManager, logger, "Weather", WEATHER_API) {
+    init();
 }
 
-void WeatherService::initFilter() {
-    JsonObject filter = filter_.to<JsonObject>();
+void WeatherService::initFilter(JsonDocument& filterDoc) {
+    JsonObject filter = filterDoc.to<JsonObject>();
     JsonObject daily  = filter["daily"].to<JsonObject>();
     daily["time"] = true;
     daily["weather_code"] = true;
@@ -19,29 +15,6 @@ void WeatherService::initFilter() {
     daily["rain_sum"] = true;
     daily["wind_speed_10m_max"] = true;
     filter["daily_units"] = true;
-}
-
-bool WeatherService::fetchData(WeatherData& outData) {
-    if (!networkManager_.isConnected()) {
-        logger_.warning("Weather: network not connected");
-        return false;
-    }
-
-    HttpClient& http = networkManager_.getHttpClient();
-    doc_->clear();
-    // open-meteo is an internet-facing API — give it the same headroom as
-    // AirVisual so a legitimately slow response isn't treated as a failure.
-    if (!http.downloadAndParse(WEATHER_API, *doc_, filter_, 2, 100, 3000, 6000)) {
-        if (http.getLastHttpCode() == HTTP_CODE_OK) {
-            logger_.warningf("Weather: JSON parse error: %s", http.getLastParseError().c_str());
-        } else {
-            logger_.errorf("Weather: HTTP GET failed, code: %d: %s", http.getLastHttpCode(),
-                           http.getLastErrorBody().c_str());
-        }
-        return false;
-    }
-
-    return parseData(outData);
 }
 
 int16_t WeatherService::extractX10(const JsonArray& array, size_t index) {
@@ -56,7 +29,7 @@ int16_t WeatherService::extractX10(const JsonArray& array, size_t index) {
 }
 
 bool WeatherService::parseData(WeatherData& outData) {
-    JsonObject daily = (*doc_)["daily"];
+    JsonObject daily = doc()["daily"];
     if (daily.isNull()) {
         logger_.warning("Weather: missing 'daily' key");
         return false;

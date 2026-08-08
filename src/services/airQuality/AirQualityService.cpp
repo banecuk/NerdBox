@@ -1,14 +1,12 @@
 #include "AirQualityService.h"
 
 AirQualityService::AirQualityService(NetworkManager& networkManager, LoggerInterface& logger)
-    : networkManager_(networkManager),
-      logger_(logger),
-      doc_(std::make_unique<JsonDocument>()) {
-    initFilter();
+    : JsonHttpService(networkManager, logger, "AirQuality", AIR_VISUAL_API) {
+    init();
 }
 
-void AirQualityService::initFilter() {
-    JsonObject filter = filter_.to<JsonObject>();
+void AirQualityService::initFilter(JsonDocument& filterDoc) {
+    JsonObject filter = filterDoc.to<JsonObject>();
     JsonObject weather = filter["data"]["current"]["weather"].to<JsonObject>();
     weather["tp"] = true;
     weather["hu"] = true;
@@ -21,31 +19,8 @@ void AirQualityService::initFilter() {
     pollution["aqius"] = true;
 }
 
-bool AirQualityService::fetchData(AirQualityData& outData) {
-    if (!networkManager_.isConnected()) {
-        logger_.warning("AirQuality: network not connected");
-        return false;
-    }
-
-    HttpClient& http = networkManager_.getHttpClient();
-    doc_->clear();
-    // AirVisual is an internet-facing API, not LAN-local like NerdWinSense —
-    // give it more headroom than HttpClient's default LAN timeouts so a
-    // legitimately slow response isn't treated as a failure.
-    if (!http.downloadAndParse(AIR_VISUAL_API, *doc_, filter_, 2, 100, 3000, 6000)) {
-        if (http.getLastHttpCode() == HTTP_CODE_OK) {
-            logger_.warningf("AirQuality: JSON parse error: %s", http.getLastParseError().c_str());
-        } else {
-            logger_.errorf("AirQuality: HTTP GET failed, code: %d", http.getLastHttpCode());
-        }
-        return false;
-    }
-
-    return parseData(outData);
-}
-
 bool AirQualityService::parseData(AirQualityData& outData) {
-    JsonObject data = (*doc_)["data"];
+    JsonObject data = doc()["data"];
     if (data.isNull()) {
         logger_.warning("AirQuality: missing 'data' key");
         return false;
