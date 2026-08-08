@@ -22,9 +22,6 @@ class WeatherService : public JsonHttpService<WeatherData, WeatherService> {
     WeatherService(NetworkManager& networkManager, LoggerInterface& logger);
     ~WeatherService() = default;
 
-    static constexpr unsigned long kRefreshIntervalMs =
-        AppConfig::internal::WeatherImpl::kRefreshIntervalMs;
-
  private:
     friend class JsonHttpService<WeatherData, WeatherService>;
 

@@ -26,7 +26,7 @@ void SettingsScreen::createWidgets() {
     // Brightness selector — spans the full width.
     widgetManager_.addWidget(std::unique_ptr<BrightnessWidget>(
         new BrightnessWidget(WidgetInterface::Dimensions{kGutter, 0, kContentW, kBrightnessH},
-                             *uiController_->getDisplayManager())));
+                             *uiController_->getDisplayManager(), config_)));
 
     // Dim at night — toggles dimming brightness 50% between 20:00 and 06:00.
     // Actual dimming is applied by DimAtNightJob/DisplayManager in the

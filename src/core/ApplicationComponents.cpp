@@ -6,7 +6,7 @@
 ApplicationComponents::ApplicationComponents()
     : logger_(systemState.core.isTimeSynced),
       displayContext(display, colors, logger_),
-      displayManager(display, logger_),
+      displayManager(display, logger_, config),
       networkManager(logger_, httpClient, config),
       pcMetricsService(networkManager, systemMetrics, logger_, config),
       airQualityService(networkManager, logger_),

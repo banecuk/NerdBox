@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/AppConfig.h"
+#include "config/AppSettings.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/widgets/base/Widget.h"
 
@@ -14,13 +15,15 @@
 //   │  [░1][░░2][▒▒3][▒▒4][▓▓5][██6]                        │
 //   └──────────────────────────────────────────────────────┘
 //
-// Level values and count come from AppConfig::internal::UiImpl::kBrightnessLevels
-// so adding a new step requires only a config change.
+// Segment count is a compile-time AppConfig constant (it sizes the fixed
+// segments_ array below); the level values themselves come from AppSettings
+// (config_.uiBrightnessLevels) since they're data a user retunes per machine.
 class BrightnessWidget : public Widget {
  public:
     static constexpr uint8_t kSegmentCount = AppConfig::internal::UiImpl::kBrightnessLevelCount;
 
-    BrightnessWidget(const WidgetInterface::Dimensions& dims, DisplayManager& displayManager);
+    BrightnessWidget(const WidgetInterface::Dimensions& dims, DisplayManager& displayManager,
+                     const AppSettings& config);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -38,6 +41,7 @@ class BrightnessWidget : public Widget {
     };
 
     DisplayManager& displayManager_;
+    const AppSettings& config_;
     uint8_t lastDrawnLevel_ = 0;
 
     Segment segments_[kSegmentCount];

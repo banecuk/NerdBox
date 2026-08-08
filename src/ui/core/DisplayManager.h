@@ -2,7 +2,7 @@
 
 #include <LovyanGFX.hpp>
 
-#include "config/AppConfig.h"
+#include "config/AppSettings.h"
 #include "config/LgfxConfig.h"
 #include "utils/LoggerInterface.h"
 
@@ -10,7 +10,7 @@
 
 class DisplayManager {
  public:
-    DisplayManager(LGFX& display, LoggerInterface& logger);
+    DisplayManager(LGFX& display, LoggerInterface& logger, const AppSettings& config);
 
     // Initialize the display hardware.
     void initialize();
@@ -59,6 +59,7 @@ class DisplayManager {
 
     LGFX& display_;
     LoggerInterface& logger_;
+    const AppSettings& config_;
     Preferences prefs_;
 
     uint8_t brightness_;
@@ -66,6 +67,4 @@ class DisplayManager {
     bool dimAtNightEnabled_;
     bool isNightWindowActive_ = false;
     bool isCurrentlyDimmed_ = false;
-
-    static constexpr uint8_t kDefaultBrightness = AppConfig::internal::UiImpl::kDefaultBrightness;
 };

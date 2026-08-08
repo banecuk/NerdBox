@@ -4,14 +4,12 @@
 #include "ui/core/Colors.h"
 
 BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,
-                                   DisplayManager& displayManager)
-    : Widget(dims, 0), displayManager_(displayManager) {
+                                   DisplayManager& displayManager, const AppSettings& config)
+    : Widget(dims, 0), displayManager_(displayManager), config_(config) {
     buildSegments();
 }
 
 void BrightnessWidget::buildSegments() {
-    using Cfg = AppConfig::internal::UiImpl;
-
     // Evenly divide available width across kSegmentCount segments.
     const uint16_t totalGaps = kGap * (kSegmentCount - 1);
     const uint16_t segW = (dimensions_.width - totalGaps) / kSegmentCount;
@@ -33,7 +31,7 @@ void BrightnessWidget::buildSegments() {
 
     for (uint8_t i = 0; i < kSegmentCount; ++i) {
         segments_[i] = {static_cast<uint16_t>(dimensions_.x + i * (segW + kGap)), segW,
-                        Cfg::kBrightnessLevels[i], kLabels[i], kColors[i]};
+                        config_.uiBrightnessLevels[i], kLabels[i], kColors[i]};
     }
 }
 

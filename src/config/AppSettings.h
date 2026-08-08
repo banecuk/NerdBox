@@ -91,4 +91,14 @@ struct AppSettings {
     uint32_t uiDisplayLockTimeoutMs = AppConfig::internal::UiImpl::kDisplayLockTimeoutMs;
     uint8_t uiDimAtNightStartHour = AppConfig::internal::UiImpl::kDimAtNightStartHour;
     uint8_t uiDimAtNightEndHour = AppConfig::internal::UiImpl::kDimAtNightEndHour;
+    uint8_t uiDimAtNightPercent = AppConfig::internal::UiImpl::kDimAtNightPercent;
+    bool uiDefaultDimAtNightEnabled = AppConfig::internal::UiImpl::kDefaultDimAtNightEnabled;
+    const char* uiNvsNamespace = AppConfig::internal::UiImpl::kNvsNamespace;
+    const char* uiNvsBrightnessKey = AppConfig::internal::UiImpl::kNvsBrightnessKey;
+    const char* uiNvsDimAtNightKey = AppConfig::internal::UiImpl::kNvsDimAtNightKey;
+    uint8_t uiDefaultBrightness = AppConfig::internal::UiImpl::kDefaultBrightness;
+    // Values (not sizes) — the levels a user retunes per machine. The array's
+    // *size* (kBrightnessLevelCount) stays a compile-time AppConfig constant,
+    // since BrightnessWidget needs it to size a fixed-length member array.
+    const uint8_t* uiBrightnessLevels = AppConfig::internal::UiImpl::kBrightnessLevels;
 };
