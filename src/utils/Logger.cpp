@@ -6,7 +6,7 @@
 // Default to 0 (off) so IntelliSense and any translation unit that omits the
 // flag both compile cleanly without emitting debug output.
 #ifndef DEBUG_MODE
-#define DEBUG_MODE 0
+    #define DEBUG_MODE 0
 #endif
 
 Logger::Logger(const bool& isTimeSynced)

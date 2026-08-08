@@ -16,7 +16,7 @@ FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions&
       pcMetrics_(pcMetrics),
       action_(action),
       callback_(std::move(callback)),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
+      freshnessGuard_(pcMetrics.freshness) {}
 
 void FpsWidget::onDrawStatic() {
     clearArea();

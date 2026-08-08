@@ -9,9 +9,7 @@
 
 NetworkTrafficWidget::NetworkTrafficWidget(const WidgetInterface::Dimensions& dims,
                                            uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs),
-      pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
 
 void NetworkTrafficWidget::onDrawStatic() {
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
@@ -36,16 +34,16 @@ void NetworkTrafficWidget::onDraw(bool forceRedraw) {
     const bool dataAvailabilityChanged = forceRedraw || hasData != lastHasData_;
     const int16_t rowH = dimensions_.height / 2;
     drawRow(dimensions_.y, true, upMbps, ETH_UPLOAD_MBPS, hasData, dataAvailabilityChanged,
-           lastUpText_, sizeof(lastUpText_), lastUpColor_);
+            lastUpText_, sizeof(lastUpText_), lastUpColor_);
     drawRow(dimensions_.y + rowH, false, downMbps, ETH_DOWNLOAD_MBPS, hasData,
-           dataAvailabilityChanged, lastDownText_, sizeof(lastDownText_), lastDownColor_);
+            dataAvailabilityChanged, lastDownText_, sizeof(lastDownText_), lastDownColor_);
 
     lastHasData_ = hasData;
 }
 
-void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps,
-                                   bool hasData, bool forceRedraw, char* lastText,
-                                   size_t lastTextSize, uint16_t& lastColor) {
+void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData,
+                                   bool forceRedraw, char* lastText, size_t lastTextSize,
+                                   uint16_t& lastColor) {
     const float percent = (hasData && maxMbps > 0.0f) ? (mbps / maxMbps) * 100.0f : 0.0f;
     const uint16_t color = hasData ? trafficColor(mbps, percent) : Colors::kHairline;
 
@@ -110,7 +108,7 @@ uint16_t NetworkTrafficWidget::trafficColor(float mbps, float percent) {
     if (percent < 85.0f)
         return TFT_YELLOW;  // heavy
     if (percent < 100.0f)
-        return TFT_ORANGE;  // near saturation
+        return TFT_ORANGE;                               // near saturation
     return Colors::blendRgb565(TFT_RED, TFT_WHITE, 90);  // at/over configured link speed
 }
 

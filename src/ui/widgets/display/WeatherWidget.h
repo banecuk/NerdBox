@@ -3,7 +3,6 @@
 #include <Arduino.h>
 
 #include <cstring>
-#include <time.h>
 
 #include "config/AppConfig.h"
 #include "config/AppSettings.h"
@@ -12,6 +11,9 @@
 #include "services/weather/WeatherData.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
+#include "utils/ScopedLock.h"
+
+#include <time.h>
 
 // Full-width daily forecast column strip, covering the whole weather screen
 // above the bottom back-button band.
@@ -47,54 +49,52 @@ class WeatherWidget : public Widget {
 
  private:
     static constexpr uint8_t kMaxColumns = AppConfig::internal::WeatherImpl::kForecastDays;
-    static constexpr uint8_t kIconSize   = AppConfig::internal::WeatherImpl::kIconSize;
+    static constexpr uint8_t kIconSize = AppConfig::internal::WeatherImpl::kIconSize;
 
     // Vertical layout: icon; day name (larger) + date beneath it; then the temp
     // block (label + max + min) and the rain/wind rows, each running an even
     // blank gutter before its label.
-    static constexpr int16_t kIconY       = 6;
-    static constexpr int16_t kDayNameY   = 64;
-    static constexpr int16_t kDateY      = 78;
-    static constexpr int16_t kTempMaxY   = 128;
-    static constexpr int16_t kTempMinY   = 156;
-    static constexpr int16_t kRainLabelY  = 186;
-    static constexpr int16_t kRainValueY  = 204;
-    static constexpr int16_t kWindLabelY  = 224;
-    static constexpr int16_t kWindValueY  = 244;
+    static constexpr int16_t kIconY = 6;
+    static constexpr int16_t kDayNameY = 64;
+    static constexpr int16_t kDateY = 78;
+    static constexpr int16_t kTempMaxY = 128;
+    static constexpr int16_t kTempMinY = 156;
+    static constexpr int16_t kRainLabelY = 186;
+    static constexpr int16_t kRainValueY = 204;
+    static constexpr int16_t kWindLabelY = 224;
+    static constexpr int16_t kWindValueY = 244;
 
     // Per-column cached snapshot for dirty detection. Equal-length arrays, one
     // element per possible column; only the first `columns_` are live.
     struct ColumnCache {
         int16_t iconWmo = -1;
         char dayName[4] = {0};
-        char date[6]    = {0};
+        char date[6] = {0};
         char tempMax[8] = {0};
         char tempMin[8] = {0};
-        char rain[12]   = {0};
-        char wind[11]  = {0};
+        char rain[12] = {0};
+        char wind[11] = {0};
     };
 
     WeatherData& weatherData_;
     const AppSettings& config_;
 
     // WeatherData is sticky-available (WeatherService never clears
-    // is_available on fetch failure) — freshness must be checked by age too,
+    // availability on fetch failure) — freshness must be checked by age too,
     // or a stale outage-era forecast displays forever with no indication.
     // Timeout mirrors WeatherJob's own refetch threshold: once a refetch was
     // already due but hasn't landed, the display should say so.
-    DataFreshnessGuard<bool, unsigned long> freshness_{weatherData_.is_available,
-                                                        weatherData_.last_update,
-                                                        config_.weatherRefreshIntervalMs};
+    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherRefreshIntervalMs};
 
     ColumnCache lastColumns_[kMaxColumns];
     uint8_t columns_ = 0;
-    bool     lastHasData_ = false;
+    bool lastHasData_ = false;
 
     unsigned long lastTimeCheckMs_ = 0;
 
     // Column geometry for the current draw pass; recomputed on every count change.
-    uint8_t  colWidth_ = 0;
-    int16_t leftPad_  = 0;
+    uint8_t colWidth_ = 0;
+    int16_t leftPad_ = 0;
 
     void recomputeLayout(uint8_t count);
     int16_t columnCenter(uint8_t col) const;
@@ -106,7 +106,7 @@ class WeatherWidget : public Widget {
     void drawIcon(int16_t wmo, uint8_t col);
     void drawDayHeader(const char* dayName, const char* date, uint16_t dayColor, uint8_t col);
     void drawTempBlock(const char* tempMax, const char* tempMin, uint8_t col);
-    void drawLabeledValue(int16_t labelY, int16_t valueY, const char* label,
-                          const char* value, uint16_t valueColor, uint8_t col);
+    void drawLabeledValue(int16_t labelY, int16_t valueY, const char* label, const char* value,
+                          uint16_t valueColor, uint8_t col);
     void drawNoData();
 };

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+
+#include <memory>
+#include <string>
 
 #include "LoggerInterface.h"
 

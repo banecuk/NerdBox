@@ -12,7 +12,7 @@
 // Displays the GPU fullscreen FPS in a compact square in the bottom-right area
 // of the main screen, just above the ClockWidget.
 // The widget is hidden whenever:
-//   - data is not yet available (pcMetrics_.is_available == false), or
+//   - data is not yet available (pcMetrics_.freshness.available() == false), or
 //   - the reported FPS value is -1 (no fullscreen app running).
 //
 // Optionally tappable: pass an action + callback (mirrors ButtonWidget) to
@@ -23,8 +23,8 @@ class FpsWidget : public Widget {
     using ActionCallback = std::function<void(EventType)>;
 
     FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-              uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-              EventType action = EventType::NONE, ActionCallback callback = nullptr);
+              uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action = EventType::NONE,
+              ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -36,7 +36,7 @@ class FpsWidget : public Widget {
     PcMetrics& pcMetrics_;
     EventType action_;
     ActionCallback callback_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     int16_t lastDrawnFps_ = -2;  // sentinel so the first draw always renders
     bool lastVisible_ = false;

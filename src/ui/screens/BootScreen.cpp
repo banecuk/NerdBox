@@ -7,7 +7,8 @@ BootScreen::BootScreen(LoggerInterface& logger, LGFX* lcd) : logger_(logger), lc
 void BootScreen::initialize() {}
 
 void BootScreen::onEnter() {
-    if (!lcd_) return;
+    if (!lcd_)
+        return;
 
     lcd_->fillScreen(TFT_BLACK);
 
@@ -34,11 +35,13 @@ void BootScreen::onEnter() {
 }
 
 void BootScreen::onExit() {
-    if (lcd_) lcd_->clearClipRect();
+    if (lcd_)
+        lcd_->clearClipRect();
 }
 
 void BootScreen::draw() {
-    if (!lcd_) return;
+    if (!lcd_)
+        return;
 
     char message[200];
     while (logger_.popScreenMessage(message, sizeof(message))) {

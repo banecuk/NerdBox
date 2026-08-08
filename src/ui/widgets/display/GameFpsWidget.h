@@ -11,7 +11,7 @@
 
 // Large GPU fullscreen FPS readout with a scrolling history sparkline, shown
 // on the game screen. One sample is recorded per PcMetrics fetch (gated on
-// last_update_timestamp, not a fixed timer) so the plot reflects real data
+// freshness.lastUpdateMs(), not a fixed timer) so the plot reflects real data
 // cadence instead of duplicating/dropping samples.
 //
 // gpu_fps == -1 ("no fullscreen app running") is stored as-is and rendered as
@@ -41,11 +41,11 @@ class GameFpsWidget : public Widget {
     // small margin and a separator gap after the number block.
     static constexpr uint16_t kPlotMarginTop = 16;
     static constexpr uint16_t kPlotMarginBottom = 14;
-    static constexpr uint16_t kPlotLeftGap = 10;   // gap after number block
+    static constexpr uint16_t kPlotLeftGap = 10;  // gap after number block
     static constexpr uint16_t kPlotRightMargin = 10;
 
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     RingHistory<int16_t, kHistorySize> history_;
     unsigned long lastSampledTimestamp_ = 0;

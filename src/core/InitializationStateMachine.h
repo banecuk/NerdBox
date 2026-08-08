@@ -58,7 +58,7 @@ class InitializationStateMachine {
     IInitializationTarget& target_;
     State currentState_;
 
-    static constexpr const char* STATE_NAMES_[] = {"INITIAL",      "DISPLAY_INIT", "WATCHDOG_INIT",
-                                                   "TASKS_INIT",   "NETWORK_INIT", "TIME_INIT",
-                                                   "FINAL_SETUP",  "COMPLETE",     "FAILED"};
+    static constexpr const char* STATE_NAMES_[] = {"INITIAL",     "DISPLAY_INIT", "WATCHDOG_INIT",
+                                                   "TASKS_INIT",  "NETWORK_INIT", "TIME_INIT",
+                                                   "FINAL_SETUP", "COMPLETE",     "FAILED"};
 };

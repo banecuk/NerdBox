@@ -17,14 +17,12 @@ bool NetworkManager::connect() {
     // own separate kReconnectTimeoutMs/kReconnectCheckIntervalMs constants,
     // not these config fields.
     uint32_t timeoutMs = config_.initNetworkRetries * config_.initNetworkRetryDelayMs;
-    wl_status_t status =
-        static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
+    wl_status_t status = static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
     bool connected = (status == WL_CONNECTED);
 
     if (connected) {
         char msg[64];
-        snprintf(msg, sizeof(msg), "WiFi connected - IP: %s",
-                WiFi.localIP().toString().c_str());
+        snprintf(msg, sizeof(msg), "WiFi connected - IP: %s", WiFi.localIP().toString().c_str());
         logger_.info(msg, true);
         reconnectAttempts_ = 0;
     } else {
@@ -42,7 +40,7 @@ void NetworkManager::startReconnect(uint32_t now) {
     WiFi.disconnect(false);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    reconnecting_     = true;
+    reconnecting_ = true;
     reconnectStartMs_ = now;
 }
 
@@ -59,10 +57,9 @@ bool NetworkManager::isConnected() const {
 bool NetworkManager::checkAndReconnect() {
     if (isConnected()) {
         if (reconnecting_) {
-            logger_.infof("Reconnected (attempt %u) — IP: %s",
-                          reconnectAttempts_,
+            logger_.infof("Reconnected (attempt %u) — IP: %s", reconnectAttempts_,
                           WiFi.localIP().toString().c_str());
-            reconnecting_      = false;
+            reconnecting_ = false;
             reconnectAttempts_ = 0;
         }
         return true;
@@ -81,9 +78,9 @@ bool NetworkManager::checkAndReconnect() {
     }
 
     if (now - reconnectStartMs_ >= kReconnectTimeoutMs) {
-        logger_.errorf("Reconnect attempt %u timed out after %u ms",
-                       reconnectAttempts_, kReconnectTimeoutMs);
-        reconnecting_           = false;
+        logger_.errorf("Reconnect attempt %u timed out after %u ms", reconnectAttempts_,
+                       kReconnectTimeoutMs);
+        reconnecting_ = false;
         lastReconnectAttemptMs_ = now;
     }
 

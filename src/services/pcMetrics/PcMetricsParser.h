@@ -22,7 +22,7 @@ namespace PcMetricsParser {
 void buildFilter(JsonDocument& filter);
 
 bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCoreCount,
-                   LoggerInterface& logger);
+                  LoggerInterface& logger);
 bool parseCpuExtendedData(JsonObjectConst cpuExtended, PcMetrics& outData);
 bool parseRamData(JsonObjectConst ram, PcMetrics& outData);
 bool parseGpuData(JsonObjectConst gpu, PcMetrics& outData);

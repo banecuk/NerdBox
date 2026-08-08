@@ -15,9 +15,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::BOOT:
             return std::make_unique<BootScreen>(ctx.logger, ctx.display->getDisplay());
         case ScreenName::MAIN:
-            return std::make_unique<MainScreen>(ctx.logger, ctx.metrics, ctx.controller,
-                                                ctx.config, ctx.systemMetrics,
-                                                ctx.airQualityData, ctx.netStatus);
+            return std::make_unique<MainScreen>(ctx.logger, ctx.metrics, ctx.controller, ctx.config,
+                                                ctx.systemMetrics, ctx.airQualityData,
+                                                ctx.netStatus);
         case ScreenName::SETTINGS:
             return std::make_unique<SettingsScreen>(ctx.logger, ctx.controller, ctx.config,
                                                     ctx.networkManager, ctx.systemMetrics);

@@ -26,22 +26,20 @@
 // " m/s") are drawn in a darker shade than their value, and the "AQI" label
 // uses loadLabel() — NotoSansDisplay 12 pt.
 class AirQualityWidget : public Widget {
-public:
+ public:
     using ActionCallback = std::function<void(EventType)>;
 
-    AirQualityWidget(const WidgetInterface::Dimensions& dims,
-                     uint32_t updateIntervalMs,
-                     const AirQualityData& airData,
-                     EventType action = EventType::NONE,
+    AirQualityWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                     const AirQualityData& airData, EventType action = EventType::NONE,
                      ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
-protected:
+ protected:
     void onDraw(bool forceRedraw) override;
     void onDrawStatic() override;
 
-private:
+ private:
     // -----------------------------------------------------------------------
     // Layout
     // -----------------------------------------------------------------------
@@ -54,8 +52,7 @@ private:
     static constexpr uint16_t kCol3X = kColWidth[0] + kColWidth[1];
     static constexpr uint16_t kCol4X = kColWidth[0] + kColWidth[1] + kColWidth[2];
 
-    static constexpr uint16_t kColCenter[4] = {kColWidth[0] / 2,
-                                               kCol2X + kColWidth[1] / 2,
+    static constexpr uint16_t kColCenter[4] = {kColWidth[0] / 2, kCol2X + kColWidth[1] / 2,
                                                kCol3X + kColWidth[2] / 2,
                                                kCol4X + kColWidth[3] / 2};
 
@@ -66,11 +63,10 @@ private:
     // -----------------------------------------------------------------------
     const AirQualityData& airData_;
 
-    // Data is sticky-available (AirQualityService never clears is_available
+    // Data is sticky-available (AirQualityService never clears availability
     // on fetch failure) — freshness must be checked by age too, or a stale
     // outage-era reading displays forever with no indication.
-    DataFreshnessGuard<bool, unsigned long> freshness_{airData_.is_available, airData_.last_update,
-                                                        AirQualityService::kRefreshIntervalMs};
+    DataFreshnessGuard freshness_{airData_.freshness, AirQualityService::kRefreshIntervalMs};
 
     // Optional tap action (mirrors FpsWidget/ButtonWidget): when a callback
     // is set, a tap publishes `action_`, e.g. to open the Weather screen.
@@ -78,13 +74,13 @@ private:
     ActionCallback callback_;
 
     // Cached values for dirty detection
-    int8_t   lastTemp_     = -128;
-    uint8_t  lastHumidity_ = 0xFF;
-    int16_t  lastPressure_ = -1;
-    uint16_t lastWindX10_  = 0xFFFF;
-    uint16_t lastAqi_      = 0xFFFF;
-    bool     lastAvail_    = false;
-    char     lastIcon_[4]  = {0};
+    int8_t lastTemp_ = -128;
+    uint8_t lastHumidity_ = 0xFF;
+    int16_t lastPressure_ = -1;
+    uint16_t lastWindX10_ = 0xFFFF;
+    uint16_t lastAqi_ = 0xFFFF;
+    bool lastAvail_ = false;
+    char lastIcon_[4] = {0};
 
     // -----------------------------------------------------------------------
     // Helpers

@@ -10,12 +10,12 @@ class MetricWidget : public Widget {
     // Format modes — select which unit suffix is drawn (smaller font, same
     // colour as the value) next to it. See getUnitText() in the .cpp.
     enum class ValueFormat : uint8_t {
-        kDefault,   // unit_ field (same as no formatter)
-        kPercent,   // "%"
-        kRpm,       // "RPM"
-        kWatts,     // "W"
-        kCelsius,   // "°C"
-        kMB,        // "MB"
+        kDefault,  // unit_ field (same as no formatter)
+        kPercent,  // "%"
+        kRpm,      // "RPM"
+        kWatts,    // "W"
+        kCelsius,  // "°C"
+        kMB,       // "MB"
     };
 
     MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs);
@@ -31,7 +31,8 @@ class MetricWidget : public Widget {
     // Label configuration
     void setLabel(const char* label);
     void setLabelWidth(uint16_t width);
-    void setVerticalLabel(bool vertical = true);  // stack label chars top-to-bottom — for tall tiles
+    void
+    setVerticalLabel(bool vertical = true);  // stack label chars top-to-bottom — for tall tiles
 
     // Display configuration
     void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
@@ -285,7 +286,7 @@ class MetricWidget : public Widget {
     // Load/unload the correct value font based on useSmallFont_.
     // All three render paths (renderValueArea, renderValueTextOnly,
     // drawValueWithLoadedFont) must use the same font to stay consistent.
-    void loadValueFont()   const;
+    void loadValueFont() const;
     void unloadValueFont() const;
 
     // Rendering methods

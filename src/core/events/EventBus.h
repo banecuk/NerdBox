@@ -1,13 +1,13 @@
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <functional>
 #include <vector>
-
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
 
 #include "EventTypes.h"
 

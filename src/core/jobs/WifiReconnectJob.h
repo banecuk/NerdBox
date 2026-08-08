@@ -13,9 +13,7 @@ class WifiReconnectJob : public BackgroundJob {
     WifiReconnectJob(NetworkManager& networkManager, SystemState::CoreState& coreState)
         : networkManager_(networkManager), coreState_(coreState) {}
 
-    unsigned long nextDueMs() const override {
-        return coreState_.isInitialized ? 0 : ULONG_MAX;
-    }
+    unsigned long nextDueMs() const override { return coreState_.isInitialized ? 0 : ULONG_MAX; }
 
     void run() override {
         if (!networkManager_.isConnected()) {

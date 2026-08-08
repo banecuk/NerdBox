@@ -31,11 +31,12 @@ class ThreadsWidget : public Widget {
     PcMetrics& pcMetrics_;
     const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     uint16_t barWidth_;
     std::vector<uint16_t> previousBarHeights_;
-    std::vector<uint16_t> previousColors_;  // tracks last drawn color per bar for threshold change detection
+    std::vector<uint16_t>
+        previousColors_;  // tracks last drawn color per bar for threshold change detection
 
     std::unique_ptr<ValueSmoother> valueSmoother_;
     std::vector<uint8_t> smoothedThreadLoads_;

@@ -18,7 +18,8 @@ IpAddressWidget::IpAddressWidget(const WidgetInterface::Dimensions& dims,
 // ---------------------------------------------------------------------------
 void IpAddressWidget::computeLayout() {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     Fonts::loadLabel(lcd);
     const uint16_t labelH = static_cast<uint16_t>(lcd->fontHeight());
@@ -29,8 +30,7 @@ void IpAddressWidget::computeLayout() {
     Fonts::unload(lcd);
 
     const uint16_t pad = 2;
-    valueY_ = dimensions_.y + labelH + pad
-              + ((dimensions_.height - labelH - pad) - valH) / 2;
+    valueY_ = dimensions_.y + labelH + pad + ((dimensions_.height - labelH - pad) - valH) / 2;
 
     layoutReady_ = true;
 }
@@ -55,8 +55,8 @@ void IpAddressWidget::onDraw(bool forceRedraw) {
         networkManager_.getLocalIp(currentIp, sizeof(currentIp));
     }
 
-    const bool changed = (connected != lastConnected_) ||
-                         (strncmp(currentIp, lastIp_, sizeof(currentIp)) != 0);
+    const bool changed =
+        (connected != lastConnected_) || (strncmp(currentIp, lastIp_, sizeof(currentIp)) != 0);
 
     if (forceRedraw || changed) {
         renderContent(connected, currentIp);

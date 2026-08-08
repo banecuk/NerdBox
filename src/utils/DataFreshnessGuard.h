@@ -2,43 +2,42 @@
 
 #include <Arduino.h>
 
+#include "utils/PublishedFlag.h"
+
 // Answers "is the most recent fetch still fresh?" without coupling callers to
-// the two-field check (availability + timestamp age) that defines freshness —
-// shared by PcMetrics and AirQualityData, which use this field pair under
-// different names and types: PcMetrics's is_available is std::atomic<bool>
-// (published cross-core from the background task), AirQualityData's is a
-// plain bool. Templated so both bind directly instead of forcing one of them
-// through a lossy conversion.
+// the two-field check (availability + timestamp age) that defines freshness.
+// Binds directly to a PublishedFlag — every data source that publishes
+// cross-core (PcMetrics, AirQualityData, WeatherData) owns one, so there is
+// exactly one freshness contract shared by all of them.
 //
-// isFresh() reads isAvailable_ before lastUpdateMs_, in that order — when
-// isAvailable_ is atomic, observing it true synchronizes-with the writer's
-// release of that flag, which happens-before every field the writer set
-// prior to it (including the timestamp), so the subsequent plain read of
-// lastUpdateMs_ is guaranteed to see the matching value, not a torn/stale one.
+// isFresh() reads PublishedFlag::available() (an acquire load) before
+// lastUpdateMs() (a plain read) — observing available() true synchronizes-
+// with the writer's release in publish(), which happens-before every field
+// the writer set prior to it (including the timestamp), so the subsequent
+// plain read of lastUpdateMs() is guaranteed to see the matching value, not
+// a torn/stale one.
 //
-// Deliberately non-owning and header-only — holds references, no heap
+// Deliberately non-owning and header-only — holds a reference, no heap
 // allocation or RTOS dependency.
-template <typename AvailabilityT, typename TimestampT>
 class DataFreshnessGuard {
  public:
     static constexpr unsigned long kDefaultTimeoutMs = 5000;
 
-    DataFreshnessGuard(const AvailabilityT& isAvailable, const TimestampT& lastUpdateMs,
-                       unsigned long timeoutMs = kDefaultTimeoutMs)
-        : isAvailable_(isAvailable), lastUpdateMs_(lastUpdateMs), timeoutMs_(timeoutMs) {}
+    explicit DataFreshnessGuard(const PublishedFlag& published,
+                                unsigned long timeoutMs = kDefaultTimeoutMs)
+        : published_(published), timeoutMs_(timeoutMs) {}
 
     bool isFresh() const {
-        if (!isAvailable_) {
+        if (!published_.available()) {
             return false;
         }
-        return (millis() - static_cast<unsigned long>(lastUpdateMs_)) <= timeoutMs_;
+        return (millis() - published_.lastUpdateMs()) <= timeoutMs_;
     }
 
     void setTimeout(unsigned long timeoutMs) { timeoutMs_ = timeoutMs; }
     unsigned long getTimeout() const { return timeoutMs_; }
 
  private:
-    const AvailabilityT& isAvailable_;
-    const TimestampT& lastUpdateMs_;
+    const PublishedFlag& published_;
     unsigned long timeoutMs_;
 };

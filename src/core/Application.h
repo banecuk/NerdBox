@@ -33,6 +33,6 @@ class Application {
     // Injected references to the specific runtime dependencies of run().
     // These are extracted from components_ in the constructor so that run()
     // does not need to reach into the composition root on every loop tick.
-    const AppSettings&   config_;
-    WebServerService&    webServerService_;
+    const AppSettings& config_;
+    WebServerService& webServerService_;
 };

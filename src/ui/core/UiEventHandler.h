@@ -12,12 +12,10 @@ class DisplayManager;
 // Subscription table (registered in registerHandlers()):
 //   EventType::NONE            → log only (debug aid)
 //   EventType::RESET_DEVICE    → resetDevice()      — shows message, calls ESP.restart()
-//   EventType::CYCLE_BRIGHTNESS → cycleBrightness() — steps through brightness levels & saves to NVS
-//   EventType::SHOW_SETTINGS   → requestSettingsScreen()
-//   EventType::SHOW_MAIN       → requestMainScreen()
-//   EventType::SHOW_GAME       → requestGameScreen()
-//   EventType::SHOW_DISKS      → requestDisksScreen()
-//   EventType::SHOW_WEATHER    → requestWeatherScreen()
+//   EventType::CYCLE_BRIGHTNESS → cycleBrightness() — steps through brightness levels & saves to
+//   NVS EventType::SHOW_SETTINGS   → requestSettingsScreen() EventType::SHOW_MAIN       →
+//   requestMainScreen() EventType::SHOW_GAME       → requestGameScreen() EventType::SHOW_DISKS →
+//   requestDisksScreen() EventType::SHOW_WEATHER    → requestWeatherScreen()
 class UiEventHandler {
  public:
     UiEventHandler(UiController* uiController, LoggerInterface& logger);

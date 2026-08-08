@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "ValueSmoother.h"
+
+#include <gtest/gtest.h>
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -67,24 +67,24 @@ TEST(ValueSmootherTest, ConvergesFromZeroToTarget) {
 TEST(ValueSmootherTest, InstantUpwardWithAlphaOne) {
     ValueSmoother s(1, /*up=*/1.0f, /*down=*/0.5f);
     std::vector<uint8_t> seed = {10};
-    s.update(seed);                         // seed at 10
+    s.update(seed);  // seed at 10
 
     std::vector<uint8_t> jump = {90};
-    s.update(jump);                         // one step upward, alpha = 1.0
+    s.update(jump);  // one step upward, alpha = 1.0
 
-    EXPECT_EQ(s.getSmoothedValue(0), 90);   // must arrive immediately
+    EXPECT_EQ(s.getSmoothedValue(0), 90);  // must arrive immediately
 }
 
 TEST(ValueSmootherTest, NoDecayWithDownwardAlphaZero) {
     ValueSmoother s(1, /*up=*/0.5f, /*down=*/0.0f);
     std::vector<uint8_t> seed = {80};
-    s.update(seed);                         // seed at 80
+    s.update(seed);  // seed at 80
 
     std::vector<uint8_t> drop = {10};
-    s.update(drop);                         // downward move, alpha = 0 → no change
+    s.update(drop);  // downward move, alpha = 0 → no change
     s.update(drop);
 
-    EXPECT_EQ(s.getSmoothedValue(0), 80);   // value must not have moved
+    EXPECT_EQ(s.getSmoothedValue(0), 80);  // value must not have moved
 }
 
 TEST(ValueSmootherTest, SlowerRiseWithLowUpwardAlpha) {
@@ -95,7 +95,7 @@ TEST(ValueSmootherTest, SlowerRiseWithLowUpwardAlpha) {
     s.update(seed);
 
     std::vector<uint8_t> target = {100};
-    s.update(target);   // smoothed ≈ 0*0.9 + 100*0.1 = 10
+    s.update(target);  // smoothed ≈ 0*0.9 + 100*0.1 = 10
 
     EXPECT_LT(s.getSmoothedValue(0), 20);
 }
@@ -106,7 +106,7 @@ TEST(ValueSmootherTest, SlowerFallWithLowDownwardAlpha) {
     s.update(seed);
 
     std::vector<uint8_t> drop = {0};
-    s.update(drop);   // smoothed ≈ 100*0.9 + 0*0.1 = 90
+    s.update(drop);  // smoothed ≈ 100*0.9 + 0*0.1 = 90
 
     EXPECT_GT(s.getSmoothedValue(0), 80);
 }
@@ -114,7 +114,7 @@ TEST(ValueSmootherTest, SlowerFallWithLowDownwardAlpha) {
 // ─── Multi-channel independence ───────────────────────────────────────────────
 
 TEST(ValueSmootherTest, EachChannelSmoothedIndependently) {
-    ValueSmoother s(3, 1.0f, 1.0f);        // alpha = 1 → instant, for predictability
+    ValueSmoother s(3, 1.0f, 1.0f);  // alpha = 1 → instant, for predictability
     std::vector<uint8_t> a = {10, 20, 30};
     std::vector<uint8_t> b = {90, 80, 70};
     s.update(a);
@@ -129,8 +129,8 @@ TEST(ValueSmootherTest, EachChannelSmoothedIndependently) {
 
 TEST(ValueSmootherTest, PartialUpdateOnlyAffectsProvidedChannels) {
     ValueSmoother s(4, 1.0f, 1.0f);
-    std::vector<uint8_t> full  = {50, 50, 50, 50};
-    std::vector<uint8_t> partial = {99, 99};    // only first two channels
+    std::vector<uint8_t> full = {50, 50, 50, 50};
+    std::vector<uint8_t> partial = {99, 99};  // only first two channels
 
     s.update(full);
     s.update(partial);

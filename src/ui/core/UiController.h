@@ -4,17 +4,17 @@
 
 #include "config/AppSettings.h"
 #include "core/IScreenUpdater.h"
+#include "core/ScreenTypes.h"
 #include "core/state/SystemState.h"
 #include "DisplayContext.h"
 #include "DisplayManager.h"
 #include "network/NetworkManager.h"
-#include "services/pcMetrics/PcMetrics.h"
 #include "services/airQuality/AirQualityData.h"
-#include "services/weather/WeatherData.h"
 #include "services/network/NetworkStatus.h"
+#include "services/pcMetrics/PcMetrics.h"
+#include "services/weather/WeatherData.h"
 #include "ui/core/TouchManager.h"
 #include "ui/screens/ScreenInterface.h"
-#include "core/ScreenTypes.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
@@ -29,10 +29,8 @@ class UiController : public IScreenUpdater {
     explicit UiController(DisplayContext& context, DisplayManager* displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                           SystemState::ScreenState& screenState, const AppSettings& config,
-NetworkManager& networkManager,
-                           const AirQualityData& airQualityData,
-                           const NetworkStatus& netStatus,
-                           WeatherData& weatherData);
+                          NetworkManager& networkManager, const AirQualityData& airQualityData,
+                          const NetworkStatus& netStatus, WeatherData& weatherData);
     ~UiController();
 
     // Lifecycle methods
@@ -87,8 +85,8 @@ NetworkManager& networkManager,
     const AppSettings& config_;
     NetworkManager& networkManager_;
     const AirQualityData& airQualityData_;
-    const NetworkStatus&  netStatus_;
-    WeatherData&          weatherData_;
+    const NetworkStatus& netStatus_;
+    WeatherData& weatherData_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<UiEventHandler> actionHandler_;

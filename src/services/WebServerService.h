@@ -12,6 +12,7 @@
 #include "services/weather/WeatherData.h"
 #include "ui/core/UiController.h"
 #include "utils/LoggerInterface.h"
+#include "utils/ScopedLock.h"
 
 class WebServerService {
  public:

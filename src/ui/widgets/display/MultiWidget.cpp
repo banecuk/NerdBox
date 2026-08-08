@@ -5,7 +5,7 @@ MultiWidget::MultiWidget(const WidgetInterface::Dimensions& dims, uint32_t updat
 
 void MultiWidget::onDrawStatic() {
     getLcd()->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                        kBorderColor);
+                       kBorderColor);
 }
 
 void MultiWidget::onDraw(bool forceRedraw) {

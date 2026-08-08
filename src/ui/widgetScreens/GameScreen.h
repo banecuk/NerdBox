@@ -5,8 +5,8 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/display/GameFpsWidget.h"
-#include "ui/widgets/display/PcMetricsWidget.h"
 #include "ui/widgets/display/LoadHistoryWidget.h"
+#include "ui/widgets/display/PcMetricsWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 
 // Gaming-focused metrics screen: large FPS + history sparkline, CPU/GPU/RAM/
@@ -15,7 +15,7 @@
 class GameScreen : public BaseWidgetScreen {
  public:
     GameScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
-              const AppSettings& config);
+               const AppSettings& config);
     ~GameScreen() override = default;
 
  private:

@@ -1,6 +1,7 @@
 #include "ClockWidget.h"
 
 #include <cstdio>
+
 #include <time.h>
 
 ClockWidget::ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
@@ -9,12 +10,12 @@ ClockWidget::ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updat
 
 void ClockWidget::computeLayout() {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     Fonts::loadMono(lcd);
-    
 
-    fontH_  = static_cast<uint16_t>(lcd->fontHeight());
+    fontH_ = static_cast<uint16_t>(lcd->fontHeight());
     digitW_ = static_cast<uint16_t>(lcd->textWidth("00"));
     colonW_ = static_cast<uint16_t>(lcd->textWidth(":"));
 
@@ -23,11 +24,11 @@ void ClockWidget::computeLayout() {
     const uint16_t totalW = digitW_ * 3 + colonW_ * 2;
     const uint16_t startX = dimensions_.x + dimensions_.width - totalW;
 
-    xHours_  = startX;
-    xColon1_ = xHours_  + digitW_;
-    xMins_   = xColon1_ + colonW_;
-    xColon2_ = xMins_   + digitW_;
-    xSecs_   = xColon2_ + colonW_;
+    xHours_ = startX;
+    xColon1_ = xHours_ + digitW_;
+    xMins_ = xColon1_ + colonW_;
+    xColon2_ = xMins_ + digitW_;
+    xSecs_ = xColon2_ + colonW_;
 
     // User tweak: nudge colons slightly right for optical spacing.
     xColon1_ = xColon1_ + digitW_ / 4;
@@ -46,7 +47,7 @@ void ClockWidget::onDrawStatic() {
         computeLayout();
 
     Fonts::loadMono(lcd);
-    
+
     lcd->setTextColor(textColor_, bgColor_);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(":", xColon1_, yText_);
@@ -54,8 +55,8 @@ void ClockWidget::onDrawStatic() {
     Fonts::unload(lcd);
 
     hours_.lastValue = -1;
-    mins_.lastValue  = -1;
-    secs_.lastValue  = -1;
+    mins_.lastValue = -1;
+    secs_.lastValue = -1;
 }
 
 void ClockWidget::onDraw(bool forceRedraw) {
@@ -71,8 +72,8 @@ void ClockWidget::onDraw(bool forceRedraw) {
 
 void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
     const bool hoursChanged = forceRedraw || timeinfo.tm_hour != hours_.lastValue;
-    const bool minsChanged  = forceRedraw || timeinfo.tm_min  != mins_.lastValue;
-    const bool secsChanged  = forceRedraw || timeinfo.tm_sec  != secs_.lastValue;
+    const bool minsChanged = forceRedraw || timeinfo.tm_min != mins_.lastValue;
+    const bool secsChanged = forceRedraw || timeinfo.tm_sec != secs_.lastValue;
 
     if (!hoursChanged && !minsChanged && !secsChanged) {
         return;

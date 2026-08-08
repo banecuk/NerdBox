@@ -121,7 +121,7 @@ bool SseConnection::parseHeaderBuf(const char* buf, size_t len) {
     }
 
     chunkedEncoding_ = containsCaseInsensitive(buf, len, "transfer-encoding") &&
-                      containsCaseInsensitive(buf, len, "chunked");
+                       containsCaseInsensitive(buf, len, "chunked");
     return true;
 }
 
@@ -182,7 +182,7 @@ void SseConnection::feedChunked(const char* data, size_t len,
                     chunkRemaining_ = strtoul(chunkSizeLine_, nullptr, 16);
                     chunkSizeLineLen_ = 0;
                     chunkState_ = (chunkRemaining_ == 0) ? ChunkState::AwaitingTrailerBlank
-                                                          : ChunkState::AwaitingData;
+                                                         : ChunkState::AwaitingData;
                 } else if (chunkSizeLineLen_ < sizeof(chunkSizeLine_) - 1) {
                     chunkSizeLine_[chunkSizeLineLen_++] = c;
                 }

@@ -4,13 +4,13 @@
 // Static styling
 // ---------------------------------------------------------------------------
 
-static constexpr uint16_t kDayColor   = TFT_WHITE;
-static constexpr uint16_t kDateColor  = TFT_LIGHTGREY;
+static constexpr uint16_t kDayColor = TFT_WHITE;
+static constexpr uint16_t kDateColor = TFT_LIGHTGREY;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;
-static constexpr uint16_t kTempColor  = TFT_WHITE;
+static constexpr uint16_t kTempColor = TFT_WHITE;
 static constexpr uint16_t kValueColor = TFT_LIGHTGREY;
 static constexpr uint16_t kWeekendColor = 0xFBCF;  // light red for SAT/SUN day names
-static constexpr uint16_t kRainColor    = 0x867F;  // light blue, matches AirQuality humidity
+static constexpr uint16_t kRainColor = 0x867F;     // light blue, matches AirQuality humidity
 
 // Abbreviated day names indexed by tm_wday (0 = Sunday).
 static const char* const kDayNames[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
@@ -37,10 +37,9 @@ WeatherWidget::WeatherWidget(const WidgetInterface::Dimensions& dims, uint32_t u
 
 void WeatherWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
-    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                  TFT_BLACK);
+    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    columns_     = 0;
+    columns_ = 0;
     lastHasData_ = false;
     // Reassign rather than memset — a raw zero-fill would clobber iconWmo's
     // -1 "no icon cached yet" sentinel with 0, which collides with WMO code 0
@@ -56,7 +55,8 @@ void WeatherWidget::onDrawStatic() {
 // ---------------------------------------------------------------------------
 
 void WeatherWidget::onDraw(bool forceRedraw) {
-    if (!getLcd()) return;
+    if (!getLcd())
+        return;
 
     checkMidnightRollover();
 
@@ -64,7 +64,7 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         if (forceRedraw || lastHasData_) {
             drawNoData();
             lastHasData_ = false;
-            columns_     = 0;
+            columns_ = 0;
         }
         return;
     }
@@ -79,14 +79,14 @@ void WeatherWidget::onDraw(bool forceRedraw) {
     if (forceRedraw || !lastHasData_ || count != columns_) {
         drawStatic();
         lastHasData_ = true;
-        columns_     = count;
+        columns_ = count;
         recomputeLayout(count);
     }
 
     for (uint8_t i = 0; i < count; ++i) {
         WeatherForecastDay day;
         {
-            WeatherDataLock lock(weatherData_);
+            ScopedLock lock(weatherData_.daysMutex);
             day = weatherData_.days[i];
         }
         ColumnCache& cache = lastColumns_[i];
@@ -110,23 +110,29 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         snprintf(wind, sizeof(wind), "%d.%d", day.windMaxX10 / 10, day.windMaxX10 % 10);
 
         const bool iconChanged = forceRedraw || day.weatherCode != cache.iconWmo;
-        const bool headerChanged = forceRedraw || strcmp(dayName, cache.dayName) != 0 ||
-                                   strcmp(date, cache.date) != 0;
+        const bool headerChanged =
+            forceRedraw || strcmp(dayName, cache.dayName) != 0 || strcmp(date, cache.date) != 0;
         const bool tempChanged = forceRedraw || strcmp(tempMax, cache.tempMax) != 0 ||
                                  strcmp(tempMin, cache.tempMin) != 0;
         const bool rainChanged = forceRedraw || strcmp(rain, cache.rain) != 0;
         const bool windChanged = forceRedraw || strcmp(wind, cache.wind) != 0;
 
         // SAT/SUN in light red, other days white.
-        const uint16_t dayColor = (ltm.tm_wday == 0 || ltm.tm_wday == 6) ? kWeekendColor : kDayColor;
+        const uint16_t dayColor =
+            (ltm.tm_wday == 0 || ltm.tm_wday == 6) ? kWeekendColor : kDayColor;
         // Any precipitation tints the value in light blue.
         const uint16_t rainColor = (day.rainX10 > 0) ? kRainColor : kValueColor;
 
-        if (iconChanged) drawIcon(day.weatherCode, i);
-        if (headerChanged) drawDayHeader(dayName, date, dayColor, i);
-        if (tempChanged) drawTempBlock(tempMax, tempMin, i);
-        if (rainChanged) drawLabeledValue(kRainLabelY, kRainValueY, "mm", rain, rainColor, i);
-        if (windChanged) drawLabeledValue(kWindLabelY, kWindValueY, "m/s", wind, kValueColor, i);
+        if (iconChanged)
+            drawIcon(day.weatherCode, i);
+        if (headerChanged)
+            drawDayHeader(dayName, date, dayColor, i);
+        if (tempChanged)
+            drawTempBlock(tempMax, tempMin, i);
+        if (rainChanged)
+            drawLabeledValue(kRainLabelY, kRainValueY, "mm", rain, rainColor, i);
+        if (windChanged)
+            drawLabeledValue(kWindLabelY, kWindValueY, "m/s", wind, kValueColor, i);
 
         cache.iconWmo = day.weatherCode;
         strncpy(cache.dayName, dayName, sizeof(cache.dayName) - 1);
@@ -150,7 +156,7 @@ void WeatherWidget::onDraw(bool forceRedraw) {
 
 void WeatherWidget::recomputeLayout(uint8_t count) {
     colWidth_ = dimensions_.width / count;
-    leftPad_  = static_cast<int16_t>((dimensions_.width - colWidth_ * count) / 2);
+    leftPad_ = static_cast<int16_t>((dimensions_.width - colWidth_ * count) / 2);
 }
 
 int16_t WeatherWidget::columnCenter(uint8_t col) const {
@@ -173,13 +179,13 @@ void WeatherWidget::checkMidnightRollover() {
         return;
     }
     timeinfo.tm_hour = 0;
-    timeinfo.tm_min  = 0;
-    timeinfo.tm_sec  = 0;
+    timeinfo.tm_min = 0;
+    timeinfo.tm_sec = 0;
     const time_t localMidnight = mktime(&timeinfo);
 
     time_t firstDayStart;
     {
-        WeatherDataLock lock(weatherData_);
+        ScopedLock lock(weatherData_.daysMutex);
         firstDayStart = weatherData_.days[0].dayStart;
     }
 
@@ -193,17 +199,28 @@ void WeatherWidget::checkMidnightRollover() {
 // ---------------------------------------------------------------------------
 
 const uint16_t* WeatherWidget::iconForWeatherCode(int16_t wmo) const {
-    if (wmo == 0 || wmo == 1) return icon_01d;                     // clear sky
-    if (wmo == 2) return icon_02d;                                  // partly cloudy
-    if (wmo == 3) return icon_04d;                                  // overcast
-    if (wmo == 45 || wmo == 48) return icon_50d;                    // fog / rime fog
-    if (wmo >= 51 && wmo <= 57) return icon_09d;                    // drizzle
-    if (wmo >= 80 && wmo <= 82) return icon_09d;                    // rain showers
-    if (wmo >= 71 && wmo <= 77) return icon_13d;                    // snow
-    if (wmo >= 95) return icon_11d;                                 // thunderstorm / hail
-    if (wmo >= 85 && wmo <= 86) return icon_13d;                    // snow showers
-    if (wmo == 66 || wmo == 67) return icon_10d;                    // freezing rain
-    if (wmo >= 61 && wmo <= 65) return icon_10d;                    // rain
+    if (wmo == 0 || wmo == 1)
+        return icon_01d;  // clear sky
+    if (wmo == 2)
+        return icon_02d;  // partly cloudy
+    if (wmo == 3)
+        return icon_04d;  // overcast
+    if (wmo == 45 || wmo == 48)
+        return icon_50d;  // fog / rime fog
+    if (wmo >= 51 && wmo <= 57)
+        return icon_09d;  // drizzle
+    if (wmo >= 80 && wmo <= 82)
+        return icon_09d;  // rain showers
+    if (wmo >= 71 && wmo <= 77)
+        return icon_13d;  // snow
+    if (wmo >= 95)
+        return icon_11d;  // thunderstorm / hail
+    if (wmo >= 85 && wmo <= 86)
+        return icon_13d;  // snow showers
+    if (wmo == 66 || wmo == 67)
+        return icon_10d;  // freezing rain
+    if (wmo >= 61 && wmo <= 65)
+        return icon_10d;  // rain
     return nullptr;
 }
 

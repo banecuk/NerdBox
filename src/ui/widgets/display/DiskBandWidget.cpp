@@ -22,13 +22,13 @@ uint16_t bandActivityColor(float kbPerSec) {
 }  // namespace
 
 DiskBandWidget::DiskBandWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                               uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                               EventType action, ActionCallback callback)
+                               uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
+                               ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
       action_(action),
       callback_(std::move(callback)),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
+      freshnessGuard_(pcMetrics.freshness) {}
 
 void DiskBandWidget::ensureDiskWidgetsCreated() {
     // Snapshot everything we need under one lock, then do all widget work lock-free.
@@ -38,7 +38,7 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     };
     std::vector<DriveSnapshot> snapshot;
     {
-        PcMetricsDiskLock lock(pcMetrics_);
+        ScopedLock lock(pcMetrics_.disk_drivesMutex);
         const size_t driveCount = pcMetrics_.disk_drives.size() < kMaxDiskWidgets
                                       ? pcMetrics_.disk_drives.size()
                                       : kMaxDiskWidgets;
@@ -56,11 +56,11 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     if (snapshot.empty())
         return;
 
-    bool needsCreation =
-        diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshot.size());
+    bool needsCreation = diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshot.size());
     if (!needsCreation) {
         for (size_t i = 0; i < snapshot.size(); ++i) {
-            if (strncmp(diskDriveNames_[i].data(), snapshot[i].name, sizeof(snapshot[i].name)) != 0) {
+            if (strncmp(diskDriveNames_[i].data(), snapshot[i].name, sizeof(snapshot[i].name)) !=
+                0) {
                 needsCreation = true;
                 break;
             }
@@ -94,22 +94,22 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     for (size_t i = 0; i < snapshot.size(); ++i) {
         uint16_t xPos = static_cast<uint16_t>(dimensions_.x + i * widgetWidth);
 
-        auto w = MetricWidget::Builder(
-                     WidgetInterface::Dimensions{
-                         xPos, static_cast<uint16_t>(dimensions_.y + kDiskAreaY), widgetWidth,
-                         static_cast<uint16_t>(diskAreaHeight)},
-                     updateIntervalMs_)
-                     .unit("")
-                     .range(0, 100)
-                     .colorThresholds(0.0f, 95.0f)
-                     .reverseThresholds(true)
-                     .useDimColors(true)
-                     .smallFont()
-                     .label(snapshot[i].name)
-                     .labelWidth(14)  // narrow: the label is a single drive letter
-                     .value(snapshot[i].freeSpacePercent)
-                     .borderMargin(0)  // flush against the activity lines — no edge gaps
-                     .build();
+        auto w =
+            MetricWidget::Builder(
+                WidgetInterface::Dimensions{xPos, static_cast<uint16_t>(dimensions_.y + kDiskAreaY),
+                                            widgetWidth, static_cast<uint16_t>(diskAreaHeight)},
+                updateIntervalMs_)
+                .unit("")
+                .range(0, 100)
+                .colorThresholds(0.0f, 95.0f)
+                .reverseThresholds(true)
+                .useDimColors(true)
+                .smallFont()
+                .label(snapshot[i].name)
+                .labelWidth(14)  // narrow: the label is a single drive letter
+                .value(snapshot[i].freeSpacePercent)
+                .borderMargin(0)  // flush against the activity lines — no edge gaps
+                .build();
 
         if (w) {
             if (!w->isInitialized())
@@ -126,7 +126,7 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
 
 void DiskBandWidget::updateDiskDriveWidgets() {
     // Snapshot the free-space values under the lock, then release it before
-    // touching the display.  Holding PcMetricsDiskLock across draw() would
+    // touching the display.  Holding ScopedLock across draw() would
     // keep the mutex taken while rendering pixels — a priority inversion risk
     // that can block the background fetch task and cause missed frames.
     // ensureDiskWidgetsCreated() uses the same snapshot pattern.
@@ -140,7 +140,7 @@ void DiskBandWidget::updateDiskDriveWidgets() {
     float readSnapshot[kMaxDiskWidgets];
     size_t updateCount = 0;
     {
-        PcMetricsDiskLock lock(pcMetrics_);
+        ScopedLock lock(pcMetrics_.disk_drivesMutex);
         updateCount = (pcMetrics_.disk_drives.size() < widgetCount) ? pcMetrics_.disk_drives.size()
                                                                     : widgetCount;
         for (size_t i = 0; i < updateCount; ++i) {
@@ -183,8 +183,8 @@ void DiskBandWidget::updateDiskDriveWidgets() {
 
         const uint16_t readColor = bandActivityColor(readSnapshot[i]);
         if (diskReadLineColor_[i] != readColor) {
-            getLcd()->fillRect(dims.x, dimensions_.y + readLineYRelative(), dims.width, kReadLineHeight,
-                               readColor);
+            getLcd()->fillRect(dims.x, dimensions_.y + readLineYRelative(), dims.width,
+                               kReadLineHeight, readColor);
             diskReadLineColor_[i] = readColor;
         }
     }
@@ -233,9 +233,9 @@ void DiskBandWidget::onDraw(bool forceRedraw) {
         wasFreshData_ = currentlyHasFreshData;
     }
 
-    if (currentlyHasFreshData && pcMetrics_.last_update_timestamp != lastEnsureCheckTimestamp_) {
+    if (currentlyHasFreshData && pcMetrics_.freshness.lastUpdateMs() != lastEnsureCheckTimestamp_) {
         ensureDiskWidgetsCreated();
-        lastEnsureCheckTimestamp_ = pcMetrics_.last_update_timestamp;
+        lastEnsureCheckTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
     }
 
     const bool needsRedraw = forceRedraw || isDirty() || needsUpdate();
@@ -267,8 +267,8 @@ void DiskBandWidget::clearDiskWidgets() {
     // very top) or read line (draws at the very bottom). To make sure nothing
     // bleeds above/below the band, clear a background 2px taller and 1px up
     // from the widget's own bounds (widget size itself is unchanged).
-    getLcd()->fillRect(dimensions_.x, dimensions_.y - 1, dimensions_.width,
-                       dimensions_.height + 2, TFT_BLACK);
+    getLcd()->fillRect(dimensions_.x, dimensions_.y - 1, dimensions_.width, dimensions_.height + 2,
+                       TFT_BLACK);
 
     diskDriveWidgets_.clear();
     diskWriteLineColor_.clear();
@@ -285,7 +285,7 @@ bool DiskBandWidget::needsUpdate() const {
         return false;
     if (hasFreshData() != wasFreshData_)
         return true;
-    return (pcMetrics_.last_update_timestamp > lastUpdateTimestamp_) ||
+    return (pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_) ||
            (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 
@@ -295,7 +295,8 @@ bool DiskBandWidget::handleTouch(uint16_t x, uint16_t y) {
 
     // The whole strip is tappable: the drive tiles span the widget's full
     // width, and the band contains nothing else (write line .. read line).
-    if (y >= dimensions_.y + kWriteLineY && y < dimensions_.y + readLineYRelative() + kReadLineHeight) {
+    if (y >= dimensions_.y + kWriteLineY &&
+        y < dimensions_.y + readLineYRelative() + kReadLineHeight) {
         callback_(action_);
         return true;
     }

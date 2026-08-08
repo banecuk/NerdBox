@@ -4,8 +4,8 @@
 
 #include "config/Environment.h"
 #include "network/NetworkManager.h"
-#include "services/JsonHttpService.h"
 #include "services/airQuality/AirQualityData.h"
+#include "services/JsonHttpService.h"
 #include "utils/LoggerInterface.h"
 
 // Fetches and parses the AirVisual nearest-city API response.
@@ -15,13 +15,13 @@
 //
 // Refresh cadence: 30 minutes — within the AirVisual free-tier rate limit.
 class AirQualityService : public JsonHttpService<AirQualityData, AirQualityService> {
-public:
+ public:
     AirQualityService(NetworkManager& networkManager, LoggerInterface& logger);
     ~AirQualityService() = default;
 
     static constexpr unsigned long kRefreshIntervalMs = 30UL * 60UL * 1000UL;
 
-private:
+ private:
     friend class JsonHttpService<AirQualityData, AirQualityService>;
 
     void initFilter(JsonDocument& filter);

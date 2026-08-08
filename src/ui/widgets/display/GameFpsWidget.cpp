@@ -12,9 +12,7 @@ static constexpr uint16_t kNewestBarColor = TFT_GREEN;
 
 GameFpsWidget::GameFpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs),
-      pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
 
 void GameFpsWidget::computePlotLayout() {
     plotX_ = dimensions_.x + kNumberBlockWidth + kPlotLeftGap;
@@ -22,7 +20,8 @@ void GameFpsWidget::computePlotLayout() {
     plotWidth_ = kHistorySize * kColWidth;
     plotHeight_ = dimensions_.height - kPlotMarginTop - kPlotMarginBottom;
     // Clamp so a narrower-than-designed dims never overflows past the widget.
-    const uint16_t maxWidth = dimensions_.width - kNumberBlockWidth - kPlotLeftGap - kPlotRightMargin;
+    const uint16_t maxWidth =
+        dimensions_.width - kNumberBlockWidth - kPlotLeftGap - kPlotRightMargin;
     if (plotWidth_ > maxWidth)
         plotWidth_ = maxWidth;
 }
@@ -43,7 +42,8 @@ void GameFpsWidget::onDrawStatic() {
     // Plot border.
     lcd->drawRect(plotX_ - 1, plotY_ - 1, plotWidth_ + 2, plotHeight_ + 2, Colors::kHairline);
 
-    for (auto& h : lastColHeight_) h = 0;
+    for (auto& h : lastColHeight_)
+        h = 0;
     scaleChanged_ = true;
     drawScaleLabels();
 }
@@ -77,7 +77,8 @@ void GameFpsWidget::updateScale(int16_t sampleValue) {
         return;
 
     if (sampleValue > yMax_) {
-        while (sampleValue > yMax_) yMax_ += kScaleStep;
+        while (sampleValue > yMax_)
+            yMax_ += kScaleStep;
         scaleChanged_ = true;
         return;
     }
@@ -88,11 +89,13 @@ void GameFpsWidget::updateScale(int16_t sampleValue) {
         int16_t bufMax = 0;
         for (size_t i = 0; i < history_.size(); ++i) {
             const int16_t v = history_.at(i);
-            if (v > bufMax) bufMax = v;
+            if (v > bufMax)
+                bufMax = v;
         }
         if (bufMax < (yMax_ * 6) / 10) {
             yMax_ -= kScaleStep;
-            if (yMax_ < kMinScale) yMax_ = kMinScale;
+            if (yMax_ < kMinScale)
+                yMax_ = kMinScale;
             scaleChanged_ = true;
         }
     }
@@ -101,10 +104,10 @@ void GameFpsWidget::updateScale(int16_t sampleValue) {
 void GameFpsWidget::sampleIfNeeded() {
     if (!freshnessGuard_.isFresh())
         return;
-    if (pcMetrics_.last_update_timestamp == lastSampledTimestamp_)
+    if (pcMetrics_.freshness.lastUpdateMs() == lastSampledTimestamp_)
         return;
 
-    lastSampledTimestamp_ = pcMetrics_.last_update_timestamp;
+    lastSampledTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
     const int16_t fps = pcMetrics_.gpu_fps;
     history_.push(fps);
     updateScale(fps);
@@ -125,7 +128,8 @@ void GameFpsWidget::drawSparkline(bool forceFullRepaint) {
         uint8_t newHeight = 0;
         if (sample >= 0 && yMax_ > 0) {
             uint32_t h = (static_cast<uint32_t>(sample) * (plotHeight_ - 1)) / yMax_;
-            if (h > plotHeight_ - 1) h = plotHeight_ - 1;
+            if (h > plotHeight_ - 1)
+                h = plotHeight_ - 1;
             newHeight = static_cast<uint8_t>(h + 1);
         }
 

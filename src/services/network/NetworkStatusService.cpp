@@ -44,8 +44,7 @@ void NetworkStatusService::maybeTriggerProbe(NetworkStatus& status) {
     if (status.probe_running)
         return;
 
-    const unsigned long interval =
-        allEndpointsProbed() ? kProbeIntervalMs : kWarmupProbeIntervalMs;
+    const unsigned long interval = allEndpointsProbed() ? kProbeIntervalMs : kWarmupProbeIntervalMs;
     if (status.last_probe != 0 && (millis() - status.last_probe) < interval)
         return;
 

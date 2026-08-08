@@ -156,7 +156,8 @@ bool InitializationStateMachine::handleWatchdogInit() {
 }
 
 void InitializationStateMachine::addMainTaskToWatchdog() {
-    if (!target_.watchdogEnabledOnBoot()) return;
+    if (!target_.watchdogEnabledOnBoot())
+        return;
 
     esp_err_t ret = esp_task_wdt_add(nullptr);
     if (ret != ESP_OK) {

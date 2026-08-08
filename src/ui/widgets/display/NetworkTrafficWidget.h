@@ -32,7 +32,7 @@ class NetworkTrafficWidget : public Widget {
 
  private:
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     // Cached *rendered* state (formatted text + colour actually drawn last
     // time), not the raw Mbps value — comparing raw floats redraws on every
@@ -44,8 +44,8 @@ class NetworkTrafficWidget : public Widget {
     uint16_t lastDownColor_ = 0;
     bool lastHasData_ = false;
 
-    void drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData,
-                bool forceRedraw, char* lastText, size_t lastTextSize, uint16_t& lastColor);
+    void drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData, bool forceRedraw,
+                 char* lastText, size_t lastTextSize, uint16_t& lastColor);
     void drawArrow(int16_t cx, int16_t cy, bool up, uint16_t color);
 
     // Colour by absolute Mbps (idle threshold) and utilisation percentage of

@@ -53,7 +53,8 @@ void Colors::generateGradient() {
 }
 
 uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
-    if (value > 99) value = 99;
+    if (value > 99)
+        value = 99;
 
     // GPU gradient: dark red (idle) → mid red → deep red → bright alert red.
     // Pure red hue throughout (no green/blue channel) so it never drifts
@@ -61,21 +62,24 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
     // Idle stays dark enough to be clearly distinct from the bright red
     // used at heavy load.
     const uint16_t darkRed = 0x1041;  // RGB(16,  8,  8) — idle, dark desaturated red
-    const uint16_t midRed  = 0x5000;  // RGB(82,   0,   0)
+    const uint16_t midRed = 0x5000;   // RGB(82,   0,   0)
     const uint16_t deepRed = 0x8800;  // RGB(140,   0,   0)
-    const uint16_t red     = 0xF800;  // RGB(255,   0,   0) — bright alert red
+    const uint16_t red = 0xF800;      // RGB(255,   0,   0) — bright alert red
 
     uint16_t C1, C2;
     uint8_t alpha;
 
     if (value < 40) {
-        C1 = darkRed; C2 = midRed;
+        C1 = darkRed;
+        C2 = midRed;
         alpha = (value * 255) / 39;
     } else if (value < 70) {
-        C1 = midRed; C2 = deepRed;
+        C1 = midRed;
+        C2 = deepRed;
         alpha = ((value - 40) * 255) / 29;
     } else {
-        C1 = deepRed; C2 = red;
+        C1 = deepRed;
+        C2 = red;
         alpha = ((value - 70) * 255) / 29;
     }
 
@@ -83,24 +87,27 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
 }
 
 uint16_t Colors::getColorFromPercentRam(uint8_t value) {
-    if (value > 99) value = 99;
+    if (value > 99)
+        value = 99;
 
     // RAM gradient: dark teal (idle) → muted teal → bright cyan (high load).
     // Teal keeps the cool blue family of the old slate/steel RAM ramp but is
     // far enough from the CPU's muted blue and the GPU's red to be told apart
     // at a glance. Idle stays near-black so it never reads as "active".
-    const uint16_t darkTeal = 0x08C3;  // RGB(  8,  24,  25) — idle, near-black teal
-    const uint16_t midTeal  = 0x11E7;  // RGB( 16,  61,  58) — low-moderate load
+    const uint16_t darkTeal = 0x08C3;    // RGB(  8,  24,  25) — idle, near-black teal
+    const uint16_t midTeal = 0x11E7;     // RGB( 16,  61,  58) — low-moderate load
     const uint16_t brightCyan = 0x4C71;  // RGB( 74, 142, 140) — bright alert cyan
 
     uint16_t C1, C2;
     uint8_t alpha;
 
     if (value < 50) {
-        C1 = darkTeal; C2 = midTeal;
+        C1 = darkTeal;
+        C2 = midTeal;
         alpha = (value * 255) / 49;
     } else {
-        C1 = midTeal; C2 = brightCyan;
+        C1 = midTeal;
+        C2 = brightCyan;
         alpha = ((value - 50) * 255) / 49;
     }
 

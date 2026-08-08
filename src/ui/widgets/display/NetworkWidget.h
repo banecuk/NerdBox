@@ -63,9 +63,9 @@ class NetworkWidget : public Widget {
 
     // Colours
     static constexpr uint16_t kColorOk = TFT_LIGHTGRAY;
-    static constexpr uint16_t kColorWarning = 0xFFE0;       // yellow
-    static constexpr uint16_t kColorDegraded = 0xFC60;      // orange
-    static constexpr uint16_t kColorDown = 0xF800;          // red
+    static constexpr uint16_t kColorWarning = 0xFFE0;   // yellow
+    static constexpr uint16_t kColorDegraded = 0xFC60;  // orange
+    static constexpr uint16_t kColorDown = 0xF800;      // red
     static constexpr uint16_t kColorUnknown = Colors::kHairline;
     static constexpr uint16_t kColorDotFail = 0xF800;       // red dot
     static constexpr uint16_t kColorDotOk = TFT_LIGHTGRAY;  // ok dot

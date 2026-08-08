@@ -15,8 +15,8 @@ class SseEventParser {
     struct Event {
         static constexpr size_t kMaxEventNameLen = 31;
         char eventName[kMaxEventNameLen + 1] = "";  // "" if the source omitted `event:`
-        const char* data = "";  // points into this parser's internal buffer;
-                                // only valid until the next feed() call
+        const char* data = "";                      // points into this parser's internal buffer;
+                                                    // only valid until the next feed() call
         size_t dataLen = 0;
     };
 

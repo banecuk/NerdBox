@@ -25,7 +25,7 @@ class IpAddressWidget : public Widget {
     char lastIp_[16] = {};
 
     uint16_t valueY_ = 0;  // computed from font metrics in computeLayout()
-    bool     layoutReady_ = false;
+    bool layoutReady_ = false;
 
     void computeLayout();
     void renderContent(bool connected, const char* ip);

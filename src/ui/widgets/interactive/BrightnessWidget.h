@@ -18,8 +18,7 @@
 // so adding a new step requires only a config change.
 class BrightnessWidget : public Widget {
  public:
-    static constexpr uint8_t kSegmentCount =
-        AppConfig::internal::UiImpl::kBrightnessLevelCount;
+    static constexpr uint8_t kSegmentCount = AppConfig::internal::UiImpl::kBrightnessLevelCount;
 
     BrightnessWidget(const WidgetInterface::Dimensions& dims, DisplayManager& displayManager);
 
@@ -31,15 +30,15 @@ class BrightnessWidget : public Widget {
 
  private:
     struct Segment {
-        uint16_t    x;            // left pixel of this segment
-        uint16_t    width;
-        uint8_t     level;        // brightness value
+        uint16_t x;  // left pixel of this segment
+        uint16_t width;
+        uint8_t level;  // brightness value
         const char* label;
-        uint16_t    activeColor;
+        uint16_t activeColor;
     };
 
     DisplayManager& displayManager_;
-    uint8_t         lastDrawnLevel_ = 0;
+    uint8_t lastDrawnLevel_ = 0;
 
     Segment segments_[kSegmentCount];
 
@@ -47,6 +46,6 @@ class BrightnessWidget : public Widget {
     void drawSegment(const Segment& seg, bool active);
 
     static constexpr uint8_t kLabelH = 13;  // px for "BRIGHTNESS" label row
-    static constexpr uint8_t kGap    = 3;   // px gap between segments
+    static constexpr uint8_t kGap = 3;      // px gap between segments
     static constexpr uint8_t kRadius = 4;   // corner radius
 };

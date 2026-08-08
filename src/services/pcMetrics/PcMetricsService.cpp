@@ -88,8 +88,7 @@ bool PcMetricsService::parseData(PcMetrics& outData) {
     // keeps growing toward the staleness timeout instead of instantly
     // flipping unavailable.
     if (allComponentsValid) {
-        outData.last_update_timestamp = millis();
-        outData.is_available = true;
+        outData.freshness.publish(millis());
     }
 
     unsigned long parseTime = millis() - startTime;

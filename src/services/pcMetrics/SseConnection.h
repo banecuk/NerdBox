@@ -38,10 +38,14 @@
 // intermediate (proxy, corporate AP) reshapes the response.
 class SseConnection {
  public:
-    enum class State { Disconnected, Connected, Error };
+    enum class State {
+        Disconnected,
+        Connected,
+        Error
+    };
 
     explicit SseConnection(LoggerInterface& logger, size_t eventBufferBytes,
-                            uint16_t maxBytesPerPoll = 512);
+                           uint16_t maxBytesPerPoll = 512);
 
     State state() const { return state_; }
 
@@ -67,7 +71,12 @@ class SseConnection {
     bool isChunkedEncoding() const { return chunkedEncoding_; }
 
  private:
-    enum class ChunkState { AwaitingSize, AwaitingData, AwaitingDataCrlf, AwaitingTrailerBlank };
+    enum class ChunkState {
+        AwaitingSize,
+        AwaitingData,
+        AwaitingDataCrlf,
+        AwaitingTrailerBlank
+    };
 
     bool readHeaders(uint16_t headerTimeoutMs);
     bool parseHeaderBuf(const char* buf, size_t len);

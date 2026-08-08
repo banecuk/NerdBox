@@ -10,6 +10,7 @@
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
+#include "utils/ScopedLock.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
 // free-space tiles, each with a solid 4px write line above and read line below
@@ -66,7 +67,7 @@ class DiskBandWidget : public Widget {
     PcMetrics& pcMetrics_;
     EventType action_;
     ActionCallback callback_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     unsigned long lastUpdateTimestamp_ = 0;
     unsigned long lastEnsureCheckTimestamp_ = 0;

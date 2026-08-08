@@ -10,9 +10,7 @@ static constexpr uint16_t kGpuColor = 0xB471;
 LoadHistoryWidget::LoadHistoryWidget(DisplayContext& context,
                                      const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs),
-      pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
 
 void LoadHistoryWidget::computePlotLayout() {
     plotX_ = dimensions_.x + kCaptionWidth;
@@ -34,17 +32,19 @@ void LoadHistoryWidget::onDrawStatic() {
     drawCaptionLabel("LOAD");
     lcd->drawRect(plotX_ - 1, plotY_ - 1, plotWidth_ + 2, plotHeight_ + 2, Colors::kHairline);
 
-    for (auto& h : lastCpuHeight_) h = 0;
-    for (auto& h : lastGpuHeight_) h = 0;
+    for (auto& h : lastCpuHeight_)
+        h = 0;
+    for (auto& h : lastGpuHeight_)
+        h = 0;
 }
 
 void LoadHistoryWidget::sampleIfNeeded() {
     if (!freshnessGuard_.isFresh())
         return;
-    if (pcMetrics_.last_update_timestamp == lastSampledTimestamp_)
+    if (pcMetrics_.freshness.lastUpdateMs() == lastSampledTimestamp_)
         return;
 
-    lastSampledTimestamp_ = pcMetrics_.last_update_timestamp;
+    lastSampledTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
     cpuHistory_.push(pcMetrics_.cpu_load);
     gpuHistory_.push(pcMetrics_.gpu_load);
 }

@@ -11,7 +11,8 @@ bool isRetryable(int httpCode) {
 }  // namespace
 
 HttpClient::HttpClient() {
-    http_.setReuse(true);  // keep-alive across the same host; begin() reconnects when the host changes
+    http_.setReuse(
+        true);  // keep-alive across the same host; begin() reconnects when the host changes
 }
 
 HttpClient::~HttpClient() {
@@ -53,7 +54,7 @@ bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetri
             }
         } else {
             http_.end();  // Unread body on a kept-alive socket would desync the next request
-            break;  // Non-retryable HTTP error (e.g. 4xx) — retrying won't help
+            break;        // Non-retryable HTTP error (e.g. 4xx) — retrying won't help
         }
         http_.end();
     }
@@ -99,9 +100,9 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
             success = !lastParseError_;
             http_.end();
             break;  // Parse is attempted exactly once per successful fetch —
-                     // matches the old download()+deserializeJson() behavior
-                     // of retrying only on HTTP-level failure, not on a
-                     // malformed 200 response.
+                    // matches the old download()+deserializeJson() behavior
+                    // of retrying only on HTTP-level failure, not on a
+                    // malformed 200 response.
         }
 
         // Non-200: grab the body for diagnostics before end() closes the

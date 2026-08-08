@@ -8,6 +8,7 @@
 #include "services/JsonHttpService.h"
 #include "services/weather/WeatherData.h"
 #include "utils/LoggerInterface.h"
+#include "utils/ScopedLock.h"
 
 // Fetches and parses the open-meteo daily forecast response.
 // Call fetchData() from the background task — it writes results directly into
@@ -17,14 +18,14 @@
 // Refresh cadence: while the Weather screen is displayed (see WeatherJob);
 // this class itself just does a single bounded fetch per call.
 class WeatherService : public JsonHttpService<WeatherData, WeatherService> {
-public:
+ public:
     WeatherService(NetworkManager& networkManager, LoggerInterface& logger);
     ~WeatherService() = default;
 
     static constexpr unsigned long kRefreshIntervalMs =
         AppConfig::internal::WeatherImpl::kRefreshIntervalMs;
 
-private:
+ private:
     friend class JsonHttpService<WeatherData, WeatherService>;
 
     void initFilter(JsonDocument& filter);

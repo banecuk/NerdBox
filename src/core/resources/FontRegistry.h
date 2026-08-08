@@ -72,7 +72,5 @@ struct Fonts {
         lcd->setTextSize(1);
     }
 
-    static void unload(LGFX* lcd) {
-        lcd->unloadFont();
-    }
+    static void unload(LGFX* lcd) { lcd->unloadFont(); }
 };

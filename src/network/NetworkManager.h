@@ -19,7 +19,8 @@ class NetworkManager {
     // connected) — no String allocation, unlike IPAddress::toString().
     void getLocalIp(char* buf, size_t size) const {
         if (!isConnected() || size == 0) {
-            if (size > 0) buf[0] = '\0';
+            if (size > 0)
+                buf[0] = '\0';
             return;
         }
         IPAddress ip = WiFi.localIP();
@@ -29,7 +30,7 @@ class NetworkManager {
     HttpClient& getHttpClient() { return httpClient_; }
 
  private:
-    static constexpr uint32_t kReconnectTimeoutMs      = 10000;
+    static constexpr uint32_t kReconnectTimeoutMs = 10000;
     static constexpr uint32_t kReconnectCheckIntervalMs = 15000;
 
     void startReconnect(uint32_t now);
@@ -39,7 +40,7 @@ class NetworkManager {
     const AppSettings& config_;
 
     uint32_t lastReconnectAttemptMs_ = 0;
-    uint32_t reconnectStartMs_       = 0;
-    uint32_t reconnectAttempts_      = 0;
-    bool reconnecting_               = false;
+    uint32_t reconnectStartMs_ = 0;
+    uint32_t reconnectAttempts_ = 0;
+    bool reconnecting_ = false;
 };

@@ -29,8 +29,8 @@
 class PcMetricsJob : public BackgroundJob {
  public:
     PcMetricsJob(PcMetricsService& service, PcMetrics& metrics, SystemState::CoreState& coreState,
-                SystemState::ScreenState& screenState, NetworkManager& networkManager,
-                const AppSettings& config, LoggerInterface& logger)
+                 SystemState::ScreenState& screenState, NetworkManager& networkManager,
+                 const AppSettings& config, LoggerInterface& logger)
         : service_(service),
           metrics_(metrics),
           coreState_(coreState),
@@ -38,7 +38,7 @@ class PcMetricsJob : public BackgroundJob {
           networkManager_(networkManager),
           config_(config),
           logger_(logger),
-          freshness_(metrics_.is_available, metrics_.last_update_timestamp) {}
+          freshness_(metrics_.freshness) {}
 
     unsigned long nextDueMs() const override {
         // Mutually exclusive with PcMetricsStreamJob — when streaming is
@@ -87,8 +87,8 @@ class PcMetricsJob : public BackgroundJob {
     LoggerInterface& logger_;
 
     // Single source of truth for PC-metrics staleness — shared with
-    // PcMetricsWidget via the same PcMetrics::last_update_timestamp field.
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshness_;
+    // PcMetricsWidget via the same PcMetrics::freshness field.
+    DataFreshnessGuard freshness_;
     uint8_t consecutiveFailures_ = 0;
     unsigned long nextSync_ = 0;
 };

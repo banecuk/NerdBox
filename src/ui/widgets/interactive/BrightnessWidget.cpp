@@ -5,8 +5,7 @@
 
 BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,
                                    DisplayManager& displayManager)
-    : Widget(dims, 0),
-      displayManager_(displayManager) {
+    : Widget(dims, 0), displayManager_(displayManager) {
     buildSegments();
 }
 
@@ -15,38 +14,32 @@ void BrightnessWidget::buildSegments() {
 
     // Evenly divide available width across kSegmentCount segments.
     const uint16_t totalGaps = kGap * (kSegmentCount - 1);
-    const uint16_t segW      = (dimensions_.width - totalGaps) / kSegmentCount;
+    const uint16_t segW = (dimensions_.width - totalGaps) / kSegmentCount;
 
     // Labels — one per level, ordered dim → bright.
-    static constexpr const char* kLabels[kSegmentCount] = { "1", "2", "3", "4", "5", "6" };
+    static constexpr const char* kLabels[kSegmentCount] = {"1", "2", "3", "4", "5", "6"};
 
     // Active-state accent colours, graduating dim-blue → steel blue → amber →
     // orange → warm yellow → white. RGB565 values chosen so text (black) is
     // readable on each.
     static constexpr uint16_t kColors[kSegmentCount] = {
-        0x4208,   // 1 — dim blue-grey  (~#404040)
-        0x7BCF,   // 2 — steel blue     (~#7090C8)
-        0xFD20,   // 3 — amber          (~#FF6800)
-        0xFD00,   // 4 — orange         (~#FFA000)
-        0xFF80,   // 5 — warm yellow    (~#FFB000)
-        TFT_WHITE // 6 — full white
+        0x4208,    // 1 — dim blue-grey  (~#404040)
+        0x7BCF,    // 2 — steel blue     (~#7090C8)
+        0xFD20,    // 3 — amber          (~#FF6800)
+        0xFD00,    // 4 — orange         (~#FFA000)
+        0xFF80,    // 5 — warm yellow    (~#FFB000)
+        TFT_WHITE  // 6 — full white
     };
 
     for (uint8_t i = 0; i < kSegmentCount; ++i) {
-        segments_[i] = {
-            static_cast<uint16_t>(dimensions_.x + i * (segW + kGap)),
-            segW,
-            Cfg::kBrightnessLevels[i],
-            kLabels[i],
-            kColors[i]
-        };
+        segments_[i] = {static_cast<uint16_t>(dimensions_.x + i * (segW + kGap)), segW,
+                        Cfg::kBrightnessLevels[i], kLabels[i], kColors[i]};
     }
 }
 
 void BrightnessWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
-    lcd->fillRect(dimensions_.x, dimensions_.y,
-                  dimensions_.width, dimensions_.height, TFT_BLACK);
+    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
     drawCaptionLabel("BRIGHTNESS");
 
@@ -67,7 +60,7 @@ void BrightnessWidget::onDraw(bool forceRedraw) {
         drawSegment(seg, seg.level == current);
     }
 
-    lastDrawnLevel_   = current;
+    lastDrawnLevel_ = current;
     lastUpdateTimeMs_ = millis();
     clearDirty();
 }
@@ -76,7 +69,7 @@ void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
     const uint16_t segY = dimensions_.y + kLabelH + kGap;
     const uint16_t segH = dimensions_.height - kLabelH - kGap;
 
-    const uint16_t bgColor   = active ? seg.activeColor : Colors::kHairline;
+    const uint16_t bgColor = active ? seg.activeColor : Colors::kHairline;
     const uint16_t textColor = active ? TFT_BLACK : Colors::kInactiveText;
 
     drawPillToggle(seg.x, segY, seg.width, segH, kRadius, bgColor, textColor, seg.label);
@@ -90,9 +83,8 @@ bool BrightnessWidget::handleTouch(uint16_t x, uint16_t y) {
     const uint16_t segH = dimensions_.height - kLabelH - kGap;
 
     for (const auto& seg : segments_) {
-        if (x >= seg.x && x < static_cast<uint16_t>(seg.x + seg.width) &&
-            y >= segY   && y < static_cast<uint16_t>(segY + segH)) {
-
+        if (x >= seg.x && x < static_cast<uint16_t>(seg.x + seg.width) && y >= segY &&
+            y < static_cast<uint16_t>(segY + segH)) {
             if (seg.level != displayManager_.getBrightness()) {
                 displayManager_.setBrightness(seg.level);
                 markDirty();

@@ -7,15 +7,17 @@
 #include "config/LgfxConfig.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
+#include "ui/core/Layout.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
+#include "utils/ScopedLock.h"
 
 // Full-screen disk info list (the content area of the DISKS screen): one row
 // per drive with a drive letter, a free-space usage bar + percent, and two
 // right-hand columns for live read/write rates (always MB/s, rounded).
 //
 // Data snapshot logic mirrors PcMetricsWidget's disk tiles — everything is
-// copied out of PcMetrics under PcMetricsDiskLock, then all rendering happens
+// copied out of PcMetrics under ScopedLock, then all rendering happens
 // lock-free. Rows are rebuilt only when the drive count changes; value-only
 // redraws are gated on cached last-drawn state.
 class DiskInfoWidget : public Widget {
@@ -34,7 +36,7 @@ class DiskInfoWidget : public Widget {
     // -----------------------------------------------------------------------
     // Layout constants — all magic numbers live here
     // -----------------------------------------------------------------------
-    static constexpr uint16_t kScreenWidth = 480;
+    static constexpr uint16_t kScreenWidth = Layout::kScreenW;
 
     // Maximum number of drives that fit in the 272 px content area.
     static constexpr uint16_t kMaxDisks = 8;
@@ -96,8 +98,8 @@ class DiskInfoWidget : public Widget {
         int lastPercent = -1;
         uint16_t lastBarColor = 0xFFFF;  // sentinel: force first draw
         char lastRateText[2][20] = {{""}, {""}};
-        uint16_t lastRateColor[2] = {0xFFFF, 0xFFFF};      // sentinel: force first draw
-        uint16_t lastLetterColor[2] = {0xFFFF, 0xFFFF};    // sentinel: force first draw
+        uint16_t lastRateColor[2] = {0xFFFF, 0xFFFF};    // sentinel: force first draw
+        uint16_t lastLetterColor[2] = {0xFFFF, 0xFFFF};  // sentinel: force first draw
     };
 
     // -----------------------------------------------------------------------
@@ -105,7 +107,7 @@ class DiskInfoWidget : public Widget {
     // -----------------------------------------------------------------------
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     // -----------------------------------------------------------------------
     // State

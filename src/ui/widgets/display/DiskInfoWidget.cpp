@@ -12,7 +12,7 @@ DiskInfoWidget::DiskInfoWidget(DisplayContext& context, const WidgetInterface::D
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {}
+      freshnessGuard_(pcMetrics.freshness) {}
 
 void DiskInfoWidget::onDrawStatic() {
     clearArea();
@@ -22,7 +22,7 @@ void DiskInfoWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool available = pcMetrics_.is_available.load();
+    const bool available = pcMetrics_.freshness.available();
     const bool stale = available && !freshnessGuard_.isFresh();
 
     // Full repaint on state transitions: availability flipped, staleness
@@ -59,10 +59,9 @@ void DiskInfoWidget::ensureRowsCreated() {
     // Snapshot everything under one lock, then do all display work lock-free.
     std::vector<DriveSnapshot> snapshot;
     {
-        PcMetricsDiskLock lock(pcMetrics_);
-        const size_t driveCount = pcMetrics_.disk_drives.size() < kMaxDisks
-                                      ? pcMetrics_.disk_drives.size()
-                                      : kMaxDisks;
+        ScopedLock lock(pcMetrics_.disk_drivesMutex);
+        const size_t driveCount =
+            pcMetrics_.disk_drives.size() < kMaxDisks ? pcMetrics_.disk_drives.size() : kMaxDisks;
         snapshot.reserve(driveCount);
         for (size_t i = 0; i < driveCount; ++i) {
             DriveSnapshot s;
@@ -137,9 +136,9 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
     // screen's disk tiles (reversed thresholds on free space): a nearly-full
     // disk reads red, an almost-empty disk reads green.
     const uint16_t barColor =
-        stale ? Colors::kInactiveText
-              : context_.getColors().getColorFromPercent(
-                    static_cast<uint8_t>(100 - percentClamped));
+        stale
+            ? Colors::kInactiveText
+            : context_.getColors().getColorFromPercent(static_cast<uint8_t>(100 - percentClamped));
     const uint16_t barW =
         static_cast<uint16_t>((static_cast<uint32_t>(kBarRight - kBarX) * percentClamped) / 100);
 
@@ -182,8 +181,7 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
         const int16_t unitW = lcd->textWidth("%");
 
         lcd->fillRect(dimensions_.x + kBarRight, rowY,
-                      kPercentRight - kBarRight - static_cast<uint16_t>(unitW), kRowH,
-                      TFT_BLACK);
+                      kPercentRight - kBarRight - static_cast<uint16_t>(unitW), kRowH, TFT_BLACK);
 
         lcd->setTextColor(stale ? Colors::kInactiveText : TFT_LIGHTGREY, TFT_BLACK);
         const int16_t numW = lcd->textWidth(numBuf);
@@ -212,8 +210,8 @@ void DiskInfoWidget::drawRate(size_t index, bool stale, uint8_t role) {
 
     const float kb = (role == kRateRead) ? r.readKBPerSec : r.writeKBPerSec;
     const uint16_t colX = (role == kRateRead) ? kReadX : kWriteX;
-    const uint16_t valueRightX = (role == kRateRead) ? (kWriteX - kRateValueRightGap)
-                                                     : (kScreenWidth - kRateValueRightGap);
+    const uint16_t valueRightX =
+        (role == kRateRead) ? (kWriteX - kRateValueRightGap) : (kScreenWidth - kRateValueRightGap);
 
     char rateText[16];
     formatRate(rateText, sizeof(rateText), kb);
@@ -295,8 +293,7 @@ void DiskInfoWidget::drawStaticUnits(size_t index) {
     const int16_t labelW = lcd->textWidth("MB/s");
     const uint16_t readRightX = kWriteX - kRateValueRightGap;
     const uint16_t writeRightX = kScreenWidth - kRateValueRightGap;
-    lcd->drawString("MB/s", dimensions_.x + static_cast<int16_t>(readRightX - labelW / 2),
-                    centerY);
+    lcd->drawString("MB/s", dimensions_.x + static_cast<int16_t>(readRightX - labelW / 2), centerY);
     lcd->drawString("MB/s", dimensions_.x + static_cast<int16_t>(writeRightX - labelW / 2),
                     centerY);
     Fonts::unload(lcd);

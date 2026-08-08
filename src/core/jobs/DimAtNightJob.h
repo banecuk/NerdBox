@@ -13,8 +13,7 @@
 // for catching the 20:00/06:00 boundary without checking every single tick.
 class DimAtNightJob : public BackgroundJob {
  public:
-    DimAtNightJob(NtpService& ntpService, DisplayManager& displayManager,
-                  const AppSettings& config)
+    DimAtNightJob(NtpService& ntpService, DisplayManager& displayManager, const AppSettings& config)
         : ntpService_(ntpService), displayManager_(displayManager), config_(config) {}
 
     unsigned long nextDueMs() const override { return lastCheckMs_ + kCheckIntervalMs; }
@@ -26,8 +25,8 @@ class DimAtNightJob : public BackgroundJob {
             return;
 
         const int hour = ntpService_.getTime().tm_hour;
-        const bool isNight = (hour >= config_.uiDimAtNightStartHour) ||
-                             (hour < config_.uiDimAtNightEndHour);
+        const bool isNight =
+            (hour >= config_.uiDimAtNightStartHour) || (hour < config_.uiDimAtNightEndHour);
 
         displayManager_.setNightWindowActive(isNight);
     }

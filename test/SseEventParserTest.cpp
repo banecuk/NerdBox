@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
-
 #include <string>
 #include <vector>
 
 #include "SseEventParser.h"
+
+#include <gtest/gtest.h>
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

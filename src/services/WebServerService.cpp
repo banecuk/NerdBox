@@ -1,7 +1,7 @@
 #include "WebServerService.h"
 
-#include <WiFi.h>
 #include <esp_system.h>
+#include <WiFi.h>
 
 #include "core/events/EventBus.h"
 #include "utils/DataFreshnessGuard.h"
@@ -135,17 +135,17 @@ static constexpr char kHtmlFoot[] = "</div></body></html>";
 void WebServerService::sendHtmlBegin(const char* title) {
     // Tell the client we will stream the body — no Content-Length needed.
     server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
-    server_.send(200, "text/html", "");      // open the response
+    server_.send(200, "text/html", "");  // open the response
     server_.sendContent(kHtmlHead1);
     server_.sendContent(title);
     server_.sendContent(kHtmlHead2);
-    server_.sendContent(title);              // repeated in the header's meta area
+    server_.sendContent(title);  // repeated in the header's meta area
     server_.sendContent(kHtmlHead3);
 }
 
 void WebServerService::sendHtmlEnd() {
     server_.sendContent(kHtmlFoot);
-    server_.sendContent("");                 // flush / end chunked transfer
+    server_.sendContent("");  // flush / end chunked transfer
 }
 
 // ---------------------------------------------------------------------------
@@ -209,8 +209,10 @@ static constexpr char kDashboardHtml[] =
     "<div class='card'><h2>Device</h2>"
     "<div class='row'><span class='k'>Uptime</span><span class='v' id='uptime'>-</span></div>"
     "<div class='row'><span class='k'>Free heap</span><span class='v' id='heapFree'>-</span></div>"
-    "<div class='row'><span class='k'>Min free heap</span><span class='v' id='heapMin'>-</span></div>"
-    "<div class='row'><span class='k'>Free PSRAM</span><span class='v' id='psramFree'>-</span></div>"
+    "<div class='row'><span class='k'>Min free heap</span><span class='v' "
+    "id='heapMin'>-</span></div>"
+    "<div class='row'><span class='k'>Free PSRAM</span><span class='v' "
+    "id='psramFree'>-</span></div>"
     "<div class='row'><span class='k'>CPU freq</span><span class='v' id='cpuMhz'>-</span></div>"
     "</div>"
 
@@ -228,18 +230,22 @@ static constexpr char kDashboardHtml[] =
     "<div class='row'><span class='k'>Parse time</span><span class='v' id='parseMs'>-</span></div>"
     "<div class='row'><span class='k'>Fetch ok/fail</span>"
     "<span class='v'><span id='fetchOk'>-</span> / <span id='fetchFail'>-</span></span></div>"
-    "<div class='row'><span class='k'>Last error</span><span class='v' id='lastError'>-</span></div>"
+    "<div class='row'><span class='k'>Last error</span><span class='v' "
+    "id='lastError'>-</span></div>"
     "</div>"
 
     "<div class='card'><h2>Rendering</h2>"
-    "<div class='row'><span class='k'>Avg draw time</span><span class='v' id='drawAvg'>-</span></div>"
+    "<div class='row'><span class='k'>Avg draw time</span><span class='v' "
+    "id='drawAvg'>-</span></div>"
     "<div class='row'><span class='k'>Widget FPS</span><span class='v' id='fps'>-</span></div>"
     "<canvas id='spark' width='300' height='60'></canvas>"
     "</div>"
 
     "<div class='card'><h2>Tasks</h2>"
-    "<div class='row'><span class='k'>Screen stack free</span><span class='v' id='screenStack'>-</span></div>"
-    "<div class='row'><span class='k'>Background stack free</span><span class='v' id='bgStack'>-</span></div>"
+    "<div class='row'><span class='k'>Screen stack free</span><span class='v' "
+    "id='screenStack'>-</span></div>"
+    "<div class='row'><span class='k'>Background stack free</span><span class='v' "
+    "id='bgStack'>-</span></div>"
     "</div>"
 
     "<div class='card'><h2>Screen</h2><div class='btns'>"
@@ -285,7 +291,8 @@ static constexpr char kDashboardHtml[] =
     "$('ip').textContent=d.net.ip;"
     "$('internet').textContent=d.net.internet;"
     "setLevel($('internet'),d.net.internet==='OK'?'ok':d.net.internet==='DOWN'?'bad':'warn');"
-    "$('probes').textContent=d.net.probes.map(function(p){return p?'\\u25cf':'\\u25cb';}).join(' ');"
+    "$('probes').textContent=d.net.probes.map(function(p){return p?'\\u25cf':'\\u25cb';}).join(' "
+    "');"
     "$('pcStatus').textContent=!d.pc.available?'Unavailable':(d.pc.fresh?'Fresh':'Stale');"
     "setLevel($('pcStatus'),!d.pc.available?'bad':(d.pc.fresh?'ok':'warn'));"
     "$('pcAge').textContent=d.pc.age_ms+' ms';"
@@ -365,8 +372,8 @@ void WebServerService::sendAppInfoBody() {
         "<tr><th>Draw</th><th>Draw time (ms)</th></tr>");
 
     const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
-    const size_t count    = systemMetrics_.getScreenDrawCount();
-    const size_t start    = systemMetrics_.getScreenDrawStartIndex();
+    const size_t count = systemMetrics_.getScreenDrawCount();
+    const size_t start = systemMetrics_.getScreenDrawStartIndex();
 
     // Walk the circular buffer starting at the oldest sample so "Draw N" is
     // chronological, not raw slot order.
@@ -392,33 +399,48 @@ void WebServerService::handleAppInfo() {
 
 const char* WebServerService::internetStatusToString(NetworkStatus::Internet status) {
     switch (status) {
-        case NetworkStatus::Internet::OK: return "OK";
-        case NetworkStatus::Internet::WARNING: return "WARNING";
-        case NetworkStatus::Internet::DEGRADED: return "DEGRADED";
-        case NetworkStatus::Internet::DOWN: return "DOWN";
+        case NetworkStatus::Internet::OK:
+            return "OK";
+        case NetworkStatus::Internet::WARNING:
+            return "WARNING";
+        case NetworkStatus::Internet::DEGRADED:
+            return "DEGRADED";
+        case NetworkStatus::Internet::DOWN:
+            return "DOWN";
         case NetworkStatus::Internet::UNKNOWN:
-        default: return "UNKNOWN";
+        default:
+            return "UNKNOWN";
     }
 }
 
 const char* WebServerService::sseStateToString(SseConnection::State state) {
     switch (state) {
-        case SseConnection::State::Disconnected: return "DISCONNECTED";
-        case SseConnection::State::Connected: return "CONNECTED";
-        case SseConnection::State::Error: return "ERROR";
-        default: return "UNKNOWN";
+        case SseConnection::State::Disconnected:
+            return "DISCONNECTED";
+        case SseConnection::State::Connected:
+            return "CONNECTED";
+        case SseConnection::State::Error:
+            return "ERROR";
+        default:
+            return "UNKNOWN";
     }
 }
 
 const char* WebServerService::screenNameToString(ScreenName screen) {
     switch (screen) {
-        case ScreenName::BOOT: return "BOOT";
-        case ScreenName::MAIN: return "MAIN";
-        case ScreenName::SETTINGS: return "SETTINGS";
-        case ScreenName::GAME: return "GAME";
-        case ScreenName::WEATHER: return "WEATHER";
+        case ScreenName::BOOT:
+            return "BOOT";
+        case ScreenName::MAIN:
+            return "MAIN";
+        case ScreenName::SETTINGS:
+            return "SETTINGS";
+        case ScreenName::GAME:
+            return "GAME";
+        case ScreenName::WEATHER:
+            return "WEATHER";
         case ScreenName::NONE:
-        default: return "NONE";
+        default:
+            return "NONE";
     }
 }
 
@@ -462,7 +484,8 @@ void WebServerService::handleApiStatus() {
         IPAddress addr = WiFi.localIP();
         snprintf(ip, sizeof(ip), "%u.%u.%u.%u", addr[0], addr[1], addr[2], addr[3]);
     }
-    snprintf(buf, sizeof(buf), "\"net\":{\"wifi\":%s,\"rssi\":%d,\"ip\":\"%s\",\"internet\":\"%s\",\"probes\":[",
+    snprintf(buf, sizeof(buf),
+             "\"net\":{\"wifi\":%s,\"rssi\":%d,\"ip\":\"%s\",\"internet\":\"%s\",\"probes\":[",
              netStatus_.wifi_connected ? "true" : "false", netStatus_.rssi, ip,
              internetStatusToString(netStatus_.internet));
     server_.sendContent(buf);
@@ -473,15 +496,15 @@ void WebServerService::handleApiStatus() {
     }
     server_.sendContent("]},");
 
-    const DataFreshnessGuard freshness(pcMetrics_.is_available, pcMetrics_.last_update_timestamp);
+    const DataFreshnessGuard freshness(pcMetrics_.freshness);
     const unsigned long ageMs =
-        pcMetrics_.is_available ? millis() - pcMetrics_.last_update_timestamp : 0;
+        pcMetrics_.freshness.available() ? millis() - pcMetrics_.freshness.lastUpdateMs() : 0;
     snprintf(buf, sizeof(buf),
              "\"pc\":{\"available\":%s,\"fresh\":%s,\"age_ms\":%lu,"
              "\"fetch_ok\":%u,\"fetch_fail\":%u,\"last_error\":\"%s\"},",
-             pcMetrics_.is_available ? "true" : "false", freshness.isFresh() ? "true" : "false",
-             ageMs, pcMetricsService_.getFetchOkCount(), pcMetricsService_.getFetchFailCount(),
-             pcMetricsService_.getLastError());
+             pcMetrics_.freshness.available() ? "true" : "false",
+             freshness.isFresh() ? "true" : "false", ageMs, pcMetricsService_.getFetchOkCount(),
+             pcMetricsService_.getFetchFailCount(), pcMetricsService_.getLastError());
     server_.sendContent(buf);
 
     // pc_stream — SseConnection/PcMetricsStreamJob health, so the streaming
@@ -508,11 +531,11 @@ void WebServerService::handleApiStatus() {
     // displayed" gating can be observed without a serial monitor. refresh_pending
     // reflects WeatherWidget's midnight-rollover signal awaiting the background job.
     const unsigned long weatherAgeMs =
-        weatherData_.is_available ? millis() - weatherData_.last_update : 0;
+        weatherData_.freshness.available() ? millis() - weatherData_.freshness.lastUpdateMs() : 0;
     snprintf(buf, sizeof(buf),
              "\"weather\":{\"available\":%s,\"age_ms\":%lu,\"days\":%u,"
              "\"refresh_pending\":%s},",
-             weatherData_.is_available ? "true" : "false", weatherAgeMs,
+             weatherData_.freshness.available() ? "true" : "false", weatherAgeMs,
              weatherData_.dayCount, weatherData_.refreshRequested.load() ? "true" : "false");
     server_.sendContent(buf);
 
@@ -553,21 +576,21 @@ struct ApiEndpoint {
 };
 
 constexpr ApiEndpoint kApiEndpoints[] = {
-    {"GET", "/api/status",
+    {"GET",  "/api/status",
      "Compact JSON snapshot: system health, app metrics, network, PC-metrics feed "
-     "status, current screen, task stack high-water marks. Cache-Control: no-store."},
-    {"GET", "/api/raw",
+     "status, current screen, task stack high-water marks. Cache-Control: no-store."   },
+    {"GET",  "/api/raw",
      "Last raw NerdWinSense payload, unfiltered — for debugging a field that reads "
      "0 or -1. Triggers a dedicated fetch; not the same connection as the regular "
-     "poll."},
-    {"GET", "/api/pc",
+     "poll."                                                                           },
+    {"GET",  "/api/pc",
      "Full current PcMetrics snapshot as JSON — every parsed field, including disk "
-     "drives. Verify what the display should show vs. what NerdWinSense sent."},
-    {"POST", "/restart", "Reboots the device (ESP.restart()). No confirmation."},
-    {"POST", "/screen/main", "Switches the display to the Main screen."},
-    {"POST", "/screen/settings", "Switches the display to the Settings screen."},
-    {"POST", "/screen/game", "Switches the display to the Game screen."},
-    {"POST", "/screen/weather", "Switches the display to the Weather screen."},
+     "drives. Verify what the display should show vs. what NerdWinSense sent."         },
+    {"POST", "/restart",         "Reboots the device (ESP.restart()). No confirmation."},
+    {"POST", "/screen/main",     "Switches the display to the Main screen."            },
+    {"POST", "/screen/settings", "Switches the display to the Settings screen."        },
+    {"POST", "/screen/game",     "Switches the display to the Game screen."            },
+    {"POST", "/screen/weather",  "Switches the display to the Weather screen."         },
 };
 }  // namespace
 
@@ -638,10 +661,11 @@ void WebServerService::handleApiPc() {
              "\"cpu_temperature\":%u,\"gpu_temperature\":%u,"
              "\"cpu_load\":%u,\"gpu_load\":%u,\"mem_load\":%u,"
              "\"cpu_power\":%u,\"gpu_power\":%u,\"cpu_fan\":%u,\"gpu_fan\":%u,",
-             pcMetrics_.is_available ? "true" : "false", pcMetrics_.last_update_timestamp,
-             pcMetrics_.cpu_temperature, pcMetrics_.gpu_temperature, pcMetrics_.cpu_load,
-             pcMetrics_.gpu_load, pcMetrics_.mem_load, pcMetrics_.cpu_power, pcMetrics_.gpu_power,
-             pcMetrics_.cpu_fan, pcMetrics_.gpu_fan);
+             pcMetrics_.freshness.available() ? "true" : "false",
+             pcMetrics_.freshness.lastUpdateMs(), pcMetrics_.cpu_temperature,
+             pcMetrics_.gpu_temperature, pcMetrics_.cpu_load, pcMetrics_.gpu_load,
+             pcMetrics_.mem_load, pcMetrics_.cpu_power, pcMetrics_.gpu_power, pcMetrics_.cpu_fan,
+             pcMetrics_.gpu_fan);
     server_.sendContent(buf);
 
     server_.sendContent("\"cpu_thread_load\":[");
@@ -668,7 +692,7 @@ void WebServerService::handleApiPc() {
     {
         // disk_drives is written from core 0 — must hold the lock for the
         // duration of the read, same as any other disk_drives access.
-        PcMetricsDiskLock lock(pcMetrics_);
+        ScopedLock lock(pcMetrics_.disk_drivesMutex);
         for (size_t i = 0; i < pcMetrics_.disk_drives.size(); ++i) {
             const DiskDrive& drive = pcMetrics_.disk_drives[i];
             snprintf(buf, sizeof(buf),
@@ -695,21 +719,20 @@ void WebServerService::handleConfig() {
 
     server_.sendContent("<pre>");
 
-#define SEND_CONFIG_U(name, value)                                    \
-    do {                                                              \
-        snprintf(buf, sizeof(buf), "%-32s %lu\n", name,               \
-                 static_cast<unsigned long>(value));                  \
-        server_.sendContent(buf);                                     \
+#define SEND_CONFIG_U(name, value)                                                          \
+    do {                                                                                    \
+        snprintf(buf, sizeof(buf), "%-32s %lu\n", name, static_cast<unsigned long>(value)); \
+        server_.sendContent(buf);                                                           \
     } while (0)
-#define SEND_CONFIG_F(name, value)                              \
-    do {                                                         \
+#define SEND_CONFIG_F(name, value)                                 \
+    do {                                                           \
         snprintf(buf, sizeof(buf), "%-32s %.3f\n", name, (value)); \
-        server_.sendContent(buf);                                 \
+        server_.sendContent(buf);                                  \
     } while (0)
-#define SEND_CONFIG_B(name, value)                                          \
-    do {                                                                    \
+#define SEND_CONFIG_B(name, value)                                                  \
+    do {                                                                            \
         snprintf(buf, sizeof(buf), "%-32s %s\n", name, (value) ? "true" : "false"); \
-        server_.sendContent(buf);                                           \
+        server_.sendContent(buf);                                                   \
     } while (0)
 
     SEND_CONFIG_U("debugSerialBaudRate", config_.debugSerialBaudRate);
@@ -751,8 +774,7 @@ void WebServerService::handleConfig() {
     SEND_CONFIG_U("pcMetricsStreamConnectTimeoutMs", config_.pcMetricsStreamConnectTimeoutMs);
     SEND_CONFIG_U("pcMetricsStreamHeaderTimeoutMs", config_.pcMetricsStreamHeaderTimeoutMs);
     SEND_CONFIG_U("pcMetricsStreamReconnectBackoffMs", config_.pcMetricsStreamReconnectBackoffMs);
-    SEND_CONFIG_U("pcMetricsStreamMaxEventBufferBytes",
-                  config_.pcMetricsStreamMaxEventBufferBytes);
+    SEND_CONFIG_U("pcMetricsStreamMaxEventBufferBytes", config_.pcMetricsStreamMaxEventBufferBytes);
     SEND_CONFIG_U("pcMetricsStreamMaxBytesPerPoll", config_.pcMetricsStreamMaxBytesPerPoll);
     SEND_CONFIG_U("uiTransitionTimeoutMs", config_.uiTransitionTimeoutMs);
     SEND_CONFIG_U("uiTouchDebounceIntervalMs", config_.uiTouchDebounceIntervalMs);
@@ -782,12 +804,18 @@ void WebServerService::handleConfig() {
 
 const char* WebServerService::logLevelToString(LoggerInterface::LogLevel level) {
     switch (level) {
-        case LoggerInterface::LogLevel::DEBUG: return "DEBUG";
-        case LoggerInterface::LogLevel::INFO: return "INFO";
-        case LoggerInterface::LogLevel::WARNING: return "WARNING";
-        case LoggerInterface::LogLevel::ERROR: return "ERROR";
-        case LoggerInterface::LogLevel::CRITICAL: return "CRITICAL";
-        default: return "UNKNOWN";
+        case LoggerInterface::LogLevel::DEBUG:
+            return "DEBUG";
+        case LoggerInterface::LogLevel::INFO:
+            return "INFO";
+        case LoggerInterface::LogLevel::WARNING:
+            return "WARNING";
+        case LoggerInterface::LogLevel::ERROR:
+            return "ERROR";
+        case LoggerInterface::LogLevel::CRITICAL:
+            return "CRITICAL";
+        default:
+            return "UNKNOWN";
     }
 }
 
@@ -796,7 +824,8 @@ void WebServerService::handleLogs() {
 
     // Heap-allocated — kRecentLogCapacity * sizeof(LogEntry) is too big for a
     // comfortable stack frame on the Arduino loop task.
-    auto entries = std::make_unique<LoggerInterface::LogEntry[]>(LoggerInterface::kRecentLogCapacity);
+    auto entries =
+        std::make_unique<LoggerInterface::LogEntry[]>(LoggerInterface::kRecentLogCapacity);
     const size_t count = logger_.copyRecentLogs(entries.get(), LoggerInterface::kRecentLogCapacity);
 
     char row[256];

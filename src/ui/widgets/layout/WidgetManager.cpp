@@ -93,7 +93,7 @@ void WidgetManager::updateDirtyWidgets() {
         }
 
         const bool chromeDirty = allDirty_ || entry.isDirty;
-        const bool valueDirty  = entry.widget->isDirty() || entry.widget->needsUpdate();
+        const bool valueDirty = entry.widget->isDirty() || entry.widget->needsUpdate();
 
         if (!chromeDirty && !valueDirty) {
             skippedCount++;
@@ -111,7 +111,7 @@ void WidgetManager::updateDirtyWidgets() {
             entry.widget->clearDirty();
         }
 
-        entry.widget->draw(chromeDirty);   // pass forceRedraw when chrome was just cleared
+        entry.widget->draw(chromeDirty);  // pass forceRedraw when chrome was just cleared
         entry.lastUpdateTime = millis();
         updatedCount++;
     }

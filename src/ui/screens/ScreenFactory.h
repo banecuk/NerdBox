@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "ScreenInterface.h"
 #include "core/ScreenTypes.h"
+#include "ScreenInterface.h"
 
 // Forward declarations — avoids pulling every dependency into every TU that
 // just needs ScreenFactory.
@@ -22,16 +22,16 @@ struct WeatherData;
 // Pass this struct to createScreen instead of a growing parameter list;
 // add new fields here as more screens are introduced.
 struct ScreenCreationContext {
-    LoggerInterface&      logger;
-    DisplayManager*       display;
-    PcMetrics&            metrics;
-    UiController*         controller;
-    const AppSettings&    config;
-    ApplicationMetrics&   systemMetrics;
-    NetworkManager&       networkManager;
+    LoggerInterface& logger;
+    DisplayManager* display;
+    PcMetrics& metrics;
+    UiController* controller;
+    const AppSettings& config;
+    ApplicationMetrics& systemMetrics;
+    NetworkManager& networkManager;
     const AirQualityData& airQualityData;
-    const NetworkStatus&  netStatus;
-    WeatherData&          weatherData;
+    const NetworkStatus& netStatus;
+    WeatherData& weatherData;
 };
 
 class ScreenFactory {

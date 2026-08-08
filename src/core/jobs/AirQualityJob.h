@@ -19,15 +19,15 @@
 class AirQualityJob : public BackgroundJob {
  public:
     AirQualityJob(AirQualityService& service, AirQualityData& data,
-                 SystemState::CoreState& coreState, NetworkManager& networkManager,
-                 const AppSettings& config, LoggerInterface& logger)
+                  SystemState::CoreState& coreState, NetworkManager& networkManager,
+                  const AppSettings& config, LoggerInterface& logger)
         : service_(service),
           data_(data),
           coreState_(coreState),
           networkManager_(networkManager),
           config_(config),
           logger_(logger),
-          freshness_(data_.is_available, data_.last_update, AirQualityService::kRefreshIntervalMs) {}
+          freshness_(data_.freshness, AirQualityService::kRefreshIntervalMs) {}
 
     unsigned long nextDueMs() const override {
         if (!coreState_.isInitialized || !networkManager_.isConnected() || freshness_.isFresh()) {
@@ -52,6 +52,6 @@ class AirQualityJob : public BackgroundJob {
     NetworkManager& networkManager_;
     const AppSettings& config_;
     LoggerInterface& logger_;
-    DataFreshnessGuard<bool, unsigned long> freshness_;
+    DataFreshnessGuard freshness_;
     unsigned long nextAttemptMs_ = 0;
 };

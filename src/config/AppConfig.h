@@ -1,8 +1,8 @@
 #pragma once
 
-#include <inttypes.h>
-
 #include <cstddef>
+
+#include <inttypes.h>
 
 namespace AppConfig {
 

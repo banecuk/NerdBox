@@ -81,7 +81,8 @@ void PcMetricsStreamJob::run() {
 void PcMetricsStreamJob::attemptConnect() {
     char pathWithQuery[96];
     snprintf(pathWithQuery, sizeof(pathWithQuery), "%s?intervalMs=%lu&delta=%s",
-             config_.pcMetricsStreamPath, static_cast<unsigned long>(config_.pcMetricsStreamIntervalMs),
+             config_.pcMetricsStreamPath,
+             static_cast<unsigned long>(config_.pcMetricsStreamIntervalMs),
              config_.pcMetricsStreamDelta ? "true" : "false");
 
     if (connection_.connect(host_, port_, pathWithQuery, config_.pcMetricsStreamConnectTimeoutMs,
@@ -122,7 +123,6 @@ void PcMetricsStreamJob::handleEvent(const SseEventParser::Event& event) {
         PcMetricsParser::parseAllSections(metricsObj, metrics_, config_.pcMetricsCores, logger_);
 
     if (sections.anySeen()) {
-        metrics_.last_update_timestamp = millis();
-        metrics_.is_available = true;
+        metrics_.freshness.publish(millis());
     }
 }

@@ -87,7 +87,7 @@ class PcMetricsWidget : public Widget {
 
     DisplayContext& context_;
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     unsigned long lastUpdateTimestamp_ = 0;
     bool wasFreshData_ = false;

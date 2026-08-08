@@ -36,7 +36,7 @@ class LoadHistoryWidget : public Widget {
     static constexpr uint16_t kRightMargin = 2;
 
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard<std::atomic<bool>, unsigned long> freshnessGuard_;
+    DataFreshnessGuard freshnessGuard_;
 
     RingHistory<uint8_t, kHistorySize> cpuHistory_;
     RingHistory<uint8_t, kHistorySize> gpuHistory_;

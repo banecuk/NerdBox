@@ -1,5 +1,7 @@
 #include "PcMetricsParser.h"
 
+#include "utils/ScopedLock.h"
+
 namespace PcMetricsParser {
 
 void buildFilter(JsonDocument& filter) {
@@ -80,7 +82,7 @@ SectionResult parseAllSections(JsonObjectConst metrics, PcMetrics& outData,
 }
 
 bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCoreCount,
-                   LoggerInterface& logger) {
+                  LoggerInterface& logger) {
     // Parse core loads into a local buffer first — ThreadsWidget reads
     // outData.cpu_thread_load from the screen task with no lock, so the
     // live array is only touched once below, in one tight commit loop,
@@ -122,7 +124,8 @@ bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCor
 
 bool parseCpuExtendedData(JsonObjectConst cpuExtended, PcMetrics& outData) {
     if (!cpuExtended["TemperatureCoreMax"].isNull()) {
-        outData.cpu_temperature = static_cast<uint8_t>(cpuExtended["TemperatureCoreMax"].as<float>());
+        outData.cpu_temperature =
+            static_cast<uint8_t>(cpuExtended["TemperatureCoreMax"].as<float>());
     }
     if (!cpuExtended["PackagePower"].isNull()) {
         outData.cpu_power = static_cast<uint16_t>(cpuExtended["PackagePower"].as<float>());
@@ -225,7 +228,8 @@ bool parseDiskData(JsonObjectConst disks, PcMetrics& outData) {
         return true;
     }
 
-    PcMetricsDiskLock lock(outData);  // protect disk_drives for the duration of this write
+    ScopedLock lock(
+        outData.disk_drivesMutex);  // protect disk_drives for the duration of this write
     outData.disk_drives.clear();
 
     for (JsonObjectConst drive : drives) {

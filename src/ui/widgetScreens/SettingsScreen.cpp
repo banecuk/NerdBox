@@ -1,5 +1,6 @@
 #include "SettingsScreen.h"
 
+#include "ui/core/Layout.h"
 #include "ui/widgets/display/IpAddressWidget.h"
 
 SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiController,
@@ -19,8 +20,7 @@ void SettingsScreen::createWidgets() {
 
     // One 12px outer gutter on both sides for every widget on this screen.
     static constexpr uint16_t kGutter = 12;
-    static constexpr uint16_t kScreenW = 480;
-    static constexpr uint16_t kContentW = kScreenW - 2 * kGutter;  // = 456
+    static constexpr uint16_t kContentW = Layout::kScreenW - 2 * kGutter;  // = 456
 
     // ── Top bar ────────────────────────────────────────────────────────────
     // Brightness selector — spans the full width.
@@ -46,14 +46,13 @@ void SettingsScreen::createWidgets() {
     // tall per the touch-target rule, vertically centered in the 64px row.
     static constexpr uint16_t kResetW = 150;
     static constexpr uint16_t kResetH = 48;
-    static constexpr uint16_t kResetX = kScreenW - kGutter - kResetW;  // = 318
-    static constexpr uint16_t kResetY = kSwitchY + (kSwitchH - kResetH) / 2;  // = 80
+    static constexpr uint16_t kResetX = Layout::kScreenW - kGutter - kResetW;  // = 318
+    static constexpr uint16_t kResetY = kSwitchY + (kSwitchH - kResetH) / 2;   // = 80
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), "Reset",
-        WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
-        EventType::RESET_DEVICE, [this](EventType action) { this->handleAction(action); },
-        TFT_RED, TFT_WHITE)));
+        WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0, EventType::RESET_DEVICE,
+        [this](EventType action) { this->handleAction(action); }, TFT_RED, TFT_WHITE)));
 
     // ── Info widgets ────────────────────────────────────────────────────────
     // IP address / Uptime — sit below the switch/reset row.
@@ -64,27 +63,28 @@ void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(std::unique_ptr<IpAddressWidget>(new IpAddressWidget(
         WidgetInterface::Dimensions{kGutter, kInfoRowY, kIpWidth, 40}, networkManager_)));
 
-    widgetManager_.addWidget(std::unique_ptr<UptimeWidget>(
-        new UptimeWidget(WidgetInterface::Dimensions{kUptimeX, kInfoRowY, 200, 40}, systemMetrics_)));
+    widgetManager_.addWidget(std::unique_ptr<UptimeWidget>(new UptimeWidget(
+        WidgetInterface::Dimensions{kUptimeX, kInfoRowY, 200, 40}, systemMetrics_)));
 
     // ── Bottom bar ─────────────────────────────────────────────────────────
     // Clock — bottom-right, right edge on the gutter. Row height bumped from
     // 24 to 32px so Mono24 glyphs get vertical padding instead of touching
     // the box edges.
-    static constexpr uint16_t kClockW = 150;
     static constexpr uint16_t kClockH = 32;
-    static constexpr uint16_t kClockX = kScreenW - kGutter - kClockW;  // = 318
+    static constexpr uint16_t kClockX = Layout::kScreenW - kGutter - Layout::kClockW;  // = 318
     static constexpr uint16_t kClockY = 280;
 
-    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH}, 1000, TFT_YELLOW,
-        TFT_BLACK)));
+    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
+        new ClockWidget(WidgetInterface::Dimensions{kClockX, kClockY, Layout::kClockW, kClockH},
+                        1000, TFT_YELLOW, TFT_BLACK)));
 
-    // Back button — flush with the left screen edge (x=0), same 272..320 band
-    // as MainScreen/GameScreen's bottom-left button (center 296), matching
-    // the clock's center below.
+    // Back button — flush with the left screen edge (x=0), same shared
+    // bottom band as MainScreen/GameScreen's bottom-left button (center 296),
+    // matching the clock's center below.
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{0, 272, 48, 48}, 0,
-        EventType::SHOW_MAIN, [this](EventType action) { this->handleAction(action); }, TFT_BLACK,
-        TFT_WHITE)));
+        uiController_->getDisplayContext(), "<",
+        WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
+                                    Layout::kButtonSize},
+        0, EventType::SHOW_MAIN, [this](EventType action) { this->handleAction(action); },
+        TFT_BLACK, TFT_WHITE)));
 }

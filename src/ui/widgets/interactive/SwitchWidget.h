@@ -15,8 +15,8 @@ class SwitchWidget : public Widget {
     using GetStateFn = std::function<bool()>;
     using SetStateFn = std::function<void(bool)>;
 
-    SwitchWidget(const WidgetInterface::Dimensions& dims, std::string label,
-                 GetStateFn getState, SetStateFn setState);
+    SwitchWidget(const WidgetInterface::Dimensions& dims, std::string label, GetStateFn getState,
+                 SetStateFn setState);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -34,9 +34,9 @@ class SwitchWidget : public Widget {
     bool lastDrawnState_ = false;
     bool hasDrawnOnce_ = false;
 
-    static constexpr uint8_t kLabelH = 13;   // px for the label row
-    static constexpr uint8_t kGap = 3;       // px gap between label and track
-    static constexpr uint8_t kRadius = 4;    // corner radius
-    static constexpr uint16_t kOnColor = 0x07E0;    // green
+    static constexpr uint8_t kLabelH = 13;        // px for the label row
+    static constexpr uint8_t kGap = 3;            // px gap between label and track
+    static constexpr uint8_t kRadius = 4;         // corner radius
+    static constexpr uint16_t kOnColor = 0x07E0;  // green
     static constexpr uint16_t kOffColor = Colors::kHairline;
 };

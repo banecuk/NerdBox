@@ -51,7 +51,7 @@ uint8_t DisplayManager::getBrightness() const {
 void DisplayManager::cycleBrightness() {
     using Cfg = AppConfig::internal::UiImpl;
     const uint8_t* levels = Cfg::kBrightnessLevels;
-    const uint8_t  count  = Cfg::kBrightnessLevelCount;
+    const uint8_t count = Cfg::kBrightnessLevelCount;
 
     // Find the current level in the array, advance to next (wrapping).
     uint8_t nextIndex = 0;
@@ -113,8 +113,8 @@ uint8_t DisplayManager::loadBrightnessFromNvs() {
         return kDefaultBrightness;
     }
 
-    uint8_t saved = prefs_.getUChar(AppConfig::internal::UiImpl::kNvsBrightnessKey,
-                                     kDefaultBrightness);
+    uint8_t saved =
+        prefs_.getUChar(AppConfig::internal::UiImpl::kNvsBrightnessKey, kDefaultBrightness);
     prefs_.end();
 
     logger_.infof("DisplayManager: loaded brightness %d from NVS", saved);

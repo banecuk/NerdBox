@@ -1,32 +1,19 @@
 #pragma once
 
-#include <atomic>
-
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+
+#include <atomic>
+
+#include "utils/PublishedFlag.h"
 
 struct DiskDrive {
     char driveName[4];  // "C", "D", etc. + null terminator
     float freeSpacePercent;
     float readKBPerSec;
     float writeKBPerSec;
-};
-
-// RAII guard: locks disk_drivesMutex on construction, releases on destruction.
-// Usage:
-//   { PcMetricsDiskLock lock(metrics); use metrics.disk_drives; }
-class PcMetrics;
-class PcMetricsDiskLock {
- public:
-    explicit PcMetricsDiskLock(PcMetrics& m);
-    ~PcMetricsDiskLock();
-    PcMetricsDiskLock(const PcMetricsDiskLock&) = delete;
-    PcMetricsDiskLock& operator=(const PcMetricsDiskLock&) = delete;
-
- private:
-    PcMetrics& m_;
 };
 
 class PcMetrics {
@@ -47,12 +34,10 @@ class PcMetrics {
     // word-sized and accessed on Xtensa as naturally atomic — no lock needed.
     SemaphoreHandle_t disk_drivesMutex = xSemaphoreCreateMutex();
 
-    // is_available is the cross-core publish flag: parseData() writes every
-    // other field (including last_update_timestamp) before setting this,
-    // and readers must check this first — see DataFreshnessGuard for the
+    // freshness.publish() is the cross-core publish point: parseData() writes
+    // every other field before calling it — see DataFreshnessGuard for the
     // happens-before argument that makes that ordering safe without a lock.
-    std::atomic<bool> is_available{false};
-    unsigned long last_update_timestamp = 0;
+    PublishedFlag freshness;
 
     uint8_t cpu_temperature = 0;
     uint8_t gpu_temperature = 0;
@@ -74,7 +59,7 @@ class PcMetrics {
     // filtered out in parseMotherboardData so indices here always map to real fans.
     static constexpr uint8_t kMaxSystemFans = 10;
     uint16_t system_fans[kMaxSystemFans] = {};
-    uint8_t  system_fan_count = 0;
+    uint8_t system_fan_count = 0;
 
     uint16_t gpu_3d = 0;  // percent; can exceed 100 on some drivers, hence 16-bit like gpu_compute
     uint16_t gpu_compute = 0;
@@ -87,13 +72,3 @@ class PcMetrics {
 
     std::vector<DiskDrive> disk_drives;
 };
-
-// Inline RAII implementation — defined here so every TU that includes PcMetrics.h
-// can use PcMetricsDiskLock without a separate .cpp.
-inline PcMetricsDiskLock::PcMetricsDiskLock(PcMetrics& m) : m_(m) {
-    xSemaphoreTake(m_.disk_drivesMutex, portMAX_DELAY);
-}
-
-inline PcMetricsDiskLock::~PcMetricsDiskLock() {
-    xSemaphoreGive(m_.disk_drivesMutex);
-}

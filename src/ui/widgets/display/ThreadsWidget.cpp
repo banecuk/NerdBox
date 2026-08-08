@@ -10,7 +10,7 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dim
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp),
+      freshnessGuard_(pcMetrics.freshness),
       barWidth_(dims.width / config_.pcMetricsCores),
       previousBarHeights_(config_.pcMetricsCores, 0),
       previousColors_(config_.pcMetricsCores, 0),
@@ -65,7 +65,7 @@ void ThreadsWidget::updateSmoothedValues() {
     // between fetches, so repeated calls just keep nudging the smoothed value
     // toward it, and the kThreadsUpward/DownwardSmoothing alphas are tuned for
     // this per-tick cadence to produce a fast-attack / slow-decay VU-meter
-    // animation. Gating this on pcMetrics_.last_update_timestamp would turn
+    // animation. Gating this on pcMetrics_.freshness.lastUpdateMs() would turn
     // that smooth animation into a hard step every fetch instead.
     valueSmoother_->update(pcMetrics_.cpu_thread_load, config_.pcMetricsCores);
     valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.pcMetricsCores);

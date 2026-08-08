@@ -29,11 +29,11 @@ class WeatherJob : public BackgroundJob {
           networkManager_(networkManager),
           config_(config),
           logger_(logger),
-          freshness_(data_.is_available, data_.last_update, config_.weatherRefreshIntervalMs) {}
+          freshness_(data_.freshness, config_.weatherRefreshIntervalMs) {}
 
     unsigned long nextDueMs() const override {
-        if (!coreState_.isInitialized || !networkManager_.isConnected()
-            || screenState_.activeScreen != ScreenName::WEATHER) {
+        if (!coreState_.isInitialized || !networkManager_.isConnected() ||
+            screenState_.activeScreen != ScreenName::WEATHER) {
             return ULONG_MAX;  // not displayed → never due
         }
         if (data_.refreshRequested.load() && millis() >= nextAttemptMs_) {
@@ -62,6 +62,6 @@ class WeatherJob : public BackgroundJob {
     NetworkManager& networkManager_;
     const AppSettings& config_;
     LoggerInterface& logger_;
-    DataFreshnessGuard<bool, unsigned long> freshness_;
+    DataFreshnessGuard freshness_;
     unsigned long nextAttemptMs_ = 0;
 };

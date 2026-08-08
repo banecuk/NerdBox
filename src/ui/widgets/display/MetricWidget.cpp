@@ -151,7 +151,8 @@ void MetricWidget::renderValueArea() {
 
 void MetricWidget::renderValueTextOnly() {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     uint16_t newBgColor = calculateBackgroundColor();
 
@@ -166,10 +167,10 @@ void MetricWidget::renderValueTextOnly() {
 
     int16_t areaX, areaWidth;
     if (hasLabel_) {
-        areaX    = valueX_;
+        areaX = valueX_;
         areaWidth = valueWidth_;
     } else {
-        areaX    = dimensions_.x + borderMargin_;
+        areaX = dimensions_.x + borderMargin_;
         areaWidth = dimensions_.width - (2 * borderMargin_);
     }
 
@@ -227,19 +228,21 @@ void MetricWidget::drawValueWithLoadedFont() {
         return;
     }
     LGFX* lcd = getLcd();
-    if (!lcd || !isStaticDrawn_) return;
+    if (!lcd || !isStaticDrawn_)
+        return;
 
     const uint16_t newBgColor = calculateBackgroundColor();
     const char* displayText = getFormattedValueText();
-    if (!displayText || displayText[0] == '\0') displayText = "0";
+    if (!displayText || displayText[0] == '\0')
+        displayText = "0";
     const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
 
     int16_t areaX, areaWidth;
     if (hasLabel_) {
-        areaX    = valueX_;
+        areaX = valueX_;
         areaWidth = valueWidth_;
     } else {
-        areaX    = dimensions_.x + borderMargin_;
+        areaX = dimensions_.x + borderMargin_;
         areaWidth = dimensions_.width - (2 * borderMargin_);
     }
 
@@ -285,10 +288,12 @@ void MetricWidget::drawUnitWithLoadedFont() {
     // Fast path: label font is already loaded by PcMetricsWidget's batch
     // caller (see drawDynamicData's second pass). No-op unless the paired
     // drawValueWithLoadedFont() call just moved or recoloured the unit.
-    if (!unitNeedsRedraw_) return;
+    if (!unitNeedsRedraw_)
+        return;
 
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     lcd->setTextColor(TFT_WHITE, unitBgColor_);
     lcd->setTextDatum(ML_DATUM);
@@ -297,10 +302,10 @@ void MetricWidget::drawUnitWithLoadedFont() {
     unitNeedsRedraw_ = false;
 }
 
-
 void MetricWidget::loadValueFont() const {
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
     if (useSmallFont_) {
         Fonts::loadValue(lcd);
     } else {
@@ -310,7 +315,8 @@ void MetricWidget::loadValueFont() const {
 
 void MetricWidget::unloadValueFont() const {
     LGFX* lcd = getLcd();
-    if (lcd) Fonts::unload(lcd);
+    if (lcd)
+        Fonts::unload(lcd);
 }
 
 void MetricWidget::updateDimensionCache() {
@@ -342,7 +348,8 @@ const char* MetricWidget::getUnitText() const {
         case ValueFormat::kWatts:
             return "W";
         case ValueFormat::kCelsius:
-            return "\xC2\xB0""C";
+            return "\xC2\xB0"
+                   "C";
         case ValueFormat::kMB:
             return " MB";
         case ValueFormat::kDefault:
@@ -352,10 +359,12 @@ const char* MetricWidget::getUnitText() const {
 }
 
 void MetricWidget::refreshUnitWidthIfNeeded() const {
-    if (!unitWidthDirty_) return;
+    if (!unitWidthDirty_)
+        return;
 
     LGFX* lcd = getLcd();
-    if (!lcd) return;
+    if (!lcd)
+        return;
 
     const char* unit = getUnitText();
     if (unit[0] != '\0') {
@@ -521,7 +530,6 @@ void MetricWidget::setUseRamColors(bool use) {
         markDirty();
     }
 }
-
 
 void MetricWidget::setLabel(const char* label) {
     if (strcmp(label_, label) != 0) {

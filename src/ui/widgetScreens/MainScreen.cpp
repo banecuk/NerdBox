@@ -1,5 +1,7 @@
 #include "MainScreen.h"
 
+#include "ui/core/Layout.h"
+
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
                        const AirQualityData& airQualityData, const NetworkStatus& netStatus)
@@ -21,16 +23,15 @@ void MainScreen::createWidgets() {
     // Air quality block — right of the threads, same top band. Reorganized
     // into four compact columns (icon | temp+humidity | pressure+wind | AQI).
     // Tappable to the weather forecast screen.
-    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(
-        new AirQualityWidget(WidgetInterface::Dimensions{240, 0, 240, 56}, 5000,
-                             airQualityData_, EventType::SHOW_WEATHER,
-                             [this](EventType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(new AirQualityWidget(
+        WidgetInterface::Dimensions{240, 0, 240, 56}, 5000, airQualityData_,
+        EventType::SHOW_WEATHER, [this](EventType action) { this->handleAction(action); })));
 
     // Game metrics grid — replaces PcMetricsWidget, directly below threads.
     // Moved up (y=56) since the top band got shorter.
-    auto gameMetricsWidget = std::unique_ptr<PcMetricsWidget>(
-        new PcMetricsWidget(uiController_->getDisplayContext(),
-                              WidgetInterface::Dimensions{0, 56, 480, 106}, 100, pcMetrics_));
+    auto gameMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
+        uiController_->getDisplayContext(),
+        WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 106}, 100, pcMetrics_));
     gameMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(gameMetricsWidget));
 
@@ -38,9 +39,9 @@ void MainScreen::createWidgets() {
     // read/write activity lines + a ~19px borderless per-drive tile area that
     // fits the NotoSans15 value font and runs flush against both lines.
     widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 162, 480, 27}, 100,
-        pcMetrics_, EventType::SHOW_DISKS,
-        [this](EventType action) { this->handleAction(action); })));
+        uiController_->getDisplayContext(),
+        WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 27}, 100, pcMetrics_,
+        EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); })));
 
     // Multifunctional widget — left of the FPS display; width trimmed from the
     // right to make room for a minimal-width FPS tile beside it.
@@ -57,29 +58,43 @@ void MainScreen::createWidgets() {
         [this](EventType action) { this->handleAction(action); })));
 
     // ── Bottom band is unchanged below this point ──────────────────────────────
+    // 3px higher than Layout::kBottomBarY so NetworkWidget/NetworkTrafficWidget
+    // share the row with the settings button and clock.
+    static constexpr uint16_t kBandY = 269;
+    static constexpr uint16_t kBandH = Layout::kButtonSize;
+    static constexpr uint16_t kNetTrafficX = Layout::kButtonSize;
+    static constexpr uint16_t kNetTrafficW = 132;
+    static constexpr uint16_t kClockX = Layout::kScreenW - Layout::kClockW - 2;
+    static constexpr uint16_t kClockH = 40;
+    static constexpr uint16_t kClockY = kBandY + kBandH / 2 - kClockH / 2;
+    static constexpr uint16_t kNetWidgetH = 24;
+    static constexpr uint16_t kNetWidgetY = kBandY + (kBandH - kNetWidgetH) / 2;
+    static constexpr uint16_t kNetWidgetW = 148;
+    static constexpr uint16_t kNetWidgetX = kClockX - kNetWidgetW;
+
     // Settings button — gear icon, no label
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",
-        WidgetInterface::Dimensions{0, 269, 48, 48}, 0, EventType::SHOW_SETTINGS,
-        [this](EventType action) { this->handleAction(action); }, TFT_BLACK, TFT_WHITE)));
+        WidgetInterface::Dimensions{0, kBandY, Layout::kButtonSize, Layout::kButtonSize}, 0,
+        EventType::SHOW_SETTINGS, [this](EventType action) { this->handleAction(action); },
+        TFT_BLACK, TFT_WHITE)));
 
     // Network traffic widget — Ethernet up/down rates, right of the settings
-    // button. Fills the full 48px band height (like the button) so its two
-    // rows (upload/download) have room; ends at x=180 where NetworkWidget
-    // begins.
-    widgetManager_.addWidget(std::unique_ptr<NetworkTrafficWidget>(
-        new NetworkTrafficWidget(WidgetInterface::Dimensions{48, 269, 132, 48}, 1000, pcMetrics_)));
+    // button. Fills the full band height (like the button) so its two rows
+    // (upload/download) have room; ends where NetworkWidget begins.
+    widgetManager_.addWidget(std::unique_ptr<NetworkTrafficWidget>(new NetworkTrafficWidget(
+        WidgetInterface::Dimensions{kNetTrafficX, kBandY, kNetTrafficW, kBandH}, 1000,
+        pcMetrics_)));
 
-    // Network widget — compact, right-aligned next to clock, vertically
-    // centered in the 48px band (269 + (48-24)/2 = 281).
-    // Clock: {328, 273, 150, 40} → network widget ends at x=328
-    // Width 148 px → x = 328 - 148 = 180
-    widgetManager_.addWidget(std::unique_ptr<NetworkWidget>(
-        new NetworkWidget(WidgetInterface::Dimensions{180, 281, 148, 24}, 1000, netStatus_)));
+    // Network widget — compact, right-aligned next to the clock, vertically
+    // centered in the band.
+    widgetManager_.addWidget(std::unique_ptr<NetworkWidget>(new NetworkWidget(
+        WidgetInterface::Dimensions{kNetWidgetX, kNetWidgetY, kNetWidgetW, kNetWidgetH}, 1000,
+        netStatus_)));
 
-    // Clock — taller row (40px) so Mono24 glyphs get vertical padding.
-    // Centered on the same band center as NetworkWidget/NetworkTrafficWidget
-    // (269 + 48/2 = 293): y = 293 - 40/2 = 273.
-    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{328, 273, 150, 40}, 1000, TFT_LIGHTGREY, TFT_BLACK)));
+    // Clock — taller row so Mono24 glyphs get vertical padding. Centered on
+    // the same band center as NetworkWidget/NetworkTrafficWidget.
+    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
+        new ClockWidget(WidgetInterface::Dimensions{kClockX, kClockY, Layout::kClockW, kClockH},
+                        1000, TFT_LIGHTGREY, TFT_BLACK)));
 }

@@ -57,8 +57,7 @@ struct AppSettings {
 
     // Weather
     uint32_t weatherRefreshIntervalMs = AppConfig::internal::WeatherImpl::kRefreshIntervalMs;
-    uint32_t weatherTimeCheckIntervalMs =
-        AppConfig::internal::WeatherImpl::kTimeCheckIntervalMs;
+    uint32_t weatherTimeCheckIntervalMs = AppConfig::internal::WeatherImpl::kTimeCheckIntervalMs;
     uint32_t weatherFailureBackoffMs = AppConfig::internal::WeatherImpl::kFailureBackoffMs;
     uint8_t weatherForecastDays = AppConfig::internal::WeatherImpl::kForecastDays;
 

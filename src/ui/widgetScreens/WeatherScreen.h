@@ -11,8 +11,8 @@
 // Data is fetched by WeatherJob only while this screen is displayed.
 class WeatherScreen : public BaseWidgetScreen {
  public:
-    WeatherScreen(LoggerInterface& logger, UiController* uiController,
-                  const AppSettings& config, WeatherData& weatherData);
+    WeatherScreen(LoggerInterface& logger, UiController* uiController, const AppSettings& config,
+                  WeatherData& weatherData);
     ~WeatherScreen() override = default;
 
  private:

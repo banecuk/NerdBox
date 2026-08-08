@@ -1,11 +1,12 @@
 #pragma once
 
-#include <Preferences.h>
 #include <LovyanGFX.hpp>
 
 #include "config/AppConfig.h"
 #include "config/LgfxConfig.h"
 #include "utils/LoggerInterface.h"
+
+#include <Preferences.h>
 
 class DisplayManager {
  public:
@@ -66,6 +67,5 @@ class DisplayManager {
     bool isNightWindowActive_ = false;
     bool isCurrentlyDimmed_ = false;
 
-    static constexpr uint8_t kDefaultBrightness =
-        AppConfig::internal::UiImpl::kDefaultBrightness;
+    static constexpr uint8_t kDefaultBrightness = AppConfig::internal::UiImpl::kDefaultBrightness;
 };

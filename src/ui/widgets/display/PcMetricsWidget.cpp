@@ -10,27 +10,50 @@ constexpr const char* kDegreesC =
     "\xC2\xB0"
     "C";
 
-float valueCpuLoad(const PcMetrics& m) { return m.cpu_load; }
-float valueCpuTemperature(const PcMetrics& m) { return m.cpu_temperature; }
-float valueCpuPower(const PcMetrics& m) { return m.cpu_power; }
-float valueCpuFan(const PcMetrics& m) { return m.cpu_fan; }
-float valueGpuLoad(const PcMetrics& m) { return m.gpu_load; }
-float valueGpuTemperature(const PcMetrics& m) { return m.gpu_temperature; }
-float valueGpuPower(const PcMetrics& m) { return m.gpu_power; }
-float valueGpu3d(const PcMetrics& m) { return m.gpu_3d; }
-float valueGpuCompute(const PcMetrics& m) { return m.gpu_compute; }
-float valueGpuMemory(const PcMetrics& m) { return m.gpu_mem; }
-float valueGpuFan(const PcMetrics& m) { return m.gpu_fan; }
-float valueMemoryLoad(const PcMetrics& m) { return m.mem_load; }
+float valueCpuLoad(const PcMetrics& m) {
+    return m.cpu_load;
+}
+float valueCpuTemperature(const PcMetrics& m) {
+    return m.cpu_temperature;
+}
+float valueCpuPower(const PcMetrics& m) {
+    return m.cpu_power;
+}
+float valueCpuFan(const PcMetrics& m) {
+    return m.cpu_fan;
+}
+float valueGpuLoad(const PcMetrics& m) {
+    return m.gpu_load;
+}
+float valueGpuTemperature(const PcMetrics& m) {
+    return m.gpu_temperature;
+}
+float valueGpuPower(const PcMetrics& m) {
+    return m.gpu_power;
+}
+float valueGpu3d(const PcMetrics& m) {
+    return m.gpu_3d;
+}
+float valueGpuCompute(const PcMetrics& m) {
+    return m.gpu_compute;
+}
+float valueGpuMemory(const PcMetrics& m) {
+    return m.gpu_mem;
+}
+float valueGpuFan(const PcMetrics& m) {
+    return m.gpu_fan;
+}
+float valueMemoryLoad(const PcMetrics& m) {
+    return m.mem_load;
+}
 }  // namespace
 
-PcMetricsWidget::PcMetricsWidget(DisplayContext& context,
-                                     const WidgetInterface::Dimensions& dims,
-                                     uint32_t updateIntervalMs, PcMetrics& pcMetrics)
+PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
+                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.is_available, pcMetrics.last_update_timestamp) {
+      freshnessGuard_(pcMetrics.freshness) {
     buildFixedWidgets();
 }
 
@@ -39,38 +62,170 @@ PcMetricsWidget::fixedTileDescriptors() {
     static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = {
         {
          // CPU row
-            {{kCol0, kRow1, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CPU", kLabelWidth,
-             0xC618, false, false, false, valueCpuLoad},
-         {{kCol1, kRow1, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-             0xC618, false, false, false, valueCpuTemperature},
-         {{kCol2, kRow1, kTileWidth, kRowH}, " W", 0, 400, 55.0f, 140.0f, "PWR", kLabelWidth,
-             0xC618, false, false, false, valueCpuPower},
-         {{kCol3, kRow1, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1200.0f, "FAN", kLabelWidth,
-             0xC618, false, false, false, valueCpuFan},
+            {{kCol0, kRow1, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "CPU",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             false,
+             valueCpuLoad},
+         {{kCol1, kRow1, kTileWidth, kRowH},
+             kDegreesC,
+             0,
+             100,
+             55.0f,
+             85.0f,
+             "TMP",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             false,
+             valueCpuTemperature},
+         {{kCol2, kRow1, kTileWidth, kRowH},
+             " W",
+             0,
+             400,
+             55.0f,
+             140.0f,
+             "PWR",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             false,
+             valueCpuPower},
+         {{kCol3, kRow1, kTileWidth, kRowH},
+             "",
+             0,
+             1500,
+             800.0f,
+             1200.0f,
+             "FAN",
+             kLabelWidth,
+             0xC618,
+             false,
+             false,
+             false,
+             valueCpuFan},
 
          // RAM — end of CPU row
-            {{kCol4, kRow1, kTileWidth, kRowH}, "%", 0, 100, 60.0f, 90.0f, "RAM", kLabelWidth,
-             0xADFB, false, false, true, valueMemoryLoad},
+            {{kCol4, kRow1, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             60.0f,
+             90.0f,
+             "RAM",
+             kLabelWidth,
+             0xADFB,
+             false,
+             false,
+             true,
+             valueMemoryLoad},
 
          // GPU row
-            {{kCol0, kRow2, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "GPU", kLabelWidth,
-             0xB471, true, false, false, valueGpuLoad},
-         {{kCol1, kRow2, kTileWidth, kRowH}, kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", kLabelWidth,
-             0xB471, true, false, false, valueGpuTemperature},
-         {{kCol2, kRow2, kTileWidth, kRowH}, " W", 0, 400, 50.0f, 170.0f, "PWR", kLabelWidth,
-             0xB471, true, false, false, valueGpuPower},
-         {{kCol3, kRow2, kTileWidth, kRowH}, "", 0, 1500, 800.0f, 1400.0f, "FAN", kLabelWidth,
-             0xB471, true, true, false, valueGpuFan},
+            {{kCol0, kRow2, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "GPU",
+             kLabelWidth,
+             0xB471,
+             true,
+             false,
+             false,
+             valueGpuLoad},
+         {{kCol1, kRow2, kTileWidth, kRowH},
+             kDegreesC,
+             0,
+             100,
+             55.0f,
+             85.0f,
+             "TMP",
+             kLabelWidth,
+             0xB471,
+             true,
+             false,
+             false,
+             valueGpuTemperature},
+         {{kCol2, kRow2, kTileWidth, kRowH},
+             " W",
+             0,
+             400,
+             50.0f,
+             170.0f,
+             "PWR",
+             kLabelWidth,
+             0xB471,
+             true,
+             false,
+             false,
+             valueGpuPower},
+         {{kCol3, kRow2, kTileWidth, kRowH},
+             "",
+             0,
+             1500,
+             800.0f,
+             1400.0f,
+             "FAN",
+             kLabelWidth,
+             0xB471,
+             true,
+             true,
+             false,
+             valueGpuFan},
 
          // VRAM — end of GPU row
-            {{kCol4, kRow2, kTileWidth, kRowH}, "%", 0, 100, 30.0f, 90.0f, "VRM", kLabelWidth,
-             0xB471, true, false, false, valueGpuMemory},
+            {{kCol4, kRow2, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             30.0f,
+             90.0f,
+             "VRM",
+             kLabelWidth,
+             0xB471,
+             true,
+             false,
+             false,
+             valueGpuMemory},
 
          // Row 3 — 3D / compute (fan slots kCol2/kCol3 are lazily created)
-            {{kCol0, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "3D", kLabelWidth,
-             0xB471, true, false, false, valueGpu3d},
-         {{kCol1, kRow3, kTileWidth, kRowH}, "%", 0, 100, 10.0f, 90.0f, "CMP", kLabelWidth,
-             0xB471, true, false, false, valueGpuCompute},
+            {{kCol0, kRow3, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "3D",
+             kLabelWidth,
+             0xB471,
+             true,
+             false,
+             false,
+             valueGpu3d},
+         {{kCol1, kRow3, kTileWidth, kRowH},
+             "%",
+             0,
+             100,
+             10.0f,
+             90.0f,
+             "CMP",
+             kLabelWidth,
+             0xB471,
+             true,
+             false,
+             false,
+             valueGpuCompute},
          }
     };
     return kTiles;
@@ -183,7 +338,7 @@ void PcMetricsWidget::onDraw(bool forceRedraw) {
         wasFreshData_ = currentlyHasFreshData;
     }
 
-    if (currentlyHasFreshData && pcMetrics_.last_update_timestamp != lastUpdateTimestamp_) {
+    if (currentlyHasFreshData && pcMetrics_.freshness.lastUpdateMs() != lastUpdateTimestamp_) {
         ensureSystemFanWidgetsCreated();
     }
 
@@ -230,7 +385,7 @@ void PcMetricsWidget::drawDynamicData() {
     }
     Fonts::unload(lcd);
 
-    lastUpdateTimestamp_ = pcMetrics_.last_update_timestamp;
+    lastUpdateTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
 }
 
 void PcMetricsWidget::drawNoDataMessage() {
@@ -262,7 +417,7 @@ bool PcMetricsWidget::needsUpdate() const {
         return false;
     if (hasFreshData() != wasFreshData_)
         return true;
-    return (pcMetrics_.last_update_timestamp > lastUpdateTimestamp_) ||
+    return (pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_) ||
            (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
 }
 

@@ -7,7 +7,7 @@ WeatherService::WeatherService(NetworkManager& networkManager, LoggerInterface& 
 
 void WeatherService::initFilter(JsonDocument& filterDoc) {
     JsonObject filter = filterDoc.to<JsonObject>();
-    JsonObject daily  = filter["daily"].to<JsonObject>();
+    JsonObject daily = filter["daily"].to<JsonObject>();
     daily["time"] = true;
     daily["weather_code"] = true;
     daily["temperature_2m_max"] = true;
@@ -42,38 +42,37 @@ bool WeatherService::parseData(WeatherData& outData) {
     }
 
     JsonArray weatherCode = daily["weather_code"];
-    JsonArray tempMax     = daily["temperature_2m_max"];
-    JsonArray tempMin     = daily["temperature_2m_min"];
-    JsonArray rainSum     = daily["rain_sum"];
-    JsonArray windMax     = daily["wind_speed_10m_max"];
+    JsonArray tempMax = daily["temperature_2m_max"];
+    JsonArray tempMin = daily["temperature_2m_min"];
+    JsonArray rainSum = daily["rain_sum"];
+    JsonArray windMax = daily["wind_speed_10m_max"];
 
     const uint8_t count = static_cast<uint8_t>(
         (timeArray.size() > kMaxForecastDays) ? kMaxForecastDays : timeArray.size());
 
     {
-        WeatherDataLock lock(outData);
+        ScopedLock lock(outData.daysMutex);
         for (uint8_t i = 0; i < count; ++i) {
             WeatherForecastDay& day = outData.days[i];
-            day.weatherCode         = static_cast<int16_t>(weatherCode[i] | 0);
-            day.tempMaxX10          = extractX10(tempMax, i);
-            day.tempMinX10          = extractX10(tempMin, i);
-            day.rainX10             = extractX10(rainSum, i);
-            day.windMaxX10          = extractX10(windMax, i);
-            day.dayStart            = static_cast<time_t>(timeArray[i].as<int64_t>());
+            day.weatherCode = static_cast<int16_t>(weatherCode[i] | 0);
+            day.tempMaxX10 = extractX10(tempMax, i);
+            day.tempMinX10 = extractX10(tempMin, i);
+            day.rainX10 = extractX10(rainSum, i);
+            day.windMaxX10 = extractX10(windMax, i);
+            day.dayStart = static_cast<time_t>(timeArray[i].as<int64_t>());
         }
     }
 
-    outData.dayCount     = count;
-    outData.is_available = true;
-    outData.last_update  = millis();
+    outData.dayCount = count;
+    outData.freshness.publish(millis());
     outData.refreshRequested.store(false);
 
-    logger_.debugf("Weather: %u days, day0 code=%d max=%d.%d°C min=%d.%d°C rain=%d.%dmm wind=%d.%dm/s",
-                   count, outData.days[0].weatherCode,
-                   outData.days[0].tempMaxX10 / 10, outData.days[0].tempMaxX10 % 10,
-                   outData.days[0].tempMinX10 / 10, outData.days[0].tempMinX10 % 10,
-                   outData.days[0].rainX10 / 10, outData.days[0].rainX10 % 10,
-                   outData.days[0].windMaxX10 / 10, outData.days[0].windMaxX10 % 10);
+    logger_.debugf(
+        "Weather: %u days, day0 code=%d max=%d.%d°C min=%d.%d°C rain=%d.%dmm wind=%d.%dm/s", count,
+        outData.days[0].weatherCode, outData.days[0].tempMaxX10 / 10,
+        outData.days[0].tempMaxX10 % 10, outData.days[0].tempMinX10 / 10,
+        outData.days[0].tempMinX10 % 10, outData.days[0].rainX10 / 10, outData.days[0].rainX10 % 10,
+        outData.days[0].windMaxX10 / 10, outData.days[0].windMaxX10 % 10);
 
     return true;
 }
