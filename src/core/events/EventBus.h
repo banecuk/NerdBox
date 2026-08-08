@@ -14,6 +14,17 @@
 // Subscribe only during init, from objects that live for the app's lifetime.
 // A short-lived subscriber must call unsubscribe() with its token before it
 // is destroyed, or its captured `this` dangles the next time the event fires.
+//
+// Caveat: unsubscribe() only guarantees the callback won't be *copied* into
+// a future publish() after it returns — it does not wait for a publish()
+// already in flight on another core. That publish() took its own copy of
+// the callback list before releasing the mutex (see publish()'s comment) and
+// keeps invoking those copies outside the lock, so a callback can still run
+// after its unsubscribe() call has completed. Safe today because every
+// subscriber is app-lifetime and never actually unsubscribes before its own
+// destruction happens after all tasks stop; a subscriber that unsubscribes
+// while still alive and expects "no more calls after this returns" would
+// need publish() to invoke under the lock instead.
 class EventBus {
  public:
     static EventBus& getInstance() {
@@ -44,7 +55,13 @@ class EventBus {
     // Copies the callback list under the lock, then invokes callbacks
     // outside it — publish() and subscribe()/unsubscribe() can safely race
     // from different tasks without callbacks running while the mutex (and
-    // any lock a callback itself takes) is held.
+    // any lock a callback itself takes) is held. See the class-level comment
+    // for what this copy-then-invoke design means for unsubscribe() timing.
+    //
+    // Each call heap-allocates a std::vector<EventCallback> copy of the
+    // subscriber list. Fine for rare UI-driven events (button taps, screen
+    // transitions); do not call this from a hot path (per-frame/per-tick
+    // code) — use a direct call or a polled flag there instead.
     void publish(EventType type) {
         std::vector<EventCallback> callbacks;
         {

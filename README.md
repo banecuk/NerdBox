@@ -279,7 +279,7 @@ widgetManager_.addWidget(std::make_unique<MyWidget>(
 
 1. Add an entry to `ScreenName` in `src/core/ScreenTypes.h`.
 2. Create `src/ui/widgetScreens/MyScreen.h/.cpp` extending `BaseWidgetScreen`.
-3. Register in `ScreenFactory::createScreen()`. If the screen needs additional dependencies (like `NetworkManager` for `SettingsScreen`), add them to `ScreenFactory::createScreen()`'s signature and thread them through `UIController`.
+3. Register in `ScreenFactory::createScreen()`. If the screen needs additional dependencies (like `NetworkManager` for `SettingsScreen`), add them to `ScreenFactory::createScreen()`'s signature and thread them through `UiController`.
 4. Navigate to it with `uiController_.requestScreen(ScreenName::MY_SCREEN)`.
 
 ---

@@ -37,6 +37,15 @@
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
 
+// ApplicationMetrics::kDrawTimesCapacity is redefined (not pulled from
+// AppConfig) so utils/ stays independent of config/AppConfig.h — see that
+// constant's comment. This is the one place both headers are already
+// included, so it's where the two constants' agreement is enforced.
+static_assert(ApplicationMetrics::kDrawTimesCapacity ==
+                  AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes,
+              "ApplicationMetrics::kDrawTimesCapacity and "
+              "AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes must match");
+
 class ApplicationComponents : public IInitializationTarget {
  public:
     ApplicationComponents();

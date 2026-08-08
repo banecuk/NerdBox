@@ -76,7 +76,7 @@ class PcMetrics {
     uint16_t system_fans[kMaxSystemFans] = {};
     uint8_t  system_fan_count = 0;
 
-    uint8_t gpu_3d = 0;
+    uint16_t gpu_3d = 0;  // percent; can exceed 100 on some drivers, hence 16-bit like gpu_compute
     uint16_t gpu_compute = 0;
     uint16_t gpu_decode = 0;
     uint16_t gpu_mem = 0;

@@ -42,7 +42,13 @@ void WeatherWidget::onDrawStatic() {
 
     columns_     = 0;
     lastHasData_ = false;
-    memset(lastColumns_, 0, sizeof(lastColumns_));
+    // Reassign rather than memset — a raw zero-fill would clobber iconWmo's
+    // -1 "no icon cached yet" sentinel with 0, which collides with WMO code 0
+    // (clear sky). That collision then skips painting the icon on the first
+    // real draw after data arrives, since iconChanged would compare 0 == 0.
+    for (auto& cache : lastColumns_) {
+        cache = ColumnCache{};
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -47,7 +47,9 @@ class PcMetricsService {
 
     // Use heap allocation for JSON document to avoid stack overflow
     std::unique_ptr<JsonDocument> doc_;  // Reused across fetches to avoid heap fragmentation
-    JsonDocument filter_;                // Filter stays on stack (small size)
+    // Small enough to be a plain member (lives inline with this object,
+    // wherever that is) instead of a separate heap allocation like doc_.
+    JsonDocument filter_;
 
     uint32_t fetchOk_ = 0;
     uint32_t fetchFail_ = 0;

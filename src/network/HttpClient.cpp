@@ -27,6 +27,10 @@ bool HttpClient::download(const char* url, String& outResponse, uint8_t maxRetri
 
     while (retryCount < maxRetries && !success) {
         if (!http_.begin(url)) {
+            // begin() itself doesn't report a specific failure code — it fails
+            // on a malformed/unparseable URL just as often as an actual
+            // connection problem. HTTPC_ERROR_CONNECTION_REFUSED is the closest
+            // existing HTTPClient error code, not a literal diagnosis.
             lastHttpCode_ = HTTPC_ERROR_CONNECTION_REFUSED;
             retryCount++;
             if (retryCount < maxRetries) {
@@ -67,6 +71,10 @@ bool HttpClient::downloadAndParse(const char* url, JsonDocument& doc, const Json
 
     while (retryCount < maxRetries && !success) {
         if (!http_.begin(url)) {
+            // begin() itself doesn't report a specific failure code — it fails
+            // on a malformed/unparseable URL just as often as an actual
+            // connection problem. HTTPC_ERROR_CONNECTION_REFUSED is the closest
+            // existing HTTPClient error code, not a literal diagnosis.
             lastHttpCode_ = HTTPC_ERROR_CONNECTION_REFUSED;
             retryCount++;
             if (retryCount < maxRetries) {

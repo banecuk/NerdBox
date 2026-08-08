@@ -43,7 +43,7 @@ NetworkManager& networkManager,
     // Screen transition methods
     bool requestTransitionTo(ScreenName screenName);
     void requestScreen(ScreenName screenName) {
-        logger_.debugf("[UIController] Requesting screen %d", static_cast<int>(screenName));
+        logger_.debugf("[UiController] Requesting screen %d", static_cast<int>(screenName));
         requestTransitionTo(screenName);
     }
 

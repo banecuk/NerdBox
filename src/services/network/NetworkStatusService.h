@@ -14,7 +14,7 @@
 //
 // Internet    — call maybeTriggerProbe() from the background task every tick.
 //               When the probe interval has elapsed and no probe is running, a
-//               one-shot FreeRTOS task is spawned that does a single HTTP HEAD
+//               one-shot FreeRTOS task is spawned that does a single HTTP GET
 //               to one of six rotating endpoints, then self-deletes.
 //               The rolling 6-slot result buffer prevents a single slow response
 //               from flipping the state.

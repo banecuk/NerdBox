@@ -13,6 +13,12 @@ class HttpClient {
     // (NerdWinSense is on the same network); pass longer values for
     // internet-facing endpoints (e.g. AirVisual) where round-trips are
     // legitimately slower.
+    //
+    // maxRetries is actually a total-attempts cap, not a retry count: the
+    // default of 2 means up to 2 GETs total (1 initial + 1 retry), not 2
+    // retries after the first attempt. Kept as-is since it's the established
+    // name across every call site's config field (e.g. AppSettings' various
+    // `*MaxRetries` members); read it as "max attempts".
     bool download(const char* url, String& outResponse, uint8_t maxRetries = 2,
                   uint32_t retryDelayMs = 100, uint16_t connectTimeoutMs = kDefaultConnectTimeoutMs,
                   uint16_t responseTimeoutMs = kDefaultResponseTimeoutMs);
@@ -22,6 +28,7 @@ class HttpClient {
     // full-payload heap copy on every call. Retries on HTTP-level failure
     // (non-200) same as download(); a parse failure after a 200 response is
     // not retried, matching download()+deserializeJson()'s prior behavior.
+    // maxRetries is a total-attempts cap — see download()'s comment.
     bool downloadAndParse(const char* url, JsonDocument& doc, const JsonDocument& filter,
                           uint8_t maxRetries = 2, uint32_t retryDelayMs = 100,
                           uint16_t connectTimeoutMs = kDefaultConnectTimeoutMs,

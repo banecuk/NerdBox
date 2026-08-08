@@ -15,6 +15,10 @@ class BootScreen : public ScreenInterface {
     void draw() override;
 
  private:
+    // Top of the scrollable log area (below the title). Fixed so the clip
+    // rect set in onEnter() matches where lines actually get drawn.
+    static constexpr uint16_t kLogAreaY = 28;
+
     LoggerInterface& logger_;
     LGFX* lcd_;
 

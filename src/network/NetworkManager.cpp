@@ -9,6 +9,13 @@ bool NetworkManager::connect() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     logger_.info("Connecting to WiFi...", true);
 
+    // waitForConnectResult() blocks once for the whole timeout below — it
+    // does not retry internally. initNetworkRetries doesn't cause repeated
+    // connect attempts here; despite the name, it's just a multiplier used
+    // to size this one overall timeout (retries * per-retry delay). The
+    // background task's own reconnect loop, checkAndReconnect(), uses its
+    // own separate kReconnectTimeoutMs/kReconnectCheckIntervalMs constants,
+    // not these config fields.
     uint32_t timeoutMs = config_.initNetworkRetries * config_.initNetworkRetryDelayMs;
     wl_status_t status =
         static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));

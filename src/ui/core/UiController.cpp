@@ -1,4 +1,4 @@
-#include "UIController.h"
+#include "UiController.h"
 
 #include "ui/core/UiEventHandler.h"
 #include "ui/screens/BootScreen.h"
@@ -173,7 +173,7 @@ void UiController::loadAndActivateScreen() {
         screenState_.activeScreen = activeTransition_.nextScreen;
         currentScreen_->onEnter();
     } else {
-        logger_.error("[UIController] Failed to create screen");
+        logger_.error("[UiController] Failed to create screen");
         requestTransitionTo(ScreenName::BOOT);  // Fallback
     }
 }
