@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <atomic>
 #include <functional>
 #include <vector>
@@ -75,6 +76,10 @@ class DiskBandWidget : public Widget {
     std::vector<uint16_t> diskWriteLineColor_;
     std::vector<uint16_t> diskReadLineColor_;
     std::vector<float> diskFreeSpaceSmoothed_;
+    // Drive letters the current tiles were built for — lets ensureDiskWidgetsCreated()
+    // detect a same-count drive swap (e.g. D: unplugged, E: appears) that a
+    // count-only comparison would miss.
+    std::vector<std::array<char, 4>> diskDriveNames_;
 
     // Read-line vertical offset within the strip (relative to the widget's
     // origin); the tile area fills between kDiskAreaY and this row.

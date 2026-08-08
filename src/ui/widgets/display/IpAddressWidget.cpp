@@ -52,8 +52,7 @@ void IpAddressWidget::onDraw(bool forceRedraw) {
     const bool connected = networkManager_.isConnected();
     char currentIp[16] = {};
     if (connected) {
-        String ip = networkManager_.getLocalIp();
-        strncpy(currentIp, ip.c_str(), sizeof(currentIp) - 1);
+        networkManager_.getLocalIp(currentIp, sizeof(currentIp));
     }
 
     const bool changed = (connected != lastConnected_) ||

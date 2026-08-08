@@ -47,15 +47,16 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    if (freshnessGuard_.isFresh()) {
+    const bool fresh = freshnessGuard_.isFresh();
+    if (fresh) {
         updateSmoothedValues();
+        systemMetrics_.addThreadWidgetFrameTime();
     }
 
-    drawBars();
+    drawBars(!fresh);
+    wasFresh_ = fresh;
     lastUpdateTimeMs_ = millis();
     clearDirty();
-
-    systemMetrics_.addThreadWidgetFrameTime();
 }
 
 void ThreadsWidget::updateSmoothedValues() {
@@ -70,7 +71,7 @@ void ThreadsWidget::updateSmoothedValues() {
     valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.pcMetricsCores);
 }
 
-void ThreadsWidget::drawBars() {
+void ThreadsWidget::drawBars(bool stale) {
     const uint16_t maxBarHeight = dimensions_.height - 1;
     LGFX* lcd = getLcd();
     const int coreCount = config_.pcMetricsCores;
@@ -81,7 +82,10 @@ void ThreadsWidget::drawBars() {
         newHeight = min(newHeight, maxBarHeight);
         newHeight = newHeight + 1;  // Ensure minimum visible height
 
-        const uint16_t newColor = context_.getColors().getColorFromPercent(threadLoad, false);
+        // Frozen bars from before a stall shouldn't look like healthy live
+        // data — dim them instead of drawing the load-graded color.
+        const uint16_t newColor =
+            stale ? TFT_DARKGREY : context_.getColors().getColorFromPercent(threadLoad, false);
         const uint16_t oldHeight = previousBarHeights_[i];
         const uint16_t oldColor = previousColors_[i];
 
@@ -121,6 +125,14 @@ void ThreadsWidget::drawBars() {
 bool ThreadsWidget::needsUpdate() const {
     if (!isInitialized_) {
         return false;
+    }
+
+    const bool fresh = freshnessGuard_.isFresh();
+    if (fresh != wasFresh_) {
+        return true;  // one redraw to dim (or undim) the bars
+    }
+    if (!fresh) {
+        return false;  // already dimmed; nothing changes while stale
     }
     return Widget::needsUpdate();
 }

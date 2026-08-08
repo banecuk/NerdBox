@@ -47,7 +47,17 @@ void ApplicationMetrics::getFormattedUptime(char* buf, size_t size) const {
     unsigned long seconds = uptimeMs / 1000;
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
-    snprintf(buf, size, "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
+
+    // HH:MM:SS only fits 2-digit hours. Past 99 h, switch to "Dd HH:MM" so the
+    // string never grows past its fixed shape and callers with small
+    // fixed-width buffers (e.g. UptimeWidget) can't get silently truncated
+    // into garbage.
+    if (hours < 100) {
+        snprintf(buf, size, "%02lu:%02lu:%02lu", hours, minutes % 60, seconds % 60);
+    } else {
+        unsigned long days = hours / 24;
+        snprintf(buf, size, "%lud %02lu:%02lu", days, hours % 24, minutes % 60);
+    }
 }
 
 void ApplicationMetrics::addThreadWidgetFrameTime() {

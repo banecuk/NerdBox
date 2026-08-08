@@ -4,7 +4,10 @@
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
 
-// Displays device uptime as HH:MM:SS, updating once per second.
+// Displays device uptime as HH:MM:SS, updating once per second. Past 99h
+// uptime, ApplicationMetrics switches the source string to "Dd HH:MM" — this
+// widget falls back to a plain whole-string redraw in that mode since the
+// fixed-offset per-field diffing below assumes exactly 2-digit HH.
 // Styled to match IpAddressWidget: a small grey label above a larger value.
 class UptimeWidget : public Widget {
  public:
@@ -27,7 +30,10 @@ class UptimeWidget : public Widget {
     uint16_t bgColor_;
 
     // Last rendered string — avoids a redraw when the second hasn't ticked.
-    char lastRendered_[9] = {};  // "HH:MM:SS" + null
+    // Sized for the "Dd HH:MM" fallback format (days up to 5 digits), not
+    // just "HH:MM:SS" + null.
+    char lastRendered_[16] = {};
+    bool dayMode_ = false;  // true once ApplicationMetrics switches formats
 
     // Font-measured layout — computed once on first drawStatic().
     bool     layoutReady_ = false;

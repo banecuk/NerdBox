@@ -134,6 +134,11 @@ void TaskManager::executeBackgroundTask() {
             // deadline as soon as `now` is small.
             if (dueAt != ULONG_MAX && (long)(now - dueAt) >= 0) {
                 job->run();
+                // Feed the watchdog after every job, not just once per tick —
+                // several blocking jobs (HTTP fetch, WiFi reconnect) coming
+                // due on the same tick would otherwise stack up before a
+                // single reset.
+                resetWatchdog();
             }
         }
 

@@ -6,6 +6,14 @@
 // and gating logic — adding a new periodic service means writing one job
 // adapter and registering it in ApplicationComponents, not touching
 // TaskManager's constructor or executeBackgroundTask().
+//
+// Blocking budget: TaskManager feeds the watchdog once per due job (see
+// TaskManager::executeBackgroundTask()), not once per tick, so several jobs
+// coming due on the same tick can't starve the watchdog between them — but
+// a single run() call is still on the clock. Keep any one run() call well
+// under WatchdogImpl::kTimeoutMs (20 s default); a job that can block that
+// long on its own (e.g. a stalled socket) should apply its own internal
+// timeout rather than relying on the watchdog to catch it.
 class BackgroundJob {
  public:
     virtual ~BackgroundJob() = default;

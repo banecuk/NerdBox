@@ -40,6 +40,12 @@ class ThreadsWidget : public Widget {
     std::unique_ptr<ValueSmoother> valueSmoother_;
     std::vector<uint8_t> smoothedThreadLoads_;
 
-    void drawBars();
+    // Tracks the freshness state as of the last draw, so needsUpdate() can
+    // (a) force one redraw on a fresh<->stale transition and (b) otherwise
+    // stop ticking every kThreadsRefreshMs while stale — there's nothing new
+    // to animate, and the bars are already dimmed to reflect that.
+    bool wasFresh_ = true;
+
+    void drawBars(bool stale);
     void updateSmoothedValues();
 };

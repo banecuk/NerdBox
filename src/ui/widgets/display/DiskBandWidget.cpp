@@ -56,8 +56,16 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     if (snapshot.empty())
         return;
 
-    const bool needsCreation =
+    bool needsCreation =
         diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshot.size());
+    if (!needsCreation) {
+        for (size_t i = 0; i < snapshot.size(); ++i) {
+            if (strncmp(diskDriveNames_[i].data(), snapshot[i].name, sizeof(snapshot[i].name)) != 0) {
+                needsCreation = true;
+                break;
+            }
+        }
+    }
 
     if (!needsCreation)
         return;
@@ -67,6 +75,13 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     diskWriteLineColor_.assign(snapshot.size(), 0xFFFF);  // sentinel forces first draw
     diskReadLineColor_.assign(snapshot.size(), 0xFFFF);
     diskFreeSpaceSmoothed_.assign(snapshot.size(), -1.0f);  // sentinel: no previous value yet
+    diskDriveNames_.clear();
+    diskDriveNames_.reserve(snapshot.size());
+    for (const auto& s : snapshot) {
+        std::array<char, 4> name{};
+        strncpy(name.data(), s.name, name.size() - 1);
+        diskDriveNames_.push_back(name);
+    }
 
     const uint16_t maxWidgetWidth = kMaxWidgetWidth;
     uint16_t widgetWidth = static_cast<uint16_t>(dimensions_.width / snapshot.size());
@@ -259,6 +274,7 @@ void DiskBandWidget::clearDiskWidgets() {
     diskWriteLineColor_.clear();
     diskReadLineColor_.clear();
     diskFreeSpaceSmoothed_.clear();
+    diskDriveNames_.clear();
 
     lastEnsureCheckTimestamp_ = 0;
     isStaticDrawn_ = false;

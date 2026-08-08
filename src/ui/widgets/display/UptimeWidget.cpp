@@ -58,12 +58,15 @@ void UptimeWidget::onDrawStatic() {
     // Draw static colons in value font at the vertical midpoint of the value
     // row so they align with digit cap height — ML_DATUM places the glyph
     // midpoint at valueY_, matching how onDraw() positions each digit field.
-    Fonts::loadValue(lcd);
-    lcd->setTextColor(TFT_DARKGREY, bgColor_);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(":", xColon1_, valueY_);
-    lcd->drawString(":", xColon2_, valueY_);
-    Fonts::unload(lcd);
+    // Skipped in day mode ("Dd HH:MM"), which draws itself as one string.
+    if (!dayMode_) {
+        Fonts::loadValue(lcd);
+        lcd->setTextColor(TFT_DARKGREY, bgColor_);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->drawString(":", xColon1_, valueY_);
+        lcd->drawString(":", xColon2_, valueY_);
+        Fonts::unload(lcd);
+    }
 
     lastRendered_[0] = '\0';
 }
@@ -72,37 +75,60 @@ void UptimeWidget::onDraw(bool forceRedraw) {
     if (!getLcd() || !layoutReady_)
         return;
 
-    char current[9];
+    char current[16];
     systemMetrics_.getFormattedUptime(current, sizeof(current));
+    const bool isDayMode = strchr(current, 'd') != nullptr;
 
-    if (!forceRedraw && strncmp(current, lastRendered_, sizeof(current)) == 0) {
+    if (!forceRedraw && isDayMode == dayMode_ &&
+        strncmp(current, lastRendered_, sizeof(current)) == 0) {
         clearDirty();
         return;
     }
 
     LGFX* lcd = getLcd();
-    char prev[9];
-    strncpy(prev, lastRendered_, sizeof(prev));
 
-    // Load value font once for all three fields.
-    // ML_DATUM — left-edge x, vertical midpoint y — matches the colons drawn
-    // in drawStatic(), so all six glyphs sit on the same optical baseline.
-    Fonts::loadValue(lcd);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->setTextColor(textColor_, bgColor_);  // bg param = per-glyph fill, no flicker
+    // Mode just changed (e.g. crossed 99h uptime) — the fixed-offset field
+    // layout below no longer matches the string shape, so repaint the whole
+    // widget (colons included) from scratch.
+    if (isDayMode != dayMode_) {
+        dayMode_ = isDayMode;
+        onDrawStatic();
+    }
 
-    auto drawField = [&](uint16_t x, const char* cur2, const char* old2) {
-        if (forceRedraw || strncmp(cur2, old2, 2) != 0) {
-            char buf[3] = {cur2[0], cur2[1], '\0'};
-            lcd->drawString(buf, x, valueY_);
-        }
-    };
+    if (isDayMode) {
+        // "Dd HH:MM" doesn't fit the fixed 2-digit-field layout — just redraw
+        // the whole string when it changes.
+        lcd->fillRect(dimensions_.x, valueY_ - digitW_ / 2, dimensions_.width,
+                      digitW_ + 2, bgColor_);
+        Fonts::loadValue(lcd);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->setTextColor(textColor_, bgColor_);
+        lcd->drawString(current, xHH_, valueY_);
+        Fonts::unload(lcd);
+    } else {
+        char prev[16];
+        strncpy(prev, lastRendered_, sizeof(prev));
 
-    drawField(xHH_, current,     prev);      // HH
-    drawField(xMM_, current + 3, prev + 3);  // MM
-    drawField(xSS_, current + 6, prev + 6);  // SS
+        // Load value font once for all three fields.
+        // ML_DATUM — left-edge x, vertical midpoint y — matches the colons drawn
+        // in drawStatic(), so all six glyphs sit on the same optical baseline.
+        Fonts::loadValue(lcd);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->setTextColor(textColor_, bgColor_);  // bg param = per-glyph fill, no flicker
 
-    Fonts::unload(lcd);
+        auto drawField = [&](uint16_t x, const char* cur2, const char* old2) {
+            if (forceRedraw || strncmp(cur2, old2, 2) != 0) {
+                char buf[3] = {cur2[0], cur2[1], '\0'};
+                lcd->drawString(buf, x, valueY_);
+            }
+        };
+
+        drawField(xHH_, current,     prev);      // HH
+        drawField(xMM_, current + 3, prev + 3);  // MM
+        drawField(xSS_, current + 6, prev + 6);  // SS
+
+        Fonts::unload(lcd);
+    }
 
     strncpy(lastRendered_, current, sizeof(lastRendered_));
     lastUpdateTimeMs_ = millis();

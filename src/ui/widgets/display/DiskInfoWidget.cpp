@@ -80,8 +80,19 @@ void DiskInfoWidget::ensureRowsCreated() {
         return;
     }
 
-    // Rebuild rows only when the drive count changed.
-    const bool needsCreation = rows_.size() != snapshot.size();
+    // Rebuild rows when the drive count changed, or the count stayed the same
+    // but the set of drives itself did (e.g. D: unplugged, E: appears at the
+    // same index) — a count-only comparison would leave the old row's cached
+    // name/state on screen forever.
+    bool needsCreation = rows_.size() != snapshot.size();
+    if (!needsCreation) {
+        for (size_t i = 0; i < snapshot.size(); ++i) {
+            if (strncmp(rows_[i].name, snapshot[i].name, sizeof(snapshot[i].name)) != 0) {
+                needsCreation = true;
+                break;
+            }
+        }
+    }
     if (needsCreation) {
         rows_.clear();
         rows_.reserve(snapshot.size());

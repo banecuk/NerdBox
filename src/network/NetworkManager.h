@@ -14,7 +14,17 @@ class NetworkManager {
     bool connect();
     bool checkAndReconnect();
     bool isConnected() const;
-    String getLocalIp() const { return isConnected() ? WiFi.localIP().toString() : ""; }
+
+    // Writes the dotted-quad IP into the caller's buffer (empty string if not
+    // connected) — no String allocation, unlike IPAddress::toString().
+    void getLocalIp(char* buf, size_t size) const {
+        if (!isConnected() || size == 0) {
+            if (size > 0) buf[0] = '\0';
+            return;
+        }
+        IPAddress ip = WiFi.localIP();
+        snprintf(buf, size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    }
 
     HttpClient& getHttpClient() { return httpClient_; }
 
