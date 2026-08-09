@@ -49,9 +49,14 @@ class WebServerService {
     void handleLogs();
     void handleRestart();
 
+    // Identifies which nav-bar link to highlight as active in sendHtmlBegin.
+    // Mirrors the pages listed in WebAssets::kHtmlHead2/kHtmlHead3's nav.
+    enum class NavPage { kHome, kAppInfo, kSystemInfo, kLogs, kConfig, kApi };
+
     // Streams the HTML wrapper and body content directly to the client in
     // chunks — no large String assembled on the heap.
-    void sendHtmlBegin(const char* title);
+    void sendHtmlBegin(const char* title, NavPage activePage);
+    void sendNavLink(const char* href, const char* label, bool active);
     void sendHtmlEnd();
     void sendSystemInfoBody();
     void sendAppInfoBody();

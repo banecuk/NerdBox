@@ -46,29 +46,36 @@ void UiController::initialize() {
 }
 
 bool UiController::requestTransitionTo(ScreenName screenName) {
-    logger_.debugf("[UiController] Scheduling transition to screen %d, current=%d",
-                   static_cast<int>(screenName), static_cast<int>(screenState_.activeScreen));
-
     if (screenName == ScreenName::NONE) {
         logger_.error("[UiController] Invalid screen: UNSET");
         return false;
     }
 
-    if (screenName == screenState_.activeScreen && !activeTransition_.isActive) {
-        logger_.debug("[UiController] Screen already active");
-        return false;
-    }
+    logger_.debugf("[UiController] Scheduling transition to screen %d",
+                   static_cast<int>(screenName));
 
-    activeTransition_.nextScreen = screenName;
-    activeTransition_.phase = TransitionPhase::UNLOADING;
-    activeTransition_.isActive = true;
-    activeTransition_.startTime = millis();
-
+    // May run on a different task than updateDisplay() — see the header
+    // comment on pendingScreen_. Do not touch activeTransition_/currentScreen_/
+    // screenState_ here.
+    pendingScreen_.store(screenName, std::memory_order_release);
     return true;
 }
 
 void UiController::updateDisplay() {
     unsigned long startTime = millis();
+
+    // Drain any cross-task request before touching activeTransition_ — this
+    // is the only place pendingScreen_ is read, and the only place
+    // activeTransition_ is written, so the two never race.
+    const ScreenName requested = pendingScreen_.exchange(ScreenName::NONE, std::memory_order_acquire);
+    if (requested != ScreenName::NONE &&
+        !(requested == screenState_.activeScreen && !activeTransition_.isActive)) {
+        activeTransition_.nextScreen = requested;
+        activeTransition_.phase = TransitionPhase::UNLOADING;
+        activeTransition_.isActive = true;
+        activeTransition_.startTime = startTime;
+    }
+
     if (activeTransition_.isActive) {
         processTransitionPhase();
 
@@ -169,6 +176,16 @@ void UiController::loadAndActivateScreen() {
     if (newScreen) {
         currentScreen_ = std::move(newScreen);
         screenState_.activeScreen = activeTransition_.nextScreen;
+
+        // Weather screen: fetch on entry rather than waiting for WeatherJob's
+        // own 2h background refresh, so tapping in always shows current
+        // conditions. WeatherJob backs off on failure, so this one-shot
+        // request doesn't turn into aggressive polling — reuses the same
+        // flag as its midnight-rollover refresh.
+        if (activeTransition_.nextScreen == ScreenName::WEATHER) {
+            weatherData_.refreshRequested.store(true);
+        }
+
         currentScreen_->onEnter();
     } else {
         logger_.error("[UiController] Failed to create screen");

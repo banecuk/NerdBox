@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 
 #include "config/AppSettings.h"
@@ -38,7 +39,11 @@ class UiController : public IScreenUpdater {
     void updateDisplay() override;
     bool isTransitioning() const { return activeTransition_.isActive; }
 
-    // Screen transition methods
+    // Screen transition methods. Callable from any task — requestTransitionTo()
+    // only ever stores into the atomic pendingScreen_; the ScreenUpdate task is
+    // the sole reader/writer of activeTransition_/currentScreen_/
+    // screenState_.activeScreen, so there's no cross-task race on the
+    // transition state machine (see updateDisplay()).
     bool requestTransitionTo(ScreenName screenName);
     void requestScreen(ScreenName screenName) {
         logger_.debugf("[UiController] Requesting screen %d", static_cast<int>(screenName));
@@ -93,5 +98,13 @@ class UiController : public IScreenUpdater {
     std::unique_ptr<TouchManager> touchManager_;
     SemaphoreHandle_t displayAccessMutex_;
 
+    // Only touched by the ScreenUpdate task.
     ScreenTransition activeTransition_;
+
+    // Cross-task handoff: requestTransitionTo() (called from the main/loop
+    // task via WebServerService, the setup task via InitializationStateMachine,
+    // or the ScreenUpdate task itself via touch/EventBus handling) stores here;
+    // updateDisplay() drains it at the top of each tick, on the ScreenUpdate
+    // task, before touching activeTransition_.
+    std::atomic<ScreenName> pendingScreen_{ScreenName::NONE};
 };

@@ -118,8 +118,8 @@ class ApplicationComponents : public IInitializationTarget {
     NetworkStatus netStatus;
 
     // Weather forecast data — written by WeatherService in the background task
-    // only while the Weather screen is active, read by the (future) WeatherWidget
-    // in the screen task. Scalars plus a fixed day array (no heap); only the
+    // every ~2h regardless of active screen, read by WeatherWidget in the
+    // screen task. Scalars plus a fixed day array (no heap); only the
     // refreshRequested flag is shared cross-task and so is atomic.
     WeatherData weatherData;
 

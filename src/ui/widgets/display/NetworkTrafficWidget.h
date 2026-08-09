@@ -8,14 +8,17 @@
 #include "utils/DataFreshnessGuard.h"
 
 // Compact Ethernet throughput widget — sits right of the Settings button in
-// the bottom band (48 x 48). Two stacked rows: upload on top, download on
-// bottom, each with a triangle direction icon and a bare Mbps value (no unit
-// suffix) in the monospace value font, fixed-width "123.4" layout (3 integer
-// digits reserved, right-aligned, one decimal) so the text never changes
-// width as the value grows. Colour reflects utilisation against the
-// configured link speed (Environment.h's ETH_UPLOAD_MBPS / ETH_DOWNLOAD_MBPS)
-// — light grey below 0.2 Mbps (idle), green/yellow/orange as the link fills
-// up, a lightened red once at or over the configured capacity.
+// the bottom band. Two stacked rows: upload on top, download on bottom, each
+// with a triangle direction icon and a bare Mbps value (no unit suffix, one
+// decimal). The integer part is right-aligned to a fixed column sized for up
+// to 3 digits ("999.9") and the decimal suffix is drawn from that same
+// column, so the decimal point stays in the same place regardless of how
+// many integer digits the value has, and the arrow position never depends on
+// the rendered string's measured width. Colour reflects utilisation against
+// the configured link speed (Environment.h's ETH_UPLOAD_MBPS /
+// ETH_DOWNLOAD_MBPS) — light grey below 0.2 Mbps (idle), green/yellow/orange
+// as the link fills up, a lightened red once at or over the configured
+// capacity.
 //
 // PcMetrics::eth_up/eth_dn arrive in KB/s (1 KB = 1024 bytes); this widget
 // converts to Mbps for display and thresholding.

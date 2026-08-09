@@ -139,8 +139,10 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
         stale
             ? Colors::kInactiveText
             : context_.getColors().getColorFromPercent(static_cast<uint8_t>(100 - percentClamped));
-    const uint16_t barW =
-        static_cast<uint16_t>((static_cast<uint32_t>(kBarRight - kBarX) * percentClamped) / 100);
+    // Bar width tracks occupied space (100 - free%), not free space, so a
+    // nearly-full disk shows a long red bar rather than a short one.
+    const uint16_t barW = static_cast<uint16_t>(
+        (static_cast<uint32_t>(kBarRight - kBarX) * (100 - percentClamped)) / 100);
 
     // Usage bar — track + fill, redrawn only when the value or color changed.
     if (!r.drawn || r.lastPercent != percentClamped || r.lastBarColor != barColor) {

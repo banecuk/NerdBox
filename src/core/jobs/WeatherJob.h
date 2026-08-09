@@ -9,20 +9,18 @@
 #include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
 
-// Refreshes the open-meteo weather forecast. Unlike the always-running jobs,
-// this one only ever fires while the Weather screen is the active screen —
-// "don't refetch unless displayed" (see docs/07-weather-forecast.md). While
-// displayed it re-fetches when data goes stale (2 h) or immediately when the
-// screen task signals a local-midnight rollover via refreshRequested.
-// Failed fetches back off for AppSettings::weatherFailureBackoffMs.
+// Refreshes the open-meteo weather forecast every kWeatherRefreshIntervalMs
+// (2 h), regardless of which screen is active, so data is already current
+// whenever the user opens the Weather screen. Fires immediately, ahead of
+// that interval, when refreshRequested is set — on screen entry (UiController)
+// or on a local-midnight rollover (WeatherWidget). Failed fetches back off
+// for AppSettings::weatherFailureBackoffMs.
 class WeatherJob : public BackgroundJob {
  public:
-    WeatherJob(WeatherService& service, WeatherData& data, SystemState::ScreenState& screenState,
-               SystemState::CoreState& coreState, NetworkManager& networkManager,
-               const AppSettings& config, LoggerInterface& logger)
+    WeatherJob(WeatherService& service, WeatherData& data, SystemState::CoreState& coreState,
+               NetworkManager& networkManager, const AppSettings& config, LoggerInterface& logger)
         : service_(service),
           data_(data),
-          screenState_(screenState),
           coreState_(coreState),
           networkManager_(networkManager),
           config_(config),
@@ -30,12 +28,11 @@ class WeatherJob : public BackgroundJob {
           freshness_(data_.freshness, config_.weatherRefreshIntervalMs) {}
 
     JobDue nextDue() const override {
-        if (!coreState_.isInitialized || !networkManager_.isConnected() ||
-            screenState_.activeScreen != ScreenName::WEATHER) {
-            return JobDue::never();  // not displayed → never due
+        if (!coreState_.isInitialized || !networkManager_.isConnected()) {
+            return JobDue::never();
         }
         if (data_.refreshRequested.load() && millis() >= nextAttemptMs_) {
-            return JobDue::now();  // midnight rollover → fire now (still honours failure backoff)
+            return JobDue::now();  // screen entry / midnight rollover → fire now (still honours failure backoff)
         }
         if (freshness_.isFresh()) {
             return JobDue::never();  // fetched < 2 h ago → skip
@@ -55,7 +52,6 @@ class WeatherJob : public BackgroundJob {
  private:
     WeatherService& service_;
     WeatherData& data_;
-    SystemState::ScreenState& screenState_;
     SystemState::CoreState& coreState_;
     NetworkManager& networkManager_;
     const AppSettings& config_;

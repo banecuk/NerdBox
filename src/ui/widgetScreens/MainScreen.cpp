@@ -35,27 +35,30 @@ void MainScreen::createWidgets() {
     gameMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(gameMetricsWidget));
 
+    // Multifunctional widget — left of the FPS display; width trimmed from the
+    // right to make room for a minimal-width FPS tile beside it.
+    // Moved up to y=162 (where the disk band used to sit) so the disk band
+    // can move below it.
+    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
+        new MultiWidget(WidgetInterface::Dimensions{0, 162, 430, 80}, 200, pcMetrics_)));
+
+    // FPS widget — beside the MultiWidget, tappable to the game screen.
+    // Narrow: 50px just fits three NotoSansMono24 digits (14px advance each)
+    // plus the border. Matches the MultiWidget height.
+    widgetManager_.addWidget(std::unique_ptr<FpsWidget>(new FpsWidget(
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{430, 162, 50, 80}, 250,
+        pcMetrics_, EventType::SHOW_GAME,
+        [this](EventType action) { this->handleAction(action); })));
+
     // Disk band — slim strip, tappable to the disk screen. 27px tall: 4px
     // read/write activity lines + a ~19px borderless per-drive tile area that
     // fits the NotoSans15 value font and runs flush against both lines.
+    // Moved below the MultiWidget/FpsWidget row (y=242..269, right above the
+    // bottom band).
     widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
         uiController_->getDisplayContext(),
-        WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 27}, 100, pcMetrics_,
+        WidgetInterface::Dimensions{0, 242, Layout::kScreenW, 27}, 100, pcMetrics_,
         EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); })));
-
-    // Multifunctional widget — left of the FPS display; width trimmed from the
-    // right to make room for a minimal-width FPS tile beside it.
-    // Taller now (y=189..269) to fill the space freed by the shorter top rows.
-    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 189, 430, 80}, 200, pcMetrics_)));
-
-    // FPS widget — bottom-right, beside the MultiWidget, tappable to the
-    // game screen. Narrow: 50px just fits three NotoSansMono24 digits (14px
-    // advance each) plus the border. Grown to match the MultiWidget height.
-    widgetManager_.addWidget(std::unique_ptr<FpsWidget>(new FpsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{430, 189, 50, 80}, 250,
-        pcMetrics_, EventType::SHOW_GAME,
-        [this](EventType action) { this->handleAction(action); })));
 
     // ── Bottom band is unchanged below this point ──────────────────────────────
     // 3px higher than Layout::kBottomBarY so NetworkWidget/NetworkTrafficWidget

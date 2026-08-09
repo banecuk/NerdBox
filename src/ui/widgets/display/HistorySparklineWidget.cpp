@@ -5,7 +5,9 @@
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = 0xC618;
 static constexpr uint16_t kGpuColor = 0xB471;
-static constexpr uint8_t kLowUsagePercent = 20;
+static constexpr uint16_t kRamColor = 0xADFB;
+static constexpr uint16_t kVramColor = kGpuColor;  // same GPU accent used in PcMetricsTilesConfig
+static constexpr uint16_t kHighUsageColor = TFT_RED;  // shared alert color, any metric >= 90%
 
 // Halves RGB565 brightness while respecting the 5-6-5 channel split — shift
 // every bit right by one, then mask off the bit that would otherwise leak
@@ -15,37 +17,52 @@ static constexpr uint16_t dimColor(uint16_t color) {
 }
 static constexpr uint16_t kCpuColorDim = dimColor(kCpuColor);
 static constexpr uint16_t kGpuColorDim = dimColor(kGpuColor);
+static constexpr uint16_t kRamColorDim = dimColor(kRamColor);
+static constexpr uint16_t kVramColorDim = dimColor(kVramColor);
 
-// Encodes a column's plotted state (bar height + below-threshold flag) into
-// a single byte so drawRow's redraw-skip check catches a color-only change
-// (crossing the low-usage threshold at the same pixel height) too.
+// Encodes a column's plotted state (bar height + below-threshold/above-
+// threshold flags) into a single byte so drawRow's redraw-skip check catches
+// a color-only change (crossing a threshold at the same pixel height) too.
 static constexpr uint8_t kLowUsageFlag = 0x80;
+static constexpr uint8_t kHighUsageFlag = 0x40;
+
+uint16_t HistorySparklineWidget::plotWidthForHalf(const WidgetInterface::Dimensions& dims,
+                                                  bool leftHalf) {
+    const uint16_t halfWidth = dims.width / 2;
+    const uint16_t sectionWidth = leftHalf ? halfWidth : (dims.width - halfWidth);
+    return sectionWidth > kCaptionWidth ? sectionWidth - kCaptionWidth : 0;
+}
 
 HistorySparklineWidget::HistorySparklineWidget(const WidgetInterface::Dimensions& dims,
                                                uint32_t updateIntervalMs, PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
       freshnessGuard_(pcMetrics.freshness),
-      cpuLoadHistory_(kHistorySize),
-      gpuLoadHistory_(kHistorySize) {}
+      cpuLoadHistory_(plotWidthForHalf(dims, true) / kColWidth),
+      gpuLoadHistory_(plotWidthForHalf(dims, true) / kColWidth),
+      ramLoadHistory_(plotWidthForHalf(dims, false) / kColWidth),
+      vramLoadHistory_(plotWidthForHalf(dims, false) / kColWidth) {}
 
 void HistorySparklineWidget::computeLayout() {
-    plotWidth_ = kHistorySize * kColWidth;
-    const uint16_t maxWidth = dimensions_.width - kCaptionWidth;
-    if (plotWidth_ > maxWidth)
-        plotWidth_ = maxWidth;
+    const uint16_t halfWidth = dimensions_.width / 2;
 
-    // Center the caption+plot block horizontally — plotWidth_ (fixed at
-    // kHistorySize columns) is normally narrower than the widget, so without
-    // this the row reads as flush-left with dead space on the right.
-    const uint16_t contentWidth = kCaptionWidth + plotWidth_;
-    const uint16_t hOffset = (dimensions_.width - contentWidth) / 2;
-    captionX_ = dimensions_.x + hOffset;
-    plotX_ = captionX_ + kCaptionWidth;
+    leftCaptionX_ = dimensions_.x;
+    leftPlotX_ = leftCaptionX_ + kCaptionWidth;
+    leftPlotWidth_ = plotWidthForHalf(dimensions_, true);
+    leftCols_ = leftPlotWidth_ / kColWidth;
+    if (leftCols_ > kMaxColumns)
+        leftCols_ = kMaxColumns;
+
+    rightCaptionX_ = dimensions_.x + halfWidth;
+    rightPlotX_ = rightCaptionX_ + kCaptionWidth;
+    rightPlotWidth_ = plotWidthForHalf(dimensions_, false);
+    rightCols_ = rightPlotWidth_ / kColWidth;
+    if (rightCols_ > kMaxColumns)
+        rightCols_ = kMaxColumns;
 
     rowHeight_ = (dimensions_.height - 2 * kRowMargin - kRowGap) / 2;
-    cpuPlotY_ = dimensions_.y + kRowMargin;
-    gpuPlotY_ = cpuPlotY_ + rowHeight_ + kRowGap;
+    topPlotY_ = dimensions_.y + kRowMargin;
+    bottomPlotY_ = topPlotY_ + rowHeight_ + kRowGap;
 }
 
 void HistorySparklineWidget::onDrawStatic() {
@@ -54,18 +71,28 @@ void HistorySparklineWidget::onDrawStatic() {
 
     computeLayout();
 
-    // Vertically centered on each row so the label reads level with the
-    // sparkline beside it, not pinned to the row's top edge.
+    // Centered in each caption column (kCaptionWidth wide) and vertically
+    // centered on its row so the label reads level with the sparkline beside
+    // it, not pinned to the row's top edge.
+    const uint16_t leftCaptionCenterX = leftCaptionX_ + kCaptionWidth / 2;
+    const uint16_t rightCaptionCenterX = rightCaptionX_ + kCaptionWidth / 2;
+
     Fonts::loadLabel(lcd);
     lcd->setTextColor(TFT_DARKGREY, kBgColor);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString("CPU", captionX_, cpuPlotY_ + rowHeight_ / 2);
-    lcd->drawString("GPU", captionX_, gpuPlotY_ + rowHeight_ / 2);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString("CPU", leftCaptionCenterX, topPlotY_ + rowHeight_ / 2);
+    lcd->drawString("GPU", leftCaptionCenterX, bottomPlotY_ + rowHeight_ / 2);
+    lcd->drawString("RAM", rightCaptionCenterX, topPlotY_ + rowHeight_ / 2);
+    lcd->drawString("VRM", rightCaptionCenterX, bottomPlotY_ + rowHeight_ / 2);
     Fonts::unload(lcd);
 
     for (auto& h : lastCpuCol_)
         h = 0;
     for (auto& h : lastGpuCol_)
+        h = 0;
+    for (auto& h : lastRamCol_)
+        h = 0;
+    for (auto& h : lastVramCol_)
         h = 0;
 }
 
@@ -79,37 +106,76 @@ void HistorySparklineWidget::sampleIfNeeded() {
     lastSampleMs_ = now;
     cpuLoadHistory_.push(pcMetrics_.cpu_load);
     gpuLoadHistory_.push(pcMetrics_.gpu_load);
+    ramLoadHistory_.push(pcMetrics_.mem_load);
+    // gpu_mem is a percent that can exceed 100 on some drivers; clamp to the
+    // sparkline's fixed 0-100 scale.
+    const uint16_t vram = pcMetrics_.gpu_mem;
+    vramLoadHistory_.push(vram > kScaleMax ? kScaleMax : static_cast<uint8_t>(vram));
 }
 
-void HistorySparklineWidget::drawRow(uint16_t plotY, const PsramRingHistory<uint8_t>& history,
-                                     uint8_t* lastCol, uint16_t color, uint16_t lowColor,
+void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
+                                     const PsramRingHistory<uint8_t>& history, uint8_t* lastCol,
+                                     uint16_t color, uint16_t lowColor, uint8_t lowThreshold,
                                      bool forceFullRepaint) {
     LGFX* lcd = getLcd();
     const size_t count = history.size();
-    const size_t offset = kHistorySize - count;
+    const size_t offset = cols > count ? cols - count : 0;
 
-    for (size_t col = 0; col < kHistorySize; ++col) {
+    // Every new sample re-indexes the whole ring buffer by one slot, so a
+    // volatile metric (CPU) typically needs nearly every column repainted on
+    // each sample tick. Redrawing those column-by-column (clear + draw
+    // interleaved) turns into hundreds of tiny SPI transfers that visibly
+    // "sweep" across the row. Above a threshold, clear the whole row in one
+    // transfer and draw the dots in a second pass instead — far fewer SPI
+    // commands, so the row updates as a single atomic-looking repaint.
+    static constexpr size_t kBatchThresholdCols = 8;
+
+    uint8_t encodedCols[kMaxColumns];
+    size_t changedCount = 0;
+
+    for (size_t col = 0; col < cols; ++col) {
         uint8_t height = 0;
         bool lowUsage = false;
+        bool highUsage = false;
         if (col >= offset) {
             const size_t idx = col - offset;
             const uint8_t rawValue = history.at(idx);
             const uint32_t h =
                 (static_cast<uint32_t>(rawValue) * (rowHeight_ - 1)) / kScaleMax;
             height = static_cast<uint8_t>((h > rowHeight_ - 1 ? rowHeight_ - 1 : h) + 1);
-            lowUsage = rawValue < kLowUsagePercent;
+            lowUsage = rawValue < lowThreshold;
+            highUsage = rawValue >= kHighUsageThreshold;
         }
 
-        const uint8_t encoded = height | (lowUsage ? kLowUsageFlag : 0);
-        if (!forceFullRepaint && encoded == lastCol[col])
+        const uint8_t encoded =
+            height | (lowUsage ? kLowUsageFlag : 0) | (highUsage ? kHighUsageFlag : 0);
+        encodedCols[col] = encoded;
+        if (forceFullRepaint || encoded != lastCol[col])
+            ++changedCount;
+    }
+
+    if (changedCount == 0)
+        return;
+
+    const bool batch = forceFullRepaint || changedCount > kBatchThresholdCols;
+    if (batch)
+        lcd->fillRect(plotX, plotY, static_cast<uint16_t>(cols) * kColWidth, rowHeight_, kBgColor);
+
+    for (size_t col = 0; col < cols; ++col) {
+        const uint8_t encoded = encodedCols[col];
+        if (!batch && encoded == lastCol[col])
             continue;
 
-        const uint16_t x = plotX_ + static_cast<uint16_t>(col) * kColWidth;
+        const uint16_t x = plotX + static_cast<uint16_t>(col) * kColWidth;
+        const uint8_t height = encoded & ~(kLowUsageFlag | kHighUsageFlag);
+        const bool lowUsage = encoded & kLowUsageFlag;
+        const bool highUsage = encoded & kHighUsageFlag;
 
-        lcd->fillRect(x, plotY, kColWidth, rowHeight_, kBgColor);
+        if (!batch)
+            lcd->fillRect(x, plotY, kColWidth, rowHeight_, kBgColor);
         if (height > 0)
             lcd->fillRect(x, plotY + rowHeight_ - height, kColWidth, 1,
-                         lowUsage ? lowColor : color);
+                         highUsage ? kHighUsageColor : (lowUsage ? lowColor : color));
 
         lastCol[col] = encoded;
     }
@@ -119,12 +185,41 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
+    const bool hasData = freshnessGuard_.isFresh();
+    if (!hasData) {
+        // Blank the whole widget (captions included) the moment data goes
+        // stale, rather than leaving a frozen last-known plot on screen —
+        // an unmoving sparkline reads as live data, which it no longer is.
+        if (forceRedraw || lastHasData_) {
+            getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width,
+                               dimensions_.height, kBgColor);
+        }
+        lastHasData_ = false;
+        clearDirty();
+        return;
+    }
+
+    // Coming back from stale: captions were blanked above, so repaint them
+    // (and reset the redraw caches so every column repaints fresh) before
+    // resuming normal per-column diffing.
+    if (!lastHasData_) {
+        onDrawStatic();
+        forceRedraw = true;
+    }
+    lastHasData_ = true;
+
     sampleIfNeeded();
 
     LGFX* lcd = getLcd();
     lcd->startWrite();
-    drawRow(cpuPlotY_, cpuLoadHistory_, lastCpuCol_, kCpuColor, kCpuColorDim, forceRedraw);
-    drawRow(gpuPlotY_, gpuLoadHistory_, lastGpuCol_, kGpuColor, kGpuColorDim, forceRedraw);
+    drawRow(leftPlotX_, topPlotY_, leftCols_, cpuLoadHistory_, lastCpuCol_, kCpuColor,
+           kCpuColorDim, kCpuGpuLowThreshold, forceRedraw);
+    drawRow(leftPlotX_, bottomPlotY_, leftCols_, gpuLoadHistory_, lastGpuCol_, kGpuColor,
+           kGpuColorDim, kCpuGpuLowThreshold, forceRedraw);
+    drawRow(rightPlotX_, topPlotY_, rightCols_, ramLoadHistory_, lastRamCol_, kRamColor,
+           kRamColorDim, kRamVramLowThreshold, forceRedraw);
+    drawRow(rightPlotX_, bottomPlotY_, rightCols_, vramLoadHistory_, lastVramCol_, kVramColor,
+           kVramColorDim, kRamVramLowThreshold, forceRedraw);
     lcd->endWrite();
 
     clearDirty();

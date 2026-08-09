@@ -71,14 +71,26 @@ void WebServerService::handleFavicon() {
 // Chunked streaming helpers
 // ---------------------------------------------------------------------------
 
-void WebServerService::sendHtmlBegin(const char* title) {
+void WebServerService::sendNavLink(const char* href, const char* label, bool active) {
+    char buf[96];
+    snprintf(buf, sizeof(buf), "<a href='%s'%s>%s</a>", href, active ? " class='active'" : "",
+             label);
+    server_.sendContent(buf);
+}
+
+void WebServerService::sendHtmlBegin(const char* title, NavPage activePage) {
     // Tell the client we will stream the body — no Content-Length needed.
     server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
     server_.send(200, "text/html", "");  // open the response
     server_.sendContent(WebAssets::kHtmlHead1);
     server_.sendContent(title);
     server_.sendContent(WebAssets::kHtmlHead2);
-    server_.sendContent(title);  // repeated in the header's meta area
+    sendNavLink("/", "Home", activePage == NavPage::kHome);
+    sendNavLink("/app-info", "App Info", activePage == NavPage::kAppInfo);
+    sendNavLink("/system-info", "System Info", activePage == NavPage::kSystemInfo);
+    sendNavLink("/logs", "Logs", activePage == NavPage::kLogs);
+    sendNavLink("/config", "Config", activePage == NavPage::kConfig);
+    sendNavLink("/api", "API", activePage == NavPage::kApi);
     server_.sendContent(WebAssets::kHtmlHead3);
 }
 
@@ -122,7 +134,7 @@ void WebServerService::sendSystemInfoBody() {
 }
 
 void WebServerService::handleSystemInfo() {
-    sendHtmlBegin("System Information");
+    sendHtmlBegin("System Information", NavPage::kSystemInfo);
     sendSystemInfoBody();
     sendHtmlEnd();
 }
@@ -174,7 +186,7 @@ void WebServerService::sendAppInfoBody() {
 }
 
 void WebServerService::handleAppInfo() {
-    sendHtmlBegin("App Information");
+    sendHtmlBegin("App Information", NavPage::kAppInfo);
     sendAppInfoBody();
     sendHtmlEnd();
 }
@@ -225,7 +237,7 @@ constexpr ApiEndpoint kApiEndpoints[] = {
 }  // namespace
 
 void WebServerService::handleApiHelp() {
-    sendHtmlBegin("API");
+    sendHtmlBegin("API", NavPage::kApi);
 
     server_.sendContent(
         "<p>Endpoints provided by this web server. JSON endpoints are safe to poll "
@@ -263,7 +275,7 @@ void WebServerService::handleApiHelp() {
 // ---------------------------------------------------------------------------
 
 void WebServerService::handleConfig() {
-    sendHtmlBegin("Config");
+    sendHtmlBegin("Config", NavPage::kConfig);
     char buf[128];
 
     server_.sendContent("<pre>");
@@ -369,7 +381,7 @@ const char* WebServerService::logLevelToString(LoggerInterface::LogLevel level) 
 }
 
 void WebServerService::handleLogs() {
-    sendHtmlBegin("Logs");
+    sendHtmlBegin("Logs", NavPage::kLogs);
 
     // Heap-allocated — kRecentLogCapacity * sizeof(LogEntry) is too big for a
     // comfortable stack frame on the Arduino loop task.

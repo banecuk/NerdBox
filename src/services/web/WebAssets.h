@@ -30,8 +30,10 @@ inline constexpr char kHtmlHead2[] =
     "header .meta{color:var(--dim);font-size:0.85rem;}"
     "nav{background:var(--card);border-bottom:1px solid var(--line);}"
     "nav .bar{padding:0.6rem 1.2rem;display:flex;gap:1rem;font-size:0.85rem;flex-wrap:wrap;}"
-    "nav a{color:var(--dim);text-decoration:none;}"
+    "nav a{color:var(--dim);text-decoration:none;padding:0.2rem 0.1rem;"
+    "border-bottom:2px solid transparent;}"
     "nav a:hover{color:var(--accent);}"
+    "nav a.active{color:var(--accent);border-bottom-color:var(--accent);}"
     ".content{max-width:1200px;margin:0 auto;padding:1.2rem;}"
     "pre{background:var(--card);padding:1rem;border-radius:8px;overflow-x:auto;"
     "border:1px solid var(--line);font-family:Consolas,monospace;color:var(--fg);}"
@@ -44,20 +46,11 @@ inline constexpr char kHtmlHead2[] =
     "<body>"
     "<header><div class='bar'>"
     "<h1>NerdBox</h1>"
-    "<div class='meta'>";
-
-inline constexpr char kHtmlHead3[] =
-    "</div>"
+    "<div class='meta'>&nbsp;</div>"
     "</div></header>"
-    "<nav><div class='bar'>"
-    "<a href='/'>Home</a>"
-    "<a href='/app-info'>App Info</a>"
-    "<a href='/system-info'>System Info</a>"
-    "<a href='/logs'>Logs</a>"
-    "<a href='/config'>Config</a>"
-    "<a href='/api'>API</a>"
-    "</div></nav>"
-    "<div class='content'>";
+    "<nav><div class='bar'>";
+
+inline constexpr char kHtmlHead3[] = "</div></nav><div class='content'>";
 
 inline constexpr char kHtmlFoot[] = "</div></body></html>";
 

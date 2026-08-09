@@ -39,8 +39,8 @@ class DiskInfoWidget : public Widget {
     static constexpr uint16_t kScreenWidth = Layout::kScreenW;
 
     // Maximum number of drives that fit in the 272 px content area.
-    static constexpr uint16_t kMaxDisks = 8;
-    static constexpr uint16_t kRowH = 30;
+    static constexpr uint16_t kMaxDisks = 10;
+    static constexpr uint16_t kRowH = 27;
 
     // Row columns, left to right: drive letter, usage bar, percent, read rate,
     // write rate.
@@ -48,9 +48,13 @@ class DiskInfoWidget : public Widget {
     static constexpr uint16_t kBarX = 48;
     static constexpr uint16_t kBarRight = 238;
     static constexpr uint16_t kBarH = 14;
+    // kReadX/kWriteX trimmed 8px closer to the percent column and to each
+    // other (was 310/395) to widen both rate columns from 85px to 89px —
+    // headroom for 4-figure NVMe rates (e.g. "3400") without clipping into
+    // the "MB/s" label.
     static constexpr uint16_t kPercentRight = 298;  // NN% right-aligned here
-    static constexpr uint16_t kReadX = 310;         // read rate column
-    static constexpr uint16_t kWriteX = 395;        // write rate column
+    static constexpr uint16_t kReadX = 302;         // read rate column
+    static constexpr uint16_t kWriteX = 391;        // write rate column
 
     // Rate column layout: a '|' column separator is pinned kRateSepX from the
     // column's left edge, then the (larger) 'R'/'W' activity letter at
@@ -58,11 +62,13 @@ class DiskInfoWidget : public Widget {
     // edge minus kRateValueRightGap (its "MB/s" suffix is also right-aligned,
     // with kRateValueLabelGap between them). All edges are fixed, so the
     // digits grow leftward instead of the text jittering left/right as the
-    // value's digit count changes.
+    // value's digit count changes. kRateLetterX/kRateValueRightGap/
+    // kRateValueLabelGap trimmed slightly (from 10/6/3) to claw back a few
+    // more px of digit room alongside the column widening above.
     static constexpr uint16_t kRateSepX = 2;
-    static constexpr uint16_t kRateLetterX = 10;
-    static constexpr uint16_t kRateValueRightGap = 6;
-    static constexpr uint16_t kRateValueLabelGap = 3;
+    static constexpr uint16_t kRateLetterX = 8;
+    static constexpr uint16_t kRateValueRightGap = 4;
+    static constexpr uint16_t kRateValueLabelGap = 2;
 
     // Rate value + letter rendering: the value is always light grey (readable
     // on black) regardless of activity, but switches to white once the rounded

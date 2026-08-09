@@ -78,10 +78,10 @@ void FpsWidget::renderFps(int16_t fps) {
     char buf[8];
     snprintf(buf, sizeof(buf), "%d", static_cast<int>(fps));
 
-    const uint16_t valueAreaY = dimensions_.y + 16;
-    const uint16_t valueAreaH = dimensions_.height - 16;
+    const uint16_t valueAreaY = dimensions_.y + 20;
+    const uint16_t valueAreaH = dimensions_.height - 20;
 
-    // NotoSansMono24 fills the 56 px value area well and keeps digits
+    // NotoSansMono24 fills the value area well and keeps digits
     // fixed-width so the number doesn't shift left/right as it changes.
     Fonts::loadMono(lcd);
     lcd->setTextColor(kValueColor, kBgColor);
@@ -97,8 +97,8 @@ void FpsWidget::renderPlaceholder() {
 
     clearValueArea();
 
-    const uint16_t valueAreaY = dimensions_.y + 16;
-    const uint16_t valueAreaH = dimensions_.height - 16;
+    const uint16_t valueAreaY = dimensions_.y + 20;
+    const uint16_t valueAreaH = dimensions_.height - 20;
 
     Fonts::loadMono(lcd);
     lcd->setTextColor(kPlaceholderColor, kBgColor);
@@ -110,8 +110,8 @@ void FpsWidget::renderPlaceholder() {
 void FpsWidget::clearValueArea() {
     if (!getLcd())
         return;
-    const uint16_t valueAreaY = dimensions_.y + 16;
-    getLcd()->fillRect(dimensions_.x, valueAreaY, dimensions_.width, dimensions_.height - 16,
+    const uint16_t valueAreaY = dimensions_.y + 20;
+    getLcd()->fillRect(dimensions_.x, valueAreaY, dimensions_.width, dimensions_.height - 20,
                        kBgColor);
 }
 

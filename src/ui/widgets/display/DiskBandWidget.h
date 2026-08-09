@@ -64,6 +64,10 @@ class DiskBandWidget : public Widget {
     // Maximum single-drive tile width; on narrower multipliers drives are inset.
     static constexpr uint16_t kMaxWidgetWidth = 120;
 
+    // Width reserved at the right edge for the ">" tap-hint chevron, so the
+    // last drive tile doesn't extend under it.
+    static constexpr uint16_t kChevronReservedWidth = 14;
+
     PcMetrics& pcMetrics_;
     EventType action_;
     ActionCallback callback_;

@@ -15,8 +15,9 @@
 // the shared WeatherData struct. fetchData() itself lives in JsonHttpService;
 // only the filter and the parse are specific to this endpoint.
 //
-// Refresh cadence: while the Weather screen is displayed (see WeatherJob);
-// this class itself just does a single bounded fetch per call.
+// Refresh cadence: every ~2h regardless of active screen, plus on-demand on
+// Weather screen entry (see WeatherJob); this class itself just does a
+// single bounded fetch per call.
 class WeatherService : public JsonHttpService<WeatherData, WeatherService> {
  public:
     WeatherService(NetworkManager& networkManager, LoggerInterface& logger);

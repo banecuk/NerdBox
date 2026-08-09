@@ -47,7 +47,9 @@ struct WeatherData {
     WeatherForecastDay days[AppConfig::internal::WeatherImpl::kForecastDays];
     uint8_t dayCount = 0;
 
-    // Written by the screen task and read by the background job — signals a
-    // local-midnight rollover so the forecast refetches and shows the new day.
+    // Written by the screen task and read by the background job — signals
+    // that the forecast should refetch immediately regardless of staleness:
+    // on a local-midnight rollover (WeatherWidget), or on Weather screen
+    // entry (UiController::loadAndActivateScreen).
     std::atomic<bool> refreshRequested{false};
 };

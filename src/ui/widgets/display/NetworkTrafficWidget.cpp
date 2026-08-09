@@ -47,17 +47,34 @@ void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float ma
     const float percent = (hasData && maxMbps > 0.0f) ? (mbps / maxMbps) * 100.0f : 0.0f;
     const uint16_t color = hasData ? trafficColor(mbps, percent) : Colors::kHairline;
 
-    // No unit suffix, fixed "123.4" layout (3 integer digits reserved, right-
-    // aligned, one decimal) so the value never shifts width as it grows —
-    // paired with the monospace font below for stable column alignment. Also
-    // matches the displayed precision so the redraw check below is comparing
-    // what's actually on screen, not the noisy raw float.
-    char buf[16];
+    // Split into integer and decimal parts so they can be drawn as two
+    // separately-anchored strings (see below) instead of one space-padded
+    // string. Padding with leading spaces to right-justify only works if the
+    // font's space glyph has exactly a digit's advance width, which isn't
+    // guaranteed — when it doesn't, the decimal point drifts between rows
+    // and the arrow (positioned from the padded string's measured width)
+    // drifts with it.
+    char intBuf[16];
+    char decBuf[4];
     if (!hasData) {
-        snprintf(buf, sizeof(buf), "  --");
+        snprintf(intBuf, sizeof(intBuf), "--");
+        decBuf[0] = '\0';
     } else {
-        snprintf(buf, sizeof(buf), "%5.1f", static_cast<double>(mbps));
+        char full[16];
+        snprintf(full, sizeof(full), "%.1f", static_cast<double>(mbps));
+        char* dot = strchr(full, '.');
+        if (dot) {
+            *dot = '\0';
+            snprintf(intBuf, sizeof(intBuf), "%s", full);
+            snprintf(decBuf, sizeof(decBuf), ".%s", dot + 1);
+        } else {
+            snprintf(intBuf, sizeof(intBuf), "%s", full);
+            decBuf[0] = '\0';
+        }
     }
+
+    char buf[20];
+    snprintf(buf, sizeof(buf), "%s%s", intBuf, decBuf);
 
     if (!forceRedraw && color == lastColor && strncmp(buf, lastText, lastTextSize) == 0)
         return;
@@ -70,15 +87,26 @@ void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float ma
     const int16_t iconCy = rowY + rowH / 2;
     const int16_t textX = dimensions_.x + 2;
 
-    Fonts::loadMono(lcd);
+    Fonts::loadValue(lcd);
     lcd->setTextColor(color, TFT_BLACK);
+
+    // Right-align the integer part to a fixed column (up to 3 digits, e.g.
+    // "999") so it lands in the same place regardless of how many digits the
+    // value has, then draw the decimal suffix left-aligned from that same
+    // column — the decimal point always lands in the same pixel column
+    // whether the row reads "3.3" or "133.3".
+    const int16_t intFieldWidth = lcd->textWidth("999");
+    const int16_t decFieldWidth = lcd->textWidth(".9");
+    const int16_t intColX = textX + intFieldWidth;
+
+    lcd->setTextDatum(MR_DATUM);
+    lcd->drawString(intBuf, intColX, iconCy);
     lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(buf, textX, iconCy);
-    const int16_t textWidth = lcd->textWidth(buf);
+    lcd->drawString(decBuf, intColX, iconCy);
     Fonts::unload(lcd);
 
-    // Arrow sits right after the value, not in front of it.
-    const int16_t iconCx = textX + textWidth + 10;
+    // Arrow sits right after the (fixed-width) value field, not in front of it.
+    const int16_t iconCx = intColX + decFieldWidth + 10;
     drawArrow(iconCx, iconCy, isUp, color);
 
     strncpy(lastText, buf, lastTextSize - 1);

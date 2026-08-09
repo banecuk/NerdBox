@@ -84,7 +84,10 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     }
 
     const uint16_t maxWidgetWidth = kMaxWidgetWidth;
-    uint16_t widgetWidth = static_cast<uint16_t>(dimensions_.width / snapshot.size());
+    const uint16_t availableWidth =
+        (dimensions_.width > kChevronReservedWidth) ? (dimensions_.width - kChevronReservedWidth)
+                                                     : dimensions_.width;
+    uint16_t widgetWidth = static_cast<uint16_t>(availableWidth / snapshot.size());
     if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
 
