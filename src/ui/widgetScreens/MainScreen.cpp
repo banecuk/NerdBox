@@ -47,7 +47,7 @@ void MainScreen::createWidgets() {
     // right to make room for a minimal-width FPS tile beside it.
     // Taller now (y=189..269) to fill the space freed by the shorter top rows.
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 189, 430, 80}, 0)));
+        new MultiWidget(WidgetInterface::Dimensions{0, 189, 430, 80}, 200, pcMetrics_)));
 
     // FPS widget — bottom-right, beside the MultiWidget, tappable to the
     // game screen. Narrow: 50px just fits three NotoSansMono24 digits (14px

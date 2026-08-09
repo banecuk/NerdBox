@@ -7,7 +7,6 @@ static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kValueColor = TFT_GREEN;
 static constexpr uint16_t kPlaceholderColor = Colors::kHairline;
-static constexpr uint16_t kBorderColor = Colors::kHairline;  // matches MultiWidget's tile border
 
 FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                      uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
@@ -22,10 +21,6 @@ void FpsWidget::onDrawStatic() {
     clearArea();
 
     LGFX* lcd = getLcd();
-
-    // Border matches MultiWidget so the two tiles read as one row.
-    lcd->drawRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                  kBorderColor);
 
     // "FPS" label
     Fonts::loadLabel(lcd);

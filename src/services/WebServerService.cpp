@@ -26,6 +26,7 @@ void WebServerService::begin() {
     server_.on("/api/status", [this]() { apiHandlers_.handleApiStatus(); });
     server_.on("/api/raw", [this]() { apiHandlers_.handleApiRaw(); });
     server_.on("/api/pc", [this]() { apiHandlers_.handleApiPc(); });
+    server_.on("/metrics", [this]() { apiHandlers_.handleMetrics(); });
     server_.on("/config", [this]() { this->handleConfig(); });
     server_.on("/logs", [this]() { this->handleLogs(); });
     server_.on("/restart", HTTP_POST, [this]() { this->handleRestart(); });
@@ -212,6 +213,9 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"GET",  "/api/pc",
      "Full current PcMetrics snapshot as JSON — every parsed field, including disk "
      "drives. Verify what the display should show vs. what NerdWinSense sent."         },
+    {"GET",  "/metrics",
+     "Prometheus text-exposition of the same data as /api/status and /api/pc — scrape "
+     "target for Prometheus/Grafana, or a bonus sensor source for Home Assistant."     },
     {"POST", "/restart",         "Reboots the device (ESP.restart()). No confirmation."},
     {"POST", "/screen/main",     "Switches the display to the Main screen."            },
     {"POST", "/screen/settings", "Switches the display to the Settings screen."        },

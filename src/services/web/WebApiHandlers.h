@@ -28,6 +28,7 @@ class WebApiHandlers {
     void handleApiStatus();
     void handleApiRaw();
     void handleApiPc();
+    void handleMetrics();
 
  private:
     static const char* internetStatusToString(NetworkStatus::Internet status);
