@@ -47,19 +47,19 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
     parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
 }
 
-unsigned long PcMetricsStreamJob::nextDueMs() const {
+JobDue PcMetricsStreamJob::nextDue() const {
     const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
                                  screenState_.activeScreen == ScreenName::GAME ||
                                  screenState_.activeScreen == ScreenName::DISKS;
     if (!config_.pcMetricsStreamEnabled || !coreState_.isInitialized || !onMetricsScreen ||
         !networkManager_.isConnected()) {
-        return ULONG_MAX;
+        return JobDue::never();
     }
 
     if (connection_.state() == SseConnection::State::Connected) {
-        return 0;  // steady state: poll() every tick, never idle while connected
+        return JobDue::now();  // steady state: poll() every tick, never idle while connected
     }
-    return nextReconnectAttemptMs_;
+    return JobDue::at(nextReconnectAttemptMs_);
 }
 
 void PcMetricsStreamJob::run() {

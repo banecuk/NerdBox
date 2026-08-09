@@ -1,7 +1,5 @@
 #pragma once
 
-#include <climits>
-
 #include "core/BackgroundJob.h"
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
@@ -13,7 +11,9 @@ class WifiReconnectJob : public BackgroundJob {
     WifiReconnectJob(NetworkManager& networkManager, SystemState::CoreState& coreState)
         : networkManager_(networkManager), coreState_(coreState) {}
 
-    unsigned long nextDueMs() const override { return coreState_.isInitialized ? 0 : ULONG_MAX; }
+    JobDue nextDue() const override {
+        return coreState_.isInitialized ? JobDue::now() : JobDue::never();
+    }
 
     void run() override {
         if (!networkManager_.isConnected()) {

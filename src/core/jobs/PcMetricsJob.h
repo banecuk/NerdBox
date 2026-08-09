@@ -3,7 +3,6 @@
 #include <Arduino.h>
 
 #include <atomic>
-#include <climits>
 
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
@@ -21,7 +20,7 @@
 //
 // As of SSE-PUSH-PLAN.md milestone 6, PcMetricsStreamJob (SSE) is the
 // default data path (AppSettings.pcMetricsStreamEnabled = true) and this
-// job is the deliberately-retained fallback — see nextDueMs() below. Kept
+// job is the deliberately-retained fallback — see nextDue() below. Kept
 // in the tree for at least one release in case streaming misbehaves in
 // the field; set pcMetricsStreamEnabled back to false to fall back to
 // this path with no code change. Slated for removal once streaming has
@@ -40,20 +39,20 @@ class PcMetricsJob : public BackgroundJob {
           logger_(logger),
           freshness_(metrics_.freshness) {}
 
-    unsigned long nextDueMs() const override {
+    JobDue nextDue() const override {
         // Mutually exclusive with PcMetricsStreamJob — when streaming is
         // enabled it is the sole writer of PcMetrics, so polling never
         // becomes due (see SSE-PUSH-PLAN.md milestone 4).
         if (config_.pcMetricsStreamEnabled) {
-            return ULONG_MAX;
+            return JobDue::never();
         }
         const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
                                      screenState_.activeScreen == ScreenName::GAME ||
                                      screenState_.activeScreen == ScreenName::DISKS;
         if (!coreState_.isInitialized || !onMetricsScreen || !networkManager_.isConnected()) {
-            return ULONG_MAX;
+            return JobDue::never();
         }
-        return nextSync_;
+        return JobDue::at(nextSync_);
     }
 
     void run() override {

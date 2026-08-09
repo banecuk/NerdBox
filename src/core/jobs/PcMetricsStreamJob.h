@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-#include <climits>
 #include <memory>
 
 #include "config/AppSettings.h"
@@ -23,8 +22,8 @@
 // straight into the shared PcMetrics instance via PcMetricsParser — the
 // same per-section functions the polling path uses (SSE-PUSH-PLAN.md design
 // constraint 5). Gated by config.pcMetricsStreamEnabled (default false);
-// ApplicationComponents also makes PcMetricsJob::nextDueMs() return
-// ULONG_MAX while this is enabled, so only one of the two is ever due.
+// ApplicationComponents also makes PcMetricsJob::nextDue() return
+// JobDue::never() while this is enabled, so only one of the two is ever due.
 //
 // UNVERIFIED against real hardware/NerdWinSense — see SseConnection.h and
 // SSE-PUSH-PLAN.md. In particular this assumes each event's `data:` payload
@@ -37,7 +36,7 @@ class PcMetricsStreamJob : public BackgroundJob {
                        SystemState::ScreenState& screenState, NetworkManager& networkManager,
                        const AppSettings& config, LoggerInterface& logger);
 
-    unsigned long nextDueMs() const override;
+    JobDue nextDue() const override;
     void run() override;
 
     SseConnection::State connectionState() const { return connection_.state(); }

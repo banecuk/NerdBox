@@ -126,13 +126,23 @@ void TaskManager::executeBackgroundTask() {
     while (true) {
         unsigned long now = millis();
         for (BackgroundJob* job : jobs_) {
-            unsigned long dueAt = job->nextDueMs();
-            // Wrap-safe: at 32-bit millis() rollover (~49.7 days), `now` can
-            // be smaller than `dueAt` while the deadline has still passed.
-            // ULONG_MAX is the "not eligible" sentinel (see BackgroundJob.h)
-            // and must be excluded — it would otherwise wrap to a due
-            // deadline as soon as `now` is small.
-            if (dueAt != ULONG_MAX && (long)(now - dueAt) >= 0) {
+            JobDue due = job->nextDue();
+            bool isDue = false;
+            switch (due.kind) {
+                case JobDue::Kind::Never:
+                    isDue = false;
+                    break;
+                case JobDue::Kind::Now:
+                    isDue = true;
+                    break;
+                case JobDue::Kind::At:
+                    // Wrap-safe: at 32-bit millis() rollover (~49.7 days),
+                    // `now` can be smaller than `deadlineMs` while the
+                    // deadline has still passed.
+                    isDue = (long)(now - due.deadlineMs) >= 0;
+                    break;
+            }
+            if (isDue) {
                 job->run();
                 // Feed the watchdog after every job, not just once per tick —
                 // several blocking jobs (HTTP fetch, WiFi reconnect) coming

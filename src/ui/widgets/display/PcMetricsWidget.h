@@ -46,7 +46,6 @@ class PcMetricsWidget : public Widget {
     static constexpr uint16_t kRow2 = kRowH;
     static constexpr uint16_t kRow3 = 2 * kRowH;
     static constexpr uint8_t kLabelWidth = 26;
-    static constexpr uint8_t kFanLabelWidth = 14;
     static constexpr uint8_t kMaxSystemFanWidgets = 2;
 
     enum FixedTile : uint8_t {
@@ -62,6 +61,7 @@ class PcMetricsWidget : public Widget {
         kGpuMemory,
         kGpuFan,
         kMemoryLoad,
+        kGpuDecode,
         kFixedTileCount
     };
 

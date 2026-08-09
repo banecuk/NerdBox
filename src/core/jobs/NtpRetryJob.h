@@ -1,7 +1,5 @@
 #pragma once
 
-#include <climits>
-
 #include "core/BackgroundJob.h"
 #include "core/state/SystemState.h"
 #include "services/NtpService.h"
@@ -15,8 +13,9 @@ class NtpRetryJob : public BackgroundJob {
     NtpRetryJob(NtpService& ntpService, SystemState::CoreState& coreState, LoggerInterface& logger)
         : ntpService_(ntpService), coreState_(coreState), logger_(logger) {}
 
-    unsigned long nextDueMs() const override {
-        return (coreState_.isInitialized && !coreState_.isTimeSynced) ? 0 : ULONG_MAX;
+    JobDue nextDue() const override {
+        return (coreState_.isInitialized && !coreState_.isTimeSynced) ? JobDue::now()
+                                                                        : JobDue::never();
     }
 
     void run() override {

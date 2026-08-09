@@ -1,7 +1,5 @@
 #include "PcMetricsWidget.h"
 
-#include <cstdio>
-
 #include "config/PcMetricsTilesConfig.h"
 #include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
@@ -43,6 +41,9 @@ float valueGpuFan(const PcMetrics& m) {
 float valueMemoryLoad(const PcMetrics& m) {
     return m.mem_load;
 }
+float valueGpuDecode(const PcMetrics& m) {
+    return m.gpu_decode;
+}
 }  // namespace
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
@@ -63,7 +64,7 @@ PcMetricsWidget::fixedTileDescriptors() {
     // Layout (dims) and the PcMetrics field each tile reads (getValue) are
     // structural and live here; thresholds/colors/labels are data — see
     // config/PcMetricsTilesConfig.h. Position in each array must match: both
-    // are ordered CPU row, RAM, GPU row, VRAM, 3D/compute.
+    // are ordered CPU row, RAM, GPU row, VRAM, 3D/compute/decode.
     static const std::array<WidgetInterface::Dimensions, kFixedTileCount> kDims = {
         WidgetInterface::Dimensions{kCol0, kRow1, kTileWidth, kRowH},
         {kCol1, kRow1, kTileWidth, kRowH},
@@ -77,12 +78,13 @@ PcMetricsWidget::fixedTileDescriptors() {
         {kCol4, kRow2, kTileWidth, kRowH},
         {kCol0, kRow3, kTileWidth, kRowH},
         {kCol1, kRow3, kTileWidth, kRowH},
+        {kCol2, kRow3, kTileWidth, kRowH},
     };
     static const std::array<float (*)(const PcMetrics&), kFixedTileCount> kGetters = {
         valueCpuLoad,        valueCpuTemperature, valueCpuPower, valueCpuFan,
         valueMemoryLoad,     valueGpuLoad,        valueGpuTemperature,
         valueGpuPower,       valueGpuFan,         valueGpuMemory,
-        valueGpu3d,          valueGpuCompute,
+        valueGpu3d,          valueGpuCompute,     valueGpuDecode,
     };
 
     static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = [] {
@@ -136,22 +138,20 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
     if (fanCount == 0)
         return;
 
-    // Two fixed slots at row 3, columns 2 and 3 (col 4 stays blank).
-    static constexpr uint16_t kFanX[kMaxSystemFanWidgets] = {kCol2, kCol3};
+    // Two fixed slots at row 3, columns 3 and 4 (col 2 is GPU Decode).
+    static constexpr uint16_t kFanX[kMaxSystemFanWidgets] = {kCol3, kCol4};
+    static constexpr const char* kFanLabels[kMaxSystemFanWidgets] = {"R1", "F1"};
     const uint8_t slots =
         min(static_cast<uint8_t>(fanCount), static_cast<uint8_t>(kMaxSystemFanWidgets));
 
-    char label[4];
     for (uint8_t i = 0; i < slots; ++i) {
-        snprintf(label, sizeof(label), "F%u", static_cast<unsigned>(i + 1));
-
         MetricWidget::Config config;
         config.unit = "";
         config.maxValue = 1500;
         config.lowerThreshold = 750.0f;
         config.upperThreshold = 1200.0f;
-        config.label = label;
-        config.labelWidth = kFanLabelWidth;
+        config.label = kFanLabels[i];
+        config.labelWidth = kLabelWidth;
         config.labelColor = 0xC618;
         config.useDimColors = true;
 

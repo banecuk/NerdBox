@@ -16,7 +16,7 @@ class DimAtNightJob : public BackgroundJob {
     DimAtNightJob(NtpService& ntpService, DisplayManager& displayManager, const AppSettings& config)
         : ntpService_(ntpService), displayManager_(displayManager), config_(config) {}
 
-    unsigned long nextDueMs() const override { return lastCheckMs_ + kCheckIntervalMs; }
+    JobDue nextDue() const override { return JobDue::at(lastCheckMs_ + kCheckIntervalMs); }
 
     void run() override {
         lastCheckMs_ = millis();

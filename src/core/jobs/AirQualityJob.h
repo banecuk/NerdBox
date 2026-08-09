@@ -1,7 +1,5 @@
 #pragma once
 
-#include <climits>
-
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/state/SystemState.h"
@@ -29,11 +27,11 @@ class AirQualityJob : public BackgroundJob {
           logger_(logger),
           freshness_(data_.freshness, AirQualityService::kRefreshIntervalMs) {}
 
-    unsigned long nextDueMs() const override {
+    JobDue nextDue() const override {
         if (!coreState_.isInitialized || !networkManager_.isConnected() || freshness_.isFresh()) {
-            return ULONG_MAX;
+            return JobDue::never();
         }
-        return nextAttemptMs_;
+        return JobDue::at(nextAttemptMs_);
     }
 
     void run() override {

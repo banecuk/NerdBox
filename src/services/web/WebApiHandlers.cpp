@@ -152,7 +152,7 @@ void WebApiHandlers::handleApiStatus() {
     // pc_stream — SseConnection/PcMetricsStreamJob health, so the streaming
     // path can be observed without a serial monitor. State is meaningful even
     // when pcMetricsStreamEnabled is false: it just stays DISCONNECTED since
-    // the job's nextDueMs() never returns due.
+    // the job's nextDue() is always Never.
     JsonObject pcStream = doc["pc_stream"].to<JsonObject>();
     pcStream["enabled"] = config_.pcMetricsStreamEnabled;
     pcStream["state"] = sseStateToString(pcMetricsStreamJob_.connectionState());

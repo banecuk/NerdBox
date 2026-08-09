@@ -1,7 +1,5 @@
 #pragma once
 
-#include <climits>
-
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/state/SystemState.h"
@@ -31,18 +29,18 @@ class WeatherJob : public BackgroundJob {
           logger_(logger),
           freshness_(data_.freshness, config_.weatherRefreshIntervalMs) {}
 
-    unsigned long nextDueMs() const override {
+    JobDue nextDue() const override {
         if (!coreState_.isInitialized || !networkManager_.isConnected() ||
             screenState_.activeScreen != ScreenName::WEATHER) {
-            return ULONG_MAX;  // not displayed → never due
+            return JobDue::never();  // not displayed → never due
         }
         if (data_.refreshRequested.load() && millis() >= nextAttemptMs_) {
-            return 0;  // midnight rollover → fire now (still honours failure backoff)
+            return JobDue::now();  // midnight rollover → fire now (still honours failure backoff)
         }
         if (freshness_.isFresh()) {
-            return ULONG_MAX;  // fetched < 2 h ago → skip
+            return JobDue::never();  // fetched < 2 h ago → skip
         }
-        return nextAttemptMs_;
+        return JobDue::at(nextAttemptMs_);
     }
 
     void run() override {

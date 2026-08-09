@@ -8,14 +8,14 @@
 
 namespace {
 // The shared diskActivityColor() scale treats anything below 2 MB/s as idle
-// (dark grey kHairline), which is indistinguishable from the background on the
-// band's thin activity lines. On the band we only want to light up when there
-// is real traffic, so treat rates up to 1 MB/s as idle and clamp the base
-// scale up to its lowest visible level (dark green) once it starts climbing.
+// (dark grey kHairline). On the band we want idle lines to disappear into the
+// background entirely, so treat rates up to 1 MB/s as idle and draw pure
+// black, then clamp the base scale up to its lowest visible level (dark
+// green) once it starts climbing.
 uint16_t bandActivityColor(float kbPerSec) {
     constexpr float kIdleThresholdKbPerSec = 1.0f * 1024.0f;
     if (kbPerSec <= kIdleThresholdKbPerSec)
-        return Colors::kHairline;
+        return TFT_BLACK;
     const uint16_t color = Colors::diskActivityColor(kbPerSec);
     return (color == Colors::kHairline) ? TFT_DARKGREEN : color;
 }

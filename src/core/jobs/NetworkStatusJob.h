@@ -11,7 +11,7 @@ class NetworkStatusJob : public BackgroundJob {
     NetworkStatusJob(NetworkStatusService& service, NetworkStatus& status)
         : service_(service), status_(status) {}
 
-    unsigned long nextDueMs() const override { return 0; }
+    JobDue nextDue() const override { return JobDue::now(); }
 
     void run() override {
         service_.updateWifi(status_);

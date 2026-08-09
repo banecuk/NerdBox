@@ -8,7 +8,6 @@ enum class EventType : uint8_t {
     CYCLE_BRIGHTNESS,
     SHOW_SETTINGS,
     SHOW_MAIN,
-    SHOW_ABOUT,
     SHOW_GAME,
     SHOW_DISKS,
     SHOW_WEATHER,
