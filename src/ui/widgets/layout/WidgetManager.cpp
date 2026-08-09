@@ -3,7 +3,7 @@
 #include <algorithm>
 
 WidgetManager::WidgetManager(DisplayContext& context)
-    : logger_(context.getLogger()), lcd_(&context.getDisplay()), context_(context) {
+    : context_(context), logger_(context.getLogger()), lcd_(&context.getDisplay()) {
     if (!lcd_) {
         logger_.error("WidgetManager created with null LGFX pointer!");
     }

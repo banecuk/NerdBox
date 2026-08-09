@@ -3,9 +3,9 @@
 BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
                                    const AppSettings& config)
     : logger_(logger),
+      config_(config),
       uiController_(uiController),
-      widgetManager_(uiController->getDisplayContext()),
-      config_(config) {}
+      widgetManager_(uiController->getDisplayContext()) {}
 
 BaseWidgetScreen::~BaseWidgetScreen() {
     logger_.debug("BaseWidgetScreen destructor");

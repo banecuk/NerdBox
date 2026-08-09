@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/resources/FontRegistry.h"
+#include "ui/widgets/base/HmsFieldRenderer.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
 
@@ -40,7 +41,7 @@ class UptimeWidget : public Widget {
     uint16_t colonW_ = 0;  // pixel width of ":"
     uint16_t xHH_ = 0;
     uint16_t xColon1_ = 0;
-    uint16_t xMM_ = 0;
     uint16_t xColon2_ = 0;
-    uint16_t xSS_ = 0;
+
+    HmsFieldRenderer fieldRenderer_;
 };

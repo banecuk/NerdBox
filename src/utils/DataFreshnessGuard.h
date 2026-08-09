@@ -23,15 +23,21 @@ class DataFreshnessGuard {
  public:
     static constexpr unsigned long kDefaultTimeoutMs = 5000;
 
+    // Defaults to the real clock; tests inject a fake one via the third
+    // constructor argument to control elapsed time deterministically without
+    // touching any production call site.
+    using ClockFn = unsigned long (*)();
+
     explicit DataFreshnessGuard(const PublishedFlag& published,
-                                unsigned long timeoutMs = kDefaultTimeoutMs)
-        : published_(published), timeoutMs_(timeoutMs) {}
+                                unsigned long timeoutMs = kDefaultTimeoutMs,
+                                ClockFn clock = &millis)
+        : published_(published), timeoutMs_(timeoutMs), clock_(clock) {}
 
     bool isFresh() const {
         if (!published_.available()) {
             return false;
         }
-        return (millis() - published_.lastUpdateMs()) <= timeoutMs_;
+        return (clock_() - published_.lastUpdateMs()) <= timeoutMs_;
     }
 
     void setTimeout(unsigned long timeoutMs) { timeoutMs_ = timeoutMs; }
@@ -40,4 +46,5 @@ class DataFreshnessGuard {
  private:
     const PublishedFlag& published_;
     unsigned long timeoutMs_;
+    ClockFn clock_;
 };

@@ -128,7 +128,6 @@ uint16_t Colors::getColorFromPercentRam(uint8_t value) {
     constexpr float kHighElevatedMid = 62.75f * 1024.0f;
     constexpr float kElevated = 75.5f * 1024.0f;
     constexpr float kElevatedSaturatedMid = 87.75f * 1024.0f;
-    constexpr float kSaturated = 100.0f * 1024.0f;
 
     if (kbPerSec < kIdle)
         return kHairline;

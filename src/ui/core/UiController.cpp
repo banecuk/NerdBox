@@ -11,9 +11,9 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
                            SystemState::ScreenState& screenState, const AppSettings& config,
                            NetworkManager& networkManager, const AirQualityData& airQualityData,
                            const NetworkStatus& netStatus, WeatherData& weatherData)
-    : context_(context),
-      logger_(context.getLogger()),
+    : logger_(context.getLogger()),
       displayManager_(displayManager),
+      context_(context),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       screenState_(screenState),

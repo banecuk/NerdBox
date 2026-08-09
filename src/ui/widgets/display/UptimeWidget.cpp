@@ -1,5 +1,6 @@
 #include "UptimeWidget.h"
 
+#include <cstdlib>
 #include <cstring>
 
 UptimeWidget::UptimeWidget(const WidgetInterface::Dimensions& dims,
@@ -23,7 +24,6 @@ void UptimeWidget::computeLayout() {
     Fonts::loadValue(lcd);
     digitW_ = static_cast<uint16_t>(lcd->textWidth("00"));
     colonW_ = static_cast<uint16_t>(lcd->textWidth(":"));
-    const uint16_t valH = static_cast<uint16_t>(lcd->fontHeight());
     Fonts::unload(lcd);
 
     // valueY_ is the vertical midpoint of the value row.
@@ -36,9 +36,11 @@ void UptimeWidget::computeLayout() {
     // Left-aligned field positions.
     xHH_ = dimensions_.x;
     xColon1_ = xHH_ + digitW_;
-    xMM_ = xColon1_ + colonW_;
-    xColon2_ = xMM_ + digitW_;
-    xSS_ = xColon2_ + colonW_;
+    const uint16_t xMM = xColon1_ + colonW_;
+    xColon2_ = xMM + digitW_;
+    const uint16_t xSS = xColon2_ + colonW_;
+
+    fieldRenderer_.setPositions({xHH_, xMM, xSS, valueY_});
 
     layoutReady_ = true;
 }
@@ -66,6 +68,7 @@ void UptimeWidget::onDrawStatic() {
     }
 
     lastRendered_[0] = '\0';
+    fieldRenderer_.resetFields();
 }
 
 void UptimeWidget::onDraw(bool forceRedraw) {
@@ -103,27 +106,12 @@ void UptimeWidget::onDraw(bool forceRedraw) {
         lcd->drawString(current, xHH_, valueY_);
         Fonts::unload(lcd);
     } else {
-        char prev[16];
-        strncpy(prev, lastRendered_, sizeof(prev));
-
         // Load value font once for all three fields.
         // ML_DATUM — left-edge x, vertical midpoint y — matches the colons drawn
         // in drawStatic(), so all six glyphs sit on the same optical baseline.
         Fonts::loadValue(lcd);
-        lcd->setTextDatum(ML_DATUM);
         lcd->setTextColor(textColor_, bgColor_);  // bg param = per-glyph fill, no flicker
-
-        auto drawField = [&](uint16_t x, const char* cur2, const char* old2) {
-            if (forceRedraw || strncmp(cur2, old2, 2) != 0) {
-                char buf[3] = {cur2[0], cur2[1], '\0'};
-                lcd->drawString(buf, x, valueY_);
-            }
-        };
-
-        drawField(xHH_, current, prev);          // HH
-        drawField(xMM_, current + 3, prev + 3);  // MM
-        drawField(xSS_, current + 6, prev + 6);  // SS
-
+        fieldRenderer_.draw(lcd, atoi(current), atoi(current + 3), atoi(current + 6), forceRedraw);
         Fonts::unload(lcd);
     }
 

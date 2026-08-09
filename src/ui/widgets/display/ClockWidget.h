@@ -2,6 +2,7 @@
 #include <string>
 
 #include "core/resources/FontRegistry.h"
+#include "ui/widgets/base/HmsFieldRenderer.h"
 #include "ui/widgets/base/Widget.h"
 
 class ClockWidget : public Widget {
@@ -37,7 +38,5 @@ class ClockWidget : public Widget {
     uint16_t xSecs_ = 0;
     uint16_t yText_ = 0;  // baseline y for MC_DATUM centering
 
-    struct Field {
-        int lastValue = -1;
-    } hours_, mins_, secs_;
+    HmsFieldRenderer fieldRenderer_;
 };

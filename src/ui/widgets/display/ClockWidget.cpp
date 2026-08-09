@@ -36,6 +36,8 @@ void ClockWidget::computeLayout() {
 
     yText_ = dimensions_.y + dimensions_.height / 2;
 
+    fieldRenderer_.setPositions({xHours_, xMins_, xSecs_, yText_});
+
     layoutReady_ = true;
 }
 
@@ -54,9 +56,7 @@ void ClockWidget::onDrawStatic() {
     lcd->drawString(":", xColon2_, yText_);
     Fonts::unload(lcd);
 
-    hours_.lastValue = -1;
-    mins_.lastValue = -1;
-    secs_.lastValue = -1;
+    fieldRenderer_.resetFields();
 }
 
 void ClockWidget::onDraw(bool forceRedraw) {
@@ -71,13 +71,8 @@ void ClockWidget::onDraw(bool forceRedraw) {
 }
 
 void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
-    const bool hoursChanged = forceRedraw || timeinfo.tm_hour != hours_.lastValue;
-    const bool minsChanged = forceRedraw || timeinfo.tm_min != mins_.lastValue;
-    const bool secsChanged = forceRedraw || timeinfo.tm_sec != secs_.lastValue;
-
-    if (!hoursChanged && !minsChanged && !secsChanged) {
+    if (!fieldRenderer_.hasChange(timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, forceRedraw))
         return;
-    }
 
     // Load the font once for every field that changed this tick instead of
     // once per field — at steady state (seconds ticking) this was one
@@ -85,27 +80,7 @@ void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
     LGFX* lcd = getLcd();
     Fonts::loadMono(lcd);
     lcd->setTextColor(textColor_, bgColor_);
-    lcd->setTextDatum(ML_DATUM);
-
-    if (hoursChanged) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_hour);
-        lcd->drawString(buf, xHours_, yText_);
-        hours_.lastValue = timeinfo.tm_hour;
-    }
-    if (minsChanged) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_min);
-        lcd->drawString(buf, xMins_, yText_);
-        mins_.lastValue = timeinfo.tm_min;
-    }
-    if (secsChanged) {
-        char buf[3];
-        snprintf(buf, sizeof(buf), "%02d", timeinfo.tm_sec);
-        lcd->drawString(buf, xSecs_, yText_);
-        secs_.lastValue = timeinfo.tm_sec;
-    }
-
+    fieldRenderer_.draw(lcd, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, forceRedraw);
     Fonts::unload(lcd);
 
     lastUpdateTimeMs_ = millis();

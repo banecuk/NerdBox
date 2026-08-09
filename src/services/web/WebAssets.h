@@ -158,6 +158,10 @@ inline constexpr char kDashboardHtml[] =
     "<button id='btnMain'>Main</button>"
     "<button id='btnSettings'>Settings</button>"
     "<button id='btnGame'>Game</button>"
+    "<button id='btnWeather'>Weather</button>"
+    "</div></div>"
+
+    "<div class='card'><h2>System</h2><div class='btns'>"
     "<button id='btnRestart' class='danger'>Restart</button>"
     "</div></div>"
 
@@ -214,6 +218,7 @@ inline constexpr char kDashboardHtml[] =
     "$('btnMain').onclick=function(){post('/screen/main');};"
     "$('btnSettings').onclick=function(){post('/screen/settings');};"
     "$('btnGame').onclick=function(){post('/screen/game');};"
+    "$('btnWeather').onclick=function(){post('/screen/weather');};"
     "$('btnRestart').onclick=function(){if(confirm('Restart device?'))post('/restart');};"
     "refresh();setInterval(refresh,2000);"
     "</script></body></html>";
