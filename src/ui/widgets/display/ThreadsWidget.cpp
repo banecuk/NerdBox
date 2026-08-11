@@ -2,6 +2,9 @@
 
 #include <algorithm>
 
+#include "core/resources/FontRegistry.h"
+#include "ui/core/UiText.h"
+
 ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics,
                              const AppSettings& config, ApplicationMetrics& systemMetrics)
@@ -48,12 +51,25 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
         return;
 
     const bool fresh = freshnessGuard_.isFresh();
+
+    if (!wasFresh_ && fresh) {
+        // Coming back from stale: reset cached bar state so the next
+        // drawBars() treats every bar as changed instead of diffing against
+        // pre-outage heights/colors left over from before the "No Data"
+        // message was shown.
+        onDrawStatic();
+    }
+
     if (fresh) {
         updateSmoothedValues();
         systemMetrics_.addThreadWidgetFrameTime();
+        drawBars();
+    } else if (wasFresh_) {
+        // Just went stale: replace the frozen bars with an explicit message
+        // instead of leaving them looking like live (if dim) data.
+        drawNoDataMessage();
     }
 
-    drawBars(!fresh);
     wasFresh_ = fresh;
     lastUpdateTimeMs_ = millis();
     clearDirty();
@@ -71,7 +87,19 @@ void ThreadsWidget::updateSmoothedValues() {
     valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.pcMetricsCores);
 }
 
-void ThreadsWidget::drawBars(bool stale) {
+void ThreadsWidget::drawNoDataMessage() {
+    LGFX* lcd = getLcd();
+    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
+
+    Fonts::loadMetric(lcd);
+    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
+                    dimensions_.y + dimensions_.height / 2);
+    Fonts::unload(lcd);
+}
+
+void ThreadsWidget::drawBars() {
     const uint16_t maxBarHeight = dimensions_.height - 1;
     LGFX* lcd = getLcd();
     const int coreCount = config_.pcMetricsCores;
@@ -82,10 +110,7 @@ void ThreadsWidget::drawBars(bool stale) {
         newHeight = min(newHeight, maxBarHeight);
         newHeight = newHeight + 1;  // Ensure minimum visible height
 
-        // Frozen bars from before a stall shouldn't look like healthy live
-        // data — dim them instead of drawing the load-graded color.
-        const uint16_t newColor =
-            stale ? TFT_DARKGREY : context_.getColors().getColorFromPercent(threadLoad, false);
+        const uint16_t newColor = context_.getColors().getColorFromPercent(threadLoad, false);
         const uint16_t oldHeight = previousBarHeights_[i];
         const uint16_t oldColor = previousColors_[i];
 
@@ -129,10 +154,10 @@ bool ThreadsWidget::needsUpdate() const {
 
     const bool fresh = freshnessGuard_.isFresh();
     if (fresh != wasFresh_) {
-        return true;  // one redraw to dim (or undim) the bars
+        return true;  // one redraw to switch between bars and "No Data"
     }
     if (!fresh) {
-        return false;  // already dimmed; nothing changes while stale
+        return false;  // "No Data" already shown; nothing changes while stale
     }
     return Widget::needsUpdate();
 }

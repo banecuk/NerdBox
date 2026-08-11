@@ -3,6 +3,7 @@
 #include "config/PcMetricsTilesConfig.h"
 #include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/core/UiText.h"
 
 namespace {
 float valueCpuLoad(const PcMetrics& m) {
@@ -263,7 +264,7 @@ void PcMetricsWidget::drawNoDataMessage() {
     Fonts::loadMetric(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
     lcd->setTextDatum(MC_DATUM);
-    lcd->drawString("No Data", dimensions_.x + dimensions_.width / 2,
+    lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
                     dimensions_.y + dimensions_.height / 2);
     Fonts::unload(lcd);
 }

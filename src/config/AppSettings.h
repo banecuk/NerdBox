@@ -77,6 +77,8 @@ struct AppSettings {
         AppConfig::internal::PcMetricsStreamImpl::kHeaderTimeoutMs;
     uint32_t pcMetricsStreamReconnectBackoffMs =
         AppConfig::internal::PcMetricsStreamImpl::kReconnectBackoffMs;
+    uint32_t pcMetricsStreamStaleTimeoutMs =
+        AppConfig::internal::PcMetricsStreamImpl::kStaleTimeoutMs;
     size_t pcMetricsStreamMaxEventBufferBytes =
         AppConfig::internal::PcMetricsStreamImpl::kMaxEventBufferBytes;
     uint16_t pcMetricsStreamMaxBytesPerPoll =

@@ -52,6 +52,8 @@ class AirQualityWidget : public Widget {
     static constexpr uint16_t kCol3X = kColWidth[0] + kColWidth[1];
     static constexpr uint16_t kCol4X = kColWidth[0] + kColWidth[1] + kColWidth[2];
 
+    static constexpr uint16_t kColX[4] = {0, kCol2X, kCol3X, kCol4X};
+
     static constexpr uint16_t kColCenter[4] = {kColWidth[0] / 2, kCol2X + kColWidth[1] / 2,
                                                kCol3X + kColWidth[2] / 2,
                                                kCol4X + kColWidth[3] / 2};
@@ -88,6 +90,14 @@ class AirQualityWidget : public Widget {
 
     // Centre Y (widget-relative) of the top / bottom row of a two-row column.
     int16_t rowCenterY(bool bottomRow) const;
+
+    // Blacks out a column's half-height cell before drawing new text into it.
+    // Text is centred (MC_DATUM) or baseline-aligned at a fixed anchor, so a
+    // new value narrower than the old one (e.g. AQI going from "123" to "42")
+    // would otherwise leave the old value's outer digits undrawn — LovyanGFX
+    // only paints the background behind the glyphs it's actually drawing,
+    // not the old string's footprint.
+    void clearCell(uint8_t col, bool bottomRow);
 
     // Draws a centred string at the given column's centre on a row centre.
     // Numeric cells use the metric font, the "AQI" label the label font.

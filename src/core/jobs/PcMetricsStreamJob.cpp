@@ -75,6 +75,20 @@ void PcMetricsStreamJob::run() {
         reconnectCount_++;
         nextReconnectAttemptMs_ = millis() + config_.pcMetricsStreamReconnectBackoffMs;
         logger_.warning("SSE stream disconnected — will retry", true);
+        return;
+    }
+
+    if (millis() - lastEventMs_ > config_.pcMetricsStreamStaleTimeoutMs) {
+        // The socket can still look Connected here — WiFiClient::connected()
+        // may keep reporting true on a half-open TCP connection even after
+        // the peer is gone — but no event, not even NerdWinSense's
+        // per-interval heartbeat, has arrived for kStaleTimeoutMs. Waiting on
+        // a socket-level failure that may never come is what let this go
+        // unnoticed before; force the reconnect ourselves instead.
+        connection_.disconnect();
+        reconnectCount_++;
+        nextReconnectAttemptMs_ = millis() + config_.pcMetricsStreamReconnectBackoffMs;
+        logger_.warning("SSE stream stalled (no events received) — forcing reconnect", true);
     }
 }
 

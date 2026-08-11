@@ -107,6 +107,13 @@ struct PcMetricsStreamImpl {
     static constexpr uint16_t kConnectTimeoutMs = 1000;
     static constexpr uint16_t kHeaderTimeoutMs = 2000;
     static constexpr uint32_t kReconnectBackoffMs = 2000;  // mirrors kRefreshAfterFailureMs
+    // NerdWinSense sends an event every ~kIntervalMs regardless of whether
+    // any section actually changed (handleEvent() stamps lastEventMs_ before
+    // checking for changed sections), so a healthy connection's event gap
+    // never approaches this. Guards against a half-open TCP connection:
+    // WiFiClient::connected() can keep reporting true after the peer is
+    // gone, so SseConnection::poll() alone may never notice the drop.
+    static constexpr uint32_t kStaleTimeoutMs = 5000;
     // Sized for a full report (all sections + a handful of disks) with
     // headroom — not yet measured against a live payload (see plan's open
     // questions); revisit once real event sizes are known.

@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "ui/core/Colors.h"
+#include "ui/core/UiText.h"
 
 // ---------------------------------------------------------------------------
 // Constructor
@@ -124,11 +125,23 @@ int16_t AirQualityWidget::rowCenterY(bool bottomRow) const {
     return dimensions_.y + 10;
 }
 
+void AirQualityWidget::clearCell(uint8_t col, bool bottomRow) {
+    LGFX* lcd = getLcd();
+    if (!lcd)
+        return;
+
+    const int16_t x = dimensions_.x + kColX[col];
+    const int16_t y = dimensions_.y + (bottomRow ? dimensions_.height / 2 : 0);
+    lcd->fillRect(x, y, kColWidth[col], dimensions_.height / 2, TFT_BLACK);
+}
+
 void AirQualityWidget::drawCellText(uint8_t col, bool bottomRow, const char* text, uint16_t color,
                                     bool labelFont) {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
+
+    clearCell(col, bottomRow);
 
     if (labelFont) {
         Fonts::loadLabel(lcd);
@@ -152,6 +165,8 @@ void AirQualityWidget::drawValueWithUnit(uint8_t col, bool bottomRow, const char
 
     const int16_t cx = dimensions_.x + kColCenter[col];
     const int16_t cy = rowCenterY(bottomRow);
+
+    clearCell(col, bottomRow);
 
     if (!unit || unit[0] == '\0') {
         Fonts::loadMetric(lcd);
@@ -222,7 +237,7 @@ void AirQualityWidget::drawNoData() {
     Fonts::loadLabel(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
     lcd->setTextDatum(MC_DATUM);
-    lcd->drawString("NO DATA", dimensions_.x + dimensions_.width / 2,
+    lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
                     dimensions_.y + dimensions_.height / 2);
     Fonts::unload(lcd);
 }

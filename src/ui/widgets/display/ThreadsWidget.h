@@ -44,9 +44,10 @@ class ThreadsWidget : public Widget {
     // Tracks the freshness state as of the last draw, so needsUpdate() can
     // (a) force one redraw on a fresh<->stale transition and (b) otherwise
     // stop ticking every kThreadsRefreshMs while stale — there's nothing new
-    // to animate, and the bars are already dimmed to reflect that.
+    // to animate, and a "No Data" message is already shown in place of bars.
     bool wasFresh_ = true;
 
-    void drawBars(bool stale);
+    void drawBars();
+    void drawNoDataMessage();
     void updateSmoothedValues();
 };
