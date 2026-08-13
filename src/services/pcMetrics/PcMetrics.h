@@ -45,7 +45,12 @@ class PcMetrics {
     uint8_t cpu_load = 0;
     uint8_t gpu_load = 0;
     uint8_t mem_load = 0;
-    uint8_t cpu_thread_load[24] = {};
+    uint8_t cpu_thread_load[48] = {};
+    // Number of valid entries in cpu_thread_load, set once CoreLoads data
+    // arrives — lets consumers size themselves to the actual reported thread
+    // count instead of a compile-time constant. 0 until the first CoreLoads
+    // section is parsed.
+    uint8_t cpu_core_count = 0;
 
     uint16_t cpu_power = 0;
     uint16_t gpu_power = 0;

@@ -88,7 +88,7 @@ struct MetricsImpl {
 
 // PcMetrics configuration
 struct PcMetricsImpl {
-    static constexpr uint8_t kCores = 18;
+    static constexpr uint8_t kCores = 28;
 };
 
 // PcMetrics SSE streaming configuration — see SSE-PUSH-PLAN.md.

@@ -33,7 +33,7 @@ class ThreadsWidget : public Widget {
     ApplicationMetrics& systemMetrics_;
     DataFreshnessGuard freshnessGuard_;
 
-    uint16_t barWidth_;
+    uint16_t barWidth_ = 0;
     std::vector<uint16_t> previousBarHeights_;
     std::vector<uint16_t>
         previousColors_;  // tracks last drawn color per bar for threshold change detection
@@ -41,12 +41,23 @@ class ThreadsWidget : public Widget {
     std::unique_ptr<ValueSmoother> valueSmoother_;
     std::vector<uint8_t> smoothedThreadLoads_;
 
+    // 0 until the first CoreLoads payload arrives; then latched to the
+    // reported thread count for the widget's lifetime — see
+    // ensureLayoutInitialized().
+    uint8_t coreCount_ = 0;
+
     // Tracks the freshness state as of the last draw, so needsUpdate() can
     // (a) force one redraw on a fresh<->stale transition and (b) otherwise
     // stop ticking every kThreadsRefreshMs while stale — there's nothing new
     // to animate, and a "No Data" message is already shown in place of bars.
     bool wasFresh_ = true;
 
+    // Sizes barWidth_/the per-bar vectors/the smoother from
+    // pcMetrics_.cpu_core_count the first time it's non-zero, since the
+    // widget is constructed at boot, before any PC-metrics data has arrived.
+    // Returns true once layout is known (whether just-initialized or already
+    // latched from an earlier call).
+    bool ensureLayoutInitialized();
     void drawBars();
     void drawNoDataMessage();
     void updateSmoothedValues();

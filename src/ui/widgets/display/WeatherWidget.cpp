@@ -106,9 +106,9 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         char tempMin[8];
         snprintf(tempMin, sizeof(tempMin), "%d\xc2\xb0", roundX10ToWhole(day.tempMinX10));
 
-        char rain[8];
+        char rain[12];
         snprintf(rain, sizeof(rain), "%d.%d", day.rainX10 / 10, day.rainX10 % 10);
-        char wind[8];
+        char wind[12];
         snprintf(wind, sizeof(wind), "%d.%d", day.windMaxX10 / 10, day.windMaxX10 % 10);
 
         const bool iconChanged = forceRedraw || day.weatherCode != cache.iconWmo;

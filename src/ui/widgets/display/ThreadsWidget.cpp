@@ -13,16 +13,7 @@ ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dim
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
-      freshnessGuard_(pcMetrics.freshness),
-      barWidth_(dims.width / config_.pcMetricsCores),
-      previousBarHeights_(config_.pcMetricsCores, 0),
-      previousColors_(config_.pcMetricsCores, 0),
-      smoothedThreadLoads_(config_.pcMetricsCores, 0) {
-    // Initialize value smoother with configurable parameters
-    valueSmoother_ = std::make_unique<ValueSmoother>(
-        config_.pcMetricsCores, config_.hardwareMonitorThreadsUpwardSmoothing,
-        config_.hardwareMonitorThreadsDownwardSmoothing);
-}
+      freshnessGuard_(pcMetrics.freshness) {}
 
 void ThreadsWidget::initialize(DisplayContext& context) {
     Widget::initialize(context);
@@ -31,9 +22,30 @@ void ThreadsWidget::initialize(DisplayContext& context) {
     setUpdateInterval(config_.hardwareMonitorThreadsRefreshMs);
 
     // Initialize the value smoother with current data if available
-    if (freshnessGuard_.isFresh()) {
+    if (freshnessGuard_.isFresh() && ensureLayoutInitialized()) {
         updateSmoothedValues();
     }
+}
+
+bool ThreadsWidget::ensureLayoutInitialized() {
+    if (coreCount_ != 0) {
+        return true;
+    }
+
+    const uint8_t detected = pcMetrics_.cpu_core_count;
+    if (detected == 0) {
+        return false;  // No CoreLoads payload has arrived yet
+    }
+
+    coreCount_ = detected;
+    barWidth_ = dimensions_.width / coreCount_;
+    previousBarHeights_.assign(coreCount_, 0);
+    previousColors_.assign(coreCount_, 0);
+    smoothedThreadLoads_.assign(coreCount_, 0);
+    valueSmoother_ = std::make_unique<ValueSmoother>(
+        coreCount_, config_.hardwareMonitorThreadsUpwardSmoothing,
+        config_.hardwareMonitorThreadsDownwardSmoothing);
+    return true;
 }
 
 void ThreadsWidget::onDrawStatic() {
@@ -50,7 +62,7 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool fresh = freshnessGuard_.isFresh();
+    const bool fresh = freshnessGuard_.isFresh() && ensureLayoutInitialized();
 
     if (!wasFresh_ && fresh) {
         // Coming back from stale: reset cached bar state so the next
@@ -83,8 +95,8 @@ void ThreadsWidget::updateSmoothedValues() {
     // this per-tick cadence to produce a fast-attack / slow-decay VU-meter
     // animation. Gating this on pcMetrics_.freshness.lastUpdateMs() would turn
     // that smooth animation into a hard step every fetch instead.
-    valueSmoother_->update(pcMetrics_.cpu_thread_load, config_.pcMetricsCores);
-    valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), config_.pcMetricsCores);
+    valueSmoother_->update(pcMetrics_.cpu_thread_load, coreCount_);
+    valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), coreCount_);
 }
 
 void ThreadsWidget::drawNoDataMessage() {
@@ -102,7 +114,7 @@ void ThreadsWidget::drawNoDataMessage() {
 void ThreadsWidget::drawBars() {
     const uint16_t maxBarHeight = dimensions_.height - 1;
     LGFX* lcd = getLcd();
-    const int coreCount = config_.pcMetricsCores;
+    const int coreCount = coreCount_;
 
     for (int i = 0; i < coreCount; ++i) {
         const uint8_t threadLoad = smoothedThreadLoads_[i];
@@ -152,7 +164,11 @@ bool ThreadsWidget::needsUpdate() const {
         return false;
     }
 
-    const bool fresh = freshnessGuard_.isFresh();
+    // Mirrors onDraw()'s "fresh" without mutating layout state here: layout
+    // initialization only happens inside ensureLayoutInitialized(), called
+    // from the non-const onDraw()/initialize().
+    const bool dataFresh = freshnessGuard_.isFresh();
+    const bool fresh = dataFresh && (coreCount_ != 0 || pcMetrics_.cpu_core_count != 0);
     if (fresh != wasFresh_) {
         return true;  // one redraw to switch between bars and "No Data"
     }

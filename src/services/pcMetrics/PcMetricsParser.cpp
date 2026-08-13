@@ -88,7 +88,7 @@ bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCor
     // live array is only touched once below, in one tight commit loop,
     // instead of across the whole JSON traversal above.
     const int maxThreads = sizeof(outData.cpu_thread_load) / sizeof(outData.cpu_thread_load[0]);
-    uint8_t newThreadLoad[24] = {};
+    uint8_t newThreadLoad[48] = {};
     static_assert(sizeof(newThreadLoad) == sizeof(outData.cpu_thread_load),
                   "newThreadLoad must match PcMetrics::cpu_thread_load's size");
     uint8_t actualCores = 0;
@@ -112,6 +112,7 @@ bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCor
         for (int i = 0; i < maxThreads; i++) {
             outData.cpu_thread_load[i] = (i < actualCores) ? newThreadLoad[i] : 0;
         }
+        outData.cpu_core_count = actualCores;
     }
     // Absent CoreLoads means "unchanged" (delta mode) — the array is left
     // untouched rather than zeroed.
