@@ -1,6 +1,6 @@
 #include "SwitchWidget.h"
 
-#include "core/resources/FontRegistry.h"
+#include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
 
 SwitchWidget::SwitchWidget(const WidgetInterface::Dimensions& dims, std::string label,

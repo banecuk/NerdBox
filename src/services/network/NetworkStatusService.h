@@ -5,7 +5,7 @@
 #include <freertos/task.h>
 
 #include "services/network/NetworkStatus.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // Keeps NetworkStatus up to date.
 //

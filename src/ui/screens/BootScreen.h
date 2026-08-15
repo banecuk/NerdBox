@@ -1,8 +1,8 @@
 #pragma once
 
 #include "config/LgfxConfig.h"
-#include "ui/screens/ScreenInterface.h"
-#include "utils/ScreenLogQueue.h"
+#include "ui/screens/base/ScreenInterface.h"
+#include "utils/logging/ScreenLogQueue.h"
 
 class BootScreen : public ScreenInterface {
  public:

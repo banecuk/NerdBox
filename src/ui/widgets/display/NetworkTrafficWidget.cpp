@@ -4,8 +4,8 @@
 #include <cstring>
 
 #include "config/Environment.h"
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/resources/FontRegistry.h"
 
 NetworkTrafficWidget::NetworkTrafficWidget(const WidgetInterface::Dimensions& dims,
                                            uint32_t updateIntervalMs, PcMetrics& pcMetrics)

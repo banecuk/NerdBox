@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "core/resources/FontRegistry.h"
+#include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
 
 IpAddressWidget::IpAddressWidget(const WidgetInterface::Dimensions& dims,

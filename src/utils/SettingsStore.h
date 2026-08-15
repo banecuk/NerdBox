@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 #include <Preferences.h>
 

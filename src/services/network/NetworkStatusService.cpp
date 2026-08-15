@@ -3,7 +3,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 // Six lightweight connectivity-check endpoints, tried in rotation.
 // All return quickly and are operated by highly reliable providers.

@@ -3,10 +3,10 @@
 #include <functional>
 
 #include "core/events/EventTypes.h"
-#include "core/resources/FontRegistry.h"
-#include "core/resources/weather_icons_44.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/airQuality/AirQualityService.h"
+#include "ui/resources/FontRegistry.h"
+#include "ui/resources/weather_icons_44.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 

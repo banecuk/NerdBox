@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <string>
 
-#include "LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // No-op LoggerInterface implementation for host tests. The formatted (`f`-
 // suffix) methods also stash their last rendered message (with the varargs

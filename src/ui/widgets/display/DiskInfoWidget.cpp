@@ -4,9 +4,9 @@
 #include <cstdio>
 #include <cstring>
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
+#include "ui/resources/FontRegistry.h"
 
 DiskInfoWidget::DiskInfoWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                uint32_t updateIntervalMs, PcMetrics& pcMetrics)

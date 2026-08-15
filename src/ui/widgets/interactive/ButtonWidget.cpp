@@ -1,6 +1,6 @@
 #include "ButtonWidget.h"
 
-#include "core/resources/FontRegistry.h"
+#include "ui/resources/FontRegistry.h"
 
 // ---------------------------------------------------------------------------
 // Constructors

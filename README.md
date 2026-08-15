@@ -193,14 +193,14 @@ The firmware is split into five layers. Dependencies only flow downward.
 
 | Class | File | Responsibility |
 |---|---|---|
-| `Application` | `core/Application.h` | Top-level owner; holds `ApplicationComponents` |
-| `ApplicationComponents` | `core/ApplicationComponents.h` | Constructs and wires all subsystems |
-| `InitializationStateMachine` | `core/InitializationStateMachine.h` | Boot sequence: display → tasks → network → NTP → watchdog |
-| `TaskManager` | `core/TaskManager.h` | Creates FreeRTOS tasks; screen task on core 1, background on core 0 |
+| `Application` | `app/Application.h` | Top-level owner; holds `ApplicationComponents` |
+| `ApplicationComponents` | `app/ApplicationComponents.h` | Constructs and wires all subsystems |
+| `InitializationStateMachine` | `app/InitializationStateMachine.h` | Boot sequence: display → tasks → network → NTP → watchdog |
+| `TaskManager` | `app/TaskManager.h` | Creates FreeRTOS tasks; screen task on core 1, background on core 0 |
 | `EventBus` | `core/events/EventBus.h` | Singleton publish/subscribe for UI actions |
 | `PcMetricsService` | `services/pcMetrics/PcMetricsService.h` | Fetches and parses NerdWinSense JSON; tracks data freshness |
 | `NtpService` | `services/NtpService.h` | NTP time sync; provides timestamp to Logger |
-| `WebServerService` | `services/WebServerService.h` | HTTP server for diagnostics and screen control |
+| `WebServerService` | `services/web/WebServerService.h` | HTTP server for diagnostics and screen control |
 | `UiController` | `ui/core/UiController.h` | Screen lifecycle, transition state machine, touch routing |
 | `WidgetManager` | `ui/widgets/layout/WidgetManager.h` | Owns and updates all widgets on the active screen |
 
@@ -278,7 +278,7 @@ widgetManager_.addWidget(std::make_unique<MyWidget>(
 ## Adding a new screen
 
 1. Add an entry to `ScreenName` in `src/core/ScreenTypes.h`.
-2. Create `src/ui/widgetScreens/MyScreen.h/.cpp` extending `BaseWidgetScreen`.
+2. Create `src/ui/screens/MyScreen.h/.cpp` extending `BaseWidgetScreen` (`src/ui/screens/base/`).
 3. Register in `ScreenFactory::createScreen()`. If the screen needs additional dependencies (like `NetworkManager` for `SettingsScreen`), add them to `ScreenFactory::createScreen()`'s signature and thread them through `UiController`.
 4. Navigate to it with `uiController_.requestScreen(ScreenName::MY_SCREEN)`.
 

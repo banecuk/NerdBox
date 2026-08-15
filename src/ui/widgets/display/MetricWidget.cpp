@@ -4,8 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "core/resources/FontRegistry.h"
-#include "MetricColorPolicy.h"
+#include "ui/resources/FontRegistry.h"
+#include "ui/widgets/base/MetricColorPolicy.h"
 
 MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                            const Config& config)

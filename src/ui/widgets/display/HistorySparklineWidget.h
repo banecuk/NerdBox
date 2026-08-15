@@ -5,7 +5,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
-#include "utils/PsramRingHistory.h"
+#include "utils/HeapRingHistory.h"
 
 // CPU/GPU/RAM/VRAM load over the last few minutes, rendered as four mini
 // sparklines in a 2x2 grid — CPU/GPU on the left, RAM/VRM on the right.
@@ -57,10 +57,10 @@ class HistorySparklineWidget : public Widget {
     PcMetrics& pcMetrics_;
     DataFreshnessGuard freshnessGuard_;
 
-    PsramRingHistory<uint8_t> cpuLoadHistory_;
-    PsramRingHistory<uint8_t> gpuLoadHistory_;
-    PsramRingHistory<uint8_t> ramLoadHistory_;
-    PsramRingHistory<uint8_t> vramLoadHistory_;
+    HeapRingHistory<uint8_t> cpuLoadHistory_;
+    HeapRingHistory<uint8_t> gpuLoadHistory_;
+    HeapRingHistory<uint8_t> ramLoadHistory_;
+    HeapRingHistory<uint8_t> vramLoadHistory_;
     uint32_t lastSampleMs_ = 0;
 
     uint16_t leftCaptionX_ = 0;
@@ -97,7 +97,7 @@ class HistorySparklineWidget : public Widget {
     void sampleIfNeeded();
     void drawRowBorders();
     void drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
-                 const PsramRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,
+                 const HeapRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,
                  uint16_t lowColor, uint8_t lowThreshold, uint8_t warnThreshold, uint16_t warnColor,
                  bool forceFullRepaint);
 };

@@ -3,7 +3,7 @@
 #include <string>
 
 #include "core/events/EventTypes.h"
-#include "core/resources/FontRegistry.h"
+#include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/HmsFieldRenderer.h"
 #include "ui/widgets/base/Widget.h"
 

@@ -1,6 +1,6 @@
 #include "AirQualityService.h"
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 AirQualityService::AirQualityService(NetworkManager& networkManager, LoggerInterface& logger)
     : JsonHttpService(networkManager, logger, "AirQuality", AIR_VISUAL_API) {

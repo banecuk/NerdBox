@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "core/resources/FontRegistry.h"
 #include "network/NetworkManager.h"
+#include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/Widget.h"
 
 class IpAddressWidget : public Widget {

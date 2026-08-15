@@ -6,7 +6,7 @@
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/JsonHttpService.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // Fetches and parses the AirVisual nearest-city API response.
 // Call fetchData() from the background task — it writes results directly into

@@ -3,7 +3,7 @@
 #include <array>
 
 #include "core/events/EventBus.h"
-#include "utils/Logger.h"
+#include "utils/logging/Logger.h"
 
 // Forward declarations
 class UiController;

@@ -2,10 +2,10 @@
 
 #include "ui/core/UiEventHandler.h"
 #include "ui/screens/BootScreen.h"
+#include "ui/screens/MainScreen.h"
 #include "ui/screens/ScreenFactory.h"
-#include "ui/widgetScreens/MainScreen.h"
-#include "ui/widgetScreens/SettingsScreen.h"
-#include "utils/LogMacros.h"
+#include "ui/screens/SettingsScreen.h"
+#include "utils/logging/LogMacros.h"
 
 UiController::UiController(DisplayContext& context, DisplayManager& displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,

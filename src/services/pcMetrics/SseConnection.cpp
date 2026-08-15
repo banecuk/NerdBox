@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 namespace {
 

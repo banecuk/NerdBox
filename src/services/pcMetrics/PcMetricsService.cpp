@@ -3,7 +3,7 @@
 #include <HTTPClient.h>
 
 #include "services/pcMetrics/PcMetricsParser.h"
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 PcMetricsService::PcMetricsService(NetworkManager& networkManager,
                                    ApplicationMetrics& systemMetrics, LoggerInterface& logger,

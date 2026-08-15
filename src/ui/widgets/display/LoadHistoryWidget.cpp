@@ -1,7 +1,7 @@
 #include "LoadHistoryWidget.h"
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;

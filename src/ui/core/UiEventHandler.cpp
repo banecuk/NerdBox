@@ -4,7 +4,7 @@
 
 #include "ui/core/DisplayManager.h"
 #include "ui/core/UiController.h"
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 UiEventHandler::UiEventHandler(UiController* uiController, LoggerInterface& logger)
     : uiController_(uiController), logger_(logger) {

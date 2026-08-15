@@ -3,8 +3,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/resources/FontRegistry.h"
 
 namespace {
 // The shared diskActivityColor() scale treats anything below 2 MB/s as idle

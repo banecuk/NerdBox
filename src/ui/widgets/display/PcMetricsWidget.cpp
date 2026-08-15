@@ -1,9 +1,9 @@
 #include "PcMetricsWidget.h"
 
 #include "config/PcMetricsTilesConfig.h"
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
+#include "ui/resources/FontRegistry.h"
 
 namespace {
 float valueCpuLoad(const PcMetrics& m) {

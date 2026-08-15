@@ -4,7 +4,7 @@
 
 #include "config/AppSettings.h"
 #include "config/LgfxConfig.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 class TouchManager {
  public:

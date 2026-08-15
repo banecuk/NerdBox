@@ -7,7 +7,7 @@
 #include "config/AppSettings.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/SseEventParser.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // The streaming counterpart to PcMetricsService: owns the JsonDocument, the
 // shared PcMetricsParser filter, and the delta-mode publish rule for one SSE

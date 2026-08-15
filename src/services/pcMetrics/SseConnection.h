@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "services/pcMetrics/SseEventParser.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // Owns a single long-lived plain-HTTP (`http://`, matching NerdWinSense's
 // non-TLS endpoint) connection to an SSE stream. The request is hand-rolled

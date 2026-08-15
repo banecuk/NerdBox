@@ -1,7 +1,7 @@
 #include "BrightnessWidget.h"
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
 
 BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,

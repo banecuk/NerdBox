@@ -1,6 +1,6 @@
 #include "WeatherService.h"
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 WeatherService::WeatherService(NetworkManager& networkManager, LoggerInterface& logger)
     : JsonHttpService(networkManager, logger, "Weather", WEATHER_API) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/ScreenTypes.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 /**
  * Narrow interface that exposes only the operations InitializationStateMachine

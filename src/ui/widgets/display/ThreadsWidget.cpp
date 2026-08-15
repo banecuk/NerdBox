@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/UiText.h"
+#include "ui/resources/FontRegistry.h"
 
 // DEBUG_MODE is defined by the build environment (-DDEBUG_MODE=1 or =0); see
 // Logger.cpp for the same pattern. Guards the drawBars() phase timer so

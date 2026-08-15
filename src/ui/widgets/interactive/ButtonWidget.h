@@ -4,8 +4,8 @@
 #include <string>
 
 #include "core/events/EventTypes.h"
-#include "core/resources/gear_icon_40.h"
 #include "ui/core/DisplayContext.h"
+#include "ui/resources/gear_icon_40.h"
 #include "ui/widgets/base/Widget.h"
 
 // Supported icon glyphs.

@@ -1,6 +1,6 @@
 #include "BootScreen.h"
 
-#include "core/resources/FontRegistry.h"
+#include "ui/resources/FontRegistry.h"
 
 BootScreen::BootScreen(ScreenLogQueue& screenLogQueue, LGFX* lcd)
     : screenLogQueue_(screenLogQueue), lcd_(lcd) {}

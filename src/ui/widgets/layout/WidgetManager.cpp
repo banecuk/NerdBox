@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 WidgetManager::WidgetManager(DisplayContext& context)
     : context_(context), logger_(context.getLogger()), lcd_(&context.getDisplay()) {

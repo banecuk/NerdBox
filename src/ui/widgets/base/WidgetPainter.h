@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "core/resources/FontRegistry.h"
+#include "ui/resources/FontRegistry.h"
 
 // Free-function draw helpers shared by a minority of widget subclasses
 // (label-row-above-value/track layouts and tappable pill tracks). Extracted

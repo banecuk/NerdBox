@@ -1,7 +1,7 @@
 #include "HistorySparklineWidget.h"
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/resources/FontRegistry.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = 0xC618;
@@ -152,7 +152,7 @@ void HistorySparklineWidget::sampleIfNeeded() {
 }
 
 void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
-                                     const PsramRingHistory<uint8_t>& history, uint8_t* lastCol,
+                                     const HeapRingHistory<uint8_t>& history, uint8_t* lastCol,
                                      uint16_t color, uint16_t lowColor, uint8_t lowThreshold,
                                      uint8_t warnThreshold, uint16_t warnColor,
                                      bool forceFullRepaint) {

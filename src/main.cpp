@@ -1,7 +1,7 @@
 #include <memory>
 
-#include "core/Application.h"
-#include "core/ApplicationComponents.h"
+#include "app/Application.h"
+#include "app/ApplicationComponents.h"
 
 static std::unique_ptr<Application> app;
 

@@ -2,8 +2,8 @@
 
 #include <cstdio>
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/UiText.h"
+#include "ui/resources/FontRegistry.h"
 
 namespace {
 // Abbreviated Monday-first weekday names for the header row.

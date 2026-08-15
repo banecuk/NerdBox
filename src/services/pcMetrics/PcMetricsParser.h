@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 
 #include "services/pcMetrics/PcMetrics.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // "NerdWinSense JSON section -> PcMetrics fields" — the single source of
 // truth for this mapping, shared by the polling path (PcMetricsService,

@@ -6,7 +6,7 @@
 #include "config/LgfxConfig.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/WidgetInterface.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 class WidgetManager {
  public:

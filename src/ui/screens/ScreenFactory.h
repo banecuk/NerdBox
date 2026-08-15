@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "core/ScreenTypes.h"
-#include "ui/screens/ScreenInterface.h"
+#include "ui/screens/base/ScreenInterface.h"
 
 // Forward declarations — avoids pulling every dependency into every TU that
 // just needs ScreenFactory.

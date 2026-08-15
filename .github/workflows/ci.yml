@@ -84,7 +84,7 @@ jobs:
         # hand-written logic, not glyph tables.
         run: |
           find src test -type f \( -name '*.cpp' -o -name '*.h' \) \
-            -not -path 'src/core/resources/NotoSans*.h' \
+            -not -path 'src/ui/resources/NotoSans*.h' \
             -not -name 'gear_icon_40.h' \
             -not -name 'weather_icons_44.h' \
             | xargs clang-format --dry-run --Werror

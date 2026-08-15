@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "network/NetworkManager.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 // Shared skeleton for "GET one internet-facing JSON endpoint, filter it, parse
 // it into a plain data struct" services — AirQualityService and WeatherService

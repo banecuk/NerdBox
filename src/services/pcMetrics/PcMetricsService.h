@@ -8,7 +8,7 @@
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "utils/ApplicationMetrics.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 
 class PcMetricsService {
  public:

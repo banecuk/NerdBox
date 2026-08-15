@@ -1,6 +1,6 @@
 #include "TouchManager.h"
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 TouchManager::TouchManager(LGFX& display, LoggerInterface& logger, const AppSettings& config)
     : display_(display),

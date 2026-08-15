@@ -1,6 +1,6 @@
 #include "utils/SettingsStore.h"
 
-#include "utils/LogMacros.h"
+#include "utils/logging/LogMacros.h"
 
 SettingsStore::SettingsStore(const char* nvsNamespace, LoggerInterface& logger)
     : namespace_(nvsNamespace), logger_(logger) {}

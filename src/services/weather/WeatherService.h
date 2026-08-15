@@ -7,7 +7,7 @@
 #include "network/NetworkManager.h"
 #include "services/JsonHttpService.h"
 #include "services/weather/WeatherData.h"
-#include "utils/LoggerInterface.h"
+#include "utils/logging/LoggerInterface.h"
 #include "utils/ScopedLock.h"
 
 // Fetches and parses the open-meteo daily forecast response.

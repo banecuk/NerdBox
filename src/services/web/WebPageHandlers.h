@@ -4,7 +4,7 @@
 
 #include "config/AppSettings.h"
 #include "utils/ApplicationMetrics.h"
-#include "utils/RecentLogView.h"
+#include "utils/logging/RecentLogView.h"
 
 // The human-facing HTML pages (dashboard, /system-info, /app-info, /config,
 // /logs, /api help), split out of WebServerService so that class isn't also

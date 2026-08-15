@@ -6,9 +6,9 @@
 
 #include "config/AppSettings.h"
 #include "config/Limits.h"
-#include "core/resources/FontRegistry.h"
-#include "core/resources/weather_icons_44.h"
 #include "services/weather/WeatherData.h"
+#include "ui/resources/FontRegistry.h"
+#include "ui/resources/weather_icons_44.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/ScopedLock.h"

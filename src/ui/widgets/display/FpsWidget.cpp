@@ -1,7 +1,7 @@
 #include "FpsWidget.h"
 
-#include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/resources/FontRegistry.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;

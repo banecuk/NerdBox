@@ -4,21 +4,22 @@
 #include <memory>
 
 #include "config/AppSettings.h"
+#include "core/IScreenNavigator.h"
 #include "core/IScreenUpdater.h"
 #include "core/ScreenTypes.h"
 #include "core/state/SystemState.h"
-#include "ui/core/DisplayContext.h"
-#include "ui/core/DisplayManager.h"
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/weather/WeatherData.h"
+#include "ui/core/DisplayContext.h"
+#include "ui/core/DisplayManager.h"
 #include "ui/core/TouchManager.h"
-#include "ui/screens/ScreenInterface.h"
+#include "ui/screens/base/ScreenInterface.h"
 #include "utils/ApplicationMetrics.h"
-#include "utils/Logger.h"
-#include "utils/LogMacros.h"
+#include "utils/logging/Logger.h"
+#include "utils/logging/LogMacros.h"
 
 // Forward declarations
 class BootScreen;
@@ -26,7 +27,7 @@ class MainScreen;
 class SettingsScreen;
 class UiEventHandler;
 
-class UiController : public IScreenUpdater {
+class UiController : public IScreenUpdater, public IScreenNavigator {
  public:
     explicit UiController(DisplayContext& context, DisplayManager& displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
@@ -48,7 +49,7 @@ class UiController : public IScreenUpdater {
     // screenState_.activeScreen, so there's no cross-task race on the
     // transition state machine (see updateDisplay()).
     bool requestTransitionTo(ScreenName screenName);
-    void requestScreen(ScreenName screenName) {
+    void requestScreen(ScreenName screenName) override {
         LOG_DEBUGF(logger_, "[UiController] Requesting screen %d", static_cast<int>(screenName));
         requestTransitionTo(screenName);
     }
