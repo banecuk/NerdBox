@@ -41,25 +41,7 @@ class MetricWidget : public Widget {
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
-    // Value configuration
     void setValue(int value);
-    void setUnit(const char* unit);
-    void setRange(int minValue, int maxValue);
-    void setColorThresholds(float lowerThreshold, float upperThreshold);
-
-    // Label configuration
-    void setLabel(const char* label);
-    void setLabelWidth(uint16_t width);
-    void
-    setVerticalLabel(bool vertical = true);  // stack label chars top-to-bottom — for tall tiles
-
-    // Display configuration
-    void setTextAlignment(uint8_t alignment);  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
-    void setReverseThresholds(bool reverse = true);
-    void setUseSmallFont(bool small = true);  // Use 15pt instead of 18pt — for narrow tiles
-    void setLabelColor(uint16_t color);
-    void setUseGpuColors(bool use = true);
-    void setUseRamColors(bool use = true);
 
     // Called by a batch-drawing caller (PcMetricsWidget, DiskBandWidget):
     // assumes the value font matching useSmallFont_ (NotoSans18 via
@@ -75,15 +57,7 @@ class MetricWidget : public Widget {
     // actually moved or recoloured it; a no-op otherwise.
     void drawUnitWithLoadedFont();
 
-    void setUseDimColors(bool useDim = false);
-
     void forceRefresh();
-
-    // Sets the inset of the coloured value area from the widget's edges.
-    // A zero margin makes the fill run flush to the widget bounds (used by
-    // DiskBandWidget so its metric tiles sit immediately against the activity
-    // lines). Defaults to Config::borderMargin (1px).
-    void setBorderMargin(uint16_t margin);
 
     // Getters
     int getValue() const { return value_; }
@@ -172,6 +146,17 @@ class MetricWidget : public Widget {
     const char* getFormattedValueText() const;
     void refreshUnitWidthIfNeeded() const;
     void safeStringCopy(char* dest, const char* src, size_t destSize) const;
+
+    // Value area bounds for the current hasLabel_/borderMargin_ — was
+    // computed via a hasLabel_ if/else copy-pasted at every render-path call
+    // site; now the single place any of them read it from.
+    void getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& areaWidth,
+                             int16_t& areaHeight) const;
+
+    // setTextColor/setTextDatum/drawString triple shared by every value- and
+    // unit-suffix draw across all three render paths. Caller owns loading
+    // the correct font first.
+    void drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor);
 
     // Start X of the [value][unit] block for the current textAlignment_,
     // given the value area bounds and the combined value+unit width.

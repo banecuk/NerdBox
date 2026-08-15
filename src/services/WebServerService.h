@@ -13,6 +13,7 @@
 #include "services/web/WebApiHandlers.h"
 #include "ui/core/UiController.h"
 #include "utils/LoggerInterface.h"
+#include "utils/RecentLogView.h"
 
 class WebServerService {
  public:
@@ -21,7 +22,8 @@ class WebServerService {
                      PcMetricsService& pcMetricsService, PcMetricsStreamJob& pcMetricsStreamJob,
                      const NetworkStatus& netStatus, const SystemState& systemState,
                      const WeatherData& weatherData, const AppSettings& config,
-                     const TaskManager& taskManager, LoggerInterface& logger);
+                     const TaskManager& taskManager, LoggerInterface& logger,
+                     RecentLogView& recentLogView);
     void begin();
     void processRequests();
 
@@ -31,6 +33,7 @@ class WebServerService {
     ApplicationMetrics& systemMetrics_;
     const AppSettings& config_;
     LoggerInterface& logger_;
+    RecentLogView& recentLogView_;
 
     // The /api/* JSON handlers live in their own unit — see WebApiHandlers.h.
     // PcMetrics, PcMetricsService, PcMetricsStreamJob, NetworkStatus,
@@ -61,5 +64,5 @@ class WebServerService {
     void sendSystemInfoBody();
     void sendAppInfoBody();
 
-    static const char* logLevelToString(LoggerInterface::LogLevel level);
+    static const char* logLevelToString(LogLevel level);
 };

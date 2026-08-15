@@ -49,10 +49,7 @@ float valueGpuDecode(const PcMetrics& m) {
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                  uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs),
-      context_(context),
-      pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.freshness) {
+    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics) {
     buildFixedWidgets();
 }
 
@@ -119,7 +116,7 @@ void PcMetricsWidget::buildFixedWidgets() {
     }
 }
 
-void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
+void PcMetricsWidget::ensureChildWidgetsCreated() {
     const uint8_t fanCount = pcMetrics_.system_fan_count;
     if (fanCount == lastSystemFanCount_)
         return;
@@ -167,59 +164,16 @@ void PcMetricsWidget::ensureSystemFanWidgetsCreated() {
     }
 }
 
-void PcMetricsWidget::initAndDrawWidget(MetricWidget& widget) {
-    widget.initialize(context_);
-    widget.drawStatic();
-    widget.forceRefresh();
-}
-
-void PcMetricsWidget::onDrawStatic() {
-    if (hasFreshData()) {
-        for (auto& w : fixedWidgets_) {
-            if (w)
-                initAndDrawWidget(*w);
-        }
-        ensureSystemFanWidgetsCreated();
-        for (auto& fw : systemFanWidgets_) {
-            if (fw)
-                initAndDrawWidget(*fw);
-        }
-    } else {
-        clearAllWidgets();
-        drawNoDataMessage();
+void PcMetricsWidget::drawFreshStatic() {
+    for (auto& w : fixedWidgets_) {
+        if (w)
+            initAndDrawWidget(*w);
     }
-}
-
-void PcMetricsWidget::onDraw(bool forceRedraw) {
-    if (!getLcd())
-        return;
-
-    const bool currentlyHasFreshData = hasFreshData();
-    const bool stateChanged = (wasFreshData_ != currentlyHasFreshData);
-
-    if (stateChanged) {
-        if (!currentlyHasFreshData) {
-            clearAllWidgets();
-            drawNoDataMessage();
-        } else {
-            restoreStaticDisplay();
-            drawDynamicData();
-            clearDirty();
-        }
-        wasFreshData_ = currentlyHasFreshData;
+    ensureChildWidgetsCreated();
+    for (auto& fw : systemFanWidgets_) {
+        if (fw)
+            initAndDrawWidget(*fw);
     }
-
-    if (currentlyHasFreshData && pcMetrics_.freshness.lastUpdateMs() != lastUpdateTimestamp_) {
-        ensureSystemFanWidgetsCreated();
-    }
-
-    const bool needsRedraw = forceRedraw || isDirty() || needsUpdate();
-    if (currentlyHasFreshData && needsRedraw) {
-        drawDynamicData();
-        clearDirty();
-    }
-
-    lastUpdateTimeMs_ = millis();
 }
 
 void PcMetricsWidget::drawDynamicData() {
@@ -255,8 +209,6 @@ void PcMetricsWidget::drawDynamicData() {
             systemFanWidgets_[i]->drawUnitWithLoadedFont();
     }
     Fonts::unload(lcd);
-
-    lastUpdateTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
 }
 
 void PcMetricsWidget::drawNoDataMessage() {
@@ -269,30 +221,11 @@ void PcMetricsWidget::drawNoDataMessage() {
     Fonts::unload(lcd);
 }
 
-void PcMetricsWidget::clearAllWidgets() {
+void PcMetricsWidget::clearChildren() {
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        TFT_BLACK);
     systemFanWidgets_.clear();
     lastSystemFanCount_ = 0xFF;
-    lastUpdateTimestamp_ = 0;
-    isStaticDrawn_ = false;
-}
-
-void PcMetricsWidget::restoreStaticDisplay() {
-    clearAllWidgets();
-    drawStatic();
-}
-
-bool PcMetricsWidget::needsUpdate() const {
-    if (!isInitialized_)
-        return false;
-    if (hasFreshData() != wasFreshData_)
-        return true;
-    // updateIntervalMs_ only bounds the *maximum* rate (Widget::needsUpdate()'s
-    // contract); the timestamp comparison is what actually decides whether
-    // there's new data to draw. A time-only OR here forced a full repaint
-    // every tick regardless of whether anything changed.
-    return pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_;
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {

@@ -2,7 +2,8 @@
 
 #include "core/resources/FontRegistry.h"
 
-BootScreen::BootScreen(LoggerInterface& logger, LGFX* lcd) : logger_(logger), lcd_(lcd) {}
+BootScreen::BootScreen(ScreenLogQueue& screenLogQueue, LGFX* lcd)
+    : screenLogQueue_(screenLogQueue), lcd_(lcd) {}
 
 void BootScreen::initialize() {}
 
@@ -44,7 +45,7 @@ void BootScreen::draw() {
         return;
 
     char message[200];
-    while (logger_.popScreenMessage(message, sizeof(message))) {
+    while (screenLogQueue_.popScreenMessage(message, sizeof(message))) {
         // Once the log area is full, scroll its contents up by one line
         // instead of drawing past the bottom of the screen — otherwise later
         // boot messages land off-screen and are simply never seen.

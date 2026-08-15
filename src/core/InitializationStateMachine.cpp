@@ -1,5 +1,7 @@
 #include "InitializationStateMachine.h"
 
+#include <Arduino.h>
+
 #include "core/ScreenTypes.h"
 #include "utils/LogMacros.h"
 

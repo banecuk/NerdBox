@@ -9,12 +9,14 @@ WebServerService::WebServerService(WebServer& server, UiController& uiController
                                    PcMetricsStreamJob& pcMetricsStreamJob,
                                    const NetworkStatus& netStatus, const SystemState& systemState,
                                    const WeatherData& weatherData, const AppSettings& config,
-                                   const TaskManager& taskManager, LoggerInterface& logger)
+                                   const TaskManager& taskManager, LoggerInterface& logger,
+                                   RecentLogView& recentLogView)
     : server_(server),
       uiController_(uiController),
       systemMetrics_(systemMetrics),
       config_(config),
       logger_(logger),
+      recentLogView_(recentLogView),
       apiHandlers_(server, systemMetrics, pcMetrics, pcMetricsService, pcMetricsStreamJob,
                    netStatus, systemState, weatherData, config, taskManager) {}
 
@@ -371,17 +373,17 @@ void WebServerService::handleConfig() {
 // /logs — recent log entries (level >= INFO), non-destructive.
 // ---------------------------------------------------------------------------
 
-const char* WebServerService::logLevelToString(LoggerInterface::LogLevel level) {
+const char* WebServerService::logLevelToString(LogLevel level) {
     switch (level) {
-        case LoggerInterface::LogLevel::DEBUG:
+        case LogLevel::DEBUG:
             return "DEBUG";
-        case LoggerInterface::LogLevel::INFO:
+        case LogLevel::INFO:
             return "INFO";
-        case LoggerInterface::LogLevel::WARNING:
+        case LogLevel::WARNING:
             return "WARNING";
-        case LoggerInterface::LogLevel::ERROR:
+        case LogLevel::ERROR:
             return "ERROR";
-        case LoggerInterface::LogLevel::CRITICAL:
+        case LogLevel::CRITICAL:
             return "CRITICAL";
         default:
             return "UNKNOWN";
@@ -393,9 +395,9 @@ void WebServerService::handleLogs() {
 
     // Heap-allocated — kRecentLogCapacity * sizeof(LogEntry) is too big for a
     // comfortable stack frame on the Arduino loop task.
-    auto entries =
-        std::make_unique<LoggerInterface::LogEntry[]>(LoggerInterface::kRecentLogCapacity);
-    const size_t count = logger_.copyRecentLogs(entries.get(), LoggerInterface::kRecentLogCapacity);
+    auto entries = std::make_unique<LogEntry[]>(RecentLogView::kRecentLogCapacity);
+    const size_t count =
+        recentLogView_.copyRecentLogs(entries.get(), RecentLogView::kRecentLogCapacity);
 
     char row[256];
     if (count == 0) {
@@ -403,7 +405,7 @@ void WebServerService::handleLogs() {
     } else {
         server_.sendContent("<table><tr><th>Time</th><th>Level</th><th>Message</th></tr>");
         for (size_t i = 0; i < count; ++i) {
-            const LoggerInterface::LogEntry& entry = entries[i];
+            const LogEntry& entry = entries[i];
             snprintf(row, sizeof(row), "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
                      entry.timestamp, logLevelToString(entry.level), entry.message);
             server_.sendContent(row);

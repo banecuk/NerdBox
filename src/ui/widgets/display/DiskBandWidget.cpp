@@ -24,13 +24,11 @@ uint16_t bandActivityColor(float kbPerSec) {
 DiskBandWidget::DiskBandWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
                                ActionCallback callback)
-    : Widget(dims, updateIntervalMs),
-      pcMetrics_(pcMetrics),
+    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics),
       action_(action),
-      callback_(std::move(callback)),
-      freshnessGuard_(pcMetrics.freshness) {}
+      callback_(std::move(callback)) {}
 
-void DiskBandWidget::ensureDiskWidgetsCreated() {
+void DiskBandWidget::ensureChildWidgetsCreated() {
     // Snapshot everything we need under one lock, then do all widget work
     // lock-free. Fixed-size array, not a vector: this runs every time fresh
     // data lands (every ~500 ms), and in the overwhelmingly common case
@@ -133,12 +131,12 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     }
 }
 
-void DiskBandWidget::updateDiskDriveWidgets() {
+void DiskBandWidget::drawDynamicData() {
     // Snapshot the free-space values under the lock, then release it before
     // touching the display.  Holding ScopedLock across draw() would
     // keep the mutex taken while rendering pixels — a priority inversion risk
     // that can block the background fetch task and cause missed frames.
-    // ensureDiskWidgetsCreated() uses the same snapshot pattern.
+    // ensureChildWidgetsCreated() uses the same snapshot pattern.
     const size_t widgetCount = diskDriveWidgets_.size();
     if (widgetCount == 0)
         return;
@@ -163,7 +161,7 @@ void DiskBandWidget::updateDiskDriveWidgets() {
     // so one loadValue()/unload() pair covers all drives instead of each
     // MetricWidget loading/unloading its own font per tick (see 07-performance.md
     // P1-5). No paired label-font pass is needed — disk tiles are built with
-    // an empty unit (DiskBandWidget::ensureDiskWidgetsCreated), so
+    // an empty unit (DiskBandWidget::ensureChildWidgetsCreated), so
     // drawUnitWithLoadedFont() would always be a no-op.
     LGFX* lcd = getLcd();
     Fonts::loadValue(lcd);
@@ -213,65 +211,13 @@ void DiskBandWidget::updateDiskDriveWidgets() {
     }
 }
 
-void DiskBandWidget::initAndDrawWidget(MetricWidget& widget) {
-    // initialize() draws static chrome on first call only (no-op on repeat
-    // calls once the widget is already initialized), so the explicit
-    // drawStatic() below is what actually repaints chrome on every
-    // subsequent stale->fresh transition. forceRefresh() resets the cached
-    // layout state and performs the initial value draw immediately.
-    widget.initialize(getContext());
-    widget.drawStatic();
-    widget.forceRefresh();
-}
-
-void DiskBandWidget::onDrawStatic() {
-    if (hasFreshData()) {
-        ensureDiskWidgetsCreated();
-        for (auto& dw : diskDriveWidgets_) {
-            if (dw)
-                initAndDrawWidget(*dw);
-        }
-        drawDiskChevron();
-    } else {
-        clearDiskWidgets();
+void DiskBandWidget::drawFreshStatic() {
+    ensureChildWidgetsCreated();
+    for (auto& dw : diskDriveWidgets_) {
+        if (dw)
+            initAndDrawWidget(*dw);
     }
-}
-
-void DiskBandWidget::onDraw(bool forceRedraw) {
-    if (!getLcd())
-        return;
-
-    const bool currentlyHasFreshData = hasFreshData();
-    const bool stateChanged = (wasFreshData_ != currentlyHasFreshData);
-
-    if (stateChanged) {
-        if (!currentlyHasFreshData) {
-            clearDiskWidgets();
-        } else {
-            clearDiskWidgets();
-            // drawStatic() -> onDrawStatic() already draws the chevron —
-            // it never changes, no need to draw it again here.
-            drawStatic();
-            clearDirty();
-        }
-        wasFreshData_ = currentlyHasFreshData;
-    }
-
-    if (currentlyHasFreshData && pcMetrics_.freshness.lastUpdateMs() != lastEnsureCheckTimestamp_) {
-        ensureDiskWidgetsCreated();
-        lastEnsureCheckTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
-    }
-
-    const bool needsRedraw = forceRedraw || isDirty() || needsUpdate();
-    if (currentlyHasFreshData && needsRedraw) {
-        // The ">" chevron never changes once drawn by onDrawStatic() — don't
-        // reload its font and redraw it on every update tick.
-        updateDiskDriveWidgets();
-        clearDirty();
-        lastUpdateTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
-    }
-
-    lastUpdateTimeMs_ = millis();
+    drawDiskChevron();
 }
 
 void DiskBandWidget::drawDiskChevron() {
@@ -288,7 +234,7 @@ void DiskBandWidget::drawDiskChevron() {
     Fonts::unload(lcd);
 }
 
-void DiskBandWidget::clearDiskWidgets() {
+void DiskBandWidget::clearChildren() {
     // The widget's static content never overlaps its write line (draws at the
     // very top) or read line (draws at the very bottom). To make sure nothing
     // bleeds above/below the band, clear a background 2px taller and 1px up
@@ -301,22 +247,6 @@ void DiskBandWidget::clearDiskWidgets() {
     diskReadLineColor_.clear();
     diskFreeSpaceSmoothed_.clear();
     diskDriveNames_.clear();
-
-    lastEnsureCheckTimestamp_ = 0;
-    lastUpdateTimestamp_ = 0;
-    isStaticDrawn_ = false;
-}
-
-bool DiskBandWidget::needsUpdate() const {
-    if (!isInitialized_)
-        return false;
-    if (hasFreshData() != wasFreshData_)
-        return true;
-    // updateIntervalMs_ only bounds the *maximum* rate (Widget::needsUpdate()'s
-    // contract); the timestamp comparison is what actually decides whether
-    // there's new data to draw. A time-only OR here forced a full repaint
-    // every tick regardless of whether anything changed.
-    return pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_;
 }
 
 bool DiskBandWidget::handleTouch(uint16_t x, uint16_t y) {

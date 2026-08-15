@@ -8,6 +8,7 @@
 // Forward declarations — avoids pulling every dependency into every TU that
 // just needs ScreenFactory.
 class LoggerInterface;
+class ScreenLogQueue;
 class DisplayManager;
 class PcMetrics;
 class UiController;
@@ -23,6 +24,7 @@ struct WeatherData;
 // add new fields here as more screens are introduced.
 struct ScreenCreationContext {
     LoggerInterface& logger;
+    ScreenLogQueue& screenLogQueue;
     DisplayManager* display;
     PcMetrics& metrics;
     UiController* controller;

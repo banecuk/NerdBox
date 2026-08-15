@@ -52,7 +52,7 @@ inline constexpr TileData kTiles[] = {
     {"%", 0, 100, 30.0f, 90.0f, "VRM", 0xB471, true, false, false},
 
     // Row 3 — 3D / compute / decode (fan slots are lazily created, see
-    // PcMetricsWidget::ensureSystemFanWidgetsCreated())
+    // PcMetricsWidget::ensureChildWidgetsCreated())
     {"%", 0, 100, 10.0f, 90.0f, "3D", 0xB471, true, false, false},
     {"%", 0, 100, 10.0f, 90.0f, "CMP", 0xB471, true, false, false},
     {"%", 0, 100, 10.0f, 90.0f, "DEC", 0xB471, true, false, false},

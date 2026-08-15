@@ -2,11 +2,11 @@
 
 #include "config/LgfxConfig.h"
 #include "ScreenInterface.h"
-#include "utils/Logger.h"
+#include "utils/ScreenLogQueue.h"
 
 class BootScreen : public ScreenInterface {
  public:
-    explicit BootScreen(LoggerInterface& logger, LGFX* lcd);
+    explicit BootScreen(ScreenLogQueue& screenLogQueue, LGFX* lcd);
     ~BootScreen() override = default;
 
     void initialize();
@@ -19,7 +19,7 @@ class BootScreen : public ScreenInterface {
     // rect set in onEnter() matches where lines actually get drawn.
     static constexpr uint16_t kLogAreaY = 28;
 
-    LoggerInterface& logger_;
+    ScreenLogQueue& screenLogQueue_;
     LGFX* lcd_;
 
     uint16_t lineY_ = 28;       // y pixel of the next log line

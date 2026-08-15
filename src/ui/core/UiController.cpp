@@ -174,9 +174,12 @@ void UiController::loadAndActivateScreen() {
     }
 
     std::unique_ptr<ScreenInterface> newScreen;
-    ScreenCreationContext ctx{logger_,    displayManager_, pcMetrics_,      this,
-                              config_,    systemMetrics_,  networkManager_, airQualityData_,
-                              netStatus_, weatherData_};
+    ScreenCreationContext ctx{logger_,        context_.getScreenLogQueue(),
+                              displayManager_, pcMetrics_,
+                              this,            config_,
+                              systemMetrics_,  networkManager_,
+                              airQualityData_, netStatus_,
+                              weatherData_};
     newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, ctx);
 
     if (newScreen) {

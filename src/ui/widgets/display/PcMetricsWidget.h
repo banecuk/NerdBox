@@ -7,25 +7,24 @@
 #include "MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
-#include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "ui/widgets/base/PcDataCompositeWidget.h"
 
 // Composite CPU + GPU + RAM/VRAM tile grid plus up to two system-fan tiles,
 // in a 5-column x 3-row, 96px-wide grid. Shared by MainScreen (106px tall)
 // and GameScreen (130px tall) via the rowHeight() rescale in toScreenSpace().
-class PcMetricsWidget : public Widget {
+class PcMetricsWidget : public PcDataCompositeWidget {
  public:
     PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                     uint32_t updateIntervalMs, PcMetrics& pcMetrics);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
-    bool needsUpdate() const override;
-
-    void setStaleTimeout(unsigned long timeoutMs) { freshnessGuard_.setTimeout(timeoutMs); }
 
  protected:
-    void onDraw(bool forceRedraw) override;
-    void onDrawStatic() override;
+    void drawFreshStatic() override;
+    void drawDynamicData() override;
+    void clearChildren() override;
+    void ensureChildWidgetsCreated() override;
+    void drawNoDataMessage() override;
 
  private:
     // Layout constants — tile columns/rows are relative offsets from this
@@ -74,12 +73,6 @@ class PcMetricsWidget : public Widget {
     static const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
     fixedTileDescriptors();
 
-    DisplayContext& context_;
-    PcMetrics& pcMetrics_;
-    DataFreshnessGuard freshnessGuard_;
-
-    unsigned long lastUpdateTimestamp_ = 0;
-    bool wasFreshData_ = false;
     uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 
     std::array<std::unique_ptr<MetricWidget>, kFixedTileCount> fixedWidgets_;
@@ -102,11 +95,4 @@ class PcMetricsWidget : public Widget {
     }
 
     void buildFixedWidgets();
-    void ensureSystemFanWidgetsCreated();
-    void drawDynamicData();
-    void drawNoDataMessage();
-    void clearAllWidgets();
-    void restoreStaticDisplay();
-    void initAndDrawWidget(MetricWidget& widget);
-    bool hasFreshData() const { return freshnessGuard_.isFresh(); }
 };

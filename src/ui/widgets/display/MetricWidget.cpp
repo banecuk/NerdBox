@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "core/resources/FontRegistry.h"
+#include "MetricColorPolicy.h"
 
 MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                            const Config& config)
@@ -118,19 +119,8 @@ void MetricWidget::renderValueArea() {
 
     lastBgColor_ = calculateBackgroundColor();
 
-    // Calculate value area bounds
     int16_t areaX, areaY, areaWidth, areaHeight;
-    if (hasLabel_) {
-        areaX = valueX_;
-        areaY = dimensions_.y + borderMargin_;
-        areaWidth = valueWidth_;
-        areaHeight = dimensions_.height - (2 * borderMargin_);
-    } else {
-        areaX = dimensions_.x + borderMargin_;
-        areaY = dimensions_.y + borderMargin_;
-        areaWidth = dimensions_.width - (2 * borderMargin_);
-        areaHeight = dimensions_.height - (2 * borderMargin_);
-    }
+    getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
 
     // Clear value area with background color
     lcd->fillRect(areaX, areaY, areaWidth, areaHeight, lastBgColor_);
@@ -152,16 +142,12 @@ void MetricWidget::renderValueArea() {
     const int16_t startX = computeStartX(areaX, areaWidth, totalW);
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
-    lcd->setTextColor(TFT_WHITE, lastBgColor_);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(displayText, startX, textY);
+    drawValueText(displayText, startX, textY, lastBgColor_);
     unloadValueFont();
 
     if (unitW > 0) {
         Fonts::loadLabel(lcd);
-        lcd->setTextColor(TFT_WHITE, lastBgColor_);
-        lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(unit_, startX + valW, textY);
+        drawValueText(unit_, startX + valW, textY, lastBgColor_);
         Fonts::unload(lcd);
     }
 
@@ -184,14 +170,8 @@ void MetricWidget::renderValueTextOnly() {
     const char* displayText = getFormattedValueText();
     const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
 
-    int16_t areaX, areaWidth;
-    if (hasLabel_) {
-        areaX = valueX_;
-        areaWidth = valueWidth_;
-    } else {
-        areaX = dimensions_.x + borderMargin_;
-        areaWidth = dimensions_.width - (2 * borderMargin_);
-    }
+    int16_t areaX, areaY, areaWidth, areaHeight;
+    getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
@@ -206,27 +186,21 @@ void MetricWidget::renderValueTextOnly() {
     // leaving stale unit pixels behind at the old position.
     const bool shifted = layoutShifted(newTextW, unitW);
     if (shifted) {
-        const int16_t areaY = dimensions_.y + borderMargin_;
-        const int16_t areaH = dimensions_.height - (2 * borderMargin_);
-        lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
+        lcd->fillRect(areaX, areaY, areaWidth, areaHeight, newBgColor);
     }
     lastTextWidth_ = newTextW;
 
     const int16_t totalW = newTextW + unitW;
     const int16_t startX = computeStartX(areaX, areaWidth, totalW);
 
-    lcd->setTextColor(TFT_WHITE, newBgColor);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(displayText, startX, textY);
+    drawValueText(displayText, startX, textY, newBgColor);
     unloadValueFont();
 
     // The unit only needs to be repainted when the layout actually shifted —
     // otherwise the previously drawn glyphs are still valid on screen.
     if (shifted && unitW > 0) {
         Fonts::loadLabel(lcd);
-        lcd->setTextColor(TFT_WHITE, newBgColor);
-        lcd->setTextDatum(ML_DATUM);
-        lcd->drawString(unit_, startX + newTextW, textY);
+        drawValueText(unit_, startX + newTextW, textY, newBgColor);
         Fonts::unload(lcd);
     }
 }
@@ -234,7 +208,7 @@ void MetricWidget::renderValueTextOnly() {
 void MetricWidget::drawValueWithLoadedFont() {
     // Fast path: the value font is already loaded by the caller's batch pass
     // — PcMetricsWidget::drawDynamicData() loads NotoSans18 (loadMetric) for
-    // its tiles, DiskBandWidget::updateDiskDriveWidgets() loads NotoSansDisplay15
+    // its tiles, DiskBandWidget::drawDynamicData() loads NotoSansDisplay15
     // (loadValue) for its small-font tiles. Either way this never calls
     // loadFont/unloadFont itself. The unit suffix (if any) is drawn separately
     // by drawUnitWithLoadedFont() in a follow-up pass under the label font.
@@ -259,18 +233,10 @@ void MetricWidget::drawValueWithLoadedFont() {
         displayText = "0";
     const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
 
-    int16_t areaX, areaWidth;
-    if (hasLabel_) {
-        areaX = valueX_;
-        areaWidth = valueWidth_;
-    } else {
-        areaX = dimensions_.x + borderMargin_;
-        areaWidth = dimensions_.width - (2 * borderMargin_);
-    }
+    int16_t areaX, areaY, areaWidth, areaH;
+    getValueAreaBounds(areaX, areaY, areaWidth, areaH);
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
-    const int16_t areaY = dimensions_.y + borderMargin_;
-    const int16_t areaH = dimensions_.height - (2 * borderMargin_);
 
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
     const bool bgChanged = (newBgColor != lastBgColor_);
@@ -290,9 +256,7 @@ void MetricWidget::drawValueWithLoadedFont() {
 
     // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a
     // single pass — no blank frame, no flash, even after a background change.
-    lcd->setTextColor(TFT_WHITE, newBgColor);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(displayText, startX, textY);
+    drawValueText(displayText, startX, textY, newBgColor);
 
     // Stash the position for the paired drawUnitWithLoadedFont() call; only
     // flag it when the unit actually needs to move/recolour.
@@ -314,13 +278,10 @@ void MetricWidget::drawUnitWithLoadedFont() {
     if (!unitNeedsRedraw_)
         return;
 
-    LGFX* lcd = getLcd();
-    if (!lcd)
+    if (!getLcd())
         return;
 
-    lcd->setTextColor(TFT_WHITE, unitBgColor_);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(unit_, unitDrawX_, unitDrawY_);
+    drawValueText(unit_, unitDrawX_, unitDrawY_, unitBgColor_);
 
     unitNeedsRedraw_ = false;
 }
@@ -384,40 +345,8 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
         return TFT_BLACK;
     }
 
-    float normalizedPercent;
-
-    if (reverseThresholds_) {
-        // REVERSE LOGIC: Warning color for LOW values
-        if (value_ >= upperThreshold_) {
-            normalizedPercent = 0.0f;  // Good (green) when value is HIGH
-        } else if (value_ <= lowerThreshold_) {
-            normalizedPercent = 100.0f;  // Bad (red) when value is LOW
-        } else {
-            float range = upperThreshold_ - lowerThreshold_;
-            if (range <= 0.0f) {
-                normalizedPercent = 0.0f;
-            } else {
-                // Invert the calculation for reverse thresholds
-                normalizedPercent = 100.0f * (upperThreshold_ - value_) / range;
-            }
-        }
-    } else {
-        // NORMAL LOGIC: Warning color for HIGH values
-        if (value_ <= lowerThreshold_) {
-            normalizedPercent = 0.0f;
-        } else if (value_ >= upperThreshold_) {
-            normalizedPercent = 100.0f;
-        } else {
-            float range = upperThreshold_ - lowerThreshold_;
-            if (range <= 0.0f) {
-                normalizedPercent = 0.0f;
-            } else {
-                normalizedPercent = 100.0f * (value_ - lowerThreshold_) / range;
-            }
-        }
-    }
-
-    uint8_t normalizedValue = static_cast<uint8_t>(normalizedPercent);
+    const uint8_t normalizedValue = MetricColorPolicy::normalizedPercent(
+        value_, lowerThreshold_, upperThreshold_, reverseThresholds_);
 
     if (useGpuColors_) {
         return getContext().getColors().getColorFromPercentGpu(normalizedValue);
@@ -426,6 +355,28 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
         return getContext().getColors().getColorFromPercentRam(normalizedValue);
     }
     return getContext().getColors().getColorFromPercent(normalizedValue, useDimColors_);
+}
+
+void MetricWidget::getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& areaWidth,
+                                      int16_t& areaHeight) const {
+    if (hasLabel_) {
+        areaX = valueX_;
+        areaWidth = valueWidth_;
+    } else {
+        areaX = dimensions_.x + borderMargin_;
+        areaWidth = dimensions_.width - (2 * borderMargin_);
+    }
+    areaY = dimensions_.y + borderMargin_;
+    areaHeight = dimensions_.height - (2 * borderMargin_);
+}
+
+void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor) {
+    LGFX* lcd = getLcd();
+    if (!lcd)
+        return;
+    lcd->setTextColor(TFT_WHITE, bgColor);
+    lcd->setTextDatum(ML_DATUM);
+    lcd->drawString(text, x, y);
 }
 
 bool MetricWidget::handleTouch(uint16_t x, uint16_t y) {
@@ -457,122 +408,6 @@ void MetricWidget::setValue(int value) {
     if (value_ != value) {
         value_ = value;
         formatCacheDirty_ = true;
-        markDirty();
-    }
-}
-
-void MetricWidget::setUnit(const char* unit) {
-    if (strcmp(unit_, unit) != 0) {
-        safeStringCopy(unit_, unit, sizeof(unit_));
-        formatCacheDirty_ = true;
-        unitWidthDirty_ = true;
-        markDirty();
-    }
-}
-
-void MetricWidget::setRange(int minValue, int maxValue) {
-    if (minValue_ != minValue || maxValue_ != maxValue) {
-        minValue_ = minValue;
-        maxValue_ = maxValue;
-        markDirty();
-    }
-}
-
-void MetricWidget::setColorThresholds(float lowerThreshold, float upperThreshold) {
-    if (lowerThreshold > upperThreshold) {
-        std::swap(lowerThreshold, upperThreshold);
-    }
-
-    if (lowerThreshold_ != lowerThreshold || upperThreshold_ != upperThreshold) {
-        lowerThreshold_ = lowerThreshold;
-        upperThreshold_ = upperThreshold;
-        markDirty();
-    }
-}
-
-void MetricWidget::setReverseThresholds(bool reverse) {
-    if (reverseThresholds_ != reverse) {
-        reverseThresholds_ = reverse;
-        markDirty();
-    }
-}
-
-void MetricWidget::setUseDimColors(bool useDim) {
-    if (useDimColors_ != useDim) {
-        useDimColors_ = useDim;
-        markDirty();
-    }
-}
-
-void MetricWidget::setUseSmallFont(bool small) {
-    if (useSmallFont_ != small) {
-        useSmallFont_ = small;
-        valueAreaDirty_ = true;
-        markDirty();
-    }
-}
-
-void MetricWidget::setLabelColor(uint16_t color) {
-    if (labelColor_ != color) {
-        labelColor_ = color;
-        markDirty();
-    }
-}
-
-void MetricWidget::setUseGpuColors(bool use) {
-    if (useGpuColors_ != use) {
-        useGpuColors_ = use;
-        markDirty();
-    }
-}
-
-void MetricWidget::setUseRamColors(bool use) {
-    if (useRamColors_ != use) {
-        useRamColors_ = use;
-        markDirty();
-    }
-}
-
-void MetricWidget::setLabel(const char* label) {
-    if (strcmp(label_, label) != 0) {
-        safeStringCopy(label_, label, sizeof(label_));
-        bool newHasLabel = (label_[0] != '\0');
-        if (hasLabel_ != newHasLabel) {
-            hasLabel_ = newHasLabel;
-            dimensionsDirty_ = true;
-            valueAreaDirty_ = true;
-        }
-        markDirty();
-    }
-}
-
-void MetricWidget::setLabelWidth(uint16_t width) {
-    if (labelWidth_ != width) {
-        labelWidth_ = width;
-        dimensionsDirty_ = true;
-        valueAreaDirty_ = true;
-        markDirty();
-    }
-}
-
-void MetricWidget::setVerticalLabel(bool vertical) {
-    if (verticalLabel_ != vertical) {
-        verticalLabel_ = vertical;
-        markDirty();
-    }
-}
-
-void MetricWidget::setTextAlignment(uint8_t alignment) {
-    if (textAlignment_ != alignment) {
-        textAlignment_ = alignment;
-        markDirty();
-    }
-}
-
-void MetricWidget::setBorderMargin(uint16_t margin) {
-    if (borderMargin_ != margin) {
-        borderMargin_ = margin;
-        valueAreaDirty_ = true;
         markDirty();
     }
 }

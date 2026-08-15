@@ -8,8 +8,7 @@
 #include "MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
-#include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "ui/widgets/base/PcDataCompositeWidget.h"
 #include "utils/ScopedLock.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
@@ -28,7 +27,7 @@
 //   kDiskAreaY             → per-drive MetricWidget tiles (borderless, fill
 //                            the space down to the read line)
 //   kReadLineHeight        → 4px write-rate line (flush to widget bottom)
-class DiskBandWidget : public Widget {
+class DiskBandWidget : public PcDataCompositeWidget {
  public:
     using ActionCallback = std::function<void(EventType)>;
 
@@ -37,13 +36,12 @@ class DiskBandWidget : public Widget {
                    EventType action = EventType::SHOW_DISKS, ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
-    bool needsUpdate() const override;
-
-    void setStaleTimeout(unsigned long timeoutMs) { freshnessGuard_.setTimeout(timeoutMs); }
 
  protected:
-    void onDraw(bool forceRedraw) override;
-    void onDrawStatic() override;
+    void drawFreshStatic() override;
+    void drawDynamicData() override;
+    void clearChildren() override;
+    void ensureChildWidgetsCreated() override;
 
  private:
     // Activity-line heights (px) — read/write activity monitors. Doubled from
@@ -68,20 +66,14 @@ class DiskBandWidget : public Widget {
     // last drive tile doesn't extend under it.
     static constexpr uint16_t kChevronReservedWidth = 14;
 
-    PcMetrics& pcMetrics_;
     EventType action_;
     ActionCallback callback_;
-    DataFreshnessGuard freshnessGuard_;
-
-    unsigned long lastUpdateTimestamp_ = 0;
-    unsigned long lastEnsureCheckTimestamp_ = 0;
-    bool wasFreshData_ = false;
 
     std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
     std::vector<uint16_t> diskWriteLineColor_;
     std::vector<uint16_t> diskReadLineColor_;
     std::vector<float> diskFreeSpaceSmoothed_;
-    // Drive letters the current tiles were built for — lets ensureDiskWidgetsCreated()
+    // Drive letters the current tiles were built for — lets ensureChildWidgetsCreated()
     // detect a same-count drive swap (e.g. D: unplugged, E: appears) that a
     // count-only comparison would miss.
     std::vector<std::array<char, 4>> diskDriveNames_;
@@ -90,13 +82,6 @@ class DiskBandWidget : public Widget {
     // origin); the tile area fills between kDiskAreaY and this row.
     uint16_t readLineYRelative() const { return dimensions_.height - kReadLineHeight; }
 
-    // Creates/recreates the drive tiles when the drive set changes.
-    void ensureDiskWidgetsCreated();
-    void updateDiskDriveWidgets();
     // Draws the ">" chevron hint at the right edge of the band.
     void drawDiskChevron();
-    void initAndDrawWidget(MetricWidget& widget);
-    void clearDiskWidgets();
-
-    bool hasFreshData() const { return freshnessGuard_.isFresh(); }
 };

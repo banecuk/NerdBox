@@ -5,7 +5,7 @@
 // order) so the two stay easy to keep in sync — see the comment there.
 ApplicationComponents::ApplicationComponents()
     : logger_(systemState.core.isTimeSynced),
-      displayContext(display, colors, logger_),
+      displayContext(display, colors, logger_, logger_),
       displayManager(display, logger_, config),
       networkManager(logger_, httpClient, config),
       pcMetricsService(networkManager, systemMetrics, logger_, config),
@@ -32,5 +32,5 @@ ApplicationComponents::ApplicationComponents()
       webServer(80),
       webServerService(webServer, uiController, systemMetrics, pcMetrics, pcMetricsService,
                        pcMetricsStreamJob, netStatus, systemState, weatherData, config, taskManager,
-                       logger_),
+                       logger_, logger_),
       initStateMachine(*this) {}
