@@ -16,26 +16,17 @@ void Widget::initialize(DisplayContext& context) {
         return;  // Already initialized
     }
 
-    try {
-        context_ = &context;
-        lcd_ = &context.getDisplay();
-        logger_ = &context.getLogger();
-        lastUpdateTimeMs_ = millis();
+    context_ = &context;
+    lcd_ = &context.getDisplay();
+    logger_ = &context.getLogger();
+    lastUpdateTimeMs_ = millis();
 
-        // Call derived class initialization
-        onInitialize();
+    // Call derived class initialization
+    onInitialize();
 
-        isInitialized_ = true;
-        state_ = isVisible_ ? WidgetInterface::State::READY : WidgetInterface::State::HIDDEN;
-        drawStatic();
-
-    } catch (const std::exception& e) {
-        state_ = WidgetInterface::State::ERROR;
-        if (logger_) {
-            logger_->errorf("Widget init failed: %s", e.what());
-        }
-        throw;
-    }
+    isInitialized_ = true;
+    state_ = isVisible_ ? WidgetInterface::State::READY : WidgetInterface::State::HIDDEN;
+    drawStatic();
 }
 
 void Widget::drawStatic() {
@@ -49,16 +40,9 @@ void Widget::drawStatic() {
         return;
     }
 
-    try {
-        onDrawStatic();
-        isStaticDrawn_ = true;
-        isDirty_ = false;
-    } catch (const std::exception& e) {
-        state_ = WidgetInterface::State::ERROR;
-        if (logger_) {
-            logger_->errorf("Widget drawStatic failed: %s", e.what());
-        }
-    }
+    onDrawStatic();
+    isStaticDrawn_ = true;
+    isDirty_ = false;
 }
 
 void Widget::draw(bool forceRedraw) {
@@ -66,24 +50,17 @@ void Widget::draw(bool forceRedraw) {
         return;
     }
 
-    try {
-        bool shouldDraw = forceRedraw || isDirty_ || needsUpdate();
+    bool shouldDraw = forceRedraw || isDirty_ || needsUpdate();
 
-        if (shouldDraw) {
-            // Callers that want a static repaint on a forced redraw are
-            // responsible for calling drawStatic() themselves beforehand —
-            // every current call site already does. Calling it here too used
-            // to double- (and via initAndDrawWidget-style call chains,
-            // triple-) repaint the widget's chrome on every forced redraw.
-            onDraw(forceRedraw || isDirty_);
-            lastUpdateTimeMs_ = millis();
-            isDirty_ = false;
-        }
-    } catch (const std::exception& e) {
-        state_ = WidgetInterface::State::ERROR;
-        if (logger_) {
-            logger_->errorf("Widget draw failed: %s", e.what());
-        }
+    if (shouldDraw) {
+        // Callers that want a static repaint on a forced redraw are
+        // responsible for calling drawStatic() themselves beforehand —
+        // every current call site already does. Calling it here too used
+        // to double- (and via initAndDrawWidget-style call chains,
+        // triple-) repaint the widget's chrome on every forced redraw.
+        onDraw(forceRedraw || isDirty_);
+        lastUpdateTimeMs_ = millis();
+        isDirty_ = false;
     }
 }
 
@@ -96,13 +73,7 @@ void Widget::cleanUp() {
         logger_->debugf("Cleaning up widget at (%d, %d)", dimensions_.x, dimensions_.y);
     }
 
-    try {
-        onCleanUp();
-    } catch (const std::exception& e) {
-        if (logger_) {
-            logger_->errorf("Widget cleanup failed: %s", e.what());
-        }
-    }
+    onCleanUp();
 
     state_ = WidgetInterface::State::UNINITIALIZED;
     isInitialized_ = false;

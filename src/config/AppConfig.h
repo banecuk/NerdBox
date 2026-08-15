@@ -122,7 +122,9 @@ struct PcMetricsStreamImpl {
     // headroom — not yet measured against a live payload (see plan's open
     // questions); revisit once real event sizes are known.
     static constexpr size_t kMaxEventBufferBytes = 4096;
-    static constexpr uint16_t kMaxBytesPerPoll = 512;
+    // 2048 so a full ~1.6 KB SSE event drains in a single background tick
+    // instead of 3-4 (measured against a live NerdWinSense payload).
+    static constexpr uint16_t kMaxBytesPerPoll = 2048;
     static constexpr const char* kStreamPath = "/api/v1/stream";
 };
 

@@ -45,7 +45,7 @@ class SseConnection {
     };
 
     explicit SseConnection(LoggerInterface& logger, size_t eventBufferBytes,
-                           uint16_t maxBytesPerPoll = 512);
+                           uint16_t maxBytesPerPoll = 2048);
 
     State state() const { return state_; }
 

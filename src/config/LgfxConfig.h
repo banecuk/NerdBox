@@ -15,7 +15,7 @@ class LGFX : public lgfx::LGFX_Device {
     LGFX(void) {
         {
             auto cfg = _bus_instance.config();
-            cfg.freq_write = 40000000;
+            cfg.freq_write = 60000000;  // 40 MHz default is safe; 60 MHz tested clean on hardware; 80 MHz showed visible artifacts (P2-11)
             cfg.pin_wr = 47;
             cfg.pin_rd = -1;
             cfg.pin_rs = 0;

@@ -46,22 +46,27 @@ void WidgetManager::initializeWidgets() {
     isInitialized_ = true;
 }
 
-bool WidgetManager::hasAnyDirtyWidgets() const {
+bool WidgetManager::hasAnyDirtyWidgets() {
     if (!isInitialized_) {
         return false;
     }
-    if (allDirty_) {
-        return true;
-    }
-    for (const auto& entry : widgetCache_) {
+
+    bool anyWork = false;
+    for (auto& entry : widgetCache_) {
         if (!entry.widget->isValid() || !entry.widget->isVisible()) {
+            entry.cachedSkip = true;
             continue;
         }
-        if (entry.isDirty || entry.widget->isDirty() || entry.widget->needsUpdate()) {
-            return true;
+
+        entry.cachedSkip = false;
+        entry.cachedChromeDirty = allDirty_ || entry.isDirty;
+        entry.cachedValueDirty = entry.widget->isDirty() || entry.widget->needsUpdate();
+
+        if (entry.cachedChromeDirty || entry.cachedValueDirty) {
+            anyWork = true;
         }
     }
-    return false;
+    return anyWork;
 }
 
 // Only update widgets that are actually dirty — no region tracking needed.
@@ -89,13 +94,13 @@ void WidgetManager::updateDirtyWidgets() {
     lcd_->startWrite();
 
     for (auto& entry : widgetCache_) {
-        if (!entry.widget->isValid() || !entry.widget->isVisible()) {
+        if (entry.cachedSkip) {
             skippedCount++;
             continue;
         }
 
-        const bool chromeDirty = allDirty_ || entry.isDirty;
-        const bool valueDirty = entry.widget->isDirty() || entry.widget->needsUpdate();
+        const bool chromeDirty = entry.cachedChromeDirty;
+        const bool valueDirty = entry.cachedValueDirty;
 
         if (!chromeDirty && !valueDirty) {
             skippedCount++;

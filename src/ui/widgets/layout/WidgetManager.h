@@ -25,8 +25,12 @@ class WidgetManager {
 
     // Cheap pre-lock check: returns true if updateDirtyWidgets() would find
     // any work to do.  Call this before acquiring the display lock so the
-    // semaphore take/give is skipped entirely on idle frames.
-    bool hasAnyDirtyWidgets() const;
+    // semaphore take/give is skipped entirely on idle frames. As a side
+    // effect it records each entry's chrome/value-dirty verdict, which
+    // updateDirtyWidgets() consumes instead of recomputing — the two are
+    // only ever called back-to-back from BaseWidgetScreen::draw(), so the
+    // cached verdicts are still fresh when updateDirtyWidgets() runs.
+    bool hasAnyDirtyWidgets();
 
  private:
     // Cache structure to avoid repeated getDimensions() calls
@@ -35,6 +39,12 @@ class WidgetManager {
         WidgetInterface::Dimensions cachedDims;
         bool isDirty = true;  // Track widget-level dirtiness
         uint32_t lastUpdateTime = 0;
+
+        // Verdict recorded by hasAnyDirtyWidgets(), consumed by
+        // updateDirtyWidgets() so it doesn't re-derive the same answers.
+        bool cachedSkip = true;
+        bool cachedChromeDirty = false;
+        bool cachedValueDirty = false;
     };
 
     DisplayContext& context_;
