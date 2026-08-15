@@ -85,6 +85,9 @@ struct AppSettings {
         AppConfig::internal::PcMetricsStreamImpl::kMaxBytesPerPoll;
     const char* pcMetricsStreamPath = AppConfig::internal::PcMetricsStreamImpl::kStreamPath;
 
+    // Network
+    const char* networkMdnsHostname = AppConfig::internal::NetworkImpl::kMdnsHostname;
+
     // UI
     uint32_t uiTransitionTimeoutMs = AppConfig::internal::UiImpl::kTransitionTimeoutMs;
     uint32_t uiTouchDebounceIntervalMs = AppConfig::internal::UiImpl::kTouchDebounceIntervalMs;

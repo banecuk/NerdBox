@@ -1,5 +1,7 @@
 #include "NetworkManager.h"
 
+#include <ESPmDNS.h>
+
 NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
                                const AppSettings& config)
     : logger_(logger), httpClient_(httpClient), config_(config) {}
@@ -25,6 +27,7 @@ bool NetworkManager::connect() {
         snprintf(msg, sizeof(msg), "WiFi connected - IP: %s", WiFi.localIP().toString().c_str());
         logger_.info(msg, true);
         reconnectAttempts_ = 0;
+        startMdns();
     } else {
         logger_.errorf("WiFi failed, status: %d", status);
     }
@@ -48,6 +51,19 @@ bool NetworkManager::isConnected() const {
     return WiFi.status() == WL_CONNECTED;
 }
 
+void NetworkManager::startMdns() {
+    // end() is safe to call even if begin() was never called — needed here
+    // since a reconnect re-invokes this on a responder that may already be
+    // bound to the old IP.
+    MDNS.end();
+    if (MDNS.begin(config_.networkMdnsHostname)) {
+        MDNS.addService("http", "tcp", 80);
+        logger_.infof("mDNS responder started: http://%s.local", config_.networkMdnsHostname);
+    } else {
+        logger_.error("mDNS responder failed to start");
+    }
+}
+
 /**
  * Call this periodically from the background task (e.g. every tick).
  * Non-blocking: kicks off WiFi.begin() once when the link drops, then polls
@@ -61,6 +77,7 @@ bool NetworkManager::checkAndReconnect() {
                           WiFi.localIP().toString().c_str());
             reconnecting_ = false;
             reconnectAttempts_ = 0;
+            startMdns();
         }
         return true;
     }

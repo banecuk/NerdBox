@@ -35,6 +35,12 @@ class NetworkManager {
 
     void startReconnect(uint32_t now);
 
+    // (Re)starts the mDNS responder so the device stays reachable as
+    // <hostname>.local across reconnects — ESP32's mDNS responder doesn't
+    // survive a WiFi drop/rejoin on its own, so this is called after both
+    // the initial connect and every successful reconnect.
+    void startMdns();
+
     LoggerInterface& logger_;
     HttpClient& httpClient_;
     const AppSettings& config_;

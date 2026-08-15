@@ -128,6 +128,14 @@ struct PcMetricsStreamImpl {
     static constexpr const char* kStreamPath = "/api/v1/stream";
 };
 
+// Network configuration
+struct NetworkImpl {
+    // Advertised via mDNS so the device is reachable as
+    // http://<kMdnsHostname>.local instead of a DHCP-assigned IP. Must be
+    // <= 63 chars and contain no dots (mDNS hostname rules).
+    static constexpr const char* kMdnsHostname = "nerdbox";
+};
+
 // UI configuration
 struct UiImpl {
     static constexpr uint32_t kTransitionTimeoutMs = 1000;
