@@ -1,6 +1,7 @@
 #include "DisplayManager.h"
 
 #include "config/AppConfig.h"
+#include "core/resources/FontRegistry.h"
 
 DisplayManager::DisplayManager(LGFX& display, LoggerInterface& logger, const AppSettings& config)
     : display_(display),
@@ -27,6 +28,8 @@ void DisplayManager::initialize() {
     // Use a safe low brightness during the init splash; postInitialization()
     // will switch to the user's saved level once the full system is up.
     display_.setBrightness(20);
+
+    Fonts::init();
 }
 
 void DisplayManager::postInitialization() {

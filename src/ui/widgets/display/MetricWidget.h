@@ -61,9 +61,12 @@ class MetricWidget : public Widget {
     void setUseGpuColors(bool use = true);
     void setUseRamColors(bool use = true);
 
-    // Called by PcMetricsWidget's batch update: assumes NotoSans18 (metric font)
-    // is already loaded by the caller.  Skips loadFont/unloadFont overhead.
-    // Only valid when the background colour hasn't changed (value-only update).
+    // Called by a batch-drawing caller (PcMetricsWidget, DiskBandWidget):
+    // assumes the value font matching useSmallFont_ (NotoSans18 via
+    // loadMetric(), or NotoSansDisplay15 via loadValue() for small-font
+    // tiles) is already loaded by the caller. Skips loadFont/unloadFont
+    // overhead. Callers must batch tiles of the same useSmallFont_ setting
+    // together so one font load covers the whole pass.
     void drawValueWithLoadedFont();
 
     // Paired with drawValueWithLoadedFont() — call after it, with the label

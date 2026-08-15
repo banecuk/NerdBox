@@ -120,6 +120,9 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
     LGFX* lcd = getLcd();
     const size_t count = history.size();
     const size_t offset = cols > count ? cols - count : 0;
+    // Computed once per row instead of once per column inside the loop below
+    // — history.at(idx) would otherwise redo this same modulo on every call.
+    const size_t start = history.startIndex();
 
     // Every new sample re-indexes the whole ring buffer by one slot, so a
     // volatile metric (CPU) typically needs nearly every column repainted on
@@ -139,7 +142,7 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
         bool highUsage = false;
         if (col >= offset) {
             const size_t idx = col - offset;
-            const uint8_t rawValue = history.at(idx);
+            const uint8_t rawValue = history.valueAtOffset(start, idx);
             const uint32_t h =
                 (static_cast<uint32_t>(rawValue) * (rowHeight_ - 1)) / kScaleMax;
             height = static_cast<uint8_t>((h > rowHeight_ - 1 ? rowHeight_ - 1 : h) + 1);

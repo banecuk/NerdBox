@@ -7,9 +7,11 @@
 //   Fonts::loadLabel(lcd);   // before drawString
 //   Fonts::unload(lcd);      // immediately after drawString
 //
-// Always call unload() after every draw block. loadFont() streams the PROGMEM
-// array into a runtime buffer; unload() releases it and restores the built-in
-// bitmap font so other widgets aren't affected.
+// Fonts::init() parses every PROGMEM font array into a runtime glyph table
+// exactly once (called from DisplayManager::initialize(), after the display
+// is up). Every loadX()/unload() call after that is just an LGFXBase::setFont()
+// pointer swap — no allocation, no PROGMEM re-read. Call unload() after every
+// draw block so other widgets aren't left drawing with the wrong font.
 //
 // Font roles
 // ──────────────────────────────────────────────────────────────────────────
@@ -27,50 +29,21 @@
 //
 //  loadMono()    NotoSansMono24            24 pt monospaced — ClockWidget
 //                                          and FpsWidget digits
-//
-// Note on PROGMEM font headers
-// ──────────────────────────────────────────────────────────────────────────
-// Each font .h file is guarded by NERDBOX_DEFINE_FONT_DATA. Included here
-// (that macro undefined), it expands to just `extern const uint8_t X[]
-// PROGMEM;` — a declaration, not a definition, so no font data is duplicated
-// into the TUs that include this registry. The one real definition of each
-// array lives in Fonts.cpp, which defines NERDBOX_DEFINE_FONT_DATA before
-// including the same headers. Every widget links against that single copy.
 
 #include <Arduino.h>
 
 #include "config/LgfxConfig.h"
-#include "core/resources/NotoSans18.h"
-#include "core/resources/NotoSansDisplay12.h"
-#include "core/resources/NotoSansDisplay15.h"
-#include "core/resources/NotoSansDisplayCondExt18.h"
-#include "core/resources/NotoSansMono24.h"
 
 struct Fonts {
-    static void loadLabel(LGFX* lcd) {
-        lcd->loadFont(NotoSansDisplay12);
-        lcd->setTextSize(1);
-    }
+    // Parses all five PROGMEM fonts into runtime glyph tables. Call once,
+    // after the display is initialized. Idempotent.
+    static void init();
 
-    static void loadValue(LGFX* lcd) {
-        lcd->loadFont(NotoSansDisplay15);
-        lcd->setTextSize(1);
-    }
+    static void loadLabel(LGFX* lcd);
+    static void loadValue(LGFX* lcd);
+    static void loadMetric(LGFX* lcd);
+    static void loadHeader(LGFX* lcd);
+    static void loadMono(LGFX* lcd);
 
-    static void loadMetric(LGFX* lcd) {
-        lcd->loadFont(NotoSans18);
-        lcd->setTextSize(1);
-    }
-
-    static void loadHeader(LGFX* lcd) {
-        lcd->loadFont(NotoSansDisplayCondExt18);
-        lcd->setTextSize(1);
-    }
-
-    static void loadMono(LGFX* lcd) {
-        lcd->loadFont(NotoSansMono24);
-        lcd->setTextSize(1);
-    }
-
-    static void unload(LGFX* lcd) { lcd->unloadFont(); }
+    static void unload(LGFX* lcd);
 };

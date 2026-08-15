@@ -31,34 +31,40 @@ DiskBandWidget::DiskBandWidget(DisplayContext& context, const WidgetInterface::D
       freshnessGuard_(pcMetrics.freshness) {}
 
 void DiskBandWidget::ensureDiskWidgetsCreated() {
-    // Snapshot everything we need under one lock, then do all widget work lock-free.
+    // Snapshot everything we need under one lock, then do all widget work
+    // lock-free. Fixed-size array, not a vector: this runs every time fresh
+    // data lands (every ~500 ms), and in the overwhelmingly common case
+    // (drive set unchanged) the snapshot is discarded a few lines below —
+    // a heap alloc/free pair on that cadence would fragment the
+    // fragmentation-sensitive heap for no reason. kMaxDiskWidgets is already
+    // a compile-time cap.
     struct DriveSnapshot {
         char name[4];
         int freeSpacePercent;
     };
-    std::vector<DriveSnapshot> snapshot;
+    DriveSnapshot snapshot[kMaxDiskWidgets];
+    size_t snapshotCount = 0;
     {
         ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        const size_t driveCount = pcMetrics_.disk_drives.size() < kMaxDiskWidgets
-                                      ? pcMetrics_.disk_drives.size()
-                                      : kMaxDiskWidgets;
-        snapshot.reserve(driveCount);
-        for (size_t i = 0; i < driveCount; ++i) {
-            DriveSnapshot s;
+        snapshotCount = pcMetrics_.disk_drives.size() < kMaxDiskWidgets
+                            ? pcMetrics_.disk_drives.size()
+                            : kMaxDiskWidgets;
+        for (size_t i = 0; i < snapshotCount; ++i) {
+            DriveSnapshot& s = snapshot[i];
             strncpy(s.name, pcMetrics_.disk_drives[i].driveName, sizeof(s.name) - 1);
             s.name[sizeof(s.name) - 1] = '\0';
             s.freeSpacePercent =
                 static_cast<int>(pcMetrics_.disk_drives[i].freeSpacePercent + 0.5f);
-            snapshot.push_back(s);
         }
     }  // mutex released here — all remaining work is lock-free
 
-    if (snapshot.empty())
+    if (snapshotCount == 0)
         return;
 
-    bool needsCreation = diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshot.size());
+    bool needsCreation =
+        diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshotCount);
     if (!needsCreation) {
-        for (size_t i = 0; i < snapshot.size(); ++i) {
+        for (size_t i = 0; i < snapshotCount; ++i) {
             if (strncmp(diskDriveNames_[i].data(), snapshot[i].name, sizeof(snapshot[i].name)) !=
                 0) {
                 needsCreation = true;
@@ -72,14 +78,14 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
 
     // Rebuild widgets from the snapshot
     diskDriveWidgets_.clear();
-    diskWriteLineColor_.assign(snapshot.size(), 0xFFFF);  // sentinel forces first draw
-    diskReadLineColor_.assign(snapshot.size(), 0xFFFF);
-    diskFreeSpaceSmoothed_.assign(snapshot.size(), -1.0f);  // sentinel: no previous value yet
+    diskWriteLineColor_.assign(snapshotCount, 0xFFFF);  // sentinel forces first draw
+    diskReadLineColor_.assign(snapshotCount, 0xFFFF);
+    diskFreeSpaceSmoothed_.assign(snapshotCount, -1.0f);  // sentinel: no previous value yet
     diskDriveNames_.clear();
-    diskDriveNames_.reserve(snapshot.size());
-    for (const auto& s : snapshot) {
+    diskDriveNames_.reserve(snapshotCount);
+    for (size_t i = 0; i < snapshotCount; ++i) {
         std::array<char, 4> name{};
-        strncpy(name.data(), s.name, name.size() - 1);
+        strncpy(name.data(), snapshot[i].name, name.size() - 1);
         diskDriveNames_.push_back(name);
     }
 
@@ -87,14 +93,14 @@ void DiskBandWidget::ensureDiskWidgetsCreated() {
     const uint16_t availableWidth =
         (dimensions_.width > kChevronReservedWidth) ? (dimensions_.width - kChevronReservedWidth)
                                                      : dimensions_.width;
-    uint16_t widgetWidth = static_cast<uint16_t>(availableWidth / snapshot.size());
+    uint16_t widgetWidth = static_cast<uint16_t>(availableWidth / snapshotCount);
     if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
 
     // Tile fills the vertical span between the write line and the read line.
     const uint16_t diskAreaHeight = static_cast<uint16_t>(readLineYRelative() - kDiskAreaY);
 
-    for (size_t i = 0; i < snapshot.size(); ++i) {
+    for (size_t i = 0; i < snapshotCount; ++i) {
         uint16_t xPos = static_cast<uint16_t>(dimensions_.x + i * widgetWidth);
 
         MetricWidget::Config config;
@@ -153,6 +159,14 @@ void DiskBandWidget::updateDiskDriveWidgets() {
         }
     }  // mutex released — all display work below is lock-free
 
+    // Batch font load: every tile here is useSmallFont_ (NotoSansDisplay15),
+    // so one loadValue()/unload() pair covers all drives instead of each
+    // MetricWidget loading/unloading its own font per tick (see 07-performance.md
+    // P1-5). No paired label-font pass is needed — disk tiles are built with
+    // an empty unit (DiskBandWidget::ensureDiskWidgetsCreated), so
+    // drawUnitWithLoadedFont() would always be a no-op.
+    LGFX* lcd = getLcd();
+    Fonts::loadValue(lcd);
     for (size_t i = 0; i < updateCount; ++i) {
         if (!diskDriveWidgets_[i] || !diskDriveWidgets_[i]->isInitialized())
             continue;
@@ -172,7 +186,13 @@ void DiskBandWidget::updateDiskDriveWidgets() {
         if (diskDriveWidgets_[i]->getValue() != freeSpaceValue) {
             diskDriveWidgets_[i]->setValue(freeSpaceValue);
         }
-        diskDriveWidgets_[i]->draw(false);
+        diskDriveWidgets_[i]->drawValueWithLoadedFont();
+    }
+    Fonts::unload(lcd);
+
+    for (size_t i = 0; i < updateCount; ++i) {
+        if (!diskDriveWidgets_[i] || !diskDriveWidgets_[i]->isInitialized())
+            continue;
 
         const auto dims = diskDriveWidgets_[i]->getDimensions();
         const uint16_t writeColor = bandActivityColor(writeSnapshot[i]);
@@ -229,8 +249,9 @@ void DiskBandWidget::onDraw(bool forceRedraw) {
             clearDiskWidgets();
         } else {
             clearDiskWidgets();
+            // drawStatic() -> onDrawStatic() already draws the chevron —
+            // it never changes, no need to draw it again here.
             drawStatic();
-            drawDiskChevron();
             clearDirty();
         }
         wasFreshData_ = currentlyHasFreshData;
@@ -243,9 +264,11 @@ void DiskBandWidget::onDraw(bool forceRedraw) {
 
     const bool needsRedraw = forceRedraw || isDirty() || needsUpdate();
     if (currentlyHasFreshData && needsRedraw) {
+        // The ">" chevron never changes once drawn by onDrawStatic() — don't
+        // reload its font and redraw it on every update tick.
         updateDiskDriveWidgets();
-        drawDiskChevron();
         clearDirty();
+        lastUpdateTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
     }
 
     lastUpdateTimeMs_ = millis();
@@ -280,6 +303,7 @@ void DiskBandWidget::clearDiskWidgets() {
     diskDriveNames_.clear();
 
     lastEnsureCheckTimestamp_ = 0;
+    lastUpdateTimestamp_ = 0;
     isStaticDrawn_ = false;
 }
 
@@ -288,8 +312,11 @@ bool DiskBandWidget::needsUpdate() const {
         return false;
     if (hasFreshData() != wasFreshData_)
         return true;
-    return (pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_) ||
-           (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
+    // updateIntervalMs_ only bounds the *maximum* rate (Widget::needsUpdate()'s
+    // contract); the timestamp comparison is what actually decides whether
+    // there's new data to draw. A time-only OR here forced a full repaint
+    // every tick regardless of whether anything changed.
+    return pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_;
 }
 
 bool DiskBandWidget::handleTouch(uint16_t x, uint16_t y) {

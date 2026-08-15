@@ -2,6 +2,11 @@
 
 #include "config/LgfxConfig.h"  // TFT_* color constants
 
+uint16_t Colors::COLOR_GRADIENT[100] = {};
+uint16_t Colors::COLOR_GRADIENT_DIM[100] = {};
+uint16_t Colors::COLOR_GRADIENT_GPU[100] = {};
+uint16_t Colors::COLOR_GRADIENT_RAM[100] = {};
+
 Colors::Colors() {
     generateGradient();
 }
@@ -49,13 +54,26 @@ void Colors::generateGradient() {
     for (int i = 0; i < 100; i++) {
         COLOR_GRADIENT[i] = generateColorFromPercent(i);
         COLOR_GRADIENT_DIM[i] = darken(COLOR_GRADIENT[i], 128);
+        COLOR_GRADIENT_GPU[i] = generateColorFromPercentGpu(i);
+        COLOR_GRADIENT_RAM[i] = generateColorFromPercentRam(i);
     }
 }
 
 uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
-    if (value > 99)
+    if (value > 99) {
         value = 99;
+    }
+    return COLOR_GRADIENT_GPU[value];
+}
 
+uint16_t Colors::getColorFromPercentRam(uint8_t value) {
+    if (value > 99) {
+        value = 99;
+    }
+    return COLOR_GRADIENT_RAM[value];
+}
+
+uint16_t Colors::generateColorFromPercentGpu(uint8_t value) {
     // GPU gradient: dark red (idle) → mid red → deep red → bright alert red.
     // Pure red hue throughout (no green/blue channel) so it never drifts
     // into the brownish/olive territory a warm-grey/amber ramp produces.
@@ -86,10 +104,7 @@ uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
     return blendRgb565(C1, C2, alpha);
 }
 
-uint16_t Colors::getColorFromPercentRam(uint8_t value) {
-    if (value > 99)
-        value = 99;
-
+uint16_t Colors::generateColorFromPercentRam(uint8_t value) {
     // RAM gradient: dark teal (idle) → muted teal → bright cyan (high load).
     // Teal keeps the cool blue family of the old slate/steel RAM ramp but is
     // far enough from the CPU's muted blue and the GPU's red to be told apart

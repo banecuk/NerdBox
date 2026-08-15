@@ -142,6 +142,11 @@ bool Widget::setVisible(bool visible) {
 }
 
 bool Widget::needsUpdate() const {
+    // Contract: this bounds the *maximum* redraw rate — it does not mean
+    // "redraw every interval regardless of change." Overrides that add a
+    // data-timestamp check (PcMetricsWidget, DiskBandWidget) should return
+    // on that check alone once it's known to be maintained correctly, not
+    // OR it with a time-elapsed clause — see 07-performance.md P0-3.
     if (updateIntervalMs_ == 0 || !isInitialized_ || !isVisible_) {
         return false;
     }

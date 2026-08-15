@@ -232,25 +232,28 @@ void MetricWidget::renderValueTextOnly() {
 }
 
 void MetricWidget::drawValueWithLoadedFont() {
-    // Fast path: font is already loaded by PcMetricsWidget's batch caller.
-    // We never call loadFont/unloadFont here — that's the caller's job. The
-    // unit suffix (if any) is drawn separately by drawUnitWithLoadedFont() in
-    // a follow-up pass under the label font — see PcMetricsWidget::drawDynamicData.
-    //
-    // Exception: small-font widgets use NotoSansDisplay15, not the batch font
-    // (NotoSans18).  Fall back to renderValueTextOnly() which handles its own
-    // load/unload (value + unit) so the batch font on the stack is left
-    // undisturbed, and skip the paired drawUnitWithLoadedFont() call.
-    if (useSmallFont_) {
-        renderValueTextOnly();
-        unitNeedsRedraw_ = false;
-        return;
-    }
+    // Fast path: the value font is already loaded by the caller's batch pass
+    // — PcMetricsWidget::drawDynamicData() loads NotoSans18 (loadMetric) for
+    // its tiles, DiskBandWidget::updateDiskDriveWidgets() loads NotoSansDisplay15
+    // (loadValue) for its small-font tiles. Either way this never calls
+    // loadFont/unloadFont itself. The unit suffix (if any) is drawn separately
+    // by drawUnitWithLoadedFont() in a follow-up pass under the label font.
     LGFX* lcd = getLcd();
     if (!lcd || !isStaticDrawn_)
         return;
 
     const uint16_t newBgColor = calculateBackgroundColor();
+
+    // Unlike renderValueArea()/renderValueTextOnly() (reached via onDraw(),
+    // which already gates on value/dirty changes before calling either), this
+    // is called unconditionally once per tick by PcMetricsWidget's batch draw
+    // — so it needs its own unchanged-value early-out.
+    if (hasDrawnOnce_ && value_ == lastDrawnValue_ && newBgColor == lastBgColor_ &&
+        !isDirty() && !valueAreaDirty_) {
+        unitNeedsRedraw_ = false;
+        return;
+    }
+
     const char* displayText = getFormattedValueText();
     if (!displayText || displayText[0] == '\0')
         displayText = "0";
@@ -301,6 +304,7 @@ void MetricWidget::drawValueWithLoadedFont() {
     lastDrawnValue_ = value_;
     hasDrawnOnce_ = true;
     clearDirty();
+    valueAreaDirty_ = false;
 }
 
 void MetricWidget::drawUnitWithLoadedFont() {

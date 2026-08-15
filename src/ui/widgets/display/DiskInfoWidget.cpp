@@ -315,7 +315,7 @@ void DiskInfoWidget::drawNoDataMessage() {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
-    Fonts::loadMetric(lcd);
+    Fonts::loadLabel(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,

@@ -261,7 +261,7 @@ void PcMetricsWidget::drawDynamicData() {
 
 void PcMetricsWidget::drawNoDataMessage() {
     LGFX* lcd = getLcd();
-    Fonts::loadMetric(lcd);
+    Fonts::loadLabel(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
@@ -288,8 +288,11 @@ bool PcMetricsWidget::needsUpdate() const {
         return false;
     if (hasFreshData() != wasFreshData_)
         return true;
-    return (pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_) ||
-           (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
+    // updateIntervalMs_ only bounds the *maximum* rate (Widget::needsUpdate()'s
+    // contract); the timestamp comparison is what actually decides whether
+    // there's new data to draw. A time-only OR here forced a full repaint
+    // every tick regardless of whether anything changed.
+    return pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_;
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {

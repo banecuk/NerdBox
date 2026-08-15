@@ -11,9 +11,18 @@
 
 class Colors {
  private:
-    uint16_t COLOR_GRADIENT[100] = {};
-    uint16_t COLOR_GRADIENT_DIM[100] = {};
+    // Static, not per-instance: Colors is only ever constructed once (as a
+    // member of ApplicationComponents), so there's no reason for these 800
+    // bytes of lookup tables to live inside every Colors object — keeping
+    // them static keeps sizeof(Colors) (and therefore ApplicationComponents)
+    // unchanged from before these tables existed.
+    static uint16_t COLOR_GRADIENT[100];
+    static uint16_t COLOR_GRADIENT_DIM[100];
+    static uint16_t COLOR_GRADIENT_GPU[100];
+    static uint16_t COLOR_GRADIENT_RAM[100];
     uint16_t generateColorFromPercent(byte value);
+    uint16_t generateColorFromPercentGpu(byte value);
+    uint16_t generateColorFromPercentRam(byte value);
     void generateGradient();
 
  public:

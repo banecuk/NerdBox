@@ -103,7 +103,7 @@ void ThreadsWidget::drawNoDataMessage() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    Fonts::loadMetric(lcd);
+    Fonts::loadLabel(lcd);
     lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
