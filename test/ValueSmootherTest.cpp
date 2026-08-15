@@ -1,5 +1,8 @@
 #include "ValueSmoother.h"
 
+#include <cmath>
+#include <limits>
+
 #include <gtest/gtest.h>
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -251,6 +254,66 @@ TEST(ValueSmootherTest, SmoothedValueClampsToUint8Range) {
 
     // getSmoothedValue casts float → uint8_t; ensure no wraparound.
     EXPECT_EQ(s.getSmoothedValue(0), 255);
+}
+
+// ─── Robustness (B4) ─────────────────────────────────────────────────────────
+
+TEST(ValueSmootherTest, OutOfRangeIndexReturnsZeroInsteadOfAsserting) {
+    ValueSmoother s(2, 0.5f, 0.5f);
+    std::vector<uint8_t> input = {10, 20};
+    s.update(input);
+
+    EXPECT_EQ(s.getSmoothedValue(2), 0);
+    EXPECT_EQ(s.getSmoothedValue(100), 0);
+}
+
+TEST(ValueSmootherTest, ZeroSizeIsClampedToOne) {
+    ValueSmoother s(0, 0.5f, 0.5f);
+    EXPECT_EQ(s.size(), 1u);
+
+    std::vector<uint8_t> input = {77};
+    s.update(input);
+    EXPECT_EQ(s.getSmoothedValue(0), 77);
+}
+
+TEST(ValueSmootherTest, NanUpwardSmoothingIsReplacedWithSafeDefault) {
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    ValueSmoother s(1, /*up=*/nan, /*down=*/0.5f);
+
+    std::vector<uint8_t> seed = {10};
+    s.update(seed);
+    std::vector<uint8_t> jump = {90};
+    s.update(jump);  // upward move — must not stay NaN forever
+
+    EXPECT_EQ(s.getSmoothedValue(0), 90);
+}
+
+TEST(ValueSmootherTest, NanDownwardSmoothingIsReplacedWithSafeDefault) {
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    ValueSmoother s(1, /*up=*/0.5f, /*down=*/nan);
+
+    std::vector<uint8_t> seed = {90};
+    s.update(seed);
+    std::vector<uint8_t> drop = {10};
+    s.update(drop);  // downward move — must not stay NaN forever
+
+    EXPECT_EQ(s.getSmoothedValue(0), 10);
+}
+
+TEST(ValueSmootherTest, OutOfRangeSmoothingFactorsAreClamped) {
+    ValueSmoother s(1, /*up=*/5.0f, /*down=*/-3.0f);
+
+    std::vector<uint8_t> seed = {0};
+    s.update(seed);
+    std::vector<uint8_t> jump = {100};
+    s.update(jump);  // up clamped to 1.0 → instant
+
+    EXPECT_EQ(s.getSmoothedValue(0), 100);
+
+    std::vector<uint8_t> drop = {0};
+    s.update(drop);  // down clamped to 0.0 → no change
+
+    EXPECT_EQ(s.getSmoothedValue(0), 100);
 }
 
 int main(int argc, char** argv) {

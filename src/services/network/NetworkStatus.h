@@ -4,6 +4,8 @@
 
 #include <atomic>
 
+#include "config/Limits.h"
+
 // Written by NetworkStatusService (background/probe tasks),
 // read by NetworkWidget (screen task).
 // All scalar fields are Xtensa word-sized — naturally atomic, no mutex needed.
@@ -22,9 +24,11 @@ struct NetworkStatus {
     } internet = Internet::UNKNOWN;
 
     // Per-endpoint last-known pass/fail (true=pass, false=fail/unknown).
-    // Index matches NetworkStatusService::kProbeUrls[].
+    // Index matches NetworkStatusService::kProbeUrls[]. Sized off the same
+    // shared constant NetworkStatusService::kNumEndpoints derives from
+    // (AppConfig::Limits::kNetworkProbeEndpoints) so the two can't drift.
     // Updated atomically (bool is word-sized on Xtensa) — no mutex needed.
-    bool endpoint_ok[6] = {false, false, false, false, false, false};
+    bool endpoint_ok[AppConfig::Limits::kNetworkProbeEndpoints] = {};
 
     // Set true while the one-shot probe task is in-flight; guards against
     // spawning overlapping tasks. std::atomic (not volatile) so the probe

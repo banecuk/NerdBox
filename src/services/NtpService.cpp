@@ -48,10 +48,15 @@ bool NtpService::retrySyncIfNeeded() {
     lastRetryAttemptMs_ = now;
 
     // SNTP was already started by the initial syncTime() call and keeps
-    // retrying in the background, so this just probes whether it has
-    // resolved the time yet — no need to call configTzTime() again.
+    // retrying in the background at its own pace, so this just probes
+    // whether it has resolved the time yet — no need to call configTzTime()
+    // again, and no need to block waiting for it: a 0ms non-blocking read
+    // (same as getTime()'s) is enough, since kRetryIntervalMs's own cadence
+    // is what does the "retrying" (see B22 — a 200ms blocking wait here
+    // stalled the shared background task, including SseConnection::poll(),
+    // every 30s while unsynced).
     struct tm timeinfo;
-    if (getLocalTime(&timeinfo, kSyncAttemptTimeoutMs)) {
+    if (getLocalTime(&timeinfo, kNonBlockingReadTimeoutMs)) {
         timeSynced_ = true;
         return true;
     }

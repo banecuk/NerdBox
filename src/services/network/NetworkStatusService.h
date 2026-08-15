@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "config/Limits.h"
 #include "services/network/NetworkStatus.h"
 #include "utils/logging/LoggerInterface.h"
 
@@ -52,7 +53,9 @@ class NetworkStatusService {
     // for an accurate status.
     static constexpr unsigned long kWarmupProbeIntervalMs = 1000UL;
 
-    static constexpr uint8_t kNumEndpoints = 6;
+    static constexpr uint8_t kNumEndpoints = AppConfig::Limits::kNetworkProbeEndpoints;
+    static_assert(sizeof(NetworkStatus{}.endpoint_ok) / sizeof(bool) == kNumEndpoints,
+                  "NetworkStatus::endpoint_ok must have exactly kNumEndpoints slots");
 
     // URL for a given probe slot, matching NetworkStatus::endpoint_ok[]'s
     // indexing. Returns nullptr if index is out of range.

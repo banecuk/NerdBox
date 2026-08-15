@@ -185,13 +185,17 @@ void WeatherWidget::checkMidnightRollover() {
     timeinfo.tm_sec = 0;
     const time_t localMidnight = mktime(&timeinfo);
 
+    if (weatherData_.dayCount == 0) {
+        return;
+    }
+
     time_t firstDayStart;
     {
         ScopedLock lock(weatherData_.daysMutex);
         firstDayStart = weatherData_.days[0].dayStart;
     }
 
-    if (weatherData_.dayCount > 0 && localMidnight != firstDayStart) {
+    if (localMidnight != firstDayStart) {
         weatherData_.refreshRequested.store(true);
     }
 }

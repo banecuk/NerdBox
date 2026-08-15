@@ -75,16 +75,12 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
 
     // Rebuild widgets from the snapshot
     diskDriveWidgets_.clear();
+    diskDriveNames_.clear();
     diskWriteLineColor_.assign(snapshotCount, 0xFFFF);  // sentinel forces first draw
     diskReadLineColor_.assign(snapshotCount, 0xFFFF);
     diskFreeSpaceSmoothed_.assign(snapshotCount, -1.0f);  // sentinel: no previous value yet
-    diskDriveNames_.clear();
+    diskDriveWidgets_.reserve(snapshotCount);
     diskDriveNames_.reserve(snapshotCount);
-    for (size_t i = 0; i < snapshotCount; ++i) {
-        std::array<char, 4> name{};
-        strncpy(name.data(), snapshot[i].name, name.size() - 1);
-        diskDriveNames_.push_back(name);
-    }
 
     const uint16_t maxWidgetWidth = kMaxWidgetWidth;
     const uint16_t availableWidth = (dimensions_.width > kChevronReservedWidth)
@@ -117,12 +113,21 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
                                         widgetWidth, static_cast<uint16_t>(diskAreaHeight)},
             updateIntervalMs_, config);
 
-        if (w) {
-            if (!w->isInitialized())
-                w->initialize(getContext());
-            initAndDrawWidget(*w);
-            diskDriveWidgets_.push_back(std::move(w));
-        }
+        // diskDriveNames_ and diskDriveWidgets_ are pushed together here, in
+        // the same loop iteration, so their sizes can never drift apart —
+        // see B23: they used to be filled by two separate loops, relying on
+        // the second loop's `if (w)` guard never actually skipping an entry.
+        if (!w)
+            continue;
+
+        if (!w->isInitialized())
+            w->initialize(getContext());
+        initAndDrawWidget(*w);
+
+        std::array<char, 4> name{};
+        strncpy(name.data(), snapshot[i].name, name.size() - 1);
+        diskDriveNames_.push_back(name);
+        diskDriveWidgets_.push_back(std::move(w));
     }
 
     if (getLogger()) {
@@ -158,10 +163,10 @@ void DiskBandWidget::drawDynamicData() {
 
     // Batch font load: every tile here is useSmallFont_ (NotoSansDisplay15),
     // so one loadValue()/unload() pair covers all drives instead of each
-    // MetricWidget loading/unloading its own font per tick (see 07-performance.md
-    // P1-5). No paired label-font pass is needed — disk tiles are built with
-    // an empty unit (DiskBandWidget::ensureChildWidgetsCreated), so
-    // drawUnitWithLoadedFont() would always be a no-op.
+    // MetricWidget calling setFont() on its own per tick. No paired
+    // label-font pass is needed — disk tiles are built with an empty unit
+    // (DiskBandWidget::ensureChildWidgetsCreated), so drawUnitWithLoadedFont()
+    // would always be a no-op.
     LGFX* lcd = getLcd();
     Fonts::loadValue(lcd);
     for (size_t i = 0; i < updateCount; ++i) {

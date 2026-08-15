@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "services/network/NetworkStatusService.h"
 #include "services/web/ChunkedPrint.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/ScopedLock.h"
@@ -147,7 +148,7 @@ void WebApiHandlers::handleApiStatus() {
     net["ip"] = ip;
     net["internet"] = internetStatusToString(netStatus_.internet);
     JsonArray probes = net["probes"].to<JsonArray>();
-    for (uint8_t i = 0; i < 6; ++i) {
+    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i) {
         probes.add(netStatus_.endpoint_ok[i] ? 1 : 0);
     }
 

@@ -39,6 +39,7 @@ class PcMetricsStreamJob : public BackgroundJob {
 
  private:
     void attemptConnect();
+    bool screenGateOpen() const;
 
     PcMetrics& metrics_;
     SystemState::CoreState& coreState_;

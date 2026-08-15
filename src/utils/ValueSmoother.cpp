@@ -2,18 +2,25 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+
+namespace {
+// A NaN smoothing factor would otherwise poison every subsequent value
+// forever (prev*(1-a) + new*a stays NaN); an out-of-range one would let a
+// single bad caller destabilize the EMA. Clamp instead of trusting the caller.
+float sanitizeSmoothing(float value) {
+    if (std::isnan(value)) {
+        return 1.0f;
+    }
+    return std::clamp(value, 0.0f, 1.0f);
+}
+}  // namespace
 
 ValueSmoother::ValueSmoother(size_t size, float upwardSmoothing, float downwardSmoothing)
-    : size_(size),
-      upwardSmoothing_(upwardSmoothing),
-      downwardSmoothing_(downwardSmoothing),
-      smoothedValues_(size, 0.0f) {
-    assert(size > 0 && "Size must be greater than zero");
-    assert(upwardSmoothing >= 0.0f && upwardSmoothing <= 1.0f &&
-           "Upward smoothing must be in range [0, 1]");
-    assert(downwardSmoothing >= 0.0f && downwardSmoothing <= 1.0f &&
-           "Downward smoothing must be in range [0, 1]");
-}
+    : size_(std::max<size_t>(size, 1)),
+      upwardSmoothing_(sanitizeSmoothing(upwardSmoothing)),
+      downwardSmoothing_(sanitizeSmoothing(downwardSmoothing)),
+      smoothedValues_(size_, 0.0f) {}
 
 void ValueSmoother::update(const uint8_t* newValues, size_t count) {
     assert(newValues != nullptr && "Input array cannot be null");
@@ -46,7 +53,12 @@ void ValueSmoother::update(const std::vector<uint8_t>& newValues) {
 }
 
 uint8_t ValueSmoother::getSmoothedValue(size_t index) const {
-    assert(index < size_ && "Index out of bounds");
+    // ESP32 Arduino builds ship with asserts enabled even in release, so a
+    // bad index here must not abort — an assert would just reboot the
+    // device. Clamp to a safe default instead of relying on callers.
+    if (index >= size_) {
+        return 0;
+    }
     return static_cast<uint8_t>(smoothedValues_[index] + ROUNDING_OFFSET);
 }
 

@@ -108,6 +108,13 @@ void ApplicationMetrics::addThreadWidgetFrameTime() {
     threadWidgetFrameCount_++;
 
     uint32_t currentTime = millis();
+    if (!threadWidgetFpsSeeded_) {
+        threadWidgetFpsSeeded_ = true;
+        threadWidgetFrameCount_ = 0;
+        threadWidgetLastFpsTime_ = currentTime;
+        return;
+    }
+
     if (currentTime - threadWidgetLastFpsTime_ >= 1000) {
         uint32_t elapsed = currentTime - threadWidgetLastFpsTime_;
         threadWidgetCurrentFps_ =

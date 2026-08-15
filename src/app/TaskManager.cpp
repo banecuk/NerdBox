@@ -143,8 +143,15 @@ void TaskManager::executeBackgroundTask() {
 }
 
 void TaskManager::logStackHighWaterMark(const char* taskName) {
+#if DEBUG_MODE
+    // Guarded like LOG_DEBUGF itself: in a release build the log call
+    // disappears entirely, so computing this would just be a discarded
+    // syscall for zero output.
     UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(nullptr);
     LOG_DEBUGF(logger_, "%s stack high water mark: %u", taskName, stackHighWaterMark);
+#else
+    (void)taskName;
+#endif
 }
 
 void TaskManager::resetWatchdog() {

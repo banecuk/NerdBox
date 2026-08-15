@@ -25,6 +25,13 @@ static constexpr uint8_t kBrightnessLevelCount = 6;
 // ApplicationMetrics draw-time ring capacity (ServiceBundle's cross-check).
 static constexpr uint8_t kMaxScreenDrawTimes = 30;
 
+// Number of rotating probe endpoints NetworkStatusService cycles through for
+// internet-reachability checks (NetworkStatus::endpoint_ok[], WebApiHandlers'
+// /api/status "probes" array). Single source of truth so adding/removing a
+// probe URL can't leave endpoint_ok[] under/over-sized relative to the count
+// that actually gets written.
+static constexpr uint8_t kNetworkProbeEndpoints = 6;
+
 // Logical CPU thread count this build expects NerdWinSense to report.
 static constexpr uint8_t kCores = 28;
 

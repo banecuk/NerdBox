@@ -176,8 +176,8 @@ void MetricWidget::renderValueTextOnly() {
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
 
     // Value font stays loaded across the measure, background clear, and draw
-    // below — loadFont()/unloadFont() stream from PROGMEM into a fresh heap
-    // buffer each time, so this keeps it to one load instead of two.
+    // below — fewer setFont() calls, even though FontRegistry preloads every
+    // font once at boot rather than streaming it from PROGMEM per call.
     loadValueFont();
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
 

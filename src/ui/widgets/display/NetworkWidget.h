@@ -1,6 +1,7 @@
 #pragma once
 
 #include "services/network/NetworkStatus.h"
+#include "services/network/NetworkStatusService.h"
 #include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 
@@ -60,6 +61,12 @@ class NetworkWidget : public Widget {
     static constexpr uint8_t kDotRows = 2;
     static constexpr uint8_t kDotSpacX = 12;  // centre-to-centre horizontal
     static constexpr uint8_t kDotSpacY = 11;  // centre-to-centre vertical
+
+    // This grid is a fixed 3x2 layout, one dot per probe endpoint — it does
+    // not resize itself. If NetworkStatusService::kNumEndpoints ever changes,
+    // this fails the build instead of silently drawing/reading past the grid.
+    static_assert(static_cast<uint8_t>(kDotCols * kDotRows) == NetworkStatusService::kNumEndpoints,
+                  "NetworkWidget's dot grid must have one cell per probe endpoint");
 
     // Colours
     static constexpr uint16_t kColorOk = TFT_LIGHTGRAY;

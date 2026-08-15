@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include <algorithm>
+
 #include "core/ScreenTypes.h"
 #include "utils/logging/LogMacros.h"
 
@@ -211,5 +213,16 @@ void InitializationStateMachine::transitionTo(State newState) {
 
 uint16_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,
                                                            uint16_t baseDelay) const {
-    return baseDelay * (1 << (attempt - 1)) + (random(0, target_.initBackoffJitterMs()));
+    // Computed in uint32_t and clamped before narrowing to uint16_t — with
+    // today's constants (kTimeSyncRetryDelayBaseMs=100, kDefaultTimeSyncRetries=3)
+    // the max is 450ms, but raising either would otherwise silently wrap the
+    // backoff to a *shorter* delay than the previous attempt (see B16).
+    static constexpr uint32_t kMaxBackoffDelayMs = 30000;
+
+    const uint32_t exponential =
+        static_cast<uint32_t>(baseDelay) * (1UL << (attempt - 1));
+    const uint32_t jitter = static_cast<uint32_t>(random(0, target_.initBackoffJitterMs()));
+    const uint32_t delay = exponential + jitter;
+
+    return static_cast<uint16_t>(std::min(delay, kMaxBackoffDelayMs));
 }

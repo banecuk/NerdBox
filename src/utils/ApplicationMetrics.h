@@ -66,4 +66,9 @@ class ApplicationMetrics {
     uint32_t threadWidgetFrameCount_ = 0;
     uint32_t threadWidgetLastFpsTime_ = 0;
     float threadWidgetCurrentFps_ = 0.0f;
+    // False until the first addThreadWidgetFrameTime() call seeds
+    // threadWidgetLastFpsTime_ — without this, the first elapsed-window
+    // check measures against millis()==0 instead of "now", reporting a
+    // nonsense FPS for the whole uptime-so-far (see B24).
+    bool threadWidgetFpsSeeded_ = false;
 };

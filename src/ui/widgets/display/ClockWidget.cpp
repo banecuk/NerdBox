@@ -80,8 +80,8 @@ void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
         return;
 
     // Load the font once for every field that changed this tick instead of
-    // once per field — at steady state (seconds ticking) this was one
-    // heap alloc/free every second; on minute/hour rollovers, up to three.
+    // once per field — fewer setFont() calls (FontRegistry preloads fonts
+    // once at boot, so this isn't avoiding a per-call PROGMEM load anymore).
     LGFX* lcd = getLcd();
     Fonts::loadMono(lcd);
     lcd->setTextColor(textColor_, bgColor_);

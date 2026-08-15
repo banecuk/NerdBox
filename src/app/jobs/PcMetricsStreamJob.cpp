@@ -19,13 +19,24 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
     UrlUtils::parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
 }
 
+bool PcMetricsStreamJob::screenGateOpen() const {
+    return screenState_.activeScreen == ScreenName::MAIN ||
+           screenState_.activeScreen == ScreenName::GAME ||
+           screenState_.activeScreen == ScreenName::DISKS;
+}
+
 JobDue PcMetricsStreamJob::nextDue() const {
-    const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
-                                 screenState_.activeScreen == ScreenName::GAME ||
-                                 screenState_.activeScreen == ScreenName::DISKS;
-    if (!config_.pcMetricsStreamEnabled || !coreState_.isInitialized || !onMetricsScreen ||
+    if (!config_.pcMetricsStreamEnabled || !coreState_.isInitialized ||
         !networkManager_.isConnected()) {
         return JobDue::never();
+    }
+
+    if (!screenGateOpen()) {
+        // Off a metrics screen: if a connection is still open, run() once
+        // more to tear it down, then go idle. Otherwise there's nothing to
+        // do — don't reconnect just to sit there unread (see B3).
+        return connection_.state() == SseConnection::State::Connected ? JobDue::now()
+                                                                       : JobDue::never();
     }
 
     if (connection_.state() == SseConnection::State::Connected) {
@@ -35,6 +46,14 @@ JobDue PcMetricsStreamJob::nextDue() const {
 }
 
 void PcMetricsStreamJob::run() {
+    if (!screenGateOpen()) {
+        if (connection_.state() == SseConnection::State::Connected) {
+            connection_.disconnect();
+            logger_.info("SSE stream disconnected (left metrics screen)", true);
+        }
+        return;
+    }
+
     if (connection_.state() != SseConnection::State::Connected) {
         attemptConnect();
         return;

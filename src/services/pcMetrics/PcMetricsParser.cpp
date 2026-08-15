@@ -26,6 +26,7 @@ void buildFilter(JsonDocument& filter) {
     gpu["Fan"] = true;
     gpu["D3d3d"] = true;
     gpu["D3dCompute"] = true;
+    gpu["D3dDecode"] = true;
     gpu["MemoryUsed"] = true;
     gpu["MemoryAvailable"] = true;
     gpu["MemoryTotal"] = true;
@@ -153,6 +154,13 @@ bool parseGpuData(JsonObjectConst gpu, PcMetrics& outData) {
     }
     if (!gpu["D3dCompute"].isNull()) {
         outData.gpu_compute = static_cast<uint16_t>(gpu["D3dCompute"].as<float>());
+    }
+    // NerdWinSense does not send this key as of 2026-08 — see docs-local/01-bugs.md
+    // B2. Left wired up (filter + parse) so the tile picks up data the moment
+    // the server starts reporting it; absent-for-now behaves like every other
+    // optional section field (stays at its default, 0).
+    if (!gpu["D3dDecode"].isNull()) {
+        outData.gpu_decode = static_cast<uint16_t>(gpu["D3dDecode"].as<float>());
     }
     if (!gpu["Fan"].isNull()) {
         outData.gpu_fan = static_cast<uint16_t>(gpu["Fan"].as<float>());

@@ -43,7 +43,8 @@ static const char* kFullReportJson = R"({
     "CpuExtended": {"TemperatureCoreMax": 65.3, "PackagePower": 95.7},
     "Ram": {"Load": 55.1},
     "Gpu": {"Load": 30.2, "Temperature": 60.9, "PackagePower": 120.4, "Fan": 1500.0,
-            "D3d3d": 12.0, "D3dCompute": 3.0, "MemoryLoad": 50.0, "FullscreenFps": 155.40016},
+            "D3d3d": 12.0, "D3dCompute": 3.0, "D3dDecode": 7.0, "MemoryLoad": 50.0,
+            "FullscreenFps": 155.40016},
     "Motherboard": {"CpuFan": 1200.0, "SystemFans": [800, 0, 900]},
     "Disks": {"Drives": [{"DriveName":"C","FreeSpacePercent":45.5,"ReadKBPerSec":120.0,"WriteKBPerSec":30.0}]},
     "Network": {"TotalUploadKBPerSec": 512.0, "TotalDownloadKBPerSec": 2048.0}
@@ -72,6 +73,9 @@ TEST(PcMetricsParserTest, FullReportParsesEverySection) {
     EXPECT_EQ(m.mem_load, 55);
     EXPECT_EQ(m.gpu_load, 30);
     EXPECT_EQ(m.gpu_temperature, 60);
+    EXPECT_EQ(m.gpu_3d, 12);
+    EXPECT_EQ(m.gpu_compute, 3);
+    EXPECT_EQ(m.gpu_decode, 7);
     EXPECT_EQ(m.gpu_fps, 155);
     EXPECT_EQ(m.cpu_fan, 1200);
     // Zero-RPM fans (disconnected headers) are filtered out, not kept as slots.
@@ -160,6 +164,34 @@ TEST(PcMetricsParserTest, AbsentCoreLoadsWithLoadPresentUpdatesLoadOnly) {
     EXPECT_EQ(m.cpu_load, 11);  // absent key: untouched
     EXPECT_EQ(m.cpu_thread_load[0], 50);
     EXPECT_EQ(m.cpu_thread_load[1], 60);
+}
+
+// ─── D3dDecode (GPU video-decode engine) ────────────────────────────────────
+// NerdWinSense does not send this key as of 2026-08 (see docs-local/01-bugs.md
+// B2) — these cover both today's absent-key reality and the day it starts
+// reporting D3dDecode.
+
+TEST(PcMetricsParserTest, AbsentD3dDecodeLeavesGpuDecodeUnchanged) {
+    JsonDocument doc;
+    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Gpu": {"Load": 5.0}}})");
+
+    PcMetrics m;
+    m.gpu_decode = 42;
+    NullLogger logger;
+    PcMetricsParser::parseAllSections(metrics, m, 24, logger);
+
+    EXPECT_EQ(m.gpu_decode, 42);
+}
+
+TEST(PcMetricsParserTest, PresentD3dDecodeUpdatesGpuDecode) {
+    JsonDocument doc;
+    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Gpu": {"D3dDecode": 63.0}}})");
+
+    PcMetrics m;
+    NullLogger logger;
+    PcMetricsParser::parseAllSections(metrics, m, 24, logger);
+
+    EXPECT_EQ(m.gpu_decode, 63);
 }
 
 // ─── FullscreenFps float extraction ─────────────────────────────────────────
