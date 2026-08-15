@@ -37,7 +37,8 @@ AS_FIELD(U, uint32_t, tasksBackgroundStack, AppConfig::internal::TasksImpl::kBac
 AS_FIELD(U, uint32_t, tasksScreenPriority, AppConfig::internal::TasksImpl::kScreenPriority)
 AS_FIELD(U, uint32_t, tasksBackgroundPriority, AppConfig::internal::TasksImpl::kBackgroundPriority)
 
-AS_FIELD(U, uint32_t, hardwareMonitorRefreshMs, AppConfig::internal::HardwareMonitorImpl::kRefreshMs)
+AS_FIELD(U, uint32_t, hardwareMonitorRefreshMs,
+         AppConfig::internal::HardwareMonitorImpl::kRefreshMs)
 AS_FIELD(U, uint32_t, hardwareMonitorThreadsRefreshMs,
          AppConfig::internal::HardwareMonitorImpl::kThreadsRefreshMs)
 AS_FIELD(U, uint32_t, hardwareMonitorFailureRefreshMs,
@@ -50,17 +51,29 @@ AS_FIELD(F, float, hardwareMonitorThreadsUpwardSmoothing,
          AppConfig::internal::HardwareMonitorImpl::kThreadsUpwardSmoothing)
 AS_FIELD(F, float, hardwareMonitorThreadsDownwardSmoothing,
          AppConfig::internal::HardwareMonitorImpl::kThreadsDownwardSmoothing)
+AS_FIELD(B, bool, hardwareMonitorThreadsStaggerEnabled,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerEnabled)
+AS_FIELD(F, float, hardwareMonitorThreadsStaggerFraction,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerFraction)
+AS_FIELD(U, uint32_t, hardwareMonitorThreadsStaggerFallbackPeriodMs,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerFallbackPeriodMs)
+AS_FIELD(U, uint32_t, hardwareMonitorThreadsStaggerMinPeriodMs,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerMinPeriodMs)
+AS_FIELD(U, uint32_t, hardwareMonitorThreadsStaggerMaxPeriodMs,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerMaxPeriodMs)
 
 AS_FIELD(U, uint32_t, airQualityFailureBackoffMs,
          AppConfig::internal::AirQualityImpl::kFailureBackoffMs)
 
-AS_FIELD(U, uint32_t, weatherRefreshIntervalMs, AppConfig::internal::WeatherImpl::kRefreshIntervalMs)
+AS_FIELD(U, uint32_t, weatherRefreshIntervalMs,
+         AppConfig::internal::WeatherImpl::kRefreshIntervalMs)
 AS_FIELD(U, uint32_t, weatherTimeCheckIntervalMs,
          AppConfig::internal::WeatherImpl::kTimeCheckIntervalMs)
 AS_FIELD(U, uint32_t, weatherFailureBackoffMs, AppConfig::internal::WeatherImpl::kFailureBackoffMs)
 AS_FIELD(U, uint8_t, weatherForecastDays, AppConfig::internal::WeatherImpl::kForecastDays)
 
-AS_FIELD(U, uint8_t, metricsMaxScreenDrawTimes, AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes)
+AS_FIELD(U, uint8_t, metricsMaxScreenDrawTimes,
+         AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes)
 
 AS_FIELD(U, uint8_t, pcMetricsCores, AppConfig::internal::PcMetricsImpl::kCores)
 

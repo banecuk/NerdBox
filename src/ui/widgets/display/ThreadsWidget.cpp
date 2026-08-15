@@ -49,9 +49,18 @@ bool ThreadsWidget::ensureLayoutInitialized() {
     previousBarHeights_.assign(coreCount_, 0);
     previousColors_.assign(coreCount_, 0);
     smoothedThreadLoads_.assign(coreCount_, 0);
+    stagedTargets_.assign(coreCount_, 0);
     valueSmoother_ =
         std::make_unique<ValueSmoother>(coreCount_, config_.hardwareMonitorThreadsUpwardSmoothing,
                                         config_.hardwareMonitorThreadsDownwardSmoothing);
+
+    stagger_.configure(coreCount_, config_.hardwareMonitorThreadsStaggerFraction,
+                       config_.hardwareMonitorThreadsStaggerFallbackPeriodMs,
+                       config_.hardwareMonitorThreadsStaggerMinPeriodMs,
+                       config_.hardwareMonitorThreadsStaggerMaxPeriodMs);
+    stagger_.seed(micros());
+    // Boot: bars should fill immediately, not ripple in from stale zeros.
+    stagger_.releaseAll(millis());
     return true;
 }
 
@@ -77,6 +86,8 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
         // pre-outage heights/colors left over from before the "No Data"
         // message was shown.
         onDrawStatic();
+        // Bars refill instantly on recovery — no ripple-in.
+        stagger_.releaseAll(millis());
     }
 
     if (fresh) {
@@ -108,7 +119,26 @@ void ThreadsWidget::updateSmoothedValues() {
     // this per-tick cadence to produce a fast-attack / slow-decay VU-meter
     // animation. Gating this on pcMetrics_.freshness.lastUpdateMs() would turn
     // that smooth animation into a hard step every fetch instead.
-    valueSmoother_->update(pcMetrics_.cpu_thread_load, coreCount_);
+    //
+    // Only the *target latch* below is gated on the publisher's timestamp:
+    // stagger_ decides, per bar, when a newly-arrived raw value is allowed to
+    // become that bar's new target, spreading 28 simultaneous target jumps
+    // across a window instead of latching them all on the same tick. A bar
+    // not yet released just keeps chasing its previous target — the smoother
+    // itself still runs every tick, unaffected.
+    const uint32_t now = millis();
+    if (config_.hardwareMonitorThreadsStaggerEnabled) {
+        stagger_.tick(now, pcMetrics_.freshness.lastUpdateMs());
+    } else {
+        stagger_.releaseAll(now);
+    }
+    for (uint8_t i = 0; i < coreCount_; ++i) {
+        if (stagger_.isReleased(i, now)) {
+            stagedTargets_[i] = pcMetrics_.cpu_thread_load[i];
+        }
+    }
+
+    valueSmoother_->update(stagedTargets_.data(), coreCount_);
     valueSmoother_->getSmoothedValues(smoothedThreadLoads_.data(), coreCount_);
 }
 

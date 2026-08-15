@@ -171,7 +171,7 @@ void CalendarWidget::drawGrid(int8_t todayMday) {
     // Leading padding — tail end of the previous month, dim grey.
     for (uint8_t col = 0; col < firstWeekday; ++col) {
         const uint8_t day = static_cast<uint8_t>(prevDaysCount - firstWeekday + 1 + col);
-        char label[3];
+        char label[4];
         snprintf(label, sizeof(label), "%d", day);
         lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
         lcd->drawString(label, cellCenterX(col), cellCenterY(0));
@@ -193,8 +193,12 @@ void CalendarWidget::drawGrid(int8_t todayMday) {
             lcd->fillCircle(cx, cy, radius, kTodayAccent);
         }
 
-        char label[3];
-        snprintf(label, sizeof(label), "%d", day);
+        char label[4];
+        // day & 0xFF: day is already a uint8_t (<= daysCount <= 31), but as
+        // the for-loop's induction variable GCC's -Wformat-truncation range
+        // analysis can't narrow it from the full int range on its own; the
+        // mask makes the byte bound explicit without changing the value.
+        snprintf(label, sizeof(label), "%u", static_cast<unsigned>(day) & 0xFFu);
         lcd->setTextColor(isToday ? TFT_BLACK : TFT_WHITE, isToday ? kTodayAccent : TFT_BLACK);
         lcd->drawString(label, cx, cy);
     }
@@ -207,7 +211,7 @@ void CalendarWidget::drawGrid(int8_t todayMday) {
     for (uint16_t cellIndex = lastCellIndex + 1; cellIndex < gridCellCount; ++cellIndex) {
         const uint8_t row = static_cast<uint8_t>(cellIndex / kCols);
         const uint8_t col = static_cast<uint8_t>(cellIndex % kCols);
-        char label[3];
+        char label[4];
         snprintf(label, sizeof(label), "%d", nextDay++);
         lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
         lcd->drawString(label, cellCenterX(col), cellCenterY(row));

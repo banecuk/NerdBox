@@ -7,6 +7,7 @@
 #include "config/AppSettings.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
+#include "ui/widgets/base/ThreadStaggerScheduler.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/DataFreshnessGuard.h"
@@ -40,6 +41,13 @@ class ThreadsWidget : public Widget {
 
     std::unique_ptr<ValueSmoother> valueSmoother_;
     std::vector<uint8_t> smoothedThreadLoads_;
+
+    // Staggers each bar's release onto the newly-arrived raw values (see
+    // ThreadStaggerScheduler); stagedTargets_ is what actually feeds
+    // valueSmoother_ — a bar not yet released keeps chasing its previous
+    // target instead of jumping to the new one.
+    ThreadStaggerScheduler stagger_;
+    std::vector<uint8_t> stagedTargets_;
 
     // 0 until the first CoreLoads payload arrives; then latched to the
     // reported thread count for the widget's lifetime — see

@@ -63,6 +63,15 @@ struct HardwareMonitorImpl {
     static constexpr uint32_t kMaxRetries = 2;
     static constexpr float kThreadsUpwardSmoothing = 0.4f;
     static constexpr float kThreadsDownwardSmoothing = 0.075f;
+
+    // Staggers the *start* of each ThreadsWidget bar's move toward a new
+    // target across a window after each data arrival, so 28 bars don't all
+    // lurch on the same tick — see ThreadStaggerScheduler.
+    static constexpr bool kThreadsStaggerEnabled = true;
+    static constexpr float kThreadsStaggerFraction = 0.5f;
+    static constexpr uint32_t kThreadsStaggerFallbackPeriodMs = 600;
+    static constexpr uint32_t kThreadsStaggerMinPeriodMs = 100;
+    static constexpr uint32_t kThreadsStaggerMaxPeriodMs = 3000;
 };
 
 // AirQuality configuration
