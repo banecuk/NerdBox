@@ -4,33 +4,61 @@
 // in ApplicationComponents.h (which is what actually governs construction
 // order) so the two stay easy to keep in sync — see the comment there.
 ApplicationComponents::ApplicationComponents()
-    : logger_(systemState.core.isTimeSynced),
-      displayContext(display, colors, logger_, logger_),
-      displayManager(display, logger_, config),
-      networkManager(logger_, httpClient, config),
-      pcMetricsService(networkManager, systemMetrics, logger_, config),
-      airQualityService(networkManager, logger_),
-      weatherService(networkManager, logger_),
-      networkStatusService(logger_),
-      uiController(displayContext, &displayManager, systemMetrics, pcMetrics, systemState.screen,
-                   config, networkManager, airQualityData, netStatus, weatherData),
-      wifiReconnectJob(networkManager, systemState.core),
-      ntpRetryJob(ntpService, systemState.core, logger_),
-      pcMetricsJob(pcMetricsService, pcMetrics, systemState.core, systemState.screen,
-                   networkManager, config, logger_),
-      pcMetricsStreamJob(pcMetrics, systemState.core, systemState.screen, networkManager, config,
-                         logger_),
-      airQualityJob(airQualityService, airQualityData, systemState.core, networkManager, config,
-                    logger_),
-      networkStatusJob(networkStatusService, netStatus),
-      dimAtNightJob(ntpService, displayManager, config),
-      weatherJob(weatherService, weatherData, systemState.core, networkManager, config, logger_),
-      taskManager(logger_, uiController, config, systemState.screen,
-                  std::vector<BackgroundJob*>{&wifiReconnectJob, &ntpRetryJob, &pcMetricsJob,
-                                              &pcMetricsStreamJob, &airQualityJob,
-                                              &networkStatusJob, &dimAtNightJob, &weatherJob}),
+    : platform(data.systemState.core.isTimeSynced, config),
+      services(platform.networkManager, platform.logger_, config),
+      jobs(platform, data, services, config),
+      uiController(platform.displayContext, &platform.displayManager, services.systemMetrics,
+                   data.pcMetrics, data.systemState.screen, config, platform.networkManager,
+                   data.airQualityData, data.netStatus, data.weatherData),
+      taskManager(platform.logger_, uiController, config, data.systemState.screen,
+                  jobs.asVector()),
       webServer(80),
-      webServerService(webServer, uiController, systemMetrics, pcMetrics, pcMetricsService,
-                       pcMetricsStreamJob, netStatus, systemState, weatherData, config, taskManager,
-                       logger_, logger_),
+      webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
+                       services.pcMetricsService, jobs.pcMetricsStreamJob, data.netStatus,
+                       data.systemState, data.weatherData, config, taskManager, platform.logger_,
+                       platform.logger_),
       initStateMachine(*this) {}
+
+// -----------------------------------------------------------------------
+// IInitializationTarget implementation
+// -----------------------------------------------------------------------
+LoggerInterface& ApplicationComponents::logger() { return platform.logger_; }
+
+void ApplicationComponents::initializeDisplay() { platform.displayManager.initialize(); }
+void ApplicationComponents::postInitializeDisplay() {
+    platform.displayManager.postInitialization();
+}
+
+void ApplicationComponents::initializeUi() { uiController.initialize(); }
+void ApplicationComponents::requestScreen(ScreenName screen) {
+    uiController.requestScreen(screen);
+}
+
+bool ApplicationComponents::createTasks() { return taskManager.createTasks(); }
+
+bool ApplicationComponents::connectNetwork() { return platform.networkManager.connect(); }
+bool ApplicationComponents::isNetworkConnected() const {
+    return platform.networkManager.isConnected();
+}
+
+bool ApplicationComponents::syncTime() { return platform.ntpService.syncTime(); }
+
+void ApplicationComponents::beginWebServer() { webServerService.begin(); }
+
+void ApplicationComponents::setScreenInitialized() { data.systemState.screen.isInitialized = true; }
+void ApplicationComponents::setTimeSynced() { data.systemState.core.isTimeSynced = true; }
+void ApplicationComponents::setSystemInitialized() { data.systemState.core.isInitialized = true; }
+
+uint8_t ApplicationComponents::initTimeSyncRetries() const { return config.initTimeSyncRetries; }
+uint32_t ApplicationComponents::initTimeSyncBaseDelayMs() const {
+    return config.initTimeSyncBaseDelayMs;
+}
+uint16_t ApplicationComponents::initBackoffJitterMs() const {
+    return config.initBackoffJitterMs;
+}
+bool ApplicationComponents::watchdogEnabledOnBoot() const {
+    return config.watchdogEnableOnBoot;
+}
+unsigned long ApplicationComponents::watchdogTimeoutMs() const {
+    return config.watchdogTimeoutMs;
+}

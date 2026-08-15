@@ -235,15 +235,16 @@ void WebApiHandlers::handleApiPc() {
     JsonDocument doc;
     doc["available"] = pcMetrics_.freshness.available();
     doc["last_update_timestamp"] = pcMetrics_.freshness.lastUpdateMs();
-    doc["cpu_temperature"] = pcMetrics_.cpu_temperature;
-    doc["gpu_temperature"] = pcMetrics_.gpu_temperature;
-    doc["cpu_load"] = pcMetrics_.cpu_load;
-    doc["gpu_load"] = pcMetrics_.gpu_load;
-    doc["mem_load"] = pcMetrics_.mem_load;
-    doc["cpu_power"] = pcMetrics_.cpu_power;
-    doc["gpu_power"] = pcMetrics_.gpu_power;
-    doc["cpu_fan"] = pcMetrics_.cpu_fan;
-    doc["gpu_fan"] = pcMetrics_.gpu_fan;
+
+#define PCM_FIELD_U(member, jsonKey) doc[jsonKey] = pcMetrics_.member;
+#define PCM_FIELD_I(member, jsonKey) doc[jsonKey] = pcMetrics_.member;
+#define PCM_FIELD_F2(member, jsonKey) doc[jsonKey] = roundToDecimals(pcMetrics_.member, 2);
+#define PCM_FIELD(member, jsonKey, promName, help, kind) PCM_FIELD_##kind(member, jsonKey)
+#include "services/pcMetrics/PcMetricsFields.def"
+#undef PCM_FIELD
+#undef PCM_FIELD_U
+#undef PCM_FIELD_I
+#undef PCM_FIELD_F2
 
     JsonArray threadLoad = doc["cpu_thread_load"].to<JsonArray>();
     const int threadCount =
@@ -256,14 +257,6 @@ void WebApiHandlers::handleApiPc() {
     for (uint8_t i = 0; i < pcMetrics_.system_fan_count; ++i) {
         fans.add(pcMetrics_.system_fans[i]);
     }
-
-    doc["gpu_3d"] = pcMetrics_.gpu_3d;
-    doc["gpu_compute"] = pcMetrics_.gpu_compute;
-    doc["gpu_decode"] = pcMetrics_.gpu_decode;
-    doc["gpu_mem"] = pcMetrics_.gpu_mem;
-    doc["gpu_fps"] = pcMetrics_.gpu_fps;
-    doc["eth_up"] = roundToDecimals(pcMetrics_.eth_up, 2);
-    doc["eth_dn"] = roundToDecimals(pcMetrics_.eth_dn, 2);
 
     JsonArray drives = doc["disk_drives"].to<JsonArray>();
     {
@@ -369,42 +362,22 @@ void WebApiHandlers::handleMetrics() {
                static_cast<unsigned long>(pcMetricsStreamJob_.lastEventAgeMs()));
 
     // ---- pc metrics values ----
-    writeHeader(out, "nerdbox_pc_cpu_load_percent", "CPU load.", "gauge");
-    out.printf("nerdbox_pc_cpu_load_percent %u\n", pcMetrics_.cpu_load);
-
-    writeHeader(out, "nerdbox_pc_gpu_load_percent", "GPU load.", "gauge");
-    out.printf("nerdbox_pc_gpu_load_percent %u\n", pcMetrics_.gpu_load);
-
-    writeHeader(out, "nerdbox_pc_mem_load_percent", "RAM load.", "gauge");
-    out.printf("nerdbox_pc_mem_load_percent %u\n", pcMetrics_.mem_load);
-
-    writeHeader(out, "nerdbox_pc_cpu_temperature_celsius", "CPU package temperature.", "gauge");
-    out.printf("nerdbox_pc_cpu_temperature_celsius %u\n", pcMetrics_.cpu_temperature);
-
-    writeHeader(out, "nerdbox_pc_gpu_temperature_celsius", "GPU temperature.", "gauge");
-    out.printf("nerdbox_pc_gpu_temperature_celsius %u\n", pcMetrics_.gpu_temperature);
-
-    writeHeader(out, "nerdbox_pc_cpu_power_watts", "CPU package power draw.", "gauge");
-    out.printf("nerdbox_pc_cpu_power_watts %u\n", pcMetrics_.cpu_power);
-
-    writeHeader(out, "nerdbox_pc_gpu_power_watts", "GPU power draw.", "gauge");
-    out.printf("nerdbox_pc_gpu_power_watts %u\n", pcMetrics_.gpu_power);
-
-    writeHeader(out, "nerdbox_pc_cpu_fan_rpm", "CPU fan speed.", "gauge");
-    out.printf("nerdbox_pc_cpu_fan_rpm %u\n", pcMetrics_.cpu_fan);
-
-    writeHeader(out, "nerdbox_pc_gpu_fan_rpm", "GPU fan speed.", "gauge");
-    out.printf("nerdbox_pc_gpu_fan_rpm %u\n", pcMetrics_.gpu_fan);
-
-    writeHeader(out, "nerdbox_pc_gpu_fps",
-               "Fullscreen application FPS; -1 when no fullscreen app is running.", "gauge");
-    out.printf("nerdbox_pc_gpu_fps %d\n", pcMetrics_.gpu_fps);
-
-    writeHeader(out, "nerdbox_pc_eth_upload_kbps", "Ethernet upload rate.", "gauge");
-    out.printf("nerdbox_pc_eth_upload_kbps %.2f\n", pcMetrics_.eth_up);
-
-    writeHeader(out, "nerdbox_pc_eth_download_kbps", "Ethernet download rate.", "gauge");
-    out.printf("nerdbox_pc_eth_download_kbps %.2f\n", pcMetrics_.eth_dn);
+#define PCM_FIELD_U(member, promName, help)                    \
+    writeHeader(out, promName, help, "gauge");                 \
+    out.printf(promName " %u\n", pcMetrics_.member);
+#define PCM_FIELD_I(member, promName, help)                     \
+    writeHeader(out, promName, help, "gauge");                  \
+    out.printf(promName " %d\n", pcMetrics_.member);
+#define PCM_FIELD_F2(member, promName, help)                     \
+    writeHeader(out, promName, help, "gauge");                   \
+    out.printf(promName " %.2f\n", pcMetrics_.member);
+#define PCM_FIELD(member, jsonKey, promName, help, kind) \
+    PCM_FIELD_##kind(member, promName, help)
+#include "services/pcMetrics/PcMetricsFields.def"
+#undef PCM_FIELD
+#undef PCM_FIELD_U
+#undef PCM_FIELD_I
+#undef PCM_FIELD_F2
 
     writeHeader(out, "nerdbox_pc_cpu_thread_load_percent", "Per-thread CPU load.", "gauge");
     const int threadCount =

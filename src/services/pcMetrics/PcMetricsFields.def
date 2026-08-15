@@ -1,0 +1,38 @@
+// X-macro field list for PcMetrics' scalar telemetry fields.
+//
+// Included by WebApiHandlers.cpp's handleApiPc() (JSON) and handleMetrics()
+// (Prometheus text) so both emitters agree on the field set by construction.
+// Adding a scalar here makes it appear on both endpoints; previously they
+// were hand-enumerated separately and had already drifted (see 02-architecture.md
+// A4 — /metrics was missing gpu_3d/gpu_compute/gpu_decode/gpu_mem).
+//
+// Not covered here — each needs its own per-element loop, not a scalar
+// assignment, so they stay hand-written in both handlers:
+//   cpu_thread_load[], system_fans[], disk_drives
+//
+// PCM_FIELD(member, jsonKey, promName, help, kind)
+//   kind: U (unsigned integral, JSON assign / Prometheus %u),
+//         I (signed integral, JSON assign / Prometheus %d),
+//         F2 (float, JSON rounded to 2 decimals / Prometheus %.2f)
+
+PCM_FIELD(cpu_load, "cpu_load", "nerdbox_pc_cpu_load_percent", "CPU load.", U)
+PCM_FIELD(gpu_load, "gpu_load", "nerdbox_pc_gpu_load_percent", "GPU load.", U)
+PCM_FIELD(mem_load, "mem_load", "nerdbox_pc_mem_load_percent", "RAM load.", U)
+PCM_FIELD(cpu_temperature, "cpu_temperature", "nerdbox_pc_cpu_temperature_celsius",
+          "CPU package temperature.", U)
+PCM_FIELD(gpu_temperature, "gpu_temperature", "nerdbox_pc_gpu_temperature_celsius",
+          "GPU temperature.", U)
+PCM_FIELD(cpu_power, "cpu_power", "nerdbox_pc_cpu_power_watts", "CPU package power draw.", U)
+PCM_FIELD(gpu_power, "gpu_power", "nerdbox_pc_gpu_power_watts", "GPU power draw.", U)
+PCM_FIELD(cpu_fan, "cpu_fan", "nerdbox_pc_cpu_fan_rpm", "CPU fan speed.", U)
+PCM_FIELD(gpu_fan, "gpu_fan", "nerdbox_pc_gpu_fan_rpm", "GPU fan speed.", U)
+PCM_FIELD(gpu_3d, "gpu_3d", "nerdbox_pc_gpu_3d_percent", "GPU 3D engine load.", U)
+PCM_FIELD(gpu_compute, "gpu_compute", "nerdbox_pc_gpu_compute_percent", "GPU compute engine load.",
+          U)
+PCM_FIELD(gpu_decode, "gpu_decode", "nerdbox_pc_gpu_decode_percent",
+          "GPU video-decode engine load.", U)
+PCM_FIELD(gpu_mem, "gpu_mem", "nerdbox_pc_gpu_mem_percent", "GPU memory (VRAM) load.", U)
+PCM_FIELD(gpu_fps, "gpu_fps", "nerdbox_pc_gpu_fps",
+          "Fullscreen application FPS; -1 when no fullscreen app is running.", I)
+PCM_FIELD(eth_up, "eth_up", "nerdbox_pc_eth_upload_kbps", "Ethernet upload rate.", F2)
+PCM_FIELD(eth_dn, "eth_dn", "nerdbox_pc_eth_download_kbps", "Ethernet download rate.", F2)

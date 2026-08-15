@@ -1,0 +1,101 @@
+// X-macro field list for AppSettings.
+//
+// Included twice: once by AppSettings.h to generate the struct members
+// (AS_FIELD expands to a member declaration + initialiser), and once by
+// WebServerService::handleConfig() to generate the /config dump (AS_FIELD
+// expands to a SEND_CONFIG_<kind> call). Adding a tuning constant means
+// adding exactly one line here — both consumers pick it up automatically.
+//
+// AS_FIELD(kind, type, name, initialiser)
+//   kind: U (unsigned/integral, printed as %lu), F (float, %.3f),
+//         B (bool, true/false), S (const char*, %s)
+//
+// uiBrightnessLevels (const uint8_t*, an array pointer) is deliberately not
+// listed here — it needs its own per-element dump and is handled by hand in
+// both AppSettings.h and handleConfig().
+
+AS_FIELD(U, uint32_t, debugSerialBaudRate, AppConfig::internal::DebugImpl::kSerialBaudRate)
+AS_FIELD(U, uint32_t, debugSerialTimeoutMs, AppConfig::internal::DebugImpl::kSerialTimeoutMs)
+AS_FIELD(B, bool, debugWaitForSerial, AppConfig::internal::DebugImpl::kWaitForSerial)
+
+AS_FIELD(U, uint8_t, initNetworkRetries, AppConfig::internal::InitImpl::kDefaultNetworkRetries)
+AS_FIELD(U, uint32_t, initNetworkRetryDelayMs, AppConfig::internal::InitImpl::kNetworkRetryDelayMs)
+AS_FIELD(U, uint8_t, initTimeSyncRetries, AppConfig::internal::InitImpl::kDefaultTimeSyncRetries)
+AS_FIELD(U, uint32_t, initTimeSyncBaseDelayMs,
+         AppConfig::internal::InitImpl::kTimeSyncRetryDelayBaseMs)
+AS_FIELD(U, uint16_t, initBackoffJitterMs, AppConfig::internal::InitImpl::kBackoffJitterMs)
+
+AS_FIELD(U, unsigned long, watchdogTimeoutMs, AppConfig::internal::WatchdogImpl::kTimeoutMs)
+AS_FIELD(B, bool, watchdogEnableOnBoot, AppConfig::internal::WatchdogImpl::kEnableOnBoot)
+
+AS_FIELD(U, uint32_t, timingScreenTaskMs, AppConfig::internal::TimingImpl::kScreenTaskMs)
+AS_FIELD(U, uint32_t, timingBackgroundTaskMs, AppConfig::internal::TimingImpl::kBackgroundTaskMs)
+AS_FIELD(U, uint32_t, timingMainLoopMs, AppConfig::internal::TimingImpl::kMainLoopMs)
+
+AS_FIELD(U, uint32_t, tasksScreenStack, AppConfig::internal::TasksImpl::kScreenStack)
+AS_FIELD(U, uint32_t, tasksBackgroundStack, AppConfig::internal::TasksImpl::kBackgroundStack)
+AS_FIELD(U, uint32_t, tasksScreenPriority, AppConfig::internal::TasksImpl::kScreenPriority)
+AS_FIELD(U, uint32_t, tasksBackgroundPriority, AppConfig::internal::TasksImpl::kBackgroundPriority)
+
+AS_FIELD(U, uint32_t, hardwareMonitorRefreshMs, AppConfig::internal::HardwareMonitorImpl::kRefreshMs)
+AS_FIELD(U, uint32_t, hardwareMonitorThreadsRefreshMs,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsRefreshMs)
+AS_FIELD(U, uint32_t, hardwareMonitorFailureRefreshMs,
+         AppConfig::internal::HardwareMonitorImpl::kRefreshAfterFailureMs)
+AS_FIELD(U, uint32_t, hardwareMonitorRetryDelayMs,
+         AppConfig::internal::HardwareMonitorImpl::kRetryDelayMs)
+AS_FIELD(U, uint32_t, hardwareMonitorMaxRetries,
+         AppConfig::internal::HardwareMonitorImpl::kMaxRetries)
+AS_FIELD(F, float, hardwareMonitorThreadsUpwardSmoothing,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsUpwardSmoothing)
+AS_FIELD(F, float, hardwareMonitorThreadsDownwardSmoothing,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsDownwardSmoothing)
+
+AS_FIELD(U, uint32_t, airQualityFailureBackoffMs,
+         AppConfig::internal::AirQualityImpl::kFailureBackoffMs)
+
+AS_FIELD(U, uint32_t, weatherRefreshIntervalMs, AppConfig::internal::WeatherImpl::kRefreshIntervalMs)
+AS_FIELD(U, uint32_t, weatherTimeCheckIntervalMs,
+         AppConfig::internal::WeatherImpl::kTimeCheckIntervalMs)
+AS_FIELD(U, uint32_t, weatherFailureBackoffMs, AppConfig::internal::WeatherImpl::kFailureBackoffMs)
+AS_FIELD(U, uint8_t, weatherForecastDays, AppConfig::internal::WeatherImpl::kForecastDays)
+
+AS_FIELD(U, uint8_t, metricsMaxScreenDrawTimes, AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes)
+
+AS_FIELD(U, uint8_t, pcMetricsCores, AppConfig::internal::PcMetricsImpl::kCores)
+
+AS_FIELD(B, bool, pcMetricsStreamEnabled, AppConfig::internal::PcMetricsStreamImpl::kEnabled)
+AS_FIELD(U, uint32_t, pcMetricsStreamIntervalMs,
+         AppConfig::internal::PcMetricsStreamImpl::kIntervalMs)
+AS_FIELD(B, bool, pcMetricsStreamDelta, AppConfig::internal::PcMetricsStreamImpl::kDelta)
+AS_FIELD(U, uint16_t, pcMetricsStreamConnectTimeoutMs,
+         AppConfig::internal::PcMetricsStreamImpl::kConnectTimeoutMs)
+AS_FIELD(U, uint16_t, pcMetricsStreamHeaderTimeoutMs,
+         AppConfig::internal::PcMetricsStreamImpl::kHeaderTimeoutMs)
+AS_FIELD(U, uint32_t, pcMetricsStreamReconnectBackoffMs,
+         AppConfig::internal::PcMetricsStreamImpl::kReconnectBackoffMs)
+AS_FIELD(U, uint32_t, pcMetricsStreamStaleTimeoutMs,
+         AppConfig::internal::PcMetricsStreamImpl::kStaleTimeoutMs)
+AS_FIELD(U, size_t, pcMetricsStreamMaxEventBufferBytes,
+         AppConfig::internal::PcMetricsStreamImpl::kMaxEventBufferBytes)
+AS_FIELD(U, uint16_t, pcMetricsStreamMaxBytesPerPoll,
+         AppConfig::internal::PcMetricsStreamImpl::kMaxBytesPerPoll)
+AS_FIELD(S, const char*, pcMetricsStreamPath, AppConfig::internal::PcMetricsStreamImpl::kStreamPath)
+
+AS_FIELD(S, const char*, networkMdnsHostname, AppConfig::internal::NetworkImpl::kMdnsHostname)
+
+AS_FIELD(U, uint32_t, uiTransitionTimeoutMs, AppConfig::internal::UiImpl::kTransitionTimeoutMs)
+AS_FIELD(U, uint32_t, uiTouchDebounceIntervalMs,
+         AppConfig::internal::UiImpl::kTouchDebounceIntervalMs)
+AS_FIELD(U, uint32_t, uiScreenTransitionCooldownMs,
+         AppConfig::internal::UiImpl::kScreenTransitionCooldownMs)
+AS_FIELD(U, uint32_t, uiDisplayLockTimeoutMs, AppConfig::internal::UiImpl::kDisplayLockTimeoutMs)
+AS_FIELD(U, uint8_t, uiDimAtNightStartHour, AppConfig::internal::UiImpl::kDimAtNightStartHour)
+AS_FIELD(U, uint8_t, uiDimAtNightEndHour, AppConfig::internal::UiImpl::kDimAtNightEndHour)
+AS_FIELD(U, uint8_t, uiDimAtNightPercent, AppConfig::internal::UiImpl::kDimAtNightPercent)
+AS_FIELD(B, bool, uiDefaultDimAtNightEnabled,
+         AppConfig::internal::UiImpl::kDefaultDimAtNightEnabled)
+AS_FIELD(S, const char*, uiNvsNamespace, AppConfig::internal::UiImpl::kNvsNamespace)
+AS_FIELD(S, const char*, uiNvsBrightnessKey, AppConfig::internal::UiImpl::kNvsBrightnessKey)
+AS_FIELD(S, const char*, uiNvsDimAtNightKey, AppConfig::internal::UiImpl::kNvsDimAtNightKey)
+AS_FIELD(U, uint8_t, uiDefaultBrightness, AppConfig::internal::UiImpl::kDefaultBrightness)
