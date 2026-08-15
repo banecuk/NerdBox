@@ -4,6 +4,8 @@
 
 #include <climits>
 
+#include "utils/LogMacros.h"
+
 TaskManager::TaskManager(LoggerInterface& logger, IScreenUpdater& uiController,
                          const AppSettings& config, SystemState::ScreenState& screenState,
                          std::vector<BackgroundJob*> jobs)
@@ -83,7 +85,7 @@ void TaskManager::initializeWatchdog() {
                            esp_err_to_name(ret));
         }
     }
-    logger_.debug("Watchdog initialized for tasks", true);
+    LOG_DEBUG(logger_, "Watchdog initialized for tasks", true);
 }
 
 void TaskManager::updateScreenTask(void* parameter) {
@@ -165,7 +167,7 @@ void TaskManager::executeBackgroundTask() {
 
 void TaskManager::logStackHighWaterMark(const char* taskName) {
     UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(nullptr);
-    logger_.debugf("%s stack high water mark: %u", taskName, stackHighWaterMark);
+    LOG_DEBUGF(logger_, "%s stack high water mark: %u", taskName, stackHighWaterMark);
 }
 
 void TaskManager::resetWatchdog() {

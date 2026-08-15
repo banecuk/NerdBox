@@ -4,6 +4,8 @@
 
 #include <cstring>
 
+#include "utils/LogMacros.h"
+
 namespace {
 
 bool containsCaseInsensitive(const char* haystack, size_t haystackLen, const char* needle) {
@@ -42,7 +44,7 @@ bool SseConnection::connect(const char* host, uint16_t port, const char* path,
 
     client_.setTimeout(connectTimeoutMs);
     if (!client_.connect(host, port)) {
-        logger_.debugf("SSE connect() failed: %s:%u", host, port);
+        LOG_DEBUGF(logger_, "SSE connect() failed: %s:%u", host, port);
         state_ = State::Error;
         return false;
     }
@@ -78,7 +80,7 @@ bool SseConnection::readHeaders(uint16_t headerTimeoutMs) {
         const int c = client_.read();
         if (c < 0) {
             if (!client_.connected() && client_.available() == 0) {
-                logger_.debug("SSE connection closed before headers arrived", true);
+                LOG_DEBUG(logger_, "SSE connection closed before headers arrived", true);
                 return false;
             }
             continue;
@@ -96,7 +98,7 @@ bool SseConnection::readHeaders(uint16_t headerTimeoutMs) {
         }
     }
 
-    logger_.debug("SSE header read timed out", true);
+    LOG_DEBUG(logger_, "SSE header read timed out", true);
     return false;
 }
 
@@ -216,7 +218,7 @@ void SseConnection::feedChunked(const char* data, size_t len,
                 // server closed it — treat it the same as a dropped
                 // connection and let the caller's reconnect/backoff handle
                 // it, rather than trying to keep parsing trailer headers.
-                logger_.debug("SSE stream sent a terminal chunk — disconnecting", true);
+                LOG_DEBUG(logger_, "SSE stream sent a terminal chunk — disconnecting", true);
                 state_ = State::Disconnected;
                 client_.stop();
                 return;

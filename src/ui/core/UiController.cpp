@@ -5,6 +5,7 @@
 #include "ui/screens/ScreenFactory.h"
 #include "ui/widgetScreens/MainScreen.h"
 #include "ui/widgetScreens/SettingsScreen.h"
+#include "utils/LogMacros.h"
 
 UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
@@ -51,8 +52,8 @@ bool UiController::requestTransitionTo(ScreenName screenName) {
         return false;
     }
 
-    logger_.debugf("[UiController] Scheduling transition to screen %d",
-                   static_cast<int>(screenName));
+    LOG_DEBUGF(logger_, "[UiController] Scheduling transition to screen %d",
+              static_cast<int>(screenName));
 
     // May run on a different task than updateDisplay() — see the header
     // comment on pendingScreen_. Do not touch activeTransition_/currentScreen_/
@@ -63,6 +64,11 @@ bool UiController::requestTransitionTo(ScreenName screenName) {
 
 void UiController::updateDisplay() {
     unsigned long startTime = millis();
+    // Separate from startTime above: that one feeds the transition timeout
+    // (compared against millis() elsewhere), this one measures the frame
+    // itself at microsecond resolution — a 16 ms frame in whole milliseconds
+    // quantizes to 0 or 1, which made the reported average meaningless.
+    const uint32_t drawStartUs = micros();
 
     // Drain any cross-task request before touching activeTransition_ — this
     // is the only place pendingScreen_ is read, and the only place
@@ -90,7 +96,7 @@ void UiController::updateDisplay() {
         logger_.warning("[UiController] No screen to draw");
         requestTransitionTo(ScreenName::BOOT);  // Fallback to boot screen
     }
-    systemMetrics_.addScreenDrawTime(millis() - startTime);
+    systemMetrics_.addScreenDrawTimeUs(micros() - drawStartUs);
 }
 
 bool UiController::tryAcquireDisplayLock() {
@@ -116,21 +122,21 @@ void UiController::processTransitionPhase() {
     displayManager_->getDisplay()->startWrite();
     switch (activeTransition_.phase) {
         case TransitionPhase::UNLOADING:
-            logger_.debug("[UiController] Unloading current screen");
-            logger_.debugf("[Heap] %d", ESP.getFreeHeap());
-            logger_.debugf("[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
+            LOG_DEBUG(logger_, "[UiController] Unloading current screen");
+            LOG_DEBUGF(logger_, "[Heap] %d", ESP.getFreeHeap());
+            LOG_DEBUGF(logger_, "[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
             unloadCurrentScreen();
             activeTransition_.phase = TransitionPhase::CLEARING;
             break;
 
         case TransitionPhase::CLEARING:
-            logger_.debug("[UiController] Clearing display");
+            LOG_DEBUG(logger_, "[UiController] Clearing display");
             clearDisplay();
             activeTransition_.phase = TransitionPhase::ACTIVATING;
             break;
 
         case TransitionPhase::ACTIVATING:
-            logger_.debug("[UiController] Activating new screen");
+            LOG_DEBUG(logger_, "[UiController] Activating new screen");
             loadAndActivateScreen();
             completeTransition();
             break;
@@ -202,7 +208,7 @@ void UiController::completeTransition() {
     // Suppress touches briefly to prevent accidental input / rapid re-triggering
     // right after a screen transition completes.
     touchManager_->suppressFor(config_.uiScreenTransitionCooldownMs);
-    logger_.debug("[UiController] Screen transition complete - cooldown active");
+    LOG_DEBUG(logger_, "[UiController] Screen transition complete - cooldown active");
 }
 
 void UiController::processTouchInput() {

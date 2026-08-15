@@ -1,5 +1,7 @@
 #include "TouchManager.h"
 
+#include "utils/LogMacros.h"
+
 TouchManager::TouchManager(LGFX& display, LoggerInterface& logger, const AppSettings& config)
     : display_(display),
       logger_(logger),
@@ -18,7 +20,7 @@ TouchManager::TouchPoint TouchManager::readTouch() {
     }
 
     if (shouldDebounce()) {
-        logger_.debug("[TouchManager] Touch ignored due to debounce");
+        LOG_DEBUG(logger_, "[TouchManager] Touch ignored due to debounce");
         return TouchPoint();  // Invalid touch
     }
 
@@ -30,7 +32,7 @@ TouchManager::TouchPoint TouchManager::readTouch() {
 
     // Valid touch detected - update timestamp and return
     lastTouchTime_ = millis();
-    logger_.debugf("[TouchManager] Touch detected at (%d, %d)", x, y);
+    LOG_DEBUGF(logger_, "[TouchManager] Touch detected at (%d, %d)", x, y);
 
     return TouchPoint(x, y);
 }
@@ -49,5 +51,5 @@ bool TouchManager::shouldDebounce() const {
 
 void TouchManager::suppressFor(uint32_t durationMs) {
     suppressUntilTime_ = millis() + durationMs;
-    logger_.debug("[TouchManager] Touch suppressed");
+    LOG_DEBUG(logger_, "[TouchManager] Touch suppressed");
 }

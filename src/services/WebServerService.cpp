@@ -156,8 +156,10 @@ void WebServerService::sendAppInfoBody() {
              systemMetrics_.getPcMetricsJsonParseTime());
     server_.sendContent(buf);
 
-    snprintf(buf, sizeof(buf), "Average Screen Draw Time: %u ms\n",
-             static_cast<uint32_t>(systemMetrics_.getAverageScreenDrawTime()));
+    snprintf(buf, sizeof(buf), "Screen Draw Time: avg %.2f ms, p95 %.2f ms, max %.2f ms\n",
+             systemMetrics_.getAverageScreenDrawTimeUs() / 1000.0f,
+             systemMetrics_.getP95ScreenDrawTimeUs() / 1000.0f,
+             systemMetrics_.getMaxScreenDrawTimeUs() / 1000.0f);
     server_.sendContent(buf);
 
     snprintf(buf, sizeof(buf), "Thread Widget FPS: %.1f\n", systemMetrics_.getThreadWidgetFPS());
@@ -170,15 +172,16 @@ void WebServerService::sendAppInfoBody() {
         "<table class='draw-times'>"
         "<tr><th>Draw</th><th>Draw time (ms)</th></tr>");
 
-    const auto& drawTimes = systemMetrics_.getScreenDrawTimes();
+    const auto& drawTimesUs = systemMetrics_.getScreenDrawTimesUs();
     const size_t count = systemMetrics_.getScreenDrawCount();
     const size_t start = systemMetrics_.getScreenDrawStartIndex();
 
     // Walk the circular buffer starting at the oldest sample so "Draw N" is
     // chronological, not raw slot order.
-    for (size_t i = 0; i < count && i < drawTimes.size(); ++i) {
-        snprintf(buf, sizeof(buf), "<tr><td>%u</td><td>%u</td></tr>",
-                 static_cast<unsigned int>(i + 1), drawTimes[(start + i) % drawTimes.size()]);
+    for (size_t i = 0; i < count && i < drawTimesUs.size(); ++i) {
+        snprintf(buf, sizeof(buf), "<tr><td>%u</td><td>%.2f</td></tr>",
+                 static_cast<unsigned int>(i + 1),
+                 drawTimesUs[(start + i) % drawTimesUs.size()] / 1000.0f);
         server_.sendContent(buf);
     }
 

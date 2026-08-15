@@ -25,13 +25,28 @@ class HistorySparklineWidget : public Widget {
     static constexpr uint16_t kColWidth = 1;
     static constexpr uint16_t kCaptionWidth = 40;
     static constexpr uint16_t kRowMargin = 2;
-    static constexpr uint16_t kRowGap = 2;
+    // 1px gap: just enough room for a single shared divider line between the
+    // two rows (see drawRowBorders) — two adjacent border lines here would
+    // read as a double line.
+    static constexpr uint16_t kRowGap = 1;
+    // Spark markers are drawn 2px tall (instead of a single pixel) so they
+    // stay legible at a glance.
+    static constexpr uint16_t kSparkThickness = 2;
     static constexpr uint8_t kScaleMax = 100;
     static constexpr uint8_t kCpuGpuLowThreshold = 20;
     static constexpr uint8_t kRamVramLowThreshold = 60;
     // Any metric at or above this is flagged with the shared alert color,
     // regardless of which of the four sparklines it is.
     static constexpr uint8_t kHighUsageThreshold = 90;
+    // An intermediate "warning" band below the full alert threshold, colored
+    // as a blend of the metric's normal color and the alert color, so the
+    // jump to red doesn't look sudden. CPU/GPU are volatile and spend a lot
+    // of time near their low threshold, so their band starts earlier;
+    // RAM/VRAM sit high most of the time (their low threshold is already
+    // 60%), so their band starts later, closer to the alert threshold.
+    static constexpr uint8_t kCpuGpuWarnThreshold = 75;
+    static constexpr uint8_t kRamVramWarnThreshold = 80;
+    static constexpr uint8_t kNoWarnThreshold = 0;
 
     // Upper bound for the fixed-size redraw-cache arrays below. The actual
     // column count (and matching ring-buffer capacity) is derived from the
@@ -80,7 +95,9 @@ class HistorySparklineWidget : public Widget {
     static uint16_t plotWidthForHalf(const WidgetInterface::Dimensions& dims, bool leftHalf);
     void computeLayout();
     void sampleIfNeeded();
+    void drawRowBorders();
     void drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
                 const PsramRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,
-                uint16_t lowColor, uint8_t lowThreshold, bool forceFullRepaint);
+                uint16_t lowColor, uint8_t lowThreshold, uint8_t warnThreshold,
+                uint16_t warnColor, bool forceFullRepaint);
 };

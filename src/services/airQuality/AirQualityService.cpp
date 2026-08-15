@@ -1,5 +1,7 @@
 #include "AirQualityService.h"
 
+#include "utils/LogMacros.h"
+
 AirQualityService::AirQualityService(NetworkManager& networkManager, LoggerInterface& logger)
     : JsonHttpService(networkManager, logger, "AirQuality", AIR_VISUAL_API) {
     init();
@@ -51,8 +53,8 @@ bool AirQualityService::parseData(AirQualityData& outData) {
     outData.aqi_us = static_cast<uint16_t>(pollution["aqius"] | 0);
     outData.freshness.publish(millis());
 
-    logger_.debugf("AirQuality: tp=%d hu=%d pr=%d ws=%.1f wd=%d aqi=%d", outData.temperature,
-                   outData.humidity, outData.pressure, ws, outData.wind_dir, outData.aqi_us);
+    LOG_DEBUGF(logger_, "AirQuality: tp=%d hu=%d pr=%d ws=%.1f wd=%d aqi=%d", outData.temperature,
+              outData.humidity, outData.pressure, ws, outData.wind_dir, outData.aqi_us);
 
     return true;
 }

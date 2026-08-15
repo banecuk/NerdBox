@@ -2,6 +2,7 @@
 
 #include "config/AppConfig.h"
 #include "core/resources/FontRegistry.h"
+#include "utils/LogMacros.h"
 
 DisplayManager::DisplayManager(LGFX& display, LoggerInterface& logger, const AppSettings& config)
     : display_(display),
@@ -113,7 +114,7 @@ void DisplayManager::applyEffectiveBrightness() {
 uint8_t DisplayManager::loadBrightnessFromNvs() {
     // open read-only; returns false if namespace doesn't exist yet — that's fine
     if (!prefs_.begin(config_.uiNvsNamespace, /*readOnly=*/true)) {
-        logger_.debug("DisplayManager: NVS namespace not found, using default brightness");
+        LOG_DEBUG(logger_, "DisplayManager: NVS namespace not found, using default brightness");
         return config_.uiDefaultBrightness;
     }
 
@@ -133,12 +134,13 @@ void DisplayManager::saveBrightnessToNvs() {
     prefs_.putUChar(config_.uiNvsBrightnessKey, brightness_);
     prefs_.end();
 
-    logger_.debugf("DisplayManager: saved brightness %d to NVS", brightness_);
+    LOG_DEBUGF(logger_, "DisplayManager: saved brightness %d to NVS", brightness_);
 }
 
 bool DisplayManager::loadDimAtNightFromNvs() {
     if (!prefs_.begin(config_.uiNvsNamespace, /*readOnly=*/true)) {
-        logger_.debug("DisplayManager: NVS namespace not found, using default dim-at-night state");
+        LOG_DEBUG(logger_,
+                 "DisplayManager: NVS namespace not found, using default dim-at-night state");
         return config_.uiDefaultDimAtNightEnabled;
     }
 
@@ -158,5 +160,5 @@ void DisplayManager::saveDimAtNightToNvs() {
     prefs_.putBool(config_.uiNvsDimAtNightKey, dimAtNightEnabled_);
     prefs_.end();
 
-    logger_.debugf("DisplayManager: saved dim-at-night=%d to NVS", dimAtNightEnabled_);
+    LOG_DEBUGF(logger_, "DisplayManager: saved dim-at-night=%d to NVS", dimAtNightEnabled_);
 }

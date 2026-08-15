@@ -9,7 +9,11 @@ namespace AppConfig {
 namespace internal {
 // Debug configuration
 struct DebugImpl {
-    static constexpr uint32_t kSerialBaudRate = 115200;
+    // 115200 costs ~87 us/byte — a single 100-char log line blocks the
+    // logging task for ~8.7 ms, more than half a 16 ms frame budget. Raised
+    // to cut that ~8x with zero code risk. Keep in sync with
+    // platformio.ini's `monitor_speed` (must match to read boot logs).
+    static constexpr uint32_t kSerialBaudRate = 921600;
     static constexpr uint32_t kSerialTimeoutMs = 10000;
     static constexpr bool kWaitForSerial = false;
 };

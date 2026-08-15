@@ -1,6 +1,7 @@
 #include "InitializationStateMachine.h"
 
 #include "core/ScreenTypes.h"
+#include "utils/LogMacros.h"
 
 InitializationStateMachine::InitializationStateMachine(IInitializationTarget& target)
     : target_(target), currentState_(State::INITIAL) {}
@@ -164,7 +165,7 @@ void InitializationStateMachine::addMainTaskToWatchdog() {
         target_.logger().errorf("Failed to add main task to watchdog: %s", esp_err_to_name(ret));
         return;
     }
-    target_.logger().debug("Main task added to watchdog", true);
+    LOG_DEBUG(target_.logger(), "Main task added to watchdog", true);
 }
 
 bool InitializationStateMachine::handleFinalSetup() {
@@ -177,7 +178,7 @@ bool InitializationStateMachine::handleFinalSetup() {
 
     target_.postInitializeDisplay();
 
-    target_.logger().debugf("Free heap post-init: %u", ESP.getFreeHeap());
+    LOG_DEBUGF(target_.logger(), "Free heap post-init: %u", ESP.getFreeHeap());
     target_.requestScreen(ScreenName::MAIN);
     target_.setSystemInitialized();
 
@@ -198,7 +199,7 @@ bool InitializationStateMachine::handleFailed() {
 // ---------------------------------------------------------------------------
 
 void InitializationStateMachine::transitionTo(State newState) {
-    target_.logger().debugf("%s -> %s", getStateName(currentState_), getStateName(newState));
+    LOG_DEBUGF(target_.logger(), "%s -> %s", getStateName(currentState_), getStateName(newState));
     currentState_ = newState;
 }
 

@@ -1,5 +1,7 @@
 #include "ApplicationMetrics.h"
 
+#include <algorithm>
+
 void ApplicationMetrics::setPcMetricsJsonParseTime(uint32_t timeMs) {
     pcMetricsJsonParseTime_ = timeMs;
 }
@@ -8,8 +10,8 @@ uint32_t ApplicationMetrics::getPcMetricsJsonParseTime() const {
     return pcMetricsJsonParseTime_;
 }
 
-void ApplicationMetrics::addScreenDrawTime(uint32_t timeMs) {
-    screenDrawTimes_[screenDrawIndex_] = timeMs;
+void ApplicationMetrics::addScreenDrawTimeUs(uint32_t timeUs) {
+    screenDrawTimesUs_[screenDrawIndex_] = timeUs;
     screenDrawIndex_ = (screenDrawIndex_ + 1) % kDrawTimesCapacity;
     if (screenDrawCount_ < kDrawTimesCapacity) {
         screenDrawCount_++;
@@ -17,11 +19,11 @@ void ApplicationMetrics::addScreenDrawTime(uint32_t timeMs) {
 }
 
 const std::array<uint32_t, ApplicationMetrics::kDrawTimesCapacity>&
-ApplicationMetrics::getScreenDrawTimes() const {
-    return screenDrawTimes_;
+ApplicationMetrics::getScreenDrawTimesUs() const {
+    return screenDrawTimesUs_;
 }
 
-float ApplicationMetrics::getAverageScreenDrawTime() const {
+float ApplicationMetrics::getAverageScreenDrawTimeUs() const {
     if (screenDrawCount_ == 0) {
         return 0.0f;
     }
@@ -29,9 +31,43 @@ float ApplicationMetrics::getAverageScreenDrawTime() const {
     uint64_t sum = 0;
     size_t start = (screenDrawIndex_ + kDrawTimesCapacity - screenDrawCount_) % kDrawTimesCapacity;
     for (size_t i = 0; i < screenDrawCount_; ++i) {
-        sum += screenDrawTimes_[(start + i) % kDrawTimesCapacity];
+        sum += screenDrawTimesUs_[(start + i) % kDrawTimesCapacity];
     }
     return static_cast<float>(sum) / static_cast<float>(screenDrawCount_);
+}
+
+uint32_t ApplicationMetrics::getMaxScreenDrawTimeUs() const {
+    if (screenDrawCount_ == 0) {
+        return 0;
+    }
+
+    uint32_t maxUs = 0;
+    size_t start = (screenDrawIndex_ + kDrawTimesCapacity - screenDrawCount_) % kDrawTimesCapacity;
+    for (size_t i = 0; i < screenDrawCount_; ++i) {
+        maxUs = std::max(maxUs, screenDrawTimesUs_[(start + i) % kDrawTimesCapacity]);
+    }
+    return maxUs;
+}
+
+uint32_t ApplicationMetrics::getP95ScreenDrawTimeUs() const {
+    if (screenDrawCount_ == 0) {
+        return 0;
+    }
+
+    // The ring buffer only holds kDrawTimesCapacity (30) samples, so a copy
+    // + sort on demand (web polling only, never per-frame) is cheap.
+    std::array<uint32_t, kDrawTimesCapacity> sorted{};
+    size_t start = (screenDrawIndex_ + kDrawTimesCapacity - screenDrawCount_) % kDrawTimesCapacity;
+    for (size_t i = 0; i < screenDrawCount_; ++i) {
+        sorted[i] = screenDrawTimesUs_[(start + i) % kDrawTimesCapacity];
+    }
+    std::sort(sorted.begin(), sorted.begin() + screenDrawCount_);
+
+    size_t idx = (screenDrawCount_ * 95) / 100;
+    if (idx >= screenDrawCount_) {
+        idx = screenDrawCount_ - 1;
+    }
+    return sorted[idx];
 }
 
 size_t ApplicationMetrics::getScreenDrawCount() const {
@@ -40,6 +76,14 @@ size_t ApplicationMetrics::getScreenDrawCount() const {
 
 size_t ApplicationMetrics::getScreenDrawStartIndex() const {
     return (screenDrawIndex_ + kDrawTimesCapacity - screenDrawCount_) % kDrawTimesCapacity;
+}
+
+void ApplicationMetrics::setThreadsBarDrawTimeUs(uint32_t timeUs) {
+    threadsBarDrawTimeUs_ = timeUs;
+}
+
+uint32_t ApplicationMetrics::getThreadsBarDrawTimeUs() const {
+    return threadsBarDrawTimeUs_;
 }
 
 void ApplicationMetrics::getFormattedUptime(char* buf, size_t size) const {

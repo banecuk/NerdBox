@@ -5,6 +5,13 @@
 #include "core/resources/FontRegistry.h"
 #include "ui/core/UiText.h"
 
+// DEBUG_MODE is defined by the build environment (-DDEBUG_MODE=1 or =0); see
+// Logger.cpp for the same pattern. Guards the drawBars() phase timer so
+// release builds pay nothing for it.
+#ifndef DEBUG_MODE
+    #define DEBUG_MODE 0
+#endif
+
 ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics,
                              const AppSettings& config, ApplicationMetrics& systemMetrics)
@@ -75,7 +82,13 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     if (fresh) {
         updateSmoothedValues();
         systemMetrics_.addThreadWidgetFrameTime();
+#if DEBUG_MODE
+        const uint32_t drawStartUs = micros();
         drawBars();
+        systemMetrics_.setThreadsBarDrawTimeUs(micros() - drawStartUs);
+#else
+        drawBars();
+#endif
     } else if (wasFresh_) {
         // Just went stale: replace the frozen bars with an explicit message
         // instead of leaving them looking like live (if dim) data.

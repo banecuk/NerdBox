@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include "utils/LogMacros.h"
+
 namespace {
 
 // Splits a "http://host[:port][/path]" URL into host/port — LIBRE_HM_API
@@ -108,7 +110,7 @@ void PcMetricsStreamJob::attemptConnect() {
 
     reconnectCount_++;
     nextReconnectAttemptMs_ = millis() + config_.pcMetricsStreamReconnectBackoffMs;
-    logger_.debug("SSE connect attempt failed", true);
+    LOG_DEBUG(logger_, "SSE connect attempt failed", true);
 }
 
 void PcMetricsStreamJob::handleEvent(const SseEventParser::Event& event) {

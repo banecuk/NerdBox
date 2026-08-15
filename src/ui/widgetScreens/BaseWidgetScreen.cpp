@@ -1,5 +1,7 @@
 #include "BaseWidgetScreen.h"
 
+#include "utils/LogMacros.h"
+
 BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
                                    const AppSettings& config)
     : logger_(logger),
@@ -8,7 +10,7 @@ BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiCont
       widgetManager_(uiController->getDisplayContext()) {}
 
 BaseWidgetScreen::~BaseWidgetScreen() {
-    logger_.debug("BaseWidgetScreen destructor");
+    LOG_DEBUG(logger_, "BaseWidgetScreen destructor");
 }
 
 void BaseWidgetScreen::onEnter() {
@@ -44,7 +46,7 @@ void BaseWidgetScreen::draw() {
 
 void BaseWidgetScreen::handleTouch(uint16_t x, uint16_t y) {
     if (!uiController_) {
-        logger_.debug("UIController not initialized, can't handle touch");
+        LOG_DEBUG(logger_, "UIController not initialized, can't handle touch");
         return;
     }
     widgetManager_.handleTouch(x, y);

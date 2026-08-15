@@ -3,6 +3,8 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
+#include "utils/LogMacros.h"
+
 // Six lightweight connectivity-check endpoints, tried in rotation.
 // All return quickly and are operated by highly reliable providers.
 const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints] = {
@@ -94,7 +96,7 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
         const int code = http.GET();
         // Accept any 2xx response — 200 or 204
         success = (code >= 200 && code < 300);
-        logger_.debugf("NetProbe: %s -> %d (%s)", url, code, success ? "OK" : "FAIL");
+        LOG_DEBUGF(logger_, "NetProbe: %s -> %d (%s)", url, code, success ? "OK" : "FAIL");
         http.end();
     } else {
         logger_.warningf("NetProbe: http.begin failed for %s", url);

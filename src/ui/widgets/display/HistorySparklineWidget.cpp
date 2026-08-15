@@ -1,6 +1,7 @@
 #include "HistorySparklineWidget.h"
 
 #include "core/resources/FontRegistry.h"
+#include "ui/core/Colors.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = 0xC618;
@@ -8,6 +9,17 @@ static constexpr uint16_t kGpuColor = 0xB471;
 static constexpr uint16_t kRamColor = 0xADFB;
 static constexpr uint16_t kVramColor = kGpuColor;  // same GPU accent used in PcMetricsTilesConfig
 static constexpr uint16_t kHighUsageColor = TFT_RED;  // shared alert color, any metric >= 90%
+// Very dark gray divider drawn above/below each of the 4 sparkline rows.
+static constexpr uint16_t kRowBorderColor = 0x18C3;
+
+// Warning-band colors: a blend of each metric's normal color and the alert
+// color, so the transition into the red zone reads as a ramp instead of a
+// sudden jump. Dynamic init (not constexpr) since Colors::blendRgb565 isn't
+// a constexpr function, but these still run before setup().
+static const uint16_t kCpuWarnColor = Colors::blendRgb565(kCpuColor, kHighUsageColor, 128);
+static const uint16_t kGpuWarnColor = Colors::blendRgb565(kGpuColor, kHighUsageColor, 128);
+static const uint16_t kRamWarnColor = Colors::blendRgb565(kRamColor, kHighUsageColor, 128);
+static const uint16_t kVramWarnColor = Colors::blendRgb565(kVramColor, kHighUsageColor, 128);
 
 // Halves RGB565 brightness while respecting the 5-6-5 channel split — shift
 // every bit right by one, then mask off the bit that would otherwise leak
@@ -20,11 +32,16 @@ static constexpr uint16_t kGpuColorDim = dimColor(kGpuColor);
 static constexpr uint16_t kRamColorDim = dimColor(kRamColor);
 static constexpr uint16_t kVramColorDim = dimColor(kVramColor);
 
-// Encodes a column's plotted state (bar height + below-threshold/above-
-// threshold flags) into a single byte so drawRow's redraw-skip check catches
-// a color-only change (crossing a threshold at the same pixel height) too.
-static constexpr uint8_t kLowUsageFlag = 0x80;
-static constexpr uint8_t kHighUsageFlag = 0x40;
+// Encodes a column's plotted state (bar height + usage zone) into a single
+// byte so drawRow's redraw-skip check catches a color-only change (crossing
+// a threshold at the same pixel height) too. Zone occupies the top 2 bits
+// (4 mutually-exclusive states), height the bottom 6.
+static constexpr uint8_t kZoneNormal = 0;
+static constexpr uint8_t kZoneLow = 1;
+static constexpr uint8_t kZoneWarn = 2;
+static constexpr uint8_t kZoneHigh = 3;
+static constexpr uint8_t kZoneShift = 6;
+static constexpr uint8_t kHeightMask = 0x3F;
 
 uint16_t HistorySparklineWidget::plotWidthForHalf(const WidgetInterface::Dimensions& dims,
                                                   bool leftHalf) {
@@ -86,6 +103,8 @@ void HistorySparklineWidget::onDrawStatic() {
     lcd->drawString("VRM", rightCaptionCenterX, bottomPlotY_ + rowHeight_ / 2);
     Fonts::unload(lcd);
 
+    drawRowBorders();
+
     for (auto& h : lastCpuCol_)
         h = 0;
     for (auto& h : lastGpuCol_)
@@ -94,6 +113,25 @@ void HistorySparklineWidget::onDrawStatic() {
         h = 0;
     for (auto& h : lastVramCol_)
         h = 0;
+}
+
+void HistorySparklineWidget::drawRowBorders() {
+    LGFX* lcd = getLcd();
+    // One line above the top row, one shared divider between the two rows
+    // (the 1px kRowGap), and one line below the bottom row — tucked into the
+    // margin/gap pixels reserved by kRowMargin/kRowGap so they never overlap
+    // the plotted data.
+    const uint16_t topBorder = topPlotY_ - 1;
+    const uint16_t middleDivider = topPlotY_ + rowHeight_;
+    const uint16_t bottomBorder = bottomPlotY_ + rowHeight_;
+
+    lcd->drawFastHLine(leftPlotX_, topBorder, leftPlotWidth_, kRowBorderColor);
+    lcd->drawFastHLine(leftPlotX_, middleDivider, leftPlotWidth_, kRowBorderColor);
+    lcd->drawFastHLine(leftPlotX_, bottomBorder, leftPlotWidth_, kRowBorderColor);
+
+    lcd->drawFastHLine(rightPlotX_, topBorder, rightPlotWidth_, kRowBorderColor);
+    lcd->drawFastHLine(rightPlotX_, middleDivider, rightPlotWidth_, kRowBorderColor);
+    lcd->drawFastHLine(rightPlotX_, bottomBorder, rightPlotWidth_, kRowBorderColor);
 }
 
 void HistorySparklineWidget::sampleIfNeeded() {
@@ -116,6 +154,7 @@ void HistorySparklineWidget::sampleIfNeeded() {
 void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
                                      const PsramRingHistory<uint8_t>& history, uint8_t* lastCol,
                                      uint16_t color, uint16_t lowColor, uint8_t lowThreshold,
+                                     uint8_t warnThreshold, uint16_t warnColor,
                                      bool forceFullRepaint) {
     LGFX* lcd = getLcd();
     const size_t count = history.size();
@@ -138,20 +177,23 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
 
     for (size_t col = 0; col < cols; ++col) {
         uint8_t height = 0;
-        bool lowUsage = false;
-        bool highUsage = false;
+        uint8_t zone = kZoneNormal;
         if (col >= offset) {
             const size_t idx = col - offset;
             const uint8_t rawValue = history.valueAtOffset(start, idx);
             const uint32_t h =
                 (static_cast<uint32_t>(rawValue) * (rowHeight_ - 1)) / kScaleMax;
             height = static_cast<uint8_t>((h > rowHeight_ - 1 ? rowHeight_ - 1 : h) + 1);
-            lowUsage = rawValue < lowThreshold;
-            highUsage = rawValue >= kHighUsageThreshold;
+            if (rawValue < lowThreshold)
+                zone = kZoneLow;
+            else if (rawValue >= kHighUsageThreshold)
+                zone = kZoneHigh;
+            else if (warnThreshold != kNoWarnThreshold && rawValue >= warnThreshold)
+                zone = kZoneWarn;
         }
 
         const uint8_t encoded =
-            height | (lowUsage ? kLowUsageFlag : 0) | (highUsage ? kHighUsageFlag : 0);
+            static_cast<uint8_t>((height & kHeightMask) | (zone << kZoneShift));
         encodedCols[col] = encoded;
         if (forceFullRepaint || encoded != lastCol[col])
             ++changedCount;
@@ -170,15 +212,29 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
             continue;
 
         const uint16_t x = plotX + static_cast<uint16_t>(col) * kColWidth;
-        const uint8_t height = encoded & ~(kLowUsageFlag | kHighUsageFlag);
-        const bool lowUsage = encoded & kLowUsageFlag;
-        const bool highUsage = encoded & kHighUsageFlag;
+        const uint8_t height = encoded & kHeightMask;
+        const uint8_t zone = encoded >> kZoneShift;
 
         if (!batch)
             lcd->fillRect(x, plotY, kColWidth, rowHeight_, kBgColor);
-        if (height > 0)
-            lcd->fillRect(x, plotY + rowHeight_ - height, kColWidth, 1,
-                         highUsage ? kHighUsageColor : (lowUsage ? lowColor : color));
+        if (height > 0) {
+            uint16_t barColor = color;
+            if (zone == kZoneHigh)
+                barColor = kHighUsageColor;
+            else if (zone == kZoneWarn)
+                barColor = warnColor;
+            else if (zone == kZoneLow)
+                barColor = lowColor;
+
+            // Draw a kSparkThickness-tall marker instead of a single pixel,
+            // clamped so it never overflows below the row (the min-height
+            // case) — the row's bottom edge is the border line drawn in
+            // drawRowBorders().
+            uint16_t barY = plotY + rowHeight_ - height;
+            if (barY + kSparkThickness > plotY + rowHeight_)
+                barY = plotY + rowHeight_ - kSparkThickness;
+            lcd->fillRect(x, barY, kColWidth, kSparkThickness, barColor);
+        }
 
         lastCol[col] = encoded;
     }
@@ -216,13 +272,14 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
     LGFX* lcd = getLcd();
     lcd->startWrite();
     drawRow(leftPlotX_, topPlotY_, leftCols_, cpuLoadHistory_, lastCpuCol_, kCpuColor,
-           kCpuColorDim, kCpuGpuLowThreshold, forceRedraw);
+           kCpuColorDim, kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kCpuWarnColor, forceRedraw);
     drawRow(leftPlotX_, bottomPlotY_, leftCols_, gpuLoadHistory_, lastGpuCol_, kGpuColor,
-           kGpuColorDim, kCpuGpuLowThreshold, forceRedraw);
+           kGpuColorDim, kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kGpuWarnColor, forceRedraw);
     drawRow(rightPlotX_, topPlotY_, rightCols_, ramLoadHistory_, lastRamCol_, kRamColor,
-           kRamColorDim, kRamVramLowThreshold, forceRedraw);
+           kRamColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kRamWarnColor, forceRedraw);
     drawRow(rightPlotX_, bottomPlotY_, rightCols_, vramLoadHistory_, lastVramCol_, kVramColor,
-           kVramColorDim, kRamVramLowThreshold, forceRedraw);
+           kVramColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kVramWarnColor,
+           forceRedraw);
     lcd->endWrite();
 
     clearDirty();

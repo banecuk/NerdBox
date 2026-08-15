@@ -20,16 +20,31 @@ class ApplicationMetrics {
     void setPcMetricsJsonParseTime(uint32_t timeMs);
     uint32_t getPcMetricsJsonParseTime() const;
 
-    // Screen draw time methods
-    void addScreenDrawTime(uint32_t timeMs);
-    const std::array<uint32_t, kDrawTimesCapacity>& getScreenDrawTimes() const;
-    float getAverageScreenDrawTime() const;
+    // Screen draw time methods — recorded in microseconds. A 16 ms frame
+    // budget measured in whole milliseconds quantizes almost every frame to
+    // 0 or 1, making the reported average meaningless; micros() gives real
+    // resolution. Callers format back to ms (with decimals) for display.
+    void addScreenDrawTimeUs(uint32_t timeUs);
+    const std::array<uint32_t, kDrawTimesCapacity>& getScreenDrawTimesUs() const;
+    float getAverageScreenDrawTimeUs() const;
+    // Max/p95 alongside the mean — the mean alone hides an occasional slow
+    // frame (e.g. the 100 ms grid tick) inside a run of cheap ones.
+    uint32_t getMaxScreenDrawTimeUs() const;
+    uint32_t getP95ScreenDrawTimeUs() const;
     size_t getScreenDrawCount() const;
 
-    // Index into getScreenDrawTimes() of the oldest sample still held — callers
-    // that want to print/emit the buffer in chronological order should start
-    // here and wrap modulo kDrawTimesCapacity, rather than reading slot order.
+    // Index into getScreenDrawTimesUs() of the oldest sample still held —
+    // callers that want to print/emit the buffer in chronological order
+    // should start here and wrap modulo kDrawTimesCapacity, rather than
+    // reading slot order.
     size_t getScreenDrawStartIndex() const;
+
+    // Coarse per-phase draw timing, microseconds — only ThreadsWidget is
+    // wired up (see its onDraw, gated on DEBUG_MODE); the setter is cheap
+    // enough to leave always-compiled, so a release build just never calls
+    // it and the value stays 0.
+    void setThreadsBarDrawTimeUs(uint32_t timeUs);
+    uint32_t getThreadsBarDrawTimeUs() const;
 
     // Uptime method — writes directly into caller's buffer; zero heap allocation.
     void getFormattedUptime(char* buf, size_t size) const;
@@ -41,9 +56,11 @@ class ApplicationMetrics {
 
  private:
     uint32_t pcMetricsJsonParseTime_ = 0;
-    std::array<uint32_t, kDrawTimesCapacity> screenDrawTimes_{};
+    std::array<uint32_t, kDrawTimesCapacity> screenDrawTimesUs_{};
     size_t screenDrawIndex_ = 0;
     size_t screenDrawCount_ = 0;
+
+    uint32_t threadsBarDrawTimeUs_ = 0;
 
     // FPS counter
     uint32_t threadWidgetFrameCount_ = 0;

@@ -8,6 +8,7 @@
 #include "services/airQuality/AirQualityService.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
+#include "utils/LogMacros.h"
 
 // Refreshes air quality data whenever it goes stale, once the system is
 // initialized and WiFi is up. Failed fetches back off for
@@ -36,7 +37,7 @@ class AirQualityJob : public BackgroundJob {
 
     void run() override {
         if (service_.fetchData(data_)) {
-            logger_.debug("AirQuality data updated");
+            LOG_DEBUG(logger_, "AirQuality data updated");
         } else {
             nextAttemptMs_ = millis() + config_.airQualityFailureBackoffMs;
             logger_.warning("AirQuality fetch failed");

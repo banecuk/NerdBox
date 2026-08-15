@@ -13,6 +13,7 @@
 #include "services/pcMetrics/PcMetricsService.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
+#include "utils/LogMacros.h"
 
 // Periodically fetches PC hardware metrics while a screen that displays them
 // (main or game) is active. Owns the retry/backoff and consecutive-failure
@@ -64,7 +65,7 @@ class PcMetricsJob : public BackgroundJob {
 
         consecutiveFailures_++;
         nextSync_ = millis() + config_.hardwareMonitorFailureRefreshMs;
-        logger_.debug("PC metrics update failed", true);
+        LOG_DEBUG(logger_, "PC metrics update failed", true);
 
         if (consecutiveFailures_ >= config_.hardwareMonitorMaxRetries) {
             logger_.warning("Multiple consecutive PC metrics failures detected", true);

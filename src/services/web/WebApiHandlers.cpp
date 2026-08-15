@@ -113,11 +113,19 @@ void WebApiHandlers::handleApiStatus() {
     app["uptime"] = uptime;
     app["uptime_ms"] = millis();
     app["parse_ms"] = systemMetrics_.getPcMetricsJsonParseTime();
-    app["draw_avg_ms"] = roundToDecimals(systemMetrics_.getAverageScreenDrawTime(), 1);
+    // Draw times are measured in microseconds internally (see
+    // ApplicationMetrics) — convert to ms with a decimal here for display.
+    app["draw_avg_ms"] = roundToDecimals(systemMetrics_.getAverageScreenDrawTimeUs() / 1000.0f, 2);
+    app["draw_max_ms"] = roundToDecimals(systemMetrics_.getMaxScreenDrawTimeUs() / 1000.0f, 2);
+    app["draw_p95_ms"] = roundToDecimals(systemMetrics_.getP95ScreenDrawTimeUs() / 1000.0f, 2);
     app["widget_fps"] = roundToDecimals(systemMetrics_.getThreadWidgetFPS(), 1);
 
-    JsonArray drawTimes = app["draw_times"].to<JsonArray>();
-    const auto& screenDrawTimes = systemMetrics_.getScreenDrawTimes();
+    // Coarse per-phase draw timing — only non-zero in debug builds, see
+    // ThreadsWidget::onDraw.
+    app["threads_bar_draw_us"] = systemMetrics_.getThreadsBarDrawTimeUs();
+
+    JsonArray drawTimes = app["draw_times_us"].to<JsonArray>();
+    const auto& screenDrawTimes = systemMetrics_.getScreenDrawTimesUs();
     const size_t drawCount = systemMetrics_.getScreenDrawCount();
     const size_t drawStart = systemMetrics_.getScreenDrawStartIndex();
     for (size_t i = 0; i < drawCount && i < screenDrawTimes.size(); ++i) {
@@ -306,7 +314,15 @@ void WebApiHandlers::handleMetrics() {
 
     // ---- app ----
     writeHeader(out, "nerdbox_draw_time_avg_ms", "Average screen draw time.", "gauge");
-    out.printf("nerdbox_draw_time_avg_ms %.2f\n", systemMetrics_.getAverageScreenDrawTime());
+    out.printf("nerdbox_draw_time_avg_ms %.3f\n", systemMetrics_.getAverageScreenDrawTimeUs() / 1000.0);
+
+    writeHeader(out, "nerdbox_draw_time_max_ms", "Max screen draw time in the retained window.",
+                "gauge");
+    out.printf("nerdbox_draw_time_max_ms %.3f\n", systemMetrics_.getMaxScreenDrawTimeUs() / 1000.0);
+
+    writeHeader(out, "nerdbox_draw_time_p95_ms", "P95 screen draw time in the retained window.",
+                "gauge");
+    out.printf("nerdbox_draw_time_p95_ms %.3f\n", systemMetrics_.getP95ScreenDrawTimeUs() / 1000.0);
 
     writeHeader(out, "nerdbox_widget_fps", "Threads widget redraw rate.", "gauge");
     out.printf("nerdbox_widget_fps %.2f\n", systemMetrics_.getThreadWidgetFPS());

@@ -8,6 +8,7 @@
 #include "services/weather/WeatherService.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/LoggerInterface.h"
+#include "utils/LogMacros.h"
 
 // Refreshes the open-meteo weather forecast every kWeatherRefreshIntervalMs
 // (2 h), regardless of which screen is active, so data is already current
@@ -42,7 +43,7 @@ class WeatherJob : public BackgroundJob {
 
     void run() override {
         if (service_.fetchData(data_)) {
-            logger_.debug("Weather data updated");
+            LOG_DEBUG(logger_, "Weather data updated");
         } else {
             nextAttemptMs_ = millis() + config_.weatherFailureBackoffMs;
             logger_.warning("Weather fetch failed");

@@ -91,19 +91,22 @@ void Logger::logMessage(LogLevel level, const char* message, bool forScreen) {
     // Send to Serial
     Serial.println(logBuffer);
 
+    // The recent-log ring and the screen queue both want the short
+    // "HH:MM:SS" timestamp (forScreen=true) — compute it at most once per
+    // call instead of once per consumer; getTimestamp() re-derives from
+    // getLocalTime() each time it's called.
+    char shortTimestamp[12];
+    if (level != LogLevel::DEBUG || forScreen) {
+        getTimestamp(shortTimestamp, sizeof(shortTimestamp), true);
+    }
+
     if (level != LogLevel::DEBUG) {
-        char recentTimestamp[12];
-        getTimestamp(recentTimestamp, sizeof(recentTimestamp), true);
-        pushRecentLog(recentTimestamp, level, message);
+        pushRecentLog(shortTimestamp, level, message);
     }
 
     // For screen messages, use efficient char array approach
     if (forScreen) {
         char screenBuffer[200];  // Separate buffer for screen messages
-        char screenTimestamp[24];
-
-        getTimestamp(screenTimestamp, sizeof(screenTimestamp), true);
-        const char* shortLevelStr = levelToString(level);
 
         // Truncate message if too long for screen display
         size_t maxMessageLen = sizeof(screenBuffer) - 32;  // Reserve space for timestamp and level
@@ -113,12 +116,12 @@ void Logger::logMessage(LogLevel level, const char* message, bool forScreen) {
         }
 
         // Build screen message efficiently
-        snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] ", screenTimestamp, shortLevelStr);
+        snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] ", shortTimestamp, levelStr);
         size_t prefixLen = strlen(screenBuffer);
         strncpy(screenBuffer + prefixLen, message, sizeof(screenBuffer) - prefixLen - 1);
         screenBuffer[sizeof(screenBuffer) - 1] = '\0';
 
-        pushScreenEntry(screenTimestamp, level, screenBuffer);
+        pushScreenEntry(shortTimestamp, level, screenBuffer);
     }
 }
 
@@ -186,25 +189,26 @@ void Logger::logFormatted(LogLevel level, const char* format, va_list args, bool
     // Send to Serial
     Serial.println(completeBuffer);
 
+    // Both consumers below want the short "HH:MM:SS" timestamp — compute it
+    // at most once per call rather than once per consumer.
+    char shortTimestamp[12];
+    if (level != LogLevel::DEBUG || forScreen) {
+        getTimestamp(shortTimestamp, sizeof(shortTimestamp), true);
+    }
+
     if (level != LogLevel::DEBUG) {
-        char recentTimestamp[12];
-        getTimestamp(recentTimestamp, sizeof(recentTimestamp), true);
-        pushRecentLog(recentTimestamp, level, messageBuffer);
+        pushRecentLog(shortTimestamp, level, messageBuffer);
     }
 
     // Screen handling with efficient buffer usage
     if (forScreen) {
         char screenBuffer[200];
-        char screenTimestamp[24];
-
-        getTimestamp(screenTimestamp, sizeof(screenTimestamp), true);
-        const char* shortLevelStr = levelToString(level);
 
         // Build screen message directly
-        snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] %s", screenTimestamp, shortLevelStr,
+        snprintf(screenBuffer, sizeof(screenBuffer), "[%s] [%s] %s", shortTimestamp, levelStr,
                  messageBuffer);
 
-        pushScreenEntry(screenTimestamp, level, screenBuffer);
+        pushScreenEntry(shortTimestamp, level, screenBuffer);
     }
 }
 

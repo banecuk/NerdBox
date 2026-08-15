@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "utils/LogMacros.h"
+
 WidgetManager::WidgetManager(DisplayContext& context)
     : context_(context), logger_(context.getLogger()), lcd_(&context.getDisplay()) {
     if (!lcd_) {
@@ -123,8 +125,8 @@ void WidgetManager::updateDirtyWidgets() {
     uint32_t currentTime = millis();
     if (currentTime - lastStatsLogTime_ > 10000) {  // Every 10 seconds
         float efficiency = (float)skippedCount / (float)widgetCache_.size() * 100.0f;
-        logger_.debugf("WidgetManager: %zu/%zu widgets updated (%.1f%% skipped)", updatedCount,
-                       widgetCache_.size(), efficiency);
+        LOG_DEBUGF(logger_, "WidgetManager: %zu/%zu widgets updated (%.1f%% skipped)", updatedCount,
+                  widgetCache_.size(), efficiency);
         lastStatsLogTime_ = currentTime;
     }
 }
@@ -164,13 +166,13 @@ bool WidgetManager::handleTouch(uint16_t x, uint16_t y) {
         if (dims.contains(x, y)) {
             if (it->widget->handleTouch(x, y)) {
                 it->isDirty = true;
-                logger_.debug("Widget handled touch and marked dirty");
+                LOG_DEBUG(logger_, "Widget handled touch and marked dirty");
                 return true;
             }
         }
     }
 
-    logger_.debug("No widget handled the touch");
+    LOG_DEBUG(logger_, "No widget handled the touch");
     return false;
 }
 

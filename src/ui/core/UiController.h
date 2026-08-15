@@ -18,6 +18,7 @@
 #include "ui/screens/ScreenInterface.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/Logger.h"
+#include "utils/LogMacros.h"
 
 // Forward declarations
 class BootScreen;
@@ -46,7 +47,7 @@ class UiController : public IScreenUpdater {
     // transition state machine (see updateDisplay()).
     bool requestTransitionTo(ScreenName screenName);
     void requestScreen(ScreenName screenName) {
-        logger_.debugf("[UiController] Requesting screen %d", static_cast<int>(screenName));
+        LOG_DEBUGF(logger_, "[UiController] Requesting screen %d", static_cast<int>(screenName));
         requestTransitionTo(screenName);
     }
 

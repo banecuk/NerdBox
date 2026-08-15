@@ -3,6 +3,7 @@
 #include <HTTPClient.h>
 
 #include "services/pcMetrics/PcMetricsParser.h"
+#include "utils/LogMacros.h"
 
 PcMetricsService::PcMetricsService(NetworkManager& networkManager,
                                    ApplicationMetrics& systemMetrics, LoggerInterface& logger,
@@ -80,7 +81,7 @@ bool PcMetricsService::parseData(PcMetrics& outData) {
     const bool allComponentsValid = sections.allSeenValid();
 
     if (!sections.seen(PcMetricsParser::kDisks)) {
-        logger_.debug("No Disks in filtered JSON");
+        LOG_DEBUG(logger_, "No Disks in filtered JSON");
     }
 
     // Update metrics — sticky on success only: a partial/failed parse leaves

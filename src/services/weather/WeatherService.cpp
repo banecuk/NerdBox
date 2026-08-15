@@ -1,5 +1,7 @@
 #include "WeatherService.h"
 
+#include "utils/LogMacros.h"
+
 WeatherService::WeatherService(NetworkManager& networkManager, LoggerInterface& logger)
     : JsonHttpService(networkManager, logger, "Weather", WEATHER_API) {
     init();
@@ -67,7 +69,8 @@ bool WeatherService::parseData(WeatherData& outData) {
     outData.freshness.publish(millis());
     outData.refreshRequested.store(false);
 
-    logger_.debugf(
+    LOG_DEBUGF(
+        logger_,
         "Weather: %u days, day0 code=%d max=%d.%d°C min=%d.%d°C rain=%d.%dmm wind=%d.%dm/s", count,
         outData.days[0].weatherCode, outData.days[0].tempMaxX10 / 10,
         outData.days[0].tempMaxX10 % 10, outData.days[0].tempMinX10 / 10,

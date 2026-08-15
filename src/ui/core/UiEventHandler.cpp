@@ -4,6 +4,7 @@
 
 #include "ui/core/DisplayManager.h"
 #include "ui/core/UiController.h"
+#include "utils/LogMacros.h"
 
 UiEventHandler::UiEventHandler(UiController* uiController, LoggerInterface& logger)
     : uiController_(uiController), logger_(logger) {
@@ -52,36 +53,36 @@ void UiEventHandler::resetDevice() {
     // No on-screen message: drawing here would race the screen task (no
     // lock), and with no delay before restart() it would never actually be
     // visible anyway.
-    logger_.debug("RESET action received");
+    LOG_DEBUG(logger_, "RESET action received");
     ESP.restart();
 }
 
 void UiEventHandler::cycleBrightness() {
-    logger_.debug("BRIGHTNESS action received");
+    LOG_DEBUG(logger_, "BRIGHTNESS action received");
     uiController_->getDisplayManager()->cycleBrightness();
 }
 
 void UiEventHandler::requestSettingsScreen() {
-    logger_.debug("SETTINGS action received");
+    LOG_DEBUG(logger_, "SETTINGS action received");
     uiController_->requestScreen(ScreenName::SETTINGS);
 }
 
 void UiEventHandler::requestMainScreen() {
-    logger_.debug("MAIN action received");
+    LOG_DEBUG(logger_, "MAIN action received");
     uiController_->requestScreen(ScreenName::MAIN);
 }
 
 void UiEventHandler::requestGameScreen() {
-    logger_.debug("GAME action received");
+    LOG_DEBUG(logger_, "GAME action received");
     uiController_->requestScreen(ScreenName::GAME);
 }
 
 void UiEventHandler::requestDisksScreen() {
-    logger_.debug("DISKS action received");
+    LOG_DEBUG(logger_, "DISKS action received");
     uiController_->requestScreen(ScreenName::DISKS);
 }
 
 void UiEventHandler::requestWeatherScreen() {
-    logger_.debug("WEATHER action received");
+    LOG_DEBUG(logger_, "WEATHER action received");
     uiController_->requestScreen(ScreenName::WEATHER);
 }
