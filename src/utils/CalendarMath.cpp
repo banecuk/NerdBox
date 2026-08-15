@@ -36,9 +36,9 @@ void stepMonth(int& year, uint8_t& month, int8_t delta) {
 }
 
 const char* monthName(uint8_t month) {
-    static const char* const kNames[12] = {"JANUARY", "FEBRUARY", "MARCH",     "APRIL",
-                                           "MAY",     "JUNE",     "JULY",      "AUGUST",
-                                           "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"};
+    static const char* const kNames[12] = {"JANUARY",   "FEBRUARY", "MARCH",    "APRIL",
+                                           "MAY",       "JUNE",     "JULY",     "AUGUST",
+                                           "SEPTEMBER", "OCTOBER",  "NOVEMBER", "DECEMBER"};
     if (month < 1 || month > 12)
         return "";
     return kNames[month - 1];

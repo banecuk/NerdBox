@@ -311,7 +311,8 @@ void WebApiHandlers::handleMetrics() {
 
     // ---- app ----
     writeHeader(out, "nerdbox_draw_time_avg_ms", "Average screen draw time.", "gauge");
-    out.printf("nerdbox_draw_time_avg_ms %.3f\n", systemMetrics_.getAverageScreenDrawTimeUs() / 1000.0);
+    out.printf("nerdbox_draw_time_avg_ms %.3f\n",
+               systemMetrics_.getAverageScreenDrawTimeUs() / 1000.0);
 
     writeHeader(out, "nerdbox_draw_time_max_ms", "Max screen draw time in the retained window.",
                 "gauge");
@@ -331,48 +332,47 @@ void WebApiHandlers::handleMetrics() {
     writeHeader(out, "nerdbox_wifi_rssi_dbm", "WiFi signal strength.", "gauge");
     out.printf("nerdbox_wifi_rssi_dbm %d\n", netStatus_.rssi);
 
-    writeHeader(out, "nerdbox_internet_reachable",
-               "Internet-reachability probe state (1=OK).", "gauge");
+    writeHeader(out, "nerdbox_internet_reachable", "Internet-reachability probe state (1=OK).",
+                "gauge");
     out.printf("nerdbox_internet_reachable %d\n",
                netStatus_.internet == NetworkStatus::Internet::OK ? 1 : 0);
 
     // ---- pc-metrics feed health ----
     const DataFreshnessGuard freshness(pcMetrics_.freshness);
-    writeHeader(out, "nerdbox_pc_available",
-               "Whether a PC-metrics reading has ever been received.", "gauge");
+    writeHeader(out, "nerdbox_pc_available", "Whether a PC-metrics reading has ever been received.",
+                "gauge");
     out.printf("nerdbox_pc_available %d\n", pcMetrics_.freshness.available() ? 1 : 0);
 
     writeHeader(out, "nerdbox_pc_fresh",
-               "Whether the last PC-metrics reading is within the staleness window.", "gauge");
+                "Whether the last PC-metrics reading is within the staleness window.", "gauge");
     out.printf("nerdbox_pc_fresh %d\n", freshness.isFresh() ? 1 : 0);
 
     writeHeader(out, "nerdbox_pc_stream_reconnects_total", "SSE reconnect count since boot.",
-               "counter");
+                "counter");
     out.printf("nerdbox_pc_stream_reconnects_total %lu\n",
                static_cast<unsigned long>(pcMetricsStreamJob_.reconnectCount()));
 
     writeHeader(out, "nerdbox_pc_stream_overflow_total",
-               "SSE event-buffer overflow count since boot.", "counter");
+                "SSE event-buffer overflow count since boot.", "counter");
     out.printf("nerdbox_pc_stream_overflow_total %lu\n",
                static_cast<unsigned long>(pcMetricsStreamJob_.overflowCount()));
 
     writeHeader(out, "nerdbox_pc_stream_last_event_age_ms",
-               "Milliseconds since the last SSE event was received.", "gauge");
+                "Milliseconds since the last SSE event was received.", "gauge");
     out.printf("nerdbox_pc_stream_last_event_age_ms %lu\n",
                static_cast<unsigned long>(pcMetricsStreamJob_.lastEventAgeMs()));
 
     // ---- pc metrics values ----
-#define PCM_FIELD_U(member, promName, help)                    \
-    writeHeader(out, promName, help, "gauge");                 \
+#define PCM_FIELD_U(member, promName, help)    \
+    writeHeader(out, promName, help, "gauge"); \
     out.printf(promName " %u\n", pcMetrics_.member);
-#define PCM_FIELD_I(member, promName, help)                     \
-    writeHeader(out, promName, help, "gauge");                  \
+#define PCM_FIELD_I(member, promName, help)    \
+    writeHeader(out, promName, help, "gauge"); \
     out.printf(promName " %d\n", pcMetrics_.member);
-#define PCM_FIELD_F2(member, promName, help)                     \
-    writeHeader(out, promName, help, "gauge");                   \
+#define PCM_FIELD_F2(member, promName, help)   \
+    writeHeader(out, promName, help, "gauge"); \
     out.printf(promName " %.2f\n", pcMetrics_.member);
-#define PCM_FIELD(member, jsonKey, promName, help, kind) \
-    PCM_FIELD_##kind(member, promName, help)
+#define PCM_FIELD(member, jsonKey, promName, help, kind) PCM_FIELD_##kind(member, promName, help)
 #include "services/pcMetrics/PcMetricsFields.def"
 #undef PCM_FIELD
 #undef PCM_FIELD_U
@@ -435,7 +435,7 @@ void WebApiHandlers::handleMetrics() {
 
     // ---- weather feed health ----
     writeHeader(out, "nerdbox_weather_available", "Whether a weather forecast has been fetched.",
-               "gauge");
+                "gauge");
     out.printf("nerdbox_weather_available %d\n", weatherData_.freshness.available() ? 1 : 0);
 
     out.flush();

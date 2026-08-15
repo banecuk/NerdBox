@@ -4,8 +4,8 @@
 
 #include <cstring>
 
-#include "config/AppConfig.h"
 #include "config/AppSettings.h"
+#include "config/Limits.h"
 #include "core/resources/FontRegistry.h"
 #include "core/resources/weather_icons_44.h"
 #include "services/weather/WeatherData.h"
@@ -48,8 +48,8 @@ class WeatherWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    static constexpr uint8_t kMaxColumns = AppConfig::internal::WeatherImpl::kForecastDays;
-    static constexpr uint8_t kIconSize = AppConfig::internal::WeatherImpl::kIconSize;
+    static constexpr uint8_t kMaxColumns = AppConfig::Limits::kForecastDays;
+    static constexpr uint8_t kIconSize = AppConfig::Limits::kIconSize;
 
     // Vertical layout: icon; day name (larger) + date beneath it; then the temp
     // block (label + max + min) and the rain/wind rows, each running an even

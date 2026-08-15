@@ -2,6 +2,7 @@
 
 #include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,
                                    DisplayManager& displayManager, const AppSettings& config)
@@ -39,7 +40,7 @@ void BrightnessWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    drawCaptionLabel("BRIGHTNESS");
+    WidgetPainter::drawCaptionLabel(lcd, dimensions_.x, dimensions_.y, "BRIGHTNESS");
 
     lastDrawnLevel_ = 0;  // force full segment redraw on next onDraw()
 }
@@ -70,7 +71,8 @@ void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
     const uint16_t bgColor = active ? seg.activeColor : Colors::kHairline;
     const uint16_t textColor = active ? TFT_BLACK : Colors::kInactiveText;
 
-    drawPillToggle(seg.x, segY, seg.width, segH, kRadius, bgColor, textColor, seg.label);
+    WidgetPainter::drawPillToggle(getLcd(), seg.x, segY, seg.width, segH, kRadius, bgColor,
+                                  textColor, seg.label);
 }
 
 bool BrightnessWidget::handleTouch(uint16_t x, uint16_t y) {

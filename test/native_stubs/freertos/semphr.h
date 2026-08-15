@@ -10,7 +10,13 @@ using SemaphoreHandle_t = void*;
 
 constexpr long portMAX_DELAY = -1;
 
-inline SemaphoreHandle_t xSemaphoreCreateMutex() { return nullptr; }
+inline SemaphoreHandle_t xSemaphoreCreateMutex() {
+    return nullptr;
+}
 inline void vSemaphoreDelete(SemaphoreHandle_t) {}
-inline int xSemaphoreTake(SemaphoreHandle_t, long) { return 1; }
-inline int xSemaphoreGive(SemaphoreHandle_t) { return 1; }
+inline int xSemaphoreTake(SemaphoreHandle_t, long) {
+    return 1;
+}
+inline int xSemaphoreGive(SemaphoreHandle_t) {
+    return 1;
+}

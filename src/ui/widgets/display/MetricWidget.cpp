@@ -222,8 +222,8 @@ void MetricWidget::drawValueWithLoadedFont() {
     // which already gates on value/dirty changes before calling either), this
     // is called unconditionally once per tick by PcMetricsWidget's batch draw
     // — so it needs its own unchanged-value early-out.
-    if (hasDrawnOnce_ && value_ == lastDrawnValue_ && newBgColor == lastBgColor_ &&
-        !isDirty() && !valueAreaDirty_) {
+    if (hasDrawnOnce_ && value_ == lastDrawnValue_ && newBgColor == lastBgColor_ && !isDirty() &&
+        !valueAreaDirty_) {
         unitNeedsRedraw_ = false;
         return;
     }

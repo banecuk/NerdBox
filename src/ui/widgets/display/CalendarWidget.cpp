@@ -138,8 +138,8 @@ void CalendarWidget::drawWeekdayHeader() {
 void CalendarWidget::drawTitle() {
     LGFX* lcd = getLcd();
 
-    lcd->fillRect(dimensions_.x + kTitleInset, dimensions_.y,
-                  dimensions_.width - 2 * kTitleInset, kTitleH, TFT_BLACK);
+    lcd->fillRect(dimensions_.x + kTitleInset, dimensions_.y, dimensions_.width - 2 * kTitleInset,
+                  kTitleH, TFT_BLACK);
 
     char title[24];
     snprintf(title, sizeof(title), "%s %d", CalendarMath::monthName(month_), year_);

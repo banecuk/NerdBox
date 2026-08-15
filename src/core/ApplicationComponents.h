@@ -32,7 +32,7 @@ class ApplicationComponents : public IInitializationTarget {
     void initializeDisplay() override;
     void postInitializeDisplay() override;
 
-    void initializeUi() override;
+    bool initializeUi() override;
     void requestScreen(ScreenName screen) override;
 
     bool createTasks() override;

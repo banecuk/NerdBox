@@ -97,7 +97,7 @@ class HistorySparklineWidget : public Widget {
     void sampleIfNeeded();
     void drawRowBorders();
     void drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
-                const PsramRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,
-                uint16_t lowColor, uint8_t lowThreshold, uint8_t warnThreshold,
-                uint16_t warnColor, bool forceFullRepaint);
+                 const PsramRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,
+                 uint16_t lowColor, uint8_t lowThreshold, uint8_t warnThreshold, uint16_t warnColor,
+                 bool forceFullRepaint);
 };

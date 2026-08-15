@@ -79,10 +79,9 @@ PcMetricsWidget::fixedTileDescriptors() {
         {kCol2, kRow3, kTileWidth, kRowH},
     };
     static const std::array<float (*)(const PcMetrics&), kFixedTileCount> kGetters = {
-        valueCpuLoad,        valueCpuTemperature, valueCpuPower, valueCpuFan,
-        valueMemoryLoad,     valueGpuLoad,        valueGpuTemperature,
-        valueGpuPower,       valueGpuFan,         valueGpuMemory,
-        valueGpu3d,          valueGpuCompute,     valueGpuDecode,
+        valueCpuLoad, valueCpuTemperature, valueCpuPower,  valueCpuFan, valueMemoryLoad,
+        valueGpuLoad, valueGpuTemperature, valueGpuPower,  valueGpuFan, valueGpuMemory,
+        valueGpu3d,   valueGpuCompute,     valueGpuDecode,
     };
 
     static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = [] {
@@ -111,8 +110,8 @@ PcMetricsWidget::fixedTileDescriptors() {
 void PcMetricsWidget::buildFixedWidgets() {
     for (uint8_t i = 0; i < kFixedTileCount; ++i) {
         const FixedTileDescriptor& d = fixedTileDescriptors()[i];
-        fixedWidgets_[i] = std::make_unique<MetricWidget>(toScreenSpace(d.dims),
-                                                          updateIntervalMs_, d.config);
+        fixedWidgets_[i] =
+            std::make_unique<MetricWidget>(toScreenSpace(d.dims), updateIntervalMs_, d.config);
     }
 }
 

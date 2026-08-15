@@ -7,7 +7,7 @@
 #include "ui/widgetScreens/SettingsScreen.h"
 #include "utils/LogMacros.h"
 
-UiController::UiController(DisplayContext& context, DisplayManager* displayManager,
+UiController::UiController(DisplayContext& context, DisplayManager& displayManager,
                            ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                            SystemState::ScreenState& screenState, const AppSettings& config,
                            NetworkManager& networkManager, const AirQualityData& airQualityData,
@@ -25,13 +25,14 @@ UiController::UiController(DisplayContext& context, DisplayManager* displayManag
       weatherData_(weatherData),
       actionHandler_(std::make_unique<UiEventHandler>(this, context.getLogger())),
       touchManager_(
-          std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)) {
-    if (!displayManager_) {
-        throw std::invalid_argument("[UiController] DisplayManager pointer cannot be null");
-    }
-    displayAccessMutex_ = xSemaphoreCreateMutex();
+          std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)),
+      displayAccessMutex_(xSemaphoreCreateMutex()) {
     if (!displayAccessMutex_) {
-        throw std::runtime_error("[UiController] Failed to create display mutex");
+        // Boot-fatal: initialize() reports this to InitializationStateMachine,
+        // which transitions to FAILED instead of pressing on with a null
+        // mutex. No exception — this runs inside ApplicationComponents'
+        // member construction, before any handler exists to catch one.
+        logger_.critical("[UiController] Failed to create display mutex");
     }
 }
 
@@ -41,9 +42,14 @@ UiController::~UiController() {
     }
 }
 
-void UiController::initialize() {
+bool UiController::initialize() {
+    if (!displayAccessMutex_) {
+        logger_.critical("[UiController] Cannot initialize UI: display mutex unavailable");
+        return false;
+    }
     logger_.info("[UiController] Initializing UI");
     requestTransitionTo(ScreenName::BOOT);
+    return true;
 }
 
 bool UiController::requestTransitionTo(ScreenName screenName) {
@@ -53,7 +59,7 @@ bool UiController::requestTransitionTo(ScreenName screenName) {
     }
 
     LOG_DEBUGF(logger_, "[UiController] Scheduling transition to screen %d",
-              static_cast<int>(screenName));
+               static_cast<int>(screenName));
 
     // May run on a different task than updateDisplay() — see the header
     // comment on pendingScreen_. Do not touch activeTransition_/currentScreen_/
@@ -73,7 +79,8 @@ void UiController::updateDisplay() {
     // Drain any cross-task request before touching activeTransition_ — this
     // is the only place pendingScreen_ is read, and the only place
     // activeTransition_ is written, so the two never race.
-    const ScreenName requested = pendingScreen_.exchange(ScreenName::NONE, std::memory_order_acquire);
+    const ScreenName requested =
+        pendingScreen_.exchange(ScreenName::NONE, std::memory_order_acquire);
     if (requested != ScreenName::NONE &&
         !(requested == screenState_.activeScreen && !activeTransition_.isActive)) {
         activeTransition_.nextScreen = requested;
@@ -119,7 +126,7 @@ void UiController::processTransitionPhase() {
         return;
     }
 
-    displayManager_->getDisplay()->startWrite();
+    displayManager_.getDisplay()->startWrite();
     switch (activeTransition_.phase) {
         case TransitionPhase::UNLOADING:
             LOG_DEBUG(logger_, "[UiController] Unloading current screen");
@@ -147,7 +154,7 @@ void UiController::processTransitionPhase() {
             break;
     }
 
-    displayManager_->getDisplay()->endWrite();
+    displayManager_.getDisplay()->endWrite();
     releaseDisplayLock();
 }
 
@@ -159,8 +166,8 @@ void UiController::unloadCurrentScreen() {
 }
 
 void UiController::clearDisplay() {
-    if (displayManager_ && displayManager_->getDisplay()) {
-        displayManager_->getDisplay()->fillScreen(TFT_BLACK);
+    if (displayManager_.getDisplay()) {
+        displayManager_.getDisplay()->fillScreen(TFT_BLACK);
     } else {
         logger_.error("[UiController] Invalid display driver");
     }
@@ -174,11 +181,16 @@ void UiController::loadAndActivateScreen() {
     }
 
     std::unique_ptr<ScreenInterface> newScreen;
-    ScreenCreationContext ctx{logger_,        context_.getScreenLogQueue(),
-                              displayManager_, pcMetrics_,
-                              this,            config_,
-                              systemMetrics_,  networkManager_,
-                              airQualityData_, netStatus_,
+    ScreenCreationContext ctx{logger_,
+                              context_.getScreenLogQueue(),
+                              &displayManager_,
+                              pcMetrics_,
+                              this,
+                              config_,
+                              systemMetrics_,
+                              networkManager_,
+                              airQualityData_,
+                              netStatus_,
                               weatherData_};
     newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, ctx);
 

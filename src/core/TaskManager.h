@@ -7,6 +7,7 @@
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/IScreenUpdater.h"
+#include "core/JobScheduler.h"
 #include "core/state/SystemState.h"
 #include "utils/Logger.h"
 
@@ -41,6 +42,7 @@ class TaskManager {
     const AppSettings& config_;
     SystemState::ScreenState& screenState_;
     std::vector<BackgroundJob*> jobs_;
+    JobScheduler jobScheduler_;
 
     // Task management
     TaskHandle_t screenTaskHandle_ = nullptr;

@@ -31,9 +31,9 @@ void CalendarScreen::createWidgets() {
     // title repaint to the inset between them). `calendar` outlives these
     // buttons: both are owned by the same widgetManager_.
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
-        uiController_->getDisplayContext(), "<", WidgetInterface::Dimensions{0, 0, kArrowW, kArrowH},
-        0, EventType::NONE, [calendar](EventType) { calendar->stepMonth(-1); }, kArrowBg,
-        TFT_WHITE)));
+        uiController_->getDisplayContext(), "<",
+        WidgetInterface::Dimensions{0, 0, kArrowW, kArrowH}, 0, EventType::NONE,
+        [calendar](EventType) { calendar->stepMonth(-1); }, kArrowBg, TFT_WHITE)));
 
     widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
         uiController_->getDisplayContext(), ">",

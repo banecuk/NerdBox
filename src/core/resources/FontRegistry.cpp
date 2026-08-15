@@ -26,7 +26,14 @@ struct FontSlot {
     }
 };
 
-enum class FontId : size_t { kLabel, kValue, kMetric, kHeader, kMono, kCount };
+enum class FontId : size_t {
+    kLabel,
+    kValue,
+    kMetric,
+    kHeader,
+    kMono,
+    kCount
+};
 
 FontSlot g_slots[static_cast<size_t>(FontId::kCount)];
 bool g_initialized = false;
@@ -38,7 +45,8 @@ inline lgfx::VLWfont* slot(FontId id) {
 }  // namespace
 
 void Fonts::init() {
-    if (g_initialized) return;
+    if (g_initialized)
+        return;
 
     g_slots[static_cast<size_t>(FontId::kLabel)].init(NotoSansDisplay12);
     g_slots[static_cast<size_t>(FontId::kValue)].init(NotoSansDisplay15);

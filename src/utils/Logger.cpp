@@ -1,9 +1,9 @@
 #include "Logger.h"
 
+#include <Arduino.h>
+
 #include <cstdarg>
 #include <cstring>
-
-#include <Arduino.h>
 
 // DEBUG_MODE is defined by the build environment (-DDEBUG_MODE=1 or =0).
 // Default to 0 (off) so IntelliSense and any translation unit that omits the

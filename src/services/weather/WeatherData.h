@@ -6,7 +6,7 @@
 
 #include <atomic>
 
-#include "config/AppConfig.h"
+#include "config/Limits.h"
 #include "utils/PublishedFlag.h"
 
 #include <time.h>
@@ -44,7 +44,7 @@ struct WeatherData {
     // atomic, mirroring PcMetrics's disk_drives lock pattern.
     SemaphoreHandle_t daysMutex = xSemaphoreCreateMutex();
 
-    WeatherForecastDay days[AppConfig::internal::WeatherImpl::kForecastDays];
+    WeatherForecastDay days[AppConfig::Limits::kForecastDays];
     uint8_t dayCount = 0;
 
     // Written by the screen task and read by the background job — signals

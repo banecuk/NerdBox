@@ -6,7 +6,9 @@
 
 WebPageHandlers::WebPageHandlers(WebServer& server, ApplicationMetrics& systemMetrics,
                                  const AppSettings& config, RecentLogView& recentLogView)
-    : server_(server), systemMetrics_(systemMetrics), config_(config),
+    : server_(server),
+      systemMetrics_(systemMetrics),
+      config_(config),
       recentLogView_(recentLogView) {}
 
 void WebPageHandlers::handleNotFound() {
@@ -235,10 +237,10 @@ void WebPageHandlers::handleConfig() {
         snprintf(buf, sizeof(buf), "%-32s %s\n", name, (value) ? "true" : "false"); \
         server_.sendContent(buf);                                                   \
     } while (0)
-#define SEND_CONFIG_S(name, value)                        \
-    do {                                                  \
+#define SEND_CONFIG_S(name, value)                               \
+    do {                                                         \
         snprintf(buf, sizeof(buf), "%-32s %s\n", name, (value)); \
-        server_.sendContent(buf);                         \
+        server_.sendContent(buf);                                \
     } while (0)
 
 #define AS_FIELD(kind, type, name, init) SEND_CONFIG_##kind(#name, config_.name);
@@ -249,8 +251,8 @@ void WebPageHandlers::handleConfig() {
         char levels[64];
         size_t offset = 0;
         for (uint8_t i = 0; i < AppConfig::internal::UiImpl::kBrightnessLevelCount; ++i) {
-            offset += snprintf(levels + offset, sizeof(levels) - offset, "%s%u",
-                                i == 0 ? "" : ",", config_.uiBrightnessLevels[i]);
+            offset += snprintf(levels + offset, sizeof(levels) - offset, "%s%u", i == 0 ? "" : ",",
+                               config_.uiBrightnessLevels[i]);
         }
         snprintf(buf, sizeof(buf), "%-32s %s\n", "uiBrightnessLevels", levels);
         server_.sendContent(buf);

@@ -1,9 +1,9 @@
-#include "PcMetricsParser.h"
-
 #include <ArduinoJson.h>
-#include <gtest/gtest.h>
 
 #include "NullLogger.h"
+#include "PcMetricsParser.h"
+
+#include <gtest/gtest.h>
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -31,7 +31,8 @@ static void seedSentinels(PcMetrics& m) {
     m.gpu_fps = 999;
     m.eth_up = 1.5f;
     m.eth_dn = 2.5f;
-    for (auto& v : m.cpu_thread_load) v = 77;
+    for (auto& v : m.cpu_thread_load)
+        v = 77;
 }
 
 // ─── Full report ────────────────────────────────────────────────────────────
@@ -59,9 +60,9 @@ TEST(PcMetricsParserTest, FullReportParsesEverySection) {
 
     EXPECT_TRUE(result.allSeenValid());
     EXPECT_EQ(result.sectionsSeen, PcMetricsParser::kCpu | PcMetricsParser::kCpuExtended |
-                                        PcMetricsParser::kRam | PcMetricsParser::kGpu |
-                                        PcMetricsParser::kMotherboard | PcMetricsParser::kDisks |
-                                        PcMetricsParser::kNetwork);
+                                       PcMetricsParser::kRam | PcMetricsParser::kGpu |
+                                       PcMetricsParser::kMotherboard | PcMetricsParser::kDisks |
+                                       PcMetricsParser::kNetwork);
 
     EXPECT_EQ(m.cpu_load, 42);
     EXPECT_EQ(m.cpu_thread_load[0], 10);
@@ -110,7 +111,8 @@ TEST(PcMetricsParserTest, DeltaWithOneSectionOnlyTouchesThatSection) {
     EXPECT_EQ(m.gpu_fps, 999);
     EXPECT_EQ(m.cpu_fan, 333);
     EXPECT_FLOAT_EQ(m.eth_up, 1.5f);
-    for (auto v : m.cpu_thread_load) EXPECT_EQ(v, 77);
+    for (auto v : m.cpu_thread_load)
+        EXPECT_EQ(v, 77);
 }
 
 TEST(PcMetricsParserTest, AbsentSectionKeyLeavesFieldsUntouched) {
@@ -140,15 +142,15 @@ TEST(PcMetricsParserTest, AbsentFieldWithinPresentSectionMeansUnchanged) {
     NullLogger logger;
     PcMetricsParser::parseAllSections(metrics, m, 24, logger);
 
-    EXPECT_EQ(m.cpu_load, 88);                  // present key updates
-    for (auto v : m.cpu_thread_load) EXPECT_EQ(v, 77);  // absent key: untouched
+    EXPECT_EQ(m.cpu_load, 88);  // present key updates
+    for (auto v : m.cpu_thread_load)
+        EXPECT_EQ(v, 77);  // absent key: untouched
 }
 
 TEST(PcMetricsParserTest, AbsentCoreLoadsWithLoadPresentUpdatesLoadOnly) {
     // Mirror case: CoreLoads present, Load absent.
     JsonDocument doc;
-    JsonObjectConst metrics =
-        metricsOf(doc, R"({"Metrics": {"Cpu": {"CoreLoads": [50, 60]}}})");
+    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Cpu": {"CoreLoads": [50, 60]}}})");
 
     PcMetrics m;
     seedSentinels(m);

@@ -126,33 +126,10 @@ void TaskManager::executeBackgroundTask() {
     unsigned long lastStackLogTime = 0;
 
     while (true) {
-        unsigned long now = millis();
-        for (BackgroundJob* job : jobs_) {
-            JobDue due = job->nextDue();
-            bool isDue = false;
-            switch (due.kind) {
-                case JobDue::Kind::Never:
-                    isDue = false;
-                    break;
-                case JobDue::Kind::Now:
-                    isDue = true;
-                    break;
-                case JobDue::Kind::At:
-                    // Wrap-safe: at 32-bit millis() rollover (~49.7 days),
-                    // `now` can be smaller than `deadlineMs` while the
-                    // deadline has still passed.
-                    isDue = (long)(now - due.deadlineMs) >= 0;
-                    break;
-            }
-            if (isDue) {
-                job->run();
-                // Feed the watchdog after every job, not just once per tick —
-                // several blocking jobs (HTTP fetch, WiFi reconnect) coming
-                // due on the same tick would otherwise stack up before a
-                // single reset.
-                resetWatchdog();
-            }
-        }
+        // Feed the watchdog after every job, not just once per tick — several
+        // blocking jobs (HTTP fetch, WiFi reconnect) coming due on the same
+        // tick would otherwise stack up before a single reset.
+        jobScheduler_.tick(jobs_, millis(), [this] { resetWatchdog(); });
 
         resetWatchdog();
 

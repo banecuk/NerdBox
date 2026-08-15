@@ -7,6 +7,7 @@
 
 #include <atomic>
 
+#include "config/Limits.h"
 #include "utils/PublishedFlag.h"
 
 struct DiskDrive {
@@ -45,7 +46,7 @@ class PcMetrics {
     uint8_t cpu_load = 0;
     uint8_t gpu_load = 0;
     uint8_t mem_load = 0;
-    uint8_t cpu_thread_load[48] = {};
+    uint8_t cpu_thread_load[AppConfig::Limits::kMaxThreads] = {};
     // Number of valid entries in cpu_thread_load, set once CoreLoads data
     // arrives — lets consumers size themselves to the actual reported thread
     // count instead of a compile-time constant. 0 until the first CoreLoads

@@ -49,9 +49,9 @@ bool ThreadsWidget::ensureLayoutInitialized() {
     previousBarHeights_.assign(coreCount_, 0);
     previousColors_.assign(coreCount_, 0);
     smoothedThreadLoads_.assign(coreCount_, 0);
-    valueSmoother_ = std::make_unique<ValueSmoother>(
-        coreCount_, config_.hardwareMonitorThreadsUpwardSmoothing,
-        config_.hardwareMonitorThreadsDownwardSmoothing);
+    valueSmoother_ =
+        std::make_unique<ValueSmoother>(coreCount_, config_.hardwareMonitorThreadsUpwardSmoothing,
+                                        config_.hardwareMonitorThreadsDownwardSmoothing);
     return true;
 }
 

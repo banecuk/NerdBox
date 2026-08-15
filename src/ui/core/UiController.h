@@ -28,15 +28,17 @@ class UiEventHandler;
 
 class UiController : public IScreenUpdater {
  public:
-    explicit UiController(DisplayContext& context, DisplayManager* displayManager,
+    explicit UiController(DisplayContext& context, DisplayManager& displayManager,
                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
                           SystemState::ScreenState& screenState, const AppSettings& config,
                           NetworkManager& networkManager, const AirQualityData& airQualityData,
                           const NetworkStatus& netStatus, WeatherData& weatherData);
     ~UiController();
 
-    // Lifecycle methods
-    void initialize();
+    // Lifecycle methods. Returns false if the display mutex failed to
+    // allocate — a boot-fatal condition the caller (InitializationStateMachine)
+    // must transition to FAILED rather than press on with a null mutex.
+    bool initialize();
     void updateDisplay() override;
     bool isTransitioning() const { return activeTransition_.isActive; }
 
@@ -53,7 +55,7 @@ class UiController : public IScreenUpdater {
 
     // Display access methods
     DisplayContext& getDisplayContext() { return context_; }
-    DisplayManager* getDisplayManager() const { return displayManager_; }
+    DisplayManager* getDisplayManager() const { return &displayManager_; }
     bool tryAcquireDisplayLock();
     void releaseDisplayLock();
 
@@ -83,7 +85,7 @@ class UiController : public IScreenUpdater {
     void processTouchInput();
 
     LoggerInterface& logger_;
-    DisplayManager* displayManager_;
+    DisplayManager& displayManager_;
     DisplayContext& context_;
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;

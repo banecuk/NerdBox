@@ -32,7 +32,7 @@ class IInitializationTarget {
     virtual void postInitializeDisplay() = 0;
 
     // --- UI -----------------------------------------------------------------
-    virtual void initializeUi() = 0;
+    virtual bool initializeUi() = 0;
     virtual void requestScreen(ScreenName screen) = 0;
 
     // --- Tasks --------------------------------------------------------------

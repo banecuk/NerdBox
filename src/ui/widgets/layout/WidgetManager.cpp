@@ -131,7 +131,7 @@ void WidgetManager::updateDirtyWidgets() {
     if (currentTime - lastStatsLogTime_ > 10000) {  // Every 10 seconds
         float efficiency = (float)skippedCount / (float)widgetCache_.size() * 100.0f;
         LOG_DEBUGF(logger_, "WidgetManager: %zu/%zu widgets updated (%.1f%% skipped)", updatedCount,
-                  widgetCache_.size(), efficiency);
+                   widgetCache_.size(), efficiency);
         lastStatsLogTime_ = currentTime;
     }
 }

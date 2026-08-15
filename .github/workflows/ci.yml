@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build firmware (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [WT32-SC01-PLUS-debug, WT32-SC01-PLUS-release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+          key: pio-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            pio-${{ matrix.env }}-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build (${{ matrix.env }})
+        # Linux runner also catches include-case bugs (e.g. UIController.h vs
+        # ui/core/UiController.h) that a case-insensitive Windows filesystem
+        # would silently paper over.
+        run: pio run -e ${{ matrix.env }}
+
+  native-tests:
+    name: Native unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+          key: pio-native-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            pio-native-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Run host-side tests
+        run: pio test -e native
+
+  clang-format:
+    name: clang-format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install clang-format
+        # Pinned to match .clang-format's stated "compatible with 14+"
+        # baseline — different major versions can disagree on edge cases.
+        run: pip install "clang-format==14.0.6"
+
+      - name: Check formatting
+        # Excludes the PROGMEM font/icon data headers (~14.8k lines of
+        # generated array literals per CLAUDE.md) — .clang-format targets
+        # hand-written logic, not glyph tables.
+        run: |
+          find src test -type f \( -name '*.cpp' -o -name '*.h' \) \
+            -not -path 'src/core/resources/NotoSans*.h' \
+            -not -name 'gear_icon_40.h' \
+            -not -name 'weather_icons_44.h' \
+            | xargs clang-format --dry-run --Werror

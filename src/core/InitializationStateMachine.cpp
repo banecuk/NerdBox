@@ -75,7 +75,11 @@ bool InitializationStateMachine::handleInitial() {
 bool InitializationStateMachine::handleDisplayInit() {
     target_.logger().info("Initializing display", true);
     target_.initializeDisplay();
-    target_.initializeUi();
+    if (!target_.initializeUi()) {
+        target_.logger().critical("UI initialization failed", true);
+        transitionTo(State::FAILED);
+        return false;
+    }
     transitionTo(State::WATCHDOG_INIT);
     return true;
 }

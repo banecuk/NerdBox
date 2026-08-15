@@ -181,8 +181,7 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
         if (col >= offset) {
             const size_t idx = col - offset;
             const uint8_t rawValue = history.valueAtOffset(start, idx);
-            const uint32_t h =
-                (static_cast<uint32_t>(rawValue) * (rowHeight_ - 1)) / kScaleMax;
+            const uint32_t h = (static_cast<uint32_t>(rawValue) * (rowHeight_ - 1)) / kScaleMax;
             height = static_cast<uint8_t>((h > rowHeight_ - 1 ? rowHeight_ - 1 : h) + 1);
             if (rawValue < lowThreshold)
                 zone = kZoneLow;
@@ -192,8 +191,7 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
                 zone = kZoneWarn;
         }
 
-        const uint8_t encoded =
-            static_cast<uint8_t>((height & kHeightMask) | (zone << kZoneShift));
+        const uint8_t encoded = static_cast<uint8_t>((height & kHeightMask) | (zone << kZoneShift));
         encodedCols[col] = encoded;
         if (forceFullRepaint || encoded != lastCol[col])
             ++changedCount;
@@ -250,8 +248,8 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
         // stale, rather than leaving a frozen last-known plot on screen —
         // an unmoving sparkline reads as live data, which it no longer is.
         if (forceRedraw || lastHasData_) {
-            getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width,
-                               dimensions_.height, kBgColor);
+            getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
+                               kBgColor);
         }
         lastHasData_ = false;
         clearDirty();
@@ -271,15 +269,15 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
 
     LGFX* lcd = getLcd();
     lcd->startWrite();
-    drawRow(leftPlotX_, topPlotY_, leftCols_, cpuLoadHistory_, lastCpuCol_, kCpuColor,
-           kCpuColorDim, kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kCpuWarnColor, forceRedraw);
+    drawRow(leftPlotX_, topPlotY_, leftCols_, cpuLoadHistory_, lastCpuCol_, kCpuColor, kCpuColorDim,
+            kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kCpuWarnColor, forceRedraw);
     drawRow(leftPlotX_, bottomPlotY_, leftCols_, gpuLoadHistory_, lastGpuCol_, kGpuColor,
-           kGpuColorDim, kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kGpuWarnColor, forceRedraw);
+            kGpuColorDim, kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kGpuWarnColor, forceRedraw);
     drawRow(rightPlotX_, topPlotY_, rightCols_, ramLoadHistory_, lastRamCol_, kRamColor,
-           kRamColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kRamWarnColor, forceRedraw);
+            kRamColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kRamWarnColor, forceRedraw);
     drawRow(rightPlotX_, bottomPlotY_, rightCols_, vramLoadHistory_, lastVramCol_, kVramColor,
-           kVramColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kVramWarnColor,
-           forceRedraw);
+            kVramColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kVramWarnColor,
+            forceRedraw);
     lcd->endWrite();
 
     clearDirty();

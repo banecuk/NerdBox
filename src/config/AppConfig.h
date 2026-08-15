@@ -2,6 +2,8 @@
 
 #include <cstddef>
 
+#include "config/Limits.h"
+
 #include <inttypes.h>
 
 namespace AppConfig {
@@ -74,7 +76,7 @@ struct AirQualityImpl {
 // Weather (open-meteo forecast) configuration
 struct WeatherImpl {
     // Forecast columns to render: 7 if the layout fits, otherwise drop to 5.
-    static constexpr uint8_t kForecastDays = 7;
+    static constexpr uint8_t kForecastDays = Limits::kForecastDays;
     // How often to re-fetch while the Weather screen is displayed.
     static constexpr uint32_t kRefreshIntervalMs = 2ul * 60ul * 60ul * 1000ul;  // 2 h
     // Cheap per-minute check while displayed so the forecast rolls over at
@@ -82,17 +84,17 @@ struct WeatherImpl {
     static constexpr uint32_t kTimeCheckIntervalMs = 60ul * 1000ul;
     // Backoff after a failed fetch — mirrors AirQualityImpl::kFailureBackoffMs.
     static constexpr uint32_t kFailureBackoffMs = 60000;
-    static constexpr uint8_t kIconSize = 44;
+    static constexpr uint8_t kIconSize = Limits::kIconSize;
 };
 
 // Metrics configuration
 struct MetricsImpl {
-    static constexpr uint8_t kMaxScreenDrawTimes = 30;
+    static constexpr uint8_t kMaxScreenDrawTimes = Limits::kMaxScreenDrawTimes;
 };
 
 // PcMetrics configuration
 struct PcMetricsImpl {
-    static constexpr uint8_t kCores = 28;
+    static constexpr uint8_t kCores = Limits::kCores;
 };
 
 // PcMetrics SSE streaming configuration — see SSE-PUSH-PLAN.md.
@@ -156,7 +158,7 @@ struct UiImpl {
     // kBrightnessLevelCount but still hand-listed — update those arrays too if
     // this count changes.)
     static constexpr uint8_t kBrightnessLevels[] = {20, 60, 85, 110, 140, 255};
-    static constexpr uint8_t kBrightnessLevelCount = 6;
+    static constexpr uint8_t kBrightnessLevelCount = Limits::kBrightnessLevelCount;
 
     // "Dim at night" — when enabled, brightness is reduced by kDimAtNightPercent
     // whenever the local hour is >= kDimAtNightStartHour or < kDimAtNightEndHour.

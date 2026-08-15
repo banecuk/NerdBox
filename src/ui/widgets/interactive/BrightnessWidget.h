@@ -1,7 +1,7 @@
 #pragma once
 
-#include "config/AppConfig.h"
 #include "config/AppSettings.h"
+#include "config/Limits.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/widgets/base/Widget.h"
 
@@ -20,7 +20,7 @@
 // (config_.uiBrightnessLevels) since they're data a user retunes per machine.
 class BrightnessWidget : public Widget {
  public:
-    static constexpr uint8_t kSegmentCount = AppConfig::internal::UiImpl::kBrightnessLevelCount;
+    static constexpr uint8_t kSegmentCount = AppConfig::Limits::kBrightnessLevelCount;
 
     BrightnessWidget(const WidgetInterface::Dimensions& dims, DisplayManager& displayManager,
                      const AppSettings& config);

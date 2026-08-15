@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "ui/widgets/base/WidgetPainter.h"
+
 UptimeWidget::UptimeWidget(const WidgetInterface::Dimensions& dims,
                            ApplicationMetrics& systemMetrics, uint16_t textColor, uint16_t bgColor)
     : Widget(dims, 1000), systemMetrics_(systemMetrics), textColor_(textColor), bgColor_(bgColor) {}
@@ -52,7 +54,7 @@ void UptimeWidget::onDrawStatic() {
     if (!layoutReady_)
         computeLayout();
 
-    drawCaptionLabel("UPTIME", bgColor_);
+    WidgetPainter::drawCaptionLabel(lcd, dimensions_.x, dimensions_.y, "UPTIME", bgColor_);
 
     // Draw static colons in value font at the vertical midpoint of the value
     // row so they align with digit cap height — ML_DATUM places the glyph

@@ -59,8 +59,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     if (snapshotCount == 0)
         return;
 
-    bool needsCreation =
-        diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshotCount);
+    bool needsCreation = diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshotCount);
     if (!needsCreation) {
         for (size_t i = 0; i < snapshotCount; ++i) {
             if (strncmp(diskDriveNames_[i].data(), snapshot[i].name, sizeof(snapshot[i].name)) !=
@@ -88,9 +87,9 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     }
 
     const uint16_t maxWidgetWidth = kMaxWidgetWidth;
-    const uint16_t availableWidth =
-        (dimensions_.width > kChevronReservedWidth) ? (dimensions_.width - kChevronReservedWidth)
-                                                     : dimensions_.width;
+    const uint16_t availableWidth = (dimensions_.width > kChevronReservedWidth)
+                                        ? (dimensions_.width - kChevronReservedWidth)
+                                        : dimensions_.width;
     uint16_t widgetWidth = static_cast<uint16_t>(availableWidth / snapshotCount);
     if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
@@ -108,7 +107,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
         config.useDimColors = true;
         config.useSmallFont = true;
         config.label = snapshot[i].name;
-        config.labelWidth = 14;  // narrow: the label is a single drive letter
+        config.labelWidth = 14;   // narrow: the label is a single drive letter
         config.borderMargin = 0;  // flush against the activity lines — no edge gaps
         config.lowerThreshold = 0.0f;
         config.upperThreshold = 95.0f;

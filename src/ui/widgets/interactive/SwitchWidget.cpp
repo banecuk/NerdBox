@@ -1,6 +1,7 @@
 #include "SwitchWidget.h"
 
 #include "core/resources/FontRegistry.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 SwitchWidget::SwitchWidget(const WidgetInterface::Dimensions& dims, std::string label,
                            GetStateFn getState, SetStateFn setState)
@@ -13,7 +14,7 @@ void SwitchWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    drawCaptionLabel(label_.c_str());
+    WidgetPainter::drawCaptionLabel(lcd, dimensions_.x, dimensions_.y, label_.c_str());
 
     hasDrawnOnce_ = false;  // force full track redraw on next onDraw()
 }
@@ -43,8 +44,8 @@ void SwitchWidget::drawTrack(bool on) {
     const uint16_t bgColor = on ? kOnColor : kOffColor;
     const uint16_t textColor = on ? TFT_BLACK : Colors::kInactiveText;
 
-    drawPillToggle(dimensions_.x, trackY, dimensions_.width, trackH, kRadius, bgColor, textColor,
-                   on ? "ON" : "OFF");
+    WidgetPainter::drawPillToggle(getLcd(), dimensions_.x, trackY, dimensions_.width, trackH,
+                                  kRadius, bgColor, textColor, on ? "ON" : "OFF");
 }
 
 bool SwitchWidget::handleTouch(uint16_t x, uint16_t y) {

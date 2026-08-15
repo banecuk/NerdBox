@@ -2,8 +2,8 @@
 
 #include <ArduinoJson.h>
 
-#include "config/AppConfig.h"
 #include "config/Environment.h"
+#include "config/Limits.h"
 #include "network/NetworkManager.h"
 #include "services/JsonHttpService.h"
 #include "services/weather/WeatherData.h"
@@ -29,7 +29,7 @@ class WeatherService : public JsonHttpService<WeatherData, WeatherService> {
     void initFilter(JsonDocument& filter);
     bool parseData(WeatherData& outData);
 
-    static constexpr uint8_t kMaxForecastDays = AppConfig::internal::WeatherImpl::kForecastDays;
+    static constexpr uint8_t kMaxForecastDays = AppConfig::Limits::kForecastDays;
 
     // Reads one daily array element as an x10-scaled integer, extracting the
     // float *before* the (rounded) cast to int — the FullscreenFps guard.

@@ -8,7 +8,9 @@
 // in for "the current fake time" instead, reset at the top of every test.
 
 static unsigned long g_fakeNowMs = 0;
-static unsigned long fakeMillis() { return g_fakeNowMs; }
+static unsigned long fakeMillis() {
+    return g_fakeNowMs;
+}
 
 class DataFreshnessGuardTest : public ::testing::Test {
  protected:

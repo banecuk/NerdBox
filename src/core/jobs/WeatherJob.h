@@ -33,7 +33,8 @@ class WeatherJob : public BackgroundJob {
             return JobDue::never();
         }
         if (data_.refreshRequested.load() && millis() >= nextAttemptMs_) {
-            return JobDue::now();  // screen entry / midnight rollover → fire now (still honours failure backoff)
+            return JobDue::now();  // screen entry / midnight rollover → fire now (still honours
+                                   // failure backoff)
         }
         if (freshness_.isFresh()) {
             return JobDue::never();  // fetched < 2 h ago → skip

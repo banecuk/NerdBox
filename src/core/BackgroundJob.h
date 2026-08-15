@@ -8,7 +8,11 @@
 // docs-local/02-architecture.md A2. Use the JobDue::now()/never()/at()
 // factories rather than constructing JobDue directly.
 struct JobDue {
-    enum class Kind { Never, Now, At };
+    enum class Kind {
+        Never,
+        Now,
+        At
+    };
 
     Kind kind;
     unsigned long deadlineMs = 0;  // only meaningful when kind == At

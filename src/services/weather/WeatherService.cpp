@@ -69,13 +69,13 @@ bool WeatherService::parseData(WeatherData& outData) {
     outData.freshness.publish(millis());
     outData.refreshRequested.store(false);
 
-    LOG_DEBUGF(
-        logger_,
-        "Weather: %u days, day0 code=%d max=%d.%d°C min=%d.%d°C rain=%d.%dmm wind=%d.%dm/s", count,
-        outData.days[0].weatherCode, outData.days[0].tempMaxX10 / 10,
-        outData.days[0].tempMaxX10 % 10, outData.days[0].tempMinX10 / 10,
-        outData.days[0].tempMinX10 % 10, outData.days[0].rainX10 / 10, outData.days[0].rainX10 % 10,
-        outData.days[0].windMaxX10 / 10, outData.days[0].windMaxX10 % 10);
+    LOG_DEBUGF(logger_,
+               "Weather: %u days, day0 code=%d max=%d.%d°C min=%d.%d°C rain=%d.%dmm wind=%d.%dm/s",
+               count, outData.days[0].weatherCode, outData.days[0].tempMaxX10 / 10,
+               outData.days[0].tempMaxX10 % 10, outData.days[0].tempMinX10 / 10,
+               outData.days[0].tempMinX10 % 10, outData.days[0].rainX10 / 10,
+               outData.days[0].rainX10 % 10, outData.days[0].windMaxX10 / 10,
+               outData.days[0].windMaxX10 % 10);
 
     return true;
 }

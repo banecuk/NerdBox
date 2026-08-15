@@ -1,36 +1,7 @@
 #include "PcMetricsStreamJob.h"
 
-#include <cstring>
-
+#include "network/UrlUtils.h"
 #include "utils/LogMacros.h"
-
-namespace {
-
-// Splits a "http://host[:port][/path]" URL into host/port — LIBRE_HM_API
-// and the SSE stream live on the same NerdWinSense server, just different
-// paths, so there's no separate stream-host config to maintain.
-void parseHostPort(const char* url, char* outHost, size_t outHostSize, uint16_t& outPort) {
-    outPort = 80;
-    const char* schemeEnd = strstr(url, "://");
-    const char* hostStart = schemeEnd ? schemeEnd + 3 : url;
-
-    const char* colon = strchr(hostStart, ':');
-    const char* slash = strchr(hostStart, '/');
-    const char* hostEnd = colon ? colon : (slash ? slash : hostStart + strlen(hostStart));
-
-    size_t hostLen = static_cast<size_t>(hostEnd - hostStart);
-    if (hostLen >= outHostSize) {
-        hostLen = outHostSize - 1;
-    }
-    memcpy(outHost, hostStart, hostLen);
-    outHost[hostLen] = '\0';
-
-    if (colon && (!slash || colon < slash)) {
-        outPort = static_cast<uint16_t>(atoi(colon + 1));
-    }
-}
-
-}  // namespace
 
 PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreState& coreState,
                                        SystemState::ScreenState& screenState,
@@ -44,9 +15,8 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
       logger_(logger),
       connection_(logger, config.pcMetricsStreamMaxEventBufferBytes,
                   config.pcMetricsStreamMaxBytesPerPoll),
-      doc_(std::make_unique<JsonDocument>()) {
-    PcMetricsParser::buildFilter(filter_);
-    parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
+      streamService_(metrics, config, logger) {
+    UrlUtils::parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
 }
 
 JobDue PcMetricsStreamJob::nextDue() const {
@@ -70,7 +40,10 @@ void PcMetricsStreamJob::run() {
         return;
     }
 
-    connection_.poll([this](const SseEventParser::Event& event) { handleEvent(event); });
+    connection_.poll([this](const SseEventParser::Event& event) {
+        lastEventMs_ = millis();
+        streamService_.handleEvent(event);
+    });
 
     if (connection_.state() != SseConnection::State::Connected) {
         // poll() detected the server dropped the connection this tick.
@@ -111,34 +84,4 @@ void PcMetricsStreamJob::attemptConnect() {
     reconnectCount_++;
     nextReconnectAttemptMs_ = millis() + config_.pcMetricsStreamReconnectBackoffMs;
     LOG_DEBUG(logger_, "SSE connect attempt failed", true);
-}
-
-void PcMetricsStreamJob::handleEvent(const SseEventParser::Event& event) {
-    lastEventMs_ = millis();
-
-    doc_->clear();
-    const DeserializationError err =
-        deserializeJson(*doc_, event.data, event.dataLen, DeserializationOption::Filter(filter_));
-    if (err) {
-        logger_.warningf("SSE event JSON parse failed: %s", err.c_str());
-        return;
-    }
-
-    JsonObject metricsObj = (*doc_)["Metrics"];
-    if (metricsObj.isNull()) {
-        // A delta event can legitimately carry no changed sections at all —
-        // nothing to commit, and not an error.
-        return;
-    }
-
-    // Unlike PcMetricsService::parseData (which requires every section of a
-    // full report to parse OK before publishing), delta mode means most
-    // events only carry a subset of sections — so any section present is
-    // enough to count as a fresh update.
-    const PcMetricsParser::SectionResult sections =
-        PcMetricsParser::parseAllSections(metricsObj, metrics_, config_.pcMetricsCores, logger_);
-
-    if (sections.anySeen()) {
-        metrics_.freshness.publish(millis());
-    }
 }

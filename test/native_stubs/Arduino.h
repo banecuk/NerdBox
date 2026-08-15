@@ -18,7 +18,9 @@
 
 using String = std::string;
 
-inline unsigned long millis() { return 0; }
+inline unsigned long millis() {
+    return 0;
+}
 
 template <typename T>
 T min(T a, T b) {

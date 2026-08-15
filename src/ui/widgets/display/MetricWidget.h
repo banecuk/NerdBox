@@ -27,7 +27,7 @@ class MetricWidget : public Widget {
         uint16_t labelColor = TFT_WHITE;
         const char* label = "";  // copied into a fixed buffer by the constructor
         uint16_t labelWidth = 0;
-        bool verticalLabel = false;  // stack label chars top-to-bottom — for tall tiles
+        bool verticalLabel = false;        // stack label chars top-to-bottom — for tall tiles
         uint8_t textAlignment = MC_DATUM;  // TL_DATUM, TC_DATUM, TR_DATUM, etc.
         // Inset of the coloured value area from the widget's edges. A zero
         // margin makes the fill run flush to the widget bounds (used by
@@ -151,7 +151,7 @@ class MetricWidget : public Widget {
     // computed via a hasLabel_ if/else copy-pasted at every render-path call
     // site; now the single place any of them read it from.
     void getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& areaWidth,
-                             int16_t& areaHeight) const;
+                            int16_t& areaHeight) const;
 
     // setTextColor/setTextDatum/drawString triple shared by every value- and
     // unit-suffix draw across all three render paths. Caller owns loading

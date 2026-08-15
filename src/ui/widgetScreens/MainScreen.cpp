@@ -98,8 +98,8 @@ void MainScreen::createWidgets() {
     // Clock — taller row so Mono24 glyphs get vertical padding. Centered on
     // the same band center as NetworkWidget/NetworkTrafficWidget. Tappable
     // to the calendar screen.
-    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(new ClockWidget(
-        WidgetInterface::Dimensions{kClockX, kClockY, Layout::kClockW, kClockH}, 1000,
-        TFT_LIGHTGREY, TFT_BLACK, "%H:%M:%S", EventType::SHOW_CALENDAR,
-        [this](EventType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
+        new ClockWidget(WidgetInterface::Dimensions{kClockX, kClockY, Layout::kClockW, kClockH},
+                        1000, TFT_LIGHTGREY, TFT_BLACK, "%H:%M:%S", EventType::SHOW_CALENDAR,
+                        [this](EventType action) { this->handleAction(action); })));
 }

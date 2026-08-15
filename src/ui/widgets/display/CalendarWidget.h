@@ -1,9 +1,9 @@
 #pragma once
 
-#include <time.h>
-
 #include "ui/widgets/base/Widget.h"
 #include "utils/CalendarMath.h"
+
+#include <time.h>
 
 // Month-grid calendar for CalendarScreen. Owns the displayed month cursor
 // (year_/month_), defaulting to today's date, and repaints only when the

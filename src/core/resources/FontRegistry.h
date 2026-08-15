@@ -8,10 +8,11 @@
 //   Fonts::unload(lcd);      // immediately after drawString
 //
 // Fonts::init() parses every PROGMEM font array into a runtime glyph table
-// exactly once (called from DisplayManager::initialize(), after the display
-// is up). Every loadX()/unload() call after that is just an LGFXBase::setFont()
-// pointer swap — no allocation, no PROGMEM re-read. Call unload() after every
-// draw block so other widgets aren't left drawing with the wrong font.
+// exactly once (called from ApplicationComponents::initializeDisplay(), right
+// after the display is up). Every loadX()/unload() call after that is just an
+// LGFXBase::setFont() pointer swap — no allocation, no PROGMEM re-read. Call
+// unload() after every draw block so other widgets aren't left drawing with
+// the wrong font.
 //
 // Font roles
 // ──────────────────────────────────────────────────────────────────────────

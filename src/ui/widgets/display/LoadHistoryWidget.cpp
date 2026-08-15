@@ -2,6 +2,7 @@
 
 #include "core/resources/FontRegistry.h"
 #include "ui/core/Colors.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = 0xC618;
@@ -29,7 +30,7 @@ void LoadHistoryWidget::onDrawStatic() {
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, kBgColor);
 
     computePlotLayout();
-    drawCaptionLabel("LOAD");
+    WidgetPainter::drawCaptionLabel(lcd, dimensions_.x, dimensions_.y, "LOAD");
     lcd->drawRect(plotX_ - 1, plotY_ - 1, plotWidth_ + 2, plotHeight_ + 2, Colors::kHairline);
 
     for (auto& h : lastCpuHeight_)

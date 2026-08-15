@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/AppSettings.h"
+#include "config/Limits.h"
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityService.h"
 #include "services/network/NetworkStatusService.h"
@@ -13,10 +14,9 @@
 // AppConfig) so utils/ stays independent of config/AppConfig.h — see that
 // constant's comment. This is the one place both headers are already
 // included, so it's where the two constants' agreement is enforced.
-static_assert(ApplicationMetrics::kDrawTimesCapacity ==
-                  AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes,
+static_assert(ApplicationMetrics::kDrawTimesCapacity == AppConfig::Limits::kMaxScreenDrawTimes,
               "ApplicationMetrics::kDrawTimesCapacity and "
-              "AppConfig::internal::MetricsImpl::kMaxScreenDrawTimes must match");
+              "AppConfig::Limits::kMaxScreenDrawTimes must match");
 
 // Services that fetch/aggregate data over the network, plus the metrics
 // aggregator they report through. Declaration order: systemMetrics has no

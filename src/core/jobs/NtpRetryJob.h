@@ -15,7 +15,7 @@ class NtpRetryJob : public BackgroundJob {
 
     JobDue nextDue() const override {
         return (coreState_.isInitialized && !coreState_.isTimeSynced) ? JobDue::now()
-                                                                        : JobDue::never();
+                                                                      : JobDue::never();
     }
 
     void run() override {

@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "core/resources/FontRegistry.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 IpAddressWidget::IpAddressWidget(const WidgetInterface::Dimensions& dims,
                                  NetworkManager& networkManager, uint16_t textColor,
@@ -42,7 +43,7 @@ void IpAddressWidget::onDrawStatic() {
     if (!layoutReady_)
         computeLayout();
 
-    drawCaptionLabel("IP ADDRESS", bgColor_);
+    WidgetPainter::drawCaptionLabel(lcd, dimensions_.x, dimensions_.y, "IP ADDRESS", bgColor_);
 }
 
 void IpAddressWidget::onDraw(bool forceRedraw) {

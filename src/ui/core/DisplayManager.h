@@ -5,8 +5,7 @@
 #include "config/AppSettings.h"
 #include "config/LgfxConfig.h"
 #include "utils/LoggerInterface.h"
-
-#include <Preferences.h>
+#include "utils/SettingsStore.h"
 
 class DisplayManager {
  public:
@@ -40,15 +39,6 @@ class DisplayManager {
     void setNightWindowActive(bool isNight);
 
  private:
-    // Reads the saved brightness from NVS; returns kDefaultBrightness on miss.
-    uint8_t loadBrightnessFromNvs();
-
-    // Writes the current brightness_ to NVS.
-    void saveBrightnessToNvs();
-
-    bool loadDimAtNightFromNvs();
-    void saveDimAtNightToNvs();
-
     // Re-evaluates whether dimming should currently be applied and, if that
     // changed, pushes the new effective brightness to the display.
     void updateDimState();
@@ -60,7 +50,7 @@ class DisplayManager {
     LGFX& display_;
     LoggerInterface& logger_;
     const AppSettings& config_;
-    Preferences prefs_;
+    SettingsStore settingsStore_;
 
     uint8_t brightness_;
 

@@ -33,29 +33,29 @@ inline constexpr const char* kDegreesC =
     "C";
 
 inline constexpr TileData kTiles[] = {
-    // CPU row
-    {"%", 0, 100, 10.0f, 90.0f, "CPU", 0xC618, false, false, false},
-    {kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", 0xC618, false, false, false},
-    {" W", 0, 400, 55.0f, 140.0f, "PWR", 0xC618, false, false, false},
-    {"", 0, 1500, 800.0f, 1200.0f, "FAN", 0xC618, false, false, false},
+  // CPU row
+    {"%",       0, 100,  10.0f,  90.0f,   "CPU", 0xC618, false, false, false},
+    {kDegreesC, 0, 100,  55.0f,  85.0f,   "TMP", 0xC618, false, false, false},
+    {" W",      0, 400,  55.0f,  140.0f,  "PWR", 0xC618, false, false, false},
+    {"",        0, 1500, 800.0f, 1200.0f, "FAN", 0xC618, false, false, false},
 
-    // RAM — end of CPU row
-    {"%", 0, 100, 60.0f, 90.0f, "RAM", 0xADFB, false, false, true},
+ // RAM — end of CPU row
+    {"%",       0, 100,  60.0f,  90.0f,   "RAM", 0xADFB, false, false, true },
 
-    // GPU row
-    {"%", 0, 100, 10.0f, 90.0f, "GPU", 0xB471, true, false, false},
-    {kDegreesC, 0, 100, 55.0f, 85.0f, "TMP", 0xB471, true, false, false},
-    {" W", 0, 400, 50.0f, 170.0f, "PWR", 0xB471, true, false, false},
-    {"", 0, 1500, 800.0f, 1400.0f, "FAN", 0xB471, true, true, false},
+ // GPU row
+    {"%",       0, 100,  10.0f,  90.0f,   "GPU", 0xB471, true,  false, false},
+    {kDegreesC, 0, 100,  55.0f,  85.0f,   "TMP", 0xB471, true,  false, false},
+    {" W",      0, 400,  50.0f,  170.0f,  "PWR", 0xB471, true,  false, false},
+    {"",        0, 1500, 800.0f, 1400.0f, "FAN", 0xB471, true,  true,  false},
 
-    // VRAM — end of GPU row
-    {"%", 0, 100, 30.0f, 90.0f, "VRM", 0xB471, true, false, false},
+ // VRAM — end of GPU row
+    {"%",       0, 100,  30.0f,  90.0f,   "VRM", 0xB471, true,  false, false},
 
-    // Row 3 — 3D / compute / decode (fan slots are lazily created, see
-    // PcMetricsWidget::ensureChildWidgetsCreated())
-    {"%", 0, 100, 10.0f, 90.0f, "3D", 0xB471, true, false, false},
-    {"%", 0, 100, 10.0f, 90.0f, "CMP", 0xB471, true, false, false},
-    {"%", 0, 100, 10.0f, 90.0f, "DEC", 0xB471, true, false, false},
+ // Row 3 — 3D / compute / decode (fan slots are lazily created, see
+  // PcMetricsWidget::ensureChildWidgetsCreated())
+    {"%",       0, 100,  10.0f,  90.0f,   "3D",  0xB471, true,  false, false},
+    {"%",       0, 100,  10.0f,  90.0f,   "CMP", 0xB471, true,  false, false},
+    {"%",       0, 100,  10.0f,  90.0f,   "DEC", 0xB471, true,  false, false},
 };
 
 }  // namespace PcMetricsTilesConfig

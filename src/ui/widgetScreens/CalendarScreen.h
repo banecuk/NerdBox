@@ -11,8 +11,7 @@
 // and clock share the bottom band with every other widget screen.
 class CalendarScreen : public BaseWidgetScreen {
  public:
-    CalendarScreen(LoggerInterface& logger, UiController* uiController,
-                  const AppSettings& config);
+    CalendarScreen(LoggerInterface& logger, UiController* uiController, const AppSettings& config);
     ~CalendarScreen() override = default;
 
  private:

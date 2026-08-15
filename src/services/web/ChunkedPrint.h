@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Print.h>
 #include <WebServer.h>
 
 #include <algorithm>
 #include <cstring>
+
+#include <Print.h>
 
 // Adapts WebServer's chunked-transfer sendContent() to Arduino's Print
 // interface, so ArduinoJson's serializeJson(doc, Print&) can stream straight
@@ -25,7 +26,8 @@ class ChunkedPrint : public Print {
             memcpy(buf_ + len_, buffer + written, chunk);
             len_ += chunk;
             written += chunk;
-            if (len_ == sizeof(buf_)) flushBuffer();
+            if (len_ == sizeof(buf_))
+                flushBuffer();
         }
         return size;
     }

@@ -15,7 +15,7 @@
 class MultiWidget : public Widget {
  public:
     MultiWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-               PcMetrics& pcMetrics);
+                PcMetrics& pcMetrics);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 

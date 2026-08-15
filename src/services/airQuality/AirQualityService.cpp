@@ -54,7 +54,7 @@ bool AirQualityService::parseData(AirQualityData& outData) {
     outData.freshness.publish(millis());
 
     LOG_DEBUGF(logger_, "AirQuality: tp=%d hu=%d pr=%d ws=%.1f wd=%d aqi=%d", outData.temperature,
-              outData.humidity, outData.pressure, ws, outData.wind_dir, outData.aqi_us);
+               outData.humidity, outData.pressure, ws, outData.wind_dir, outData.aqi_us);
 
     return true;
 }
