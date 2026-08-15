@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config/LgfxConfig.h"
-#include "ScreenInterface.h"
+#include "ui/screens/ScreenInterface.h"
 #include "utils/ScreenLogQueue.h"
 
 class BootScreen : public ScreenInterface {

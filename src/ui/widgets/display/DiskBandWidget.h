@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "core/events/EventTypes.h"
-#include "MetricWidget.h"
+#include "ui/widgets/display/MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"

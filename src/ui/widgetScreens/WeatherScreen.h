@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseWidgetScreen.h"
+#include "ui/widgetScreens/BaseWidgetScreen.h"
 #include "config/AppSettings.h"
 #include "services/weather/WeatherData.h"
 #include "ui/widgets/display/WeatherWidget.h"

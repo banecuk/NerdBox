@@ -9,7 +9,7 @@
 #include <functional>
 #include <vector>
 
-#include "EventTypes.h"
+#include "core/events/EventTypes.h"
 
 // Subscribe only during init, from objects that live for the app's lifetime.
 // A short-lived subscriber must call unsubscribe() with its token before it

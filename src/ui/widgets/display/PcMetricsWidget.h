@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "config/AppSettings.h"
-#include "MetricWidget.h"
+#include "ui/widgets/display/MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"

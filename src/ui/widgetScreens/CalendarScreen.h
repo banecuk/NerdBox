@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseWidgetScreen.h"
+#include "ui/widgetScreens/BaseWidgetScreen.h"
 #include "config/AppSettings.h"
 #include "ui/widgets/display/CalendarWidget.h"
 #include "ui/widgets/display/ClockWidget.h"

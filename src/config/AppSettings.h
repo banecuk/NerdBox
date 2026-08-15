@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "AppConfig.h"
+#include "config/AppConfig.h"
 
 // Plain value object populated from AppConfig::internal's compile-time
 // constants. Replaces the old AppConfigInterface/AppConfigService virtual

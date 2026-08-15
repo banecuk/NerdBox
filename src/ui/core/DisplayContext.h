@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Colors.h"
+#include "ui/core/Colors.h"
 #include "config/LgfxConfig.h"
 #include "utils/LoggerInterface.h"
 #include "utils/ScreenLogQueue.h"

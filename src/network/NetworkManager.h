@@ -5,7 +5,7 @@
 
 #include "config/AppSettings.h"
 #include "config/Environment.h"
-#include "HttpClient.h"
+#include "network/HttpClient.h"
 #include "utils/Logger.h"
 
 class NetworkManager {

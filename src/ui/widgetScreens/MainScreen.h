@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseWidgetScreen.h"
+#include "ui/widgetScreens/BaseWidgetScreen.h"
 #include "config/AppSettings.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/network/NetworkStatus.h"
