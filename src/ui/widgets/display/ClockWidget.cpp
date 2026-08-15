@@ -5,8 +5,13 @@
 #include <time.h>
 
 ClockWidget::ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                         uint16_t textColor, uint16_t bgColor, const std::string& format)
-    : Widget(dims, updateIntervalMs), textColor_(textColor), bgColor_(bgColor) {}
+                         uint16_t textColor, uint16_t bgColor, const std::string& format,
+                         EventType action, ActionCallback callback)
+    : Widget(dims, updateIntervalMs),
+      textColor_(textColor),
+      bgColor_(bgColor),
+      action_(action),
+      callback_(std::move(callback)) {}
 
 void ClockWidget::computeLayout() {
     LGFX* lcd = getLcd();
@@ -87,6 +92,9 @@ void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
     clearDirty();
 }
 
-bool ClockWidget::handleTouch(uint16_t x, uint16_t y) {
-    return false;
+bool ClockWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
+    if (!callback_)
+        return false;
+    callback_(action_);
+    return true;
 }

@@ -18,6 +18,7 @@ class DisplayManager;
 //   NVS EventType::SHOW_SETTINGS   → requestSettingsScreen() EventType::SHOW_MAIN       →
 //   requestMainScreen() EventType::SHOW_GAME       → requestGameScreen() EventType::SHOW_DISKS →
 //   requestDisksScreen() EventType::SHOW_WEATHER    → requestWeatherScreen()
+//   EventType::SHOW_CALENDAR  → requestCalendarScreen()
 class UiEventHandler {
  public:
     UiEventHandler(UiController* uiController, LoggerInterface& logger);
@@ -31,6 +32,7 @@ class UiEventHandler {
     void requestGameScreen();
     void requestDisksScreen();
     void requestWeatherScreen();
+    void requestCalendarScreen();
 
  private:
     UiController* uiController_;
@@ -40,6 +42,6 @@ class UiEventHandler {
         EventType type;
         EventBus::SubscriptionId id;
     };
-    static constexpr size_t kSubscriptionCount = 8;
+    static constexpr size_t kSubscriptionCount = 9;
     std::array<Subscription, kSubscriptionCount> subscriptions_{};
 };

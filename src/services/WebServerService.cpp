@@ -49,6 +49,10 @@ void WebServerService::begin() {
         uiController_.requestScreen(ScreenName::WEATHER);
         server_.send(200, "text/plain", "OK");
     });
+    server_.on("/screen/calendar", HTTP_POST, [this]() {
+        uiController_.requestScreen(ScreenName::CALENDAR);
+        server_.send(200, "text/plain", "OK");
+    });
     server_.onNotFound([this]() { this->handleNotFound(); });
     server_.begin();
 }
@@ -236,6 +240,7 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"POST", "/screen/settings", "Switches the display to the Settings screen."        },
     {"POST", "/screen/game",     "Switches the display to the Game screen."            },
     {"POST", "/screen/weather",  "Switches the display to the Weather screen."         },
+    {"POST", "/screen/calendar", "Switches the display to the Calendar screen."        },
 };
 }  // namespace
 

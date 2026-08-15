@@ -78,8 +78,12 @@ const char* WebApiHandlers::screenNameToString(ScreenName screen) {
             return "SETTINGS";
         case ScreenName::GAME:
             return "GAME";
+        case ScreenName::DISKS:
+            return "DISKS";
         case ScreenName::WEATHER:
             return "WEATHER";
+        case ScreenName::CALENDAR:
+            return "CALENDAR";
         case ScreenName::NONE:
         default:
             return "NONE";

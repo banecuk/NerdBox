@@ -47,6 +47,9 @@ void UiEventHandler::registerHandlers() {
     subscriptions_[i++] = {EventType::SHOW_WEATHER,
                            eventBus.subscribe(EventType::SHOW_WEATHER,
                                               [this]() { requestWeatherScreen(); })};
+    subscriptions_[i++] = {EventType::SHOW_CALENDAR,
+                           eventBus.subscribe(EventType::SHOW_CALENDAR,
+                                              [this]() { requestCalendarScreen(); })};
 }
 
 void UiEventHandler::resetDevice() {
@@ -85,4 +88,9 @@ void UiEventHandler::requestDisksScreen() {
 void UiEventHandler::requestWeatherScreen() {
     LOG_DEBUG(logger_, "WEATHER action received");
     uiController_->requestScreen(ScreenName::WEATHER);
+}
+
+void UiEventHandler::requestCalendarScreen() {
+    LOG_DEBUG(logger_, "CALENDAR action received");
+    uiController_->requestScreen(ScreenName::CALENDAR);
 }

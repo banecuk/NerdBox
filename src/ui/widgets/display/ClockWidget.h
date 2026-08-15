@@ -1,15 +1,24 @@
 #pragma once
+#include <functional>
 #include <string>
 
+#include "core/events/EventTypes.h"
 #include "core/resources/FontRegistry.h"
 #include "ui/widgets/base/HmsFieldRenderer.h"
 #include "ui/widgets/base/Widget.h"
 
 class ClockWidget : public Widget {
  public:
+    using ActionCallback = std::function<void(EventType)>;
+
+    // Optional tap action (mirrors AirQualityWidget/FpsWidget): when a
+    // callback is set, a tap publishes `action`, e.g. to open the calendar
+    // screen. Defaults keep every other ClockWidget instance (DiskScreen,
+    // SettingsScreen, WeatherScreen, ...) non-tappable.
     ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs = 1000,
                 uint16_t textColor = TFT_LIGHTGREY, uint16_t bgColor = TFT_BLACK,
-                const std::string& format = "%H:%M:%S");
+                const std::string& format = "%H:%M:%S", EventType action = EventType::NONE,
+                ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -23,6 +32,9 @@ class ClockWidget : public Widget {
 
     uint16_t textColor_;
     uint16_t bgColor_;
+
+    EventType action_;
+    ActionCallback callback_;
 
     // Font metrics — measured once after first loadFont call.
     uint16_t fontH_ = 0;   // font cap height in pixels

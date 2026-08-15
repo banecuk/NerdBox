@@ -3,6 +3,7 @@
 #include "BootScreen.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/network/NetworkStatus.h"
+#include "ui/widgetScreens/CalendarScreen.h"
 #include "ui/widgetScreens/DiskScreen.h"
 #include "ui/widgetScreens/GameScreen.h"
 #include "ui/widgetScreens/MainScreen.h"
@@ -30,6 +31,8 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::WEATHER:
             return std::make_unique<WeatherScreen>(ctx.logger, ctx.controller, ctx.config,
                                                    ctx.weatherData);
+        case ScreenName::CALENDAR:
+            return std::make_unique<CalendarScreen>(ctx.logger, ctx.controller, ctx.config);
         default:
             return nullptr;
     }
