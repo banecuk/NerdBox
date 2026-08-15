@@ -227,11 +227,13 @@ void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t co
             // Draw a kSparkThickness-tall marker instead of a single pixel,
             // clamped so it never overflows below the row (the min-height
             // case) — the row's bottom edge is the border line drawn in
-            // drawRowBorders().
+            // drawRowBorders(). Below the low threshold, thin it to 1px so
+            // quiet/idle stretches read as visually lighter than active ones.
+            const uint16_t thickness = zone == kZoneLow ? 1 : kSparkThickness;
             uint16_t barY = plotY + rowHeight_ - height;
-            if (barY + kSparkThickness > plotY + rowHeight_)
-                barY = plotY + rowHeight_ - kSparkThickness;
-            lcd->fillRect(x, barY, kColWidth, kSparkThickness, barColor);
+            if (barY + thickness > plotY + rowHeight_)
+                barY = plotY + rowHeight_ - thickness;
+            lcd->fillRect(x, barY, kColWidth, thickness, barColor);
         }
 
         lastCol[col] = encoded;

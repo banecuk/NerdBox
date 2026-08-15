@@ -1,5 +1,8 @@
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+
 #include "LoggerInterface.h"
 #include "LogRing.h"
 #include "RecentLogView.h"
@@ -39,6 +42,16 @@ class Logger : public LoggerInterface, public ScreenLogQueue, public RecentLogVi
 
     LogRing<kScreenQueueCapacity> screenQueue_;
     LogRing<RecentLogView::kRecentLogCapacity> recentLogs_;
+
+    // Serial output is drained by a dedicated low-priority task so a full USB
+    // CDC TX buffer (or no host attached to read it) never blocks whichever
+    // task produced the log line — see docs-local/07-performance.md P1-10.
+    static constexpr size_t kSerialQueueCapacity = 16;
+    static constexpr size_t kSerialLineMaxLen = 256;
+    QueueHandle_t serialQueue_ = nullptr;
+
+    void startSerialDrainTask();
+    static void serialDrainTaskFn(void* arg);
 
     // Buffer-based methods
     void getTimestamp(char* buffer, size_t bufferSize, bool forScreen = false);

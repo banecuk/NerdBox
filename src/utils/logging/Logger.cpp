@@ -1,6 +1,7 @@
 #include "Logger.h"
 
 #include <Arduino.h>
+#include <freertos/task.h>
 
 #include <cstdarg>
 #include <cstring>
@@ -14,6 +15,25 @@
 
 Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
     // Serial is initialized by main.cpp using the configured baud rate
+    startSerialDrainTask();
+}
+
+void Logger::startSerialDrainTask() {
+    serialQueue_ = xQueueCreate(kSerialQueueCapacity, kSerialLineMaxLen);
+    // Low priority + small stack: this task only ever blocks on the queue or
+    // on Serial.println(), so it never competes for CPU with the screen or
+    // background tasks.
+    xTaskCreate(serialDrainTaskFn, "SerialLog", 2048, this, 1, nullptr);
+}
+
+void Logger::serialDrainTaskFn(void* arg) {
+    Logger* self = static_cast<Logger*>(arg);
+    char line[kSerialLineMaxLen];
+    for (;;) {
+        if (xQueueReceive(self->serialQueue_, line, portMAX_DELAY) == pdTRUE) {
+            Serial.println(line);
+        }
+    }
 }
 
 void Logger::getUptimeTimestamp(char* buffer, size_t bufferSize, bool forScreen) {
@@ -86,8 +106,10 @@ void Logger::emit(LogLevel level, const char* message, bool forScreen) {
     // Direct format to avoid intermediate String operations
     snprintf(logBuffer, sizeof(logBuffer), "%s [%s] %s", timestamp, levelStr, message);
 
-    // Send to Serial
-    Serial.println(logBuffer);
+    // Hand off to the serial-drain task rather than writing to Serial here —
+    // a non-blocking send that just drops the line if the queue is full, so
+    // this call never stalls the calling task (see startSerialDrainTask()).
+    xQueueSend(serialQueue_, logBuffer, 0);
 
     // The recent-log ring and the screen queue both want the short
     // "HH:MM:SS" timestamp (forScreen=true) — compute it at most once per

@@ -14,6 +14,11 @@
 //
 // CRTP rather than virtuals: every hook is known at compile time and each
 // service is instantiated exactly once, so a vtable would buy nothing.
+//
+// Only PcMetricsService, AirQualityService, and WeatherService derive from
+// this — PcMetricsStreamService (the default PC-metrics data path) is SSE,
+// not a bounded request/response GET, and can't fit this pattern. Don't
+// assume every service shares this base.
 // Derived must provide:
 //     void initFilter(JsonDocument& filter);   // called once, from init()
 //     bool parseData(TData& outData);          // reads doc(), fills outData

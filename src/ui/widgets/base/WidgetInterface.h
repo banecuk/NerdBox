@@ -2,6 +2,12 @@
 
 #include "ui/core/DisplayContext.h"
 
+// ui/widgets/base/ holds three different kinds of thing: the base class
+// chain (this interface + Widget), a specialized base (PcDataCompositeWidget),
+// and free-function helpers used by a minority of subclasses
+// (HmsFieldRenderer, WidgetPainter, MetricColorPolicy). Fine at this size —
+// if it keeps growing, the helpers are the ones to split off first, since
+// they have no inheritance relationship to anything here.
 class WidgetInterface {
  public:
     struct Dimensions {
