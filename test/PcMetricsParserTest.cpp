@@ -43,7 +43,7 @@ static const char* kFullReportJson = R"({
     "CpuExtended": {"TemperatureCoreMax": 65.3, "PackagePower": 95.7},
     "Ram": {"Load": 55.1},
     "Gpu": {"Load": 30.2, "Temperature": 60.9, "PackagePower": 120.4, "Fan": 1500.0,
-            "D3d3d": 12.0, "D3dCompute": 3.0, "D3dDecode": 7.0, "MemoryLoad": 50.0,
+            "D3d3d": 12.0, "D3dCompute": 3.0, "D3dVideoDecode": 7.0, "MemoryLoad": 50.0,
             "FullscreenFps": 155.40016},
     "Motherboard": {"CpuFan": 1200.0, "SystemFans": [800, 0, 900]},
     "Disks": {"Drives": [{"DriveName":"C","FreeSpacePercent":45.5,"ReadKBPerSec":120.0,"WriteKBPerSec":30.0}]},
@@ -166,12 +166,9 @@ TEST(PcMetricsParserTest, AbsentCoreLoadsWithLoadPresentUpdatesLoadOnly) {
     EXPECT_EQ(m.cpu_thread_load[1], 60);
 }
 
-// ─── D3dDecode (GPU video-decode engine) ────────────────────────────────────
-// NerdWinSense does not send this key as of 2026-08 (see docs-local/01-bugs.md
-// B2) — these cover both today's absent-key reality and the day it starts
-// reporting D3dDecode.
+// ─── D3dVideoDecode (GPU video-decode engine) ───────────────────────────────
 
-TEST(PcMetricsParserTest, AbsentD3dDecodeLeavesGpuDecodeUnchanged) {
+TEST(PcMetricsParserTest, AbsentD3dVideoDecodeLeavesGpuDecodeUnchanged) {
     JsonDocument doc;
     JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Gpu": {"Load": 5.0}}})");
 
@@ -183,9 +180,9 @@ TEST(PcMetricsParserTest, AbsentD3dDecodeLeavesGpuDecodeUnchanged) {
     EXPECT_EQ(m.gpu_decode, 42);
 }
 
-TEST(PcMetricsParserTest, PresentD3dDecodeUpdatesGpuDecode) {
+TEST(PcMetricsParserTest, PresentD3dVideoDecodeUpdatesGpuDecode) {
     JsonDocument doc;
-    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Gpu": {"D3dDecode": 63.0}}})");
+    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Gpu": {"D3dVideoDecode": 63.0}}})");
 
     PcMetrics m;
     NullLogger logger;
