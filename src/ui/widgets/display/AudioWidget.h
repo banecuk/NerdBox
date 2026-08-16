@@ -38,6 +38,7 @@ class AudioWidget : public Widget {
     bool lastOffline_ = false;
     char lastTitle_[sizeof(AudioData::title)] = {0};
     char lastArtist_[sizeof(AudioData::artist)] = {0};
+    char lastAlbum_[sizeof(AudioData::album)] = {0};
     char lastQuality_[24] = {0};
     uint16_t lastBarWidth_ = 0xFFFF;  // sentinel — never a real fill width
     uint32_t lastPositionMs_ = 0xFFFFFFFF;
@@ -46,6 +47,7 @@ class AudioWidget : public Widget {
 
     uint16_t titleY_ = 0;
     uint16_t artistY_ = 0;
+    uint16_t albumY_ = 0;
     uint16_t timeY_ = 0;
     uint16_t barX_ = 0;
     uint16_t barY_ = 0;

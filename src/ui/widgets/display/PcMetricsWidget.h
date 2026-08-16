@@ -1,9 +1,11 @@
 #pragma once
 #include <array>
 #include <atomic>
+#include <functional>
 #include <vector>
 
 #include "config/AppSettings.h"
+#include "core/events/EventTypes.h"
 #include "ui/widgets/display/MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
@@ -14,8 +16,15 @@
 // and GameScreen (130px tall) via the rowHeight() rescale in toScreenSpace().
 class PcMetricsWidget : public PcDataCompositeWidget {
  public:
+    using ActionCallback = std::function<void(EventType)>;
+
+    // action/callback mirror AirQualityWidget/FpsWidget's tap-to-navigate
+    // pattern: a tap on any GPU tile (load/temp/power/fan/memory/3D/compute/
+    // decode) publishes `action` via `callback` (e.g. to open the game
+    // screen). No-op when either is left at its default.
     PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                    uint32_t updateIntervalMs, PcMetrics& pcMetrics);
+                    uint32_t updateIntervalMs, PcMetrics& pcMetrics,
+                    EventType action = EventType::NONE, ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -72,6 +81,17 @@ class PcMetricsWidget : public PcDataCompositeWidget {
 
     static const std::array<PcMetricsWidget::FixedTileDescriptor, PcMetricsWidget::kFixedTileCount>&
     fixedTileDescriptors();
+
+    // fixedTileDescriptors()'s kGetters/kDims are laid out CPU row (indices
+    // 0-4: load/temp/power/fan/RAM), then GPU row + GPU-adjacent row 3 tiles
+    // (indices 5-12: load/temp/power/fan/memory/3D/compute/decode) — the
+    // contiguous GPU range a tap check needs. FixedTile's own enum values are
+    // just names; they don't index these arrays.
+    static constexpr uint8_t kGpuTileFirstIndex = 5;
+    static constexpr uint8_t kGpuTileLastIndex = 12;
+
+    EventType action_;
+    ActionCallback callback_;
 
     uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 

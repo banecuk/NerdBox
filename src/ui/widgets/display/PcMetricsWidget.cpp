@@ -48,8 +48,11 @@ float valueGpuDecode(const PcMetrics& m) {
 }  // namespace
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics) {
+                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics,
+                                 EventType action, ActionCallback callback)
+    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics),
+      action_(action),
+      callback_(std::move(callback)) {
     buildFixedWidgets();
 }
 
@@ -228,5 +231,18 @@ void PcMetricsWidget::clearChildren() {
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
+    if (!callback_)
+        return false;
+
+    for (uint8_t i = kGpuTileFirstIndex; i <= kGpuTileLastIndex; ++i) {
+        const auto& widget = fixedWidgets_[i];
+        if (!widget)
+            continue;
+        const auto d = widget->getDimensions();
+        if (x >= d.x && x < d.x + d.width && y >= d.y && y < d.y + d.height) {
+            callback_(action_);
+            return true;
+        }
+    }
     return false;
 }

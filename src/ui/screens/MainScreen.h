@@ -9,7 +9,6 @@
 #include "ui/widgets/display/AirQualityWidget.h"
 #include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/display/DiskBandWidget.h"
-#include "ui/widgets/display/FpsWidget.h"
 #include "ui/widgets/display/MultiWidget.h"
 #include "ui/widgets/display/NetworkTrafficWidget.h"
 #include "ui/widgets/display/NetworkWidget.h"

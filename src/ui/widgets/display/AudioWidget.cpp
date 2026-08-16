@@ -10,6 +10,7 @@
 namespace {
 constexpr uint16_t kTitleRowH = 20;
 constexpr uint16_t kArtistRowH = 16;
+constexpr uint16_t kAlbumRowH = 14;
 constexpr uint16_t kTimeRowH = 14;
 // Gap between the quality label and the time text on the same row.
 constexpr int32_t kQualityTimeGap = 10;
@@ -31,9 +32,10 @@ AudioWidget::AudioWidget(const WidgetInterface::Dimensions& dims, uint32_t updat
 void AudioWidget::computeLayout() {
     titleY_ = dimensions_.y + 2;
     artistY_ = titleY_ + kTitleRowH + 1;
-    timeY_ = artistY_ + kArtistRowH + 4;
+    albumY_ = artistY_ + kArtistRowH + 1;
+    timeY_ = albumY_ + kAlbumRowH + 2;
     barH_ = kBarH;
-    barY_ = timeY_ + kTimeRowH + 3;
+    barY_ = timeY_ + kTimeRowH + 2;
     barX_ = dimensions_.x;
     barW_ = dimensions_.width > kRightPadding ? dimensions_.width - kRightPadding : 0;
 }
@@ -135,6 +137,7 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
 
     const bool titleChanged = forceRedraw || strcmp(audioData_.title, lastTitle_) != 0;
     const bool artistChanged = forceRedraw || strcmp(audioData_.artist, lastArtist_) != 0;
+    const bool albumChanged = forceRedraw || strcmp(audioData_.album, lastAlbum_) != 0;
 
     if (titleChanged) {
         lcd->fillRect(dimensions_.x, titleY_, dimensions_.width, kTitleRowH, TFT_BLACK);
@@ -159,6 +162,18 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
         Fonts::unload(lcd);
         lcd->clearClipRect();
         snprintf(lastArtist_, sizeof(lastArtist_), "%s", audioData_.artist);
+    }
+
+    if (albumChanged) {
+        lcd->fillRect(dimensions_.x, albumY_, dimensions_.width, kAlbumRowH, TFT_BLACK);
+        lcd->setClipRect(dimensions_.x, albumY_, dimensions_.width, kAlbumRowH);
+        Fonts::loadLabel(lcd);
+        lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
+        lcd->setTextDatum(TL_DATUM);
+        lcd->drawString(audioData_.album, dimensions_.x, albumY_);
+        Fonts::unload(lcd);
+        lcd->clearClipRect();
+        snprintf(lastAlbum_, sizeof(lastAlbum_), "%s", audioData_.album);
     }
 
     const uint32_t duration = audioData_.durationMs;
