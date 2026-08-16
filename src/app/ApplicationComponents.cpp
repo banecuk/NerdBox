@@ -7,17 +7,17 @@
 // order) so the two stay easy to keep in sync — see the comment there.
 ApplicationComponents::ApplicationComponents()
     : platform(data.systemState.core.isTimeSynced, config),
-      services(platform.networkManager, platform.logger_, config),
+      services(platform.networkManager, platform.logger_, config, data.audioData),
       jobs(platform, data, services, config),
       uiController(platform.displayContext, platform.displayManager, services.systemMetrics,
                    data.pcMetrics, data.systemState.screen, config, platform.networkManager,
-                   data.airQualityData, data.netStatus, data.weatherData),
+                   data.airQualityData, data.netStatus, data.weatherData, data.audioData),
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
       webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
                        services.pcMetricsService, jobs.pcMetricsStreamJob, data.netStatus,
                        data.systemState, data.weatherData, config, taskManager, platform.logger_,
-                       platform.logger_),
+                       platform.logger_, data.audioData, services.audioService),
       initStateMachine(*this) {}
 
 // -----------------------------------------------------------------------

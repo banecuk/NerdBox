@@ -7,6 +7,8 @@
 #include "config/AppSettings.h"
 #include "core/IScreenNavigator.h"
 #include "core/state/SystemState.h"
+#include "services/audio/AudioData.h"
+#include "services/audio/AudioService.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
@@ -29,7 +31,8 @@ class WebServerService {
                      const NetworkStatus& netStatus, const SystemState& systemState,
                      const WeatherData& weatherData, const AppSettings& config,
                      const TaskManager& taskManager, LoggerInterface& logger,
-                     RecentLogView& recentLogView);
+                     RecentLogView& recentLogView, const AudioData& audioData,
+                     AudioService& audioService);
     void begin();
     void processRequests();
 
@@ -37,6 +40,7 @@ class WebServerService {
     WebServer& server_;
     IScreenNavigator& screenNavigator_;
     LoggerInterface& logger_;
+    AudioService& audioService_;
 
     // PcMetrics, PcMetricsService, PcMetricsStreamJob, NetworkStatus,
     // SystemState, WeatherData, and TaskManager are only needed by
@@ -47,4 +51,5 @@ class WebServerService {
     WebPageHandlers pageHandlers_;
 
     void handleRestart();
+    void handleAudioPush();
 };

@@ -4,12 +4,14 @@
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
-                       const AirQualityData& airQualityData, const NetworkStatus& netStatus)
+                       const AirQualityData& airQualityData, const NetworkStatus& netStatus,
+                       const AudioData& audioData)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
       systemMetrics_(systemMetrics),
       airQualityData_(airQualityData),
-      netStatus_(netStatus) {}
+      netStatus_(netStatus),
+      audioData_(audioData) {}
 
 void MainScreen::createWidgets() {
     // Threads — reduced-width row filling the left side of the top band.
@@ -39,8 +41,8 @@ void MainScreen::createWidgets() {
     // right to make room for a minimal-width FPS tile beside it.
     // Moved up to y=162 (where the disk band used to sit) so the disk band
     // can move below it.
-    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 162, 430, 80}, 200, pcMetrics_)));
+    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(new MultiWidget(
+        WidgetInterface::Dimensions{0, 162, 430, 80}, 200, pcMetrics_, audioData_, config_)));
 
     // FPS widget — beside the MultiWidget, tappable to the game screen.
     // Narrow: 50px just fits three NotoSansMono24 digits (14px advance each)

@@ -2,6 +2,7 @@
 
 #include "config/AppSettings.h"
 #include "services/airQuality/AirQualityData.h"
+#include "services/audio/AudioData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/screens/base/BaseWidgetScreen.h"
@@ -20,7 +21,8 @@ class MainScreen : public BaseWidgetScreen {
  public:
     MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                const AppSettings& config, ApplicationMetrics& systemMetrics,
-               const AirQualityData& airQualityData, const NetworkStatus& netStatus);
+               const AirQualityData& airQualityData, const NetworkStatus& netStatus,
+               const AudioData& audioData);
     ~MainScreen() override = default;
 
  private:
@@ -29,4 +31,5 @@ class MainScreen : public BaseWidgetScreen {
     ApplicationMetrics& systemMetrics_;
     const AirQualityData& airQualityData_;
     const NetworkStatus& netStatus_;
+    const AudioData& audioData_;
 };

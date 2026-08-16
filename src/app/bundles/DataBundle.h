@@ -2,6 +2,7 @@
 
 #include "core/state/SystemState.h"
 #include "services/airQuality/AirQualityData.h"
+#include "services/audio/AudioData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/weather/WeatherData.h"
@@ -32,4 +33,10 @@ struct DataBundle {
     // plus a fixed day array (no heap); only the refreshRequested flag is
     // shared cross-task and so is atomic.
     WeatherData weatherData;
+
+    // Written by AudioService from the web server's POST /audio handler
+    // (main-loop task) as the mb_NerdBox MusicBee plugin pushes now-playing
+    // events, read by AudioWidget/MultiWidget (screen task). Scalars plus
+    // fixed char arrays — no mutex needed, see AudioData's own comment.
+    AudioData audioData;
 };

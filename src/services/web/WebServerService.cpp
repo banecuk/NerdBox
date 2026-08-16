@@ -25,12 +25,14 @@ WebServerService::WebServerService(WebServer& server, IScreenNavigator& screenNa
                                    const NetworkStatus& netStatus, const SystemState& systemState,
                                    const WeatherData& weatherData, const AppSettings& config,
                                    const TaskManager& taskManager, LoggerInterface& logger,
-                                   RecentLogView& recentLogView)
+                                   RecentLogView& recentLogView, const AudioData& audioData,
+                                   AudioService& audioService)
     : server_(server),
       screenNavigator_(screenNavigator),
       logger_(logger),
+      audioService_(audioService),
       apiHandlers_(server, systemMetrics, pcMetrics, pcMetricsService, pcMetricsStreamJob,
-                   netStatus, systemState, weatherData, config, taskManager),
+                   netStatus, systemState, weatherData, config, taskManager, audioData),
       pageHandlers_(server, systemMetrics, config, recentLogView) {}
 
 void WebServerService::begin() {
@@ -45,6 +47,9 @@ void WebServerService::begin() {
     server_.on("/config", [this]() { pageHandlers_.handleConfig(); });
     server_.on("/logs", [this]() { pageHandlers_.handleLogs(); });
     server_.on("/restart", HTTP_POST, [this]() { this->handleRestart(); });
+    // mb_NerdBox MusicBee plugin push target — default PushUrl path, see
+    // docs-local/NERDBOX_INTEGRATION.md.
+    server_.on("/audio", HTTP_POST, [this]() { this->handleAudioPush(); });
     server_.on("/favicon.ico", [this]() { pageHandlers_.handleFavicon(); });
     // POST-only: these change device state, so a GET (e.g. a LAN prefetcher
     // or a link crawler) can no longer flip the screen as a side effect.
@@ -73,4 +78,20 @@ void WebServerService::handleRestart() {
     server_.client().flush();
     delay(200);  // give the TCP stack time to push the response before reboot
     EventBus::getInstance().publish(EventType::RESET_DEVICE);
+}
+
+// ---------------------------------------------------------------------------
+// POST /audio — mb_NerdBox MusicBee plugin push events.
+// ---------------------------------------------------------------------------
+
+void WebServerService::handleAudioPush() {
+    const String body = server_.arg("plain");
+    const bool needsResync = audioService_.handlePush(body);
+    // The plugin only inspects HTTP 409 or a body containing "resend" — any
+    // other response is ordinary success/failure and otherwise ignored.
+    if (needsResync) {
+        server_.send(409, "text/plain", "resend");
+    } else {
+        server_.send(200, "text/plain", "OK");
+    }
 }

@@ -4,6 +4,8 @@
 #include "config/Limits.h"
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityService.h"
+#include "services/audio/AudioData.h"
+#include "services/audio/AudioService.h"
 #include "services/network/NetworkStatusService.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/weather/WeatherService.h"
@@ -29,11 +31,15 @@ struct ServiceBundle {
     AirQualityService airQualityService;
     WeatherService weatherService;
     NetworkStatusService networkStatusService;
+    // Push-driven (not fetch-driven, unlike its siblings above), so it only
+    // needs the AudioData it writes into plus a logger — no NetworkManager.
+    AudioService audioService;
 
     ServiceBundle(NetworkManager& networkManager, LoggerInterface& logger,
-                  const AppSettings& config)
+                  const AppSettings& config, AudioData& audioData)
         : pcMetricsService(networkManager, systemMetrics, logger, config),
           airQualityService(networkManager, logger),
           weatherService(networkManager, logger),
-          networkStatusService(logger) {}
+          networkStatusService(logger),
+          audioService(audioData, logger) {}
 };

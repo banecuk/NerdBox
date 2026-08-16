@@ -6,6 +6,7 @@
 #include "app/TaskManager.h"
 #include "config/AppSettings.h"
 #include "core/state/SystemState.h"
+#include "services/audio/AudioData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
@@ -23,7 +24,7 @@ class WebApiHandlers {
                    PcMetricsService& pcMetricsService, PcMetricsStreamJob& pcMetricsStreamJob,
                    const NetworkStatus& netStatus, const SystemState& systemState,
                    const WeatherData& weatherData, const AppSettings& config,
-                   const TaskManager& taskManager);
+                   const TaskManager& taskManager, const AudioData& audioData);
 
     void handleApiStatus();
     void handleApiRaw();
@@ -34,6 +35,7 @@ class WebApiHandlers {
     static const char* internetStatusToString(NetworkStatus::Internet status);
     static const char* screenNameToString(ScreenName screen);
     static const char* sseStateToString(SseConnection::State state);
+    static const char* playStateToString(AudioData::PlayState state);
 
     WebServer& server_;
     ApplicationMetrics& systemMetrics_;
@@ -45,4 +47,5 @@ class WebApiHandlers {
     const WeatherData& weatherData_;
     const AppSettings& config_;
     const TaskManager& taskManager_;
+    const AudioData& audioData_;
 };

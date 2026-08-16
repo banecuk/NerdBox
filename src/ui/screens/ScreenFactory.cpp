@@ -18,7 +18,7 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::MAIN:
             return std::make_unique<MainScreen>(ctx.logger, ctx.metrics, ctx.controller, ctx.config,
                                                 ctx.systemMetrics, ctx.airQualityData,
-                                                ctx.netStatus);
+                                                ctx.netStatus, ctx.audioData);
         case ScreenName::SETTINGS:
             return std::make_unique<SettingsScreen>(ctx.logger, ctx.controller, ctx.config,
                                                     ctx.networkManager, ctx.systemMetrics);

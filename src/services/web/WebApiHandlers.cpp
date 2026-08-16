@@ -28,7 +28,7 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
                                PcMetricsStreamJob& pcMetricsStreamJob,
                                const NetworkStatus& netStatus, const SystemState& systemState,
                                const WeatherData& weatherData, const AppSettings& config,
-                               const TaskManager& taskManager)
+                               const TaskManager& taskManager, const AudioData& audioData)
     : server_(server),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
@@ -38,7 +38,8 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
       systemState_(systemState),
       weatherData_(weatherData),
       config_(config),
-      taskManager_(taskManager) {}
+      taskManager_(taskManager),
+      audioData_(audioData) {}
 
 const char* WebApiHandlers::internetStatusToString(NetworkStatus::Internet status) {
     switch (status) {
@@ -66,6 +67,22 @@ const char* WebApiHandlers::sseStateToString(SseConnection::State state) {
             return "ERROR";
         default:
             return "UNKNOWN";
+    }
+}
+
+const char* WebApiHandlers::playStateToString(AudioData::PlayState state) {
+    switch (state) {
+        case AudioData::PlayState::Loading:
+            return "LOADING";
+        case AudioData::PlayState::Playing:
+            return "PLAYING";
+        case AudioData::PlayState::Paused:
+            return "PAUSED";
+        case AudioData::PlayState::Stopped:
+            return "STOPPED";
+        case AudioData::PlayState::Undefined:
+        default:
+            return "UNDEFINED";
     }
 }
 
@@ -189,6 +206,30 @@ void WebApiHandlers::handleApiStatus() {
     weather["age_ms"] = weatherAgeMs;
     weather["days"] = weatherData_.dayCount;
     weather["refresh_pending"] = weatherData_.refreshRequested.load();
+
+    // audio — mb_NerdBox MusicBee plugin push feed state, so the push path
+    // (POST /audio) can be observed without a serial monitor or a visible
+    // screen — see docs-local/NERDBOX_INTEGRATION.md.
+    const unsigned long audioAgeMs =
+        audioData_.freshness.available() ? millis() - audioData_.freshness.lastUpdateMs() : 0;
+    JsonObject audio = doc["audio"].to<JsonObject>();
+    audio["has_track"] = audioData_.hasTrack;
+    audio["play_state"] = playStateToString(audioData_.playState);
+    audio["is_playing"] = audioData_.isPlaying;
+    audio["stopped"] = audioData_.stopped;
+    audio["offline"] = audioData_.offline;
+    audio["title"] = audioData_.title;
+    audio["artist"] = audioData_.artist;
+    audio["album"] = audioData_.album;
+    audio["position_ms"] = audioData_.positionMs;
+    audio["duration_ms"] = audioData_.durationMs;
+    audio["seq"] = audioData_.seq;
+    audio["track_id"] = audioData_.trackId;
+    audio["session"] = audioData_.session;
+    audio["last_event_age_ms"] = audioAgeMs;
+    // Age since the last stop/offline event, so "how long has it been
+    // stopped" is observable without a screen — 0 while a track is loaded.
+    audio["stopped_age_ms"] = audioData_.stopped ? millis() - audioData_.stoppedAtMs : 0;
 
     // Stack high-water marks — early warning before a tight task stack
     // (6144/8192 B) overflows and reboots the device. 0 means the task

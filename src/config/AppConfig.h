@@ -139,6 +139,18 @@ struct PcMetricsStreamImpl {
     static constexpr const char* kStreamPath = "/api/v1/stream";
 };
 
+// Audio (MusicBee mb_NerdBox plugin push) configuration — see
+// docs-local/NERDBOX_INTEGRATION.md.
+struct AudioImpl {
+    // How long MultiWidget keeps showing the "Stopped"/"Disconnected"
+    // message after a stop/offline event before falling back to the
+    // sparkline widget, if no new track has started in the meantime.
+    static constexpr uint32_t kStoppedMessageMs = 2000;
+    // How long MultiWidget keeps showing a paused track before falling back
+    // to the sparkline widget, if playback hasn't resumed in the meantime.
+    static constexpr uint32_t kPausedTimeoutMs = 10000;
+};
+
 // Network configuration
 struct NetworkImpl {
     // Advertised via mDNS so the device is reachable as
