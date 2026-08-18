@@ -10,6 +10,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"
+#include "utils/MidpointInterpolator.h"
 
 // Composite CPU + GPU + RAM/VRAM tile grid plus up to two system-fan tiles,
 // in a 5-column x 3-row, 96px-wide grid. Shared by MainScreen (106px tall)
@@ -27,6 +28,8 @@ class PcMetricsWidget : public PcDataCompositeWidget {
                     EventType action = EventType::NONE, ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
+
+    bool needsUpdate() const override;
 
  protected:
     void drawFreshStatic() override;
@@ -97,6 +100,11 @@ class PcMetricsWidget : public PcDataCompositeWidget {
 
     std::array<std::unique_ptr<MetricWidget>, kFixedTileCount> fixedWidgets_;
     std::vector<std::unique_ptr<MetricWidget>> systemFanWidgets_;
+
+    // CPU load moves much faster than the other tiles between fetches, so it
+    // alone gets a mid-cycle interpolated redraw — see MidpointInterpolator.
+    // mutable: needsUpdate() (const) consumes its one-shot reveal deadline.
+    mutable MidpointInterpolator cpuLoadInterpolator_;
 
     // Row height derived from this widget's actual height (3-row grid). At the
     // nominal 90px instance this equals kRowH (30px); a shorter instance yields

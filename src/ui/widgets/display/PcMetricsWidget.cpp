@@ -182,16 +182,27 @@ void PcMetricsWidget::drawDynamicData() {
     if (!isStaticDrawn_)
         return;
 
+    // A new sample arrived (rather than this being a mid-cycle interpolation
+    // wake-up) exactly when the shared freshness timestamp is about to move —
+    // lastUpdateTimestamp_ still holds the previous value here; the caller
+    // (PcDataCompositeWidget::onDraw) only updates it after this call returns.
+    const bool newSampleArrived = pcMetrics_.freshness.lastUpdateMs() != lastUpdateTimestamp_;
+    if (newSampleArrived) {
+        cpuLoadInterpolator_.onSample(valueCpuLoad(pcMetrics_), millis());
+    }
+
     LGFX* lcd = getLcd();
 
     Fonts::loadMetric(lcd);
     const auto& descriptors = fixedTileDescriptors();
     for (uint8_t i = 0; i < kFixedTileCount; ++i) {
         auto& widget = fixedWidgets_[i];
-        if (widget) {
-            widget->setValue(static_cast<int>(descriptors[i].getValue(pcMetrics_)));
-            widget->drawValueWithLoadedFont();
-        }
+        if (!widget)
+            continue;
+        const float raw = (i == kCpuLoad) ? cpuLoadInterpolator_.displayValue(millis())
+                                          : descriptors[i].getValue(pcMetrics_);
+        widget->setValue(static_cast<int>(raw));
+        widget->drawValueWithLoadedFont();
     }
     for (uint8_t i = 0; i < pcMetrics_.system_fan_count && i < systemFanWidgets_.size(); ++i) {
         if (systemFanWidgets_[i]) {
@@ -228,6 +239,20 @@ void PcMetricsWidget::clearChildren() {
                        TFT_BLACK);
     systemFanWidgets_.clear();
     lastSystemFanCount_ = 0xFF;
+    // Restart the interpolation cycle instead of averaging against a raw
+    // CPU-load sample from before the stale/fresh gap.
+    cpuLoadInterpolator_ = MidpointInterpolator();
+}
+
+bool PcMetricsWidget::needsUpdate() const {
+    if (PcDataCompositeWidget::needsUpdate())
+        return true;
+    // One extra wake-up per cycle, right at the interpolator's midpoint
+    // deadline, to snap the CPU tile from the averaged value to the actual
+    // sample — see MidpointInterpolator. consumeRevealDue() is one-shot, so
+    // this doesn't degrade into a continuous time-elapsed poll once the
+    // deadline has passed (see 07-performance.md P0-3).
+    return hasFreshData() && cpuLoadInterpolator_.consumeRevealDue(millis());
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
