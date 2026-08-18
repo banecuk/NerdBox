@@ -13,8 +13,8 @@
 
 // Slim, position-independent disk-band strip: a single row of per-drive
 // free-space tiles, each with a solid 4px write line above and read line below
-// colour-coded by activity rate, plus a ">" chevron at the right edge marking
-// the band tappable (default SHOW_DISKS action, mirroring FpsWidget).
+// colour-coded by activity rate. The whole band is tappable (default
+// SHOW_DISKS action, mirroring FpsWidget).
 //
 // Extracted from PcMetricsWidget so it can be placed anywhere on a screen. All
 // tile/line positions derive from dimensions_ rather than hardcoded absolute
@@ -62,10 +62,6 @@ class DiskBandWidget : public PcDataCompositeWidget {
     // Maximum single-drive tile width; on narrower multipliers drives are inset.
     static constexpr uint16_t kMaxWidgetWidth = 120;
 
-    // Width reserved at the right edge for the ">" tap-hint chevron, so the
-    // last drive tile doesn't extend under it.
-    static constexpr uint16_t kChevronReservedWidth = 14;
-
     EventType action_;
     ActionCallback callback_;
 
@@ -81,7 +77,4 @@ class DiskBandWidget : public PcDataCompositeWidget {
     // Read-line vertical offset within the strip (relative to the widget's
     // origin); the tile area fills between kDiskAreaY and this row.
     uint16_t readLineYRelative() const { return dimensions_.height - kReadLineHeight; }
-
-    // Draws the ">" chevron hint at the right edge of the band.
-    void drawDiskChevron();
 };

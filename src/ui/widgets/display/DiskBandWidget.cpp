@@ -83,10 +83,9 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     diskDriveNames_.reserve(snapshotCount);
 
     const uint16_t maxWidgetWidth = kMaxWidgetWidth;
-    const uint16_t availableWidth = (dimensions_.width > kChevronReservedWidth)
-                                        ? (dimensions_.width - kChevronReservedWidth)
-                                        : dimensions_.width;
+    const uint16_t availableWidth = dimensions_.width;
     uint16_t widgetWidth = static_cast<uint16_t>(availableWidth / snapshotCount);
+    const bool uncapped = widgetWidth <= maxWidgetWidth;
     if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
 
@@ -95,6 +94,13 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
 
     for (size_t i = 0; i < snapshotCount; ++i) {
         uint16_t xPos = static_cast<uint16_t>(dimensions_.x + i * widgetWidth);
+        // Last tile absorbs any leftover pixels from integer division so the
+        // band's right edge is flush with the widget bounds — but only when
+        // tiles aren't already capped narrower than an even split, else this
+        // would stretch the last tile far wider than its siblings.
+        uint16_t tileWidth = widgetWidth;
+        if (uncapped && i == snapshotCount - 1)
+            tileWidth = static_cast<uint16_t>(dimensions_.x + dimensions_.width - xPos);
 
         MetricWidget::Config config;
         config.value = snapshot[i].freeSpacePercent;
@@ -110,7 +116,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
 
         auto w = std::make_unique<MetricWidget>(
             WidgetInterface::Dimensions{xPos, static_cast<uint16_t>(dimensions_.y + kDiskAreaY),
-                                        widgetWidth, static_cast<uint16_t>(diskAreaHeight)},
+                                        tileWidth, static_cast<uint16_t>(diskAreaHeight)},
             updateIntervalMs_, config);
 
         // diskDriveNames_ and diskDriveWidgets_ are pushed together here, in
@@ -221,21 +227,6 @@ void DiskBandWidget::drawFreshStatic() {
         if (dw)
             initAndDrawWidget(*dw);
     }
-    drawDiskChevron();
-}
-
-void DiskBandWidget::drawDiskChevron() {
-    if (diskDriveWidgets_.empty())
-        return;
-    LGFX* lcd = getLcd();
-    if (!lcd)
-        return;
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(">", static_cast<int32_t>(dimensions_.x + dimensions_.width - 10),
-                    (dimensions_.y + kWriteLineY + dimensions_.y + readLineYRelative()) / 2);
-    Fonts::unload(lcd);
 }
 
 void DiskBandWidget::clearChildren() {
