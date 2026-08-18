@@ -42,19 +42,21 @@ void MainScreen::createWidgets() {
     // Multifunctional widget — full screen width now that the FPS tile is
     // gone from the main screen (still shown on the game screen via
     // FpsWidget/GameFpsWidget). Moved up to y=162 (where the disk band used
-    // to sit) so the disk band can move below it.
+    // to sit) so the disk band can move below it. 82px tall: 2px taller than
+    // before, absorbing the 2px DiskBandWidget's activity line shed when it
+    // dropped from a 4px write line + 4px read line to one shared 2px line.
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(new MultiWidget(
-        WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 80}, 200, pcMetrics_, audioData_,
+        WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 82}, 200, pcMetrics_, audioData_,
         config_)));
 
-    // Disk band — slim strip, tappable to the disk screen. 27px tall: 4px
-    // read/write activity lines + a ~19px borderless per-drive tile area that
-    // fits the NotoSans15 value font and runs flush against both lines.
-    // Moved below the MultiWidget/FpsWidget row (y=242..269, right above the
-    // bottom band).
+    // Disk band — slim strip, tappable to the disk screen. 25px tall: one
+    // shared 2px read/write activity line at the top (split left/right, see
+    // DiskBandWidget), a 1px gap, then a ~22px borderless per-drive tile area
+    // that fits the NotoSans15 value font. Moved below the MultiWidget/FpsWidget
+    // row (y=244..269, right above the bottom band).
     widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
         uiController_->getDisplayContext(),
-        WidgetInterface::Dimensions{0, 242, Layout::kScreenW, 27}, 100, pcMetrics_,
+        WidgetInterface::Dimensions{0, 244, Layout::kScreenW, 25}, 100, pcMetrics_,
         EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); })));
 
     // ── Bottom band is unchanged below this point ──────────────────────────────

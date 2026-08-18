@@ -24,6 +24,8 @@ class Colors {
     uint16_t generateColorFromPercentGpu(byte value);
     uint16_t generateColorFromPercentRam(byte value);
     void generateGradient();
+    static uint16_t diskActivityColorScale(float kbPerSec, uint16_t darkColor,
+                                            uint16_t brightColor);
 
  public:
     // Shared chrome constants — hairline borders/separators/idle states, and
@@ -38,13 +40,13 @@ class Colors {
     // Alpha-weighted blend between two RGB565 colors (alpha=0 -> a, alpha=255 -> b).
     static uint16_t blendRgb565(uint16_t a, uint16_t b, uint8_t alpha);
 
-    // Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
-    // gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
-    // yellow, >75.5 MB/s orange (capped -- everything above kSaturated stays
-    // orange), with a blended intermediate shade inserted at the midpoint of
-    // each band below kSaturated for finer gradation. Shared by PcMetricsWidget
-    // (main-screen activity lines) and DiskInfoWidget (disk-screen rates).
-    static uint16_t diskActivityColor(float kbPerSec);
+    // Disk activity color scales, in KB/s: <1 MB/s dark gray (idle), then a
+    // continuous blend from a dark to a bright shade of the scale's hue as
+    // the rate climbs to a 100 MB/s cap (everything at/above stays at the
+    // brightest shade). Read uses green shades, write uses red shades, so the
+    // two directions stay visually distinguishable at a glance.
+    static uint16_t diskReadActivityColor(float kbPerSec);
+    static uint16_t diskWriteActivityColor(float kbPerSec);
 
     uint16_t getColorFromPercent(uint8_t value, bool dim = false);
     uint16_t getColorFromPercentGpu(uint8_t value);

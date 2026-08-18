@@ -12,21 +12,23 @@
 #include "utils/ScopedLock.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
-// free-space tiles, each with a solid 4px write line above and read line below
-// colour-coded by activity rate. The whole band is tappable (default
-// SHOW_DISKS action, mirroring FpsWidget).
+// free-space tiles, each with a single solid activity line flush to its top
+// edge, split left/right into a read half (green) and a write half (red).
+// The whole band is tappable (default SHOW_DISKS action, mirroring
+// FpsWidget).
 //
 // Extracted from PcMetricsWidget so it can be placed anywhere on a screen. All
 // tile/line positions derive from dimensions_ rather than hardcoded absolute
 // pixels, so the strip renders correctly at any origin. The tiles render
-// borderless (MetricWidget::setBorderMargin(0)) so their coloured area runs
-// flush against both activity lines — no wasted pixels at the strip edges.
+// borderless (MetricWidget::setBorderMargin(0)).
 //
 // Strip anatomy (top to bottom):
-//   kWriteLineY            → 4px read-rate line
-//   kDiskAreaY             → per-drive MetricWidget tiles (borderless, fill
-//                            the space down to the read line)
-//   kReadLineHeight        → 4px write-rate line (flush to widget bottom)
+//   kActivityLineHeight     → one 2px line per tile, flush to widget top,
+//                            left half = read rate, right half = write rate
+//   kActivityGap            → 1px gap so the activity line stays visually
+//                            separate from the value below it
+//   kDiskAreaY              → per-drive MetricWidget tiles, filling the rest
+//                            of the widget's height
 class DiskBandWidget : public PcDataCompositeWidget {
  public:
     using ActionCallback = std::function<void(EventType)>;
@@ -44,17 +46,15 @@ class DiskBandWidget : public PcDataCompositeWidget {
     void ensureChildWidgetsCreated() override;
 
  private:
-    // Activity-line heights (px) — read/write activity monitors. Doubled from
-    // 2px to 4px so the activity state is more visible.
-    static constexpr uint16_t kWriteLineHeight = 4;
-    static constexpr uint16_t kReadLineHeight = 4;
+    // Height (px) of the single read/write activity line at the top of
+    // each tile.
+    static constexpr uint16_t kActivityLineHeight = 2;
 
-    // Horizontal line positions (vertical offsets from the widget's origin).
-    static constexpr uint16_t kWriteLineY = 0;
-    // Tile area top: the write line. The tile's own border is disabled
-    // (borderMargin 0), so the tile fill starts immediately below the line —
-    // no explicit gap needed between them.
-    static constexpr uint16_t kDiskAreaY = kWriteLineY + kWriteLineHeight;
+    // Gap (px) between the activity line and the value tile below it.
+    static constexpr uint16_t kActivityGap = 1;
+
+    // Tile area top: below the activity line and its gap.
+    static constexpr uint16_t kDiskAreaY = kActivityLineHeight + kActivityGap;
 
     // Maximum number of disk-drive tiles that can be displayed simultaneously
     static constexpr size_t kMaxDiskWidgets = 10;
@@ -74,7 +74,4 @@ class DiskBandWidget : public PcDataCompositeWidget {
     // count-only comparison would miss.
     std::vector<std::array<char, 4>> diskDriveNames_;
 
-    // Read-line vertical offset within the strip (relative to the widget's
-    // origin); the tile area fills between kDiskAreaY and this row.
-    uint16_t readLineYRelative() const { return dimensions_.height - kReadLineHeight; }
 };

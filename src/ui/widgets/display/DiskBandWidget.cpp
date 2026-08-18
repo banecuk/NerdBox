@@ -7,17 +7,25 @@
 #include "ui/resources/FontRegistry.h"
 
 namespace {
-// The shared diskActivityColor() scale treats anything below 2 MB/s as idle
-// (dark grey kHairline). On the band we want idle lines to disappear into the
-// background entirely, so treat rates up to 1 MB/s as idle and draw pure
-// black, then clamp the base scale up to its lowest visible level (dark
-// green) once it starts climbing.
-uint16_t bandActivityColor(float kbPerSec) {
+// The shared Colors::disk*ActivityColor() scales treat anything below 1 MB/s
+// as idle (dark grey kHairline). On the band we want idle lines to disappear
+// into the background entirely, so treat rates at/below that same threshold
+// as idle and draw pure black instead. The kHairline fallback below is
+// defensive only — Colors won't actually return it once the two thresholds
+// match, but it protects against the scales' idle threshold ever changing
+// independently again.
+uint16_t bandActivityColor(float kbPerSec, bool isWrite) {
     constexpr float kIdleThresholdKbPerSec = 1.0f * 1024.0f;
     if (kbPerSec <= kIdleThresholdKbPerSec)
         return TFT_BLACK;
-    const uint16_t color = Colors::diskActivityColor(kbPerSec);
-    return (color == Colors::kHairline) ? TFT_DARKGREEN : color;
+    const uint16_t color = isWrite ? Colors::diskWriteActivityColor(kbPerSec)
+                                    : Colors::diskReadActivityColor(kbPerSec);
+    if (color != Colors::kHairline)
+        return color;
+    // TFT_DARKRED is a buggy LovyanGFX constant (duplicate of TFT_DARKMAGENTA's
+    // value) that decodes to olive/yellow-green rather than red — see
+    // Colors::diskWriteActivityColor(). TFT_MAROON is the correct dark red.
+    return isWrite ? TFT_MAROON : TFT_DARKGREEN;
 }
 }  // namespace
 
@@ -89,8 +97,8 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     if (widgetWidth > maxWidgetWidth)
         widgetWidth = maxWidgetWidth;
 
-    // Tile fills the vertical span between the write line and the read line.
-    const uint16_t diskAreaHeight = static_cast<uint16_t>(readLineYRelative() - kDiskAreaY);
+    // Tile fills the vertical span below the activity line and its gap.
+    const uint16_t diskAreaHeight = static_cast<uint16_t>(dimensions_.height - kDiskAreaY);
 
     for (size_t i = 0; i < snapshotCount; ++i) {
         uint16_t xPos = static_cast<uint16_t>(dimensions_.x + i * widgetWidth);
@@ -203,20 +211,27 @@ void DiskBandWidget::drawDynamicData() {
             continue;
 
         const auto dims = diskDriveWidgets_[i]->getDimensions();
-        const uint16_t writeColor = bandActivityColor(writeSnapshot[i]);
         if (i >= diskWriteLineColor_.size())
             continue;
-        if (diskWriteLineColor_[i] != writeColor) {
-            getLcd()->fillRect(dims.x, dimensions_.y + kWriteLineY, dims.width, kWriteLineHeight,
-                               writeColor);
-            diskWriteLineColor_[i] = writeColor;
+
+        // Activity line is split left/right within the tile: left half reads,
+        // right half writes. The right half absorbs any odd leftover pixel so
+        // the two halves always cover the tile's full width with no gap.
+        const uint16_t readHalfWidth = static_cast<uint16_t>(dims.width / 2);
+        const uint16_t writeHalfWidth = static_cast<uint16_t>(dims.width - readHalfWidth);
+        const uint16_t lineY = dimensions_.y;
+
+        const uint16_t readColor = bandActivityColor(readSnapshot[i], /*isWrite=*/false);
+        if (diskReadLineColor_[i] != readColor) {
+            getLcd()->fillRect(dims.x, lineY, readHalfWidth, kActivityLineHeight, readColor);
+            diskReadLineColor_[i] = readColor;
         }
 
-        const uint16_t readColor = bandActivityColor(readSnapshot[i]);
-        if (diskReadLineColor_[i] != readColor) {
-            getLcd()->fillRect(dims.x, dimensions_.y + readLineYRelative(), dims.width,
-                               kReadLineHeight, readColor);
-            diskReadLineColor_[i] = readColor;
+        const uint16_t writeColor = bandActivityColor(writeSnapshot[i], /*isWrite=*/true);
+        if (diskWriteLineColor_[i] != writeColor) {
+            getLcd()->fillRect(static_cast<int32_t>(dims.x + readHalfWidth), lineY, writeHalfWidth,
+                               kActivityLineHeight, writeColor);
+            diskWriteLineColor_[i] = writeColor;
         }
     }
 }
@@ -230,10 +245,10 @@ void DiskBandWidget::drawFreshStatic() {
 }
 
 void DiskBandWidget::clearChildren() {
-    // The widget's static content never overlaps its write line (draws at the
-    // very top) or read line (draws at the very bottom). To make sure nothing
-    // bleeds above/below the band, clear a background 2px taller and 1px up
-    // from the widget's own bounds (widget size itself is unchanged).
+    // The widget's static content never overlaps its activity line (draws at
+    // the very top). To make sure nothing bleeds above/below the band, clear
+    // a background 2px taller and 1px up from the widget's own bounds
+    // (widget size itself is unchanged).
     getLcd()->fillRect(dimensions_.x, dimensions_.y - 1, dimensions_.width, dimensions_.height + 2,
                        TFT_BLACK);
 
@@ -249,9 +264,8 @@ bool DiskBandWidget::handleTouch(uint16_t x, uint16_t y) {
         return false;
 
     // The whole strip is tappable: the drive tiles span the widget's full
-    // width, and the band contains nothing else (write line .. read line).
-    if (y >= dimensions_.y + kWriteLineY &&
-        y < dimensions_.y + readLineYRelative() + kReadLineHeight) {
+    // width and height.
+    if (y >= dimensions_.y && y < dimensions_.y + dimensions_.height) {
         callback_(action_);
         return true;
     }

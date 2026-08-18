@@ -129,38 +129,37 @@ uint16_t Colors::generateColorFromPercentRam(uint8_t value) {
     return blendRgb565(C1, C2, alpha);
 }
 
-// Disk read/write activity color scale, in KB/s. Breakpoints: <2 MB/s dark
-// gray (idle), 2-25 MB/s dark green, 25-50 MB/s light green, 50-75.5 MB/s
-// yellow, >75.5 MB/s orange (capped -- everything above kSaturated stays
-// orange), with a blended intermediate shade inserted at the midpoint of
-// each band below kSaturated for finer gradation.
-/* static */ uint16_t Colors::diskActivityColor(float kbPerSec) {
-    constexpr float kIdle = 2.0f * 1024.0f;
-    constexpr float kIdleModerateMid = 13.5f * 1024.0f;
-    constexpr float kModerate = 25.0f * 1024.0f;
-    constexpr float kModerateHighMid = 37.5f * 1024.0f;
-    constexpr float kHigh = 50.0f * 1024.0f;
-    constexpr float kHighElevatedMid = 62.75f * 1024.0f;
-    constexpr float kElevated = 75.5f * 1024.0f;
-    constexpr float kElevatedSaturatedMid = 87.75f * 1024.0f;
+// Disk activity color scale, in KB/s: <1 MB/s dark gray (idle), then a
+// continuous linear blend from darkColor to brightColor as the rate climbs
+// from the idle threshold to a 100 MB/s cap (capped -- everything at/above
+// stays at brightColor). The blend starts at the halfway point between
+// darkColor and brightColor rather than at darkColor itself, so even minimal
+// activity (just above idle) renders noticeably brighter and easier to spot.
+/* static */ uint16_t Colors::diskActivityColorScale(float kbPerSec, uint16_t darkColor,
+                                                      uint16_t brightColor) {
+    constexpr float kIdle = 1.0f * 1024.0f;
+    constexpr float kMax = 100.0f * 1024.0f;
 
     if (kbPerSec < kIdle)
         return kHairline;
-    if (kbPerSec < kIdleModerateMid)
-        return blendRgb565(kHairline, TFT_DARKGREEN, 128);
-    if (kbPerSec < kModerate)
-        return TFT_DARKGREEN;
-    if (kbPerSec < kModerateHighMid)
-        return blendRgb565(TFT_DARKGREEN, TFT_GREEN, 128);
-    if (kbPerSec < kHigh)
-        return TFT_GREEN;
-    if (kbPerSec < kHighElevatedMid)
-        return blendRgb565(TFT_GREEN, TFT_YELLOW, 128);
-    if (kbPerSec < kElevated)
-        return TFT_YELLOW;
-    if (kbPerSec < kElevatedSaturatedMid)
-        return blendRgb565(TFT_YELLOW, TFT_ORANGE, 128);
-    return TFT_ORANGE;
+    const float clamped = kbPerSec > kMax ? kMax : kbPerSec;
+    const float t = (clamped - kIdle) / (kMax - kIdle);  // 0 at idle, 1 at kMax
+    const uint8_t alpha = static_cast<uint8_t>((0.5f + 0.5f * t) * 255.0f + 0.5f);
+    return blendRgb565(darkColor, brightColor, alpha);
+}
+
+/* static */ uint16_t Colors::diskReadActivityColor(float kbPerSec) {
+    return diskActivityColorScale(kbPerSec, TFT_DARKGREEN, TFT_GREEN);
+}
+
+/* static */ uint16_t Colors::diskWriteActivityColor(float kbPerSec) {
+    // TFT_DARKRED is a known upstream LovyanGFX/TFT_eSPI bug: it's defined as
+    // 0x8B00, a byte-for-byte duplicate of TFT_DARKMAGENTA's value, which
+    // actually decodes to an olive/dark-yellow-green RGB565 triplet rather
+    // than dark red — blending toward it produced yellow/orange write-line
+    // shades instead of a clean red gradient. TFT_MAROON (0x7800, a genuine
+    // (128,0,0)) is the correct dark-red anchor instead.
+    return diskActivityColorScale(kbPerSec, TFT_MAROON, TFT_RED);
 }
 
 #define MAKE_RGB565(r, g, b) (((r) << 11) | ((g) << 5) | (b))
