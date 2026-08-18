@@ -97,7 +97,8 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
     if (windChanged)
         drawValueWithUnit(2, true, bufWind, " m/s", TFT_LIGHTGREY);
 
-    drawCellText(3, false, "AQI", 0x8410, true);
+    if (forceRedraw || becomingAvailable)
+        drawCellText(3, false, "AQI", 0x8410, true);
     if (aqiChanged)
         drawValueWithUnit(3, true, bufAqi, "", aqiColor(airData_.aqi_us));
 

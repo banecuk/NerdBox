@@ -1,7 +1,10 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <vector>
+
+#include "config/Limits.h"
 
 // Staggers the *start* of each ThreadsWidget bar's move toward a new target
 // across a window after each data arrival, so 28 bars don't all lurch on the
@@ -63,4 +66,11 @@ class ThreadStaggerScheduler {
 
     std::vector<uint8_t> ranks_;
     std::vector<uint32_t> releaseAtMs_;
+
+    // Scratch buffers for assignRanks()'s CenterOut/EdgesIn/Shuffle patterns.
+    // Fixed-size (barCount_ is capped by AppConfig::Limits::kMaxThreads via
+    // the static_assert in Limits.h) so assignRanks() never heap-allocates —
+    // it runs once per epoch (~2/s) on the screen task.
+    std::array<uint8_t, AppConfig::Limits::kMaxThreads> order_{};
+    std::array<uint8_t, AppConfig::Limits::kMaxThreads> perm_{};
 };

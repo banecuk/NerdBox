@@ -7,6 +7,7 @@
 #include "config/AppSettings.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/SseEventParser.h"
+#include "utils/ApplicationMetrics.h"
 #include "utils/logging/LoggerInterface.h"
 
 // The streaming counterpart to PcMetricsService: owns the JsonDocument, the
@@ -19,7 +20,8 @@
 // logic), mirroring the PcMetricsJob/PcMetricsService split.
 class PcMetricsStreamService {
  public:
-    PcMetricsStreamService(PcMetrics& metrics, const AppSettings& config, LoggerInterface& logger);
+    PcMetricsStreamService(PcMetrics& metrics, const AppSettings& config, LoggerInterface& logger,
+                           ApplicationMetrics& systemMetrics);
 
     // Deserializes one SSE event's `data:` payload and, if it carries any
     // recognized section, applies it to the shared PcMetrics instance and
@@ -30,6 +32,7 @@ class PcMetricsStreamService {
     PcMetrics& metrics_;
     const AppSettings& config_;
     LoggerInterface& logger_;
+    ApplicationMetrics& systemMetrics_;
 
     std::unique_ptr<JsonDocument> doc_;  // reused across events, like PcMetricsService::doc_
     JsonDocument filter_;

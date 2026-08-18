@@ -22,6 +22,10 @@ inline unsigned long millis() {
     return 0;
 }
 
+inline unsigned long micros() {
+    return 0;
+}
+
 template <typename T>
 T min(T a, T b) {
     return a < b ? a : b;

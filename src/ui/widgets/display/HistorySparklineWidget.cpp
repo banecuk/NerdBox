@@ -134,12 +134,12 @@ void HistorySparklineWidget::drawRowBorders() {
     lcd->drawFastHLine(rightPlotX_, bottomBorder, rightPlotWidth_, kRowBorderColor);
 }
 
-void HistorySparklineWidget::sampleIfNeeded() {
+bool HistorySparklineWidget::sampleIfNeeded() {
     if (!freshnessGuard_.isFresh())
-        return;
+        return false;
     const uint32_t now = millis();
     if (now - lastSampleMs_ < kSampleIntervalMs)
-        return;
+        return false;
 
     lastSampleMs_ = now;
     cpuLoadHistory_.push(pcMetrics_.cpu_load);
@@ -149,6 +149,7 @@ void HistorySparklineWidget::sampleIfNeeded() {
     // sparkline's fixed 0-100 scale.
     const uint16_t vram = pcMetrics_.gpu_mem;
     vramLoadHistory_.push(vram > kScaleMax ? kScaleMax : static_cast<uint8_t>(vram));
+    return true;
 }
 
 void HistorySparklineWidget::drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
@@ -267,7 +268,14 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
     }
     lastHasData_ = true;
 
-    sampleIfNeeded();
+    const bool sampled = sampleIfNeeded();
+    if (!sampled && !forceRedraw) {
+        // No new sample landed and nothing else forces a repaint — the
+        // per-column diff in drawRow would just re-encode every column to
+        // discover nothing changed, so skip the whole pass.
+        clearDirty();
+        return;
+    }
 
     LGFX* lcd = getLcd();
     lcd->startWrite();

@@ -135,6 +135,10 @@ void WebApiHandlers::handleApiStatus() {
     app["uptime"] = uptime;
     app["uptime_ms"] = millis();
     app["parse_ms"] = systemMetrics_.getPcMetricsJsonParseTime();
+    // Streaming path's counterpart to parse_ms above — the default data path
+    // never fed parse_ms, leaving it permanently 0 while streaming. Reported
+    // separately, in µs, so parse_ms stays meaningful for the polling fallback.
+    app["stream_parse_us"] = systemMetrics_.getPcMetricsStreamParseTimeUs();
     // Draw times are measured in microseconds internally (see
     // ApplicationMetrics) — convert to ms with a decimal here for display.
     app["draw_avg_ms"] = roundToDecimals(systemMetrics_.getAverageScreenDrawTimeUs() / 1000.0f, 2);

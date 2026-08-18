@@ -94,7 +94,7 @@ class HistorySparklineWidget : public Widget {
     // in the constructor's initializer list, before computeLayout() runs.
     static uint16_t plotWidthForHalf(const WidgetInterface::Dimensions& dims, bool leftHalf);
     void computeLayout();
-    void sampleIfNeeded();
+    bool sampleIfNeeded();
     void drawRowBorders();
     void drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
                  const HeapRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,

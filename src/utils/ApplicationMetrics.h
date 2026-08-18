@@ -20,6 +20,14 @@ class ApplicationMetrics {
     void setPcMetricsJsonParseTime(uint32_t timeMs);
     uint32_t getPcMetricsJsonParseTime() const;
 
+    // SSE stream path's counterpart to the above — the default data path
+    // (PcMetricsStreamService::handleEvent()) never called into
+    // setPcMetricsJsonParseTime(), leaving parse_ms permanently 0 while
+    // streaming. Reported separately (µs, not ms — see the draw-time comment
+    // below) so the polling fallback's parse_ms stays meaningful on its own.
+    void setPcMetricsStreamParseTimeUs(uint32_t timeUs);
+    uint32_t getPcMetricsStreamParseTimeUs() const;
+
     // Screen draw time methods — recorded in microseconds. A 16 ms frame
     // budget measured in whole milliseconds quantizes almost every frame to
     // 0 or 1, making the reported average meaningless; micros() gives real
@@ -56,6 +64,7 @@ class ApplicationMetrics {
 
  private:
     uint32_t pcMetricsJsonParseTime_ = 0;
+    uint32_t pcMetricsStreamParseTimeUs_ = 0;
     std::array<uint32_t, kDrawTimesCapacity> screenDrawTimesUs_{};
     size_t screenDrawIndex_ = 0;
     size_t screenDrawCount_ = 0;

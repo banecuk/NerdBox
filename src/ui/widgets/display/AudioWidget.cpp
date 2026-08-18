@@ -77,6 +77,7 @@ void AudioWidget::onDrawStatic() {
                        TFT_BLACK);
     computeLayout();
     firstDraw_ = true;
+    lastSeq_ = 0xFFFFFFFF;
 }
 
 void AudioWidget::onDraw(bool forceRedraw) {
@@ -133,6 +134,10 @@ void AudioWidget::drawStoppedMessage(bool forceRedraw) {
 }
 
 void AudioWidget::drawNowPlaying(bool forceRedraw) {
+    if (!forceRedraw && audioData_.seq == lastSeq_)
+        return;
+    lastSeq_ = audioData_.seq;
+
     LGFX* lcd = getLcd();
 
     const bool titleChanged = forceRedraw || strcmp(audioData_.title, lastTitle_) != 0;

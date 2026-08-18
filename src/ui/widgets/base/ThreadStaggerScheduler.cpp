@@ -98,15 +98,14 @@ void ThreadStaggerScheduler::assignRanks() {
             break;
         case 2:    // CenterOut
         case 3: {  // EdgesIn
-            std::vector<uint8_t> order(n);
-            std::iota(order.begin(), order.end(), 0);
-            std::stable_sort(order.begin(), order.end(), [n](uint8_t a, uint8_t b) {
+            std::iota(order_.begin(), order_.begin() + n, 0);
+            std::stable_sort(order_.begin(), order_.begin() + n, [n](uint8_t a, uint8_t b) {
                 const int keyA = std::abs(2 * a - (n - 1));
                 const int keyB = std::abs(2 * b - (n - 1));
                 return keyA < keyB;
             });
             for (uint8_t rank = 0; rank < n; ++rank) {
-                const uint8_t index = order[rank];
+                const uint8_t index = order_[rank];
                 ranks_[index] = (pattern == 2) ? rank : static_cast<uint8_t>(n - 1 - rank);
             }
             break;
@@ -118,14 +117,13 @@ void ThreadStaggerScheduler::assignRanks() {
             }
             break;
         case 5: {  // Shuffle: Fisher-Yates permutation
-            std::vector<uint8_t> perm(n);
-            std::iota(perm.begin(), perm.end(), 0);
+            std::iota(perm_.begin(), perm_.begin() + n, 0);
             for (uint8_t i = static_cast<uint8_t>(n - 1); i > 0; --i) {
                 const uint8_t j = static_cast<uint8_t>(nextRandom() % (i + 1));
-                std::swap(perm[i], perm[j]);
+                std::swap(perm_[i], perm_[j]);
             }
             for (uint8_t rank = 0; rank < n; ++rank) {
-                ranks_[perm[rank]] = rank;
+                ranks_[perm_[rank]] = rank;
             }
             break;
         }

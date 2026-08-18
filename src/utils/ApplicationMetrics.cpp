@@ -1,6 +1,7 @@
 #include "ApplicationMetrics.h"
 
 #include <algorithm>
+#include <cstdio>
 
 void ApplicationMetrics::setPcMetricsJsonParseTime(uint32_t timeMs) {
     pcMetricsJsonParseTime_ = timeMs;
@@ -8,6 +9,14 @@ void ApplicationMetrics::setPcMetricsJsonParseTime(uint32_t timeMs) {
 
 uint32_t ApplicationMetrics::getPcMetricsJsonParseTime() const {
     return pcMetricsJsonParseTime_;
+}
+
+void ApplicationMetrics::setPcMetricsStreamParseTimeUs(uint32_t timeUs) {
+    pcMetricsStreamParseTimeUs_ = timeUs;
+}
+
+uint32_t ApplicationMetrics::getPcMetricsStreamParseTimeUs() const {
+    return pcMetricsStreamParseTimeUs_;
 }
 
 void ApplicationMetrics::addScreenDrawTimeUs(uint32_t timeUs) {

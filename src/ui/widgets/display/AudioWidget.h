@@ -44,6 +44,10 @@ class AudioWidget : public Widget {
     uint32_t lastPositionMs_ = 0xFFFFFFFF;
     uint32_t lastDurationMs_ = 0xFFFFFFFF;
     AudioData::PlayState lastPlayState_ = AudioData::PlayState::Undefined;
+    // Every AudioData field drawNowPlaying reads only ever changes as part of
+    // a push event, and seq is stamped on every one of those — so "seq
+    // unchanged" means "nothing to redraw" without comparing each field.
+    uint32_t lastSeq_ = 0xFFFFFFFF;
 
     uint16_t titleY_ = 0;
     uint16_t artistY_ = 0;

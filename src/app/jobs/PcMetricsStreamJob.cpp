@@ -6,7 +6,7 @@
 PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreState& coreState,
                                        SystemState::ScreenState& screenState,
                                        NetworkManager& networkManager, const AppSettings& config,
-                                       LoggerInterface& logger)
+                                       LoggerInterface& logger, ApplicationMetrics& systemMetrics)
     : metrics_(metrics),
       coreState_(coreState),
       screenState_(screenState),
@@ -15,7 +15,7 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
       logger_(logger),
       connection_(logger, config.pcMetricsStreamMaxEventBufferBytes,
                   config.pcMetricsStreamMaxBytesPerPoll),
-      streamService_(metrics, config, logger) {
+      streamService_(metrics, config, logger, systemMetrics) {
     UrlUtils::parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
 }
 

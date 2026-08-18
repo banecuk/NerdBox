@@ -3,6 +3,7 @@
 #include "config/AppSettings.h"
 #include "NullLogger.h"
 #include "PcMetricsStreamService.h"
+#include "utils/ApplicationMetrics.h"
 
 #include <gtest/gtest.h>
 
@@ -24,7 +25,8 @@ TEST(PcMetricsStreamServiceTest, PublishesWhenAnySectionPresent) {
     PcMetrics metrics;
     AppSettings config;
     NullLogger logger;
-    PcMetricsStreamService service(metrics, config, logger);
+    ApplicationMetrics systemMetrics;
+    PcMetricsStreamService service(metrics, config, logger, systemMetrics);
 
     EXPECT_FALSE(metrics.freshness.available());
 
@@ -39,7 +41,8 @@ TEST(PcMetricsStreamServiceTest, DoesNotPublishWhenMetricsObjectMissing) {
     PcMetrics metrics;
     AppSettings config;
     NullLogger logger;
-    PcMetricsStreamService service(metrics, config, logger);
+    ApplicationMetrics systemMetrics;
+    PcMetricsStreamService service(metrics, config, logger, systemMetrics);
 
     SseEventParser::Event event = makeEvent(R"({"SomethingElse": 1})");
     service.handleEvent(event);
@@ -51,7 +54,8 @@ TEST(PcMetricsStreamServiceTest, DoesNotPublishOnMalformedJson) {
     PcMetrics metrics;
     AppSettings config;
     NullLogger logger;
-    PcMetricsStreamService service(metrics, config, logger);
+    ApplicationMetrics systemMetrics;
+    PcMetricsStreamService service(metrics, config, logger, systemMetrics);
 
     SseEventParser::Event event = makeEvent("{not json");
     service.handleEvent(event);
@@ -67,7 +71,8 @@ TEST(PcMetricsStreamServiceTest, PublishesOnPartialDeltaEvenIfOtherSectionsAbsen
     PcMetrics metrics;
     AppSettings config;
     NullLogger logger;
-    PcMetricsStreamService service(metrics, config, logger);
+    ApplicationMetrics systemMetrics;
+    PcMetricsStreamService service(metrics, config, logger, systemMetrics);
 
     SseEventParser::Event event = makeEvent(R"({"Metrics": {"Gpu": {"Load": 12.0}}})");
     service.handleEvent(event);

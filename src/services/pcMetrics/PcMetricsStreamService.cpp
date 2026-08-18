@@ -5,12 +5,19 @@
 #include "services/pcMetrics/PcMetricsParser.h"
 
 PcMetricsStreamService::PcMetricsStreamService(PcMetrics& metrics, const AppSettings& config,
-                                               LoggerInterface& logger)
-    : metrics_(metrics), config_(config), logger_(logger), doc_(std::make_unique<JsonDocument>()) {
+                                               LoggerInterface& logger,
+                                               ApplicationMetrics& systemMetrics)
+    : metrics_(metrics),
+      config_(config),
+      logger_(logger),
+      systemMetrics_(systemMetrics),
+      doc_(std::make_unique<JsonDocument>()) {
     PcMetricsParser::buildFilter(filter_);
 }
 
 void PcMetricsStreamService::handleEvent(const SseEventParser::Event& event) {
+    const uint32_t startUs = micros();
+
     doc_->clear();
     const DeserializationError err =
         deserializeJson(*doc_, event.data, event.dataLen, DeserializationOption::Filter(filter_));
@@ -36,4 +43,6 @@ void PcMetricsStreamService::handleEvent(const SseEventParser::Event& event) {
     if (sections.anySeen()) {
         metrics_.freshness.publish(millis());
     }
+
+    systemMetrics_.setPcMetricsStreamParseTimeUs(micros() - startUs);
 }

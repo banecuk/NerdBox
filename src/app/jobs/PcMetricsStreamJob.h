@@ -11,6 +11,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsStreamService.h"
 #include "services/pcMetrics/SseConnection.h"
+#include "utils/ApplicationMetrics.h"
 #include "utils/logging/LoggerInterface.h"
 
 // Streaming counterpart to PcMetricsJob: keeps one SseConnection open to
@@ -27,7 +28,8 @@ class PcMetricsStreamJob : public BackgroundJob {
  public:
     PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreState& coreState,
                        SystemState::ScreenState& screenState, NetworkManager& networkManager,
-                       const AppSettings& config, LoggerInterface& logger);
+                       const AppSettings& config, LoggerInterface& logger,
+                       ApplicationMetrics& systemMetrics);
 
     JobDue nextDue() const override;
     void run() override;

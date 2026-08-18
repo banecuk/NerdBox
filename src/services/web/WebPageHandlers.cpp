@@ -158,7 +158,8 @@ struct ApiEndpoint {
 constexpr ApiEndpoint kApiEndpoints[] = {
     {"GET",  "/api/status",
      "Compact JSON snapshot: system health, app metrics, network, PC-metrics feed "
-     "status, current screen, task stack high-water marks. Cache-Control: no-store."   },
+     "status, current screen, task stack high-water marks. Cache-Control: no-store. "
+     "app.threads_bar_draw_us is 0 on release builds by design (DEBUG_MODE-gated)."    },
     {"GET",  "/api/raw",
      "Last raw NerdWinSense payload, unfiltered — for debugging a field that reads "
      "0 or -1. Triggers a dedicated fetch; not the same connection as the regular "
