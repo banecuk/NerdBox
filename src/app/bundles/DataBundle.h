@@ -1,8 +1,11 @@
 #pragma once
 
+#include <memory>
+
 #include "core/state/SystemState.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/audio/AudioData.h"
+#include "services/cpuClock/CpuClockData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/weather/WeatherData.h"
@@ -39,4 +42,17 @@ struct DataBundle {
     // events, read by AudioWidget/MultiWidget (screen task). Scalars plus
     // fixed char arrays — no mutex needed, see AudioData's own comment.
     AudioData audioData;
+
+    // Written by CpuClockStreamJob only while the CPU_CLOCK screen is active,
+    // read by CpuClockWidget (screen task). Scalars plus a fixed core-clock
+    // array — no mutex needed, same convention as PcMetrics' scalar fields.
+    //
+    // Heap-allocated rather than embedded inline: ApplicationComponents (the
+    // struct this bundle lives inside) is size-sensitive on real hardware —
+    // growing its embedded footprint by even a couple hundred bytes has
+    // previously corrupted the LCD (scattered pixels) despite a clean build
+    // and passing host tests, plausibly a tight internal-RAM margin against
+    // the display driver's own DMA-capable allocations. A separate heap
+    // allocation keeps ApplicationComponents' own block the same size.
+    std::unique_ptr<CpuClockData> cpuClockData = std::make_unique<CpuClockData>();
 };

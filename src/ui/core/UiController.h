@@ -11,6 +11,7 @@
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/audio/AudioData.h"
+#include "services/cpuClock/CpuClockData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/weather/WeatherData.h"
@@ -35,7 +36,7 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
                           SystemState::ScreenState& screenState, const AppSettings& config,
                           NetworkManager& networkManager, const AirQualityData& airQualityData,
                           const NetworkStatus& netStatus, WeatherData& weatherData,
-                          const AudioData& audioData);
+                          const AudioData& audioData, CpuClockData& cpuClockData);
     ~UiController();
 
     // Lifecycle methods. Returns false if the display mutex failed to
@@ -99,6 +100,7 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
     const NetworkStatus& netStatus_;
     WeatherData& weatherData_;
     const AudioData& audioData_;
+    CpuClockData& cpuClockData_;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<UiEventHandler> actionHandler_;

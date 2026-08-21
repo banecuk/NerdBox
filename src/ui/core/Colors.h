@@ -20,9 +20,16 @@ class Colors {
     static uint16_t COLOR_GRADIENT_DIM[100];
     static uint16_t COLOR_GRADIENT_GPU[100];
     static uint16_t COLOR_GRADIENT_RAM[100];
+    // Light-gray-to-light-green ramp shared by every widget that wants a
+    // smooth "idle/low -> good/high" scale instead of a metric-specific hue
+    // (CpuClockWidget's per-core MHz color, NetworkTrafficWidget's idle-to-
+    // moderate utilisation color) — named for the ramp's colors, not either
+    // caller's metric, since it isn't specific to either one.
+    static uint16_t COLOR_GRADIENT_GRAY_GREEN[100];
     uint16_t generateColorFromPercent(byte value);
     uint16_t generateColorFromPercentGpu(byte value);
     uint16_t generateColorFromPercentRam(byte value);
+    uint16_t generateColorFromPercentGrayGreen(byte value);
     void generateGradient();
     static uint16_t diskActivityColorScale(float kbPerSec, uint16_t darkColor,
                                             uint16_t brightColor);
@@ -51,5 +58,12 @@ class Colors {
     uint16_t getColorFromPercent(uint8_t value, bool dim = false);
     uint16_t getColorFromPercentGpu(uint8_t value);
     uint16_t getColorFromPercentRam(uint8_t value);
+    // value is 0-99, mapping linearly onto whatever range the caller scaled
+    // its raw metric into (see CpuClockWidget::clockPercent,
+    // NetworkTrafficWidget::trafficColor) — the gradient itself doesn't know
+    // what metric it's for, same as the other getColorFromPercent*
+    // accessors; it just indexes a precomputed table instead of blending two
+    // RGB565 colors on every draw.
+    uint16_t getColorFromPercentGrayGreen(uint8_t value);
     uint16_t darken(uint16_t color, uint8_t alpha);
 };

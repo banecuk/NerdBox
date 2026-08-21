@@ -16,8 +16,10 @@
 // many integer digits the value has, and the arrow position never depends on
 // the rendered string's measured width. Colour reflects utilisation against
 // the configured link speed (Environment.h's ETH_UPLOAD_MBPS /
-// ETH_DOWNLOAD_MBPS) — light grey below 0.2 Mbps (idle), green/yellow/orange
-// as the link fills up, a lightened red once at or over the configured
+// ETH_DOWNLOAD_MBPS) — a smooth light-grey-to-light-green ramp (via
+// Colors::getColorFromPercentGrayGreen(), the same precomputed table
+// CpuClockWidget uses) from idle up to 60% utilisation, then yellow/orange
+// as the link fills further, a lightened red once at or over the configured
 // capacity.
 //
 // PcMetrics::eth_up/eth_dn arrive in KB/s (1 KB = 1024 bytes); this widget
@@ -52,8 +54,10 @@ class NetworkTrafficWidget : public Widget {
     void drawArrow(int16_t cx, int16_t cy, bool up, uint16_t color);
 
     // Colour by absolute Mbps (idle threshold) and utilisation percentage of
-    // the configured link speed (higher tiers).
-    static uint16_t trafficColor(float mbps, float percent);
+    // the configured link speed (higher tiers). Not static: the idle/
+    // low-utilisation range indexes Colors::getColorFromPercentGrayGreen()'s
+    // precomputed table via getContext(), same pattern as CpuClockWidget.
+    uint16_t trafficColor(float mbps, float percent);
 
     // KB/s (1024 bytes) -> Mbps.
     static constexpr float kKBpsToMbps = (1024.0f * 8.0f) / 1000000.0f;

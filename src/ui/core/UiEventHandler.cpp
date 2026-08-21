@@ -44,6 +44,9 @@ void UiEventHandler::registerHandlers() {
         EventType::SHOW_DISKS,
         eventBus.subscribe(EventType::SHOW_DISKS, [this]() { requestDisksScreen(); })};
     subscriptions_[i++] = {
+        EventType::SHOW_CPU_CLOCK,
+        eventBus.subscribe(EventType::SHOW_CPU_CLOCK, [this]() { requestCpuClockScreen(); })};
+    subscriptions_[i++] = {
         EventType::SHOW_WEATHER,
         eventBus.subscribe(EventType::SHOW_WEATHER, [this]() { requestWeatherScreen(); })};
     subscriptions_[i++] = {
@@ -82,6 +85,11 @@ void UiEventHandler::requestGameScreen() {
 void UiEventHandler::requestDisksScreen() {
     LOG_DEBUG(logger_, "DISKS action received");
     uiController_->requestScreen(ScreenName::DISKS);
+}
+
+void UiEventHandler::requestCpuClockScreen() {
+    LOG_DEBUG(logger_, "CPU_CLOCK action received");
+    uiController_->requestScreen(ScreenName::CPU_CLOCK);
 }
 
 void UiEventHandler::requestWeatherScreen() {

@@ -139,6 +139,21 @@ struct PcMetricsStreamImpl {
     static constexpr const char* kStreamPath = "/api/v1/stream";
 };
 
+// CPU-clock SSE streaming configuration — see docs-local/CPU-CLOCK-SCREEN-PLAN.md.
+// Fetched only while the CPU_CLOCK screen is active (opt-in, single-metric
+// endpoint) — no polling fallback and no delta mode, so there's nothing to
+// toggle here beyond the connection tuning itself.
+struct CpuClockStreamImpl {
+    static constexpr uint32_t kIntervalMs = 1000;
+    static constexpr uint16_t kConnectTimeoutMs = 1000;
+    static constexpr uint16_t kHeaderTimeoutMs = 2000;
+    static constexpr uint32_t kReconnectBackoffMs = 2000;
+    static constexpr uint32_t kStaleTimeoutMs = 5000;
+    static constexpr size_t kMaxEventBufferBytes = 1024;  // payload is tiny vs. the main stream's 4096
+    static constexpr uint16_t kMaxBytesPerPoll = 1024;
+    static constexpr const char* kStreamPath = "/api/v1/stream/cpu-clock";
+};
+
 // Audio (MusicBee mb_NerdBox plugin push) configuration — see
 // docs-local/NERDBOX_INTEGRATION.md.
 struct AudioImpl {

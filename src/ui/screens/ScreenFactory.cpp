@@ -4,6 +4,7 @@
 #include "services/airQuality/AirQualityData.h"
 #include "services/network/NetworkStatus.h"
 #include "ui/screens/CalendarScreen.h"
+#include "ui/screens/CpuClockScreen.h"
 #include "ui/screens/DiskScreen.h"
 #include "ui/screens/GameScreen.h"
 #include "ui/screens/MainScreen.h"
@@ -28,6 +29,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::DISKS:
             return std::make_unique<DiskScreen>(ctx.logger, ctx.metrics, ctx.controller,
                                                 ctx.config);
+        case ScreenName::CPU_CLOCK:
+            return std::make_unique<CpuClockScreen>(ctx.logger, ctx.cpuClockData, ctx.controller,
+                                                    ctx.config);
         case ScreenName::WEATHER:
             return std::make_unique<WeatherScreen>(ctx.logger, ctx.controller, ctx.config,
                                                    ctx.weatherData);

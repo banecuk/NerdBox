@@ -19,7 +19,8 @@ void MainScreen::createWidgets() {
     // (56px) so downstream rows get more room.
     auto threadsWidget = std::unique_ptr<ThreadsWidget>(new ThreadsWidget(
         uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 240, 56},
-        config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_));
+        config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_,
+        EventType::SHOW_CPU_CLOCK, [this](EventType action) { this->handleAction(action); }));
     widgetManager_.addWidget(std::move(threadsWidget));
 
     // Air quality block — right of the threads, same top band. Reorganized

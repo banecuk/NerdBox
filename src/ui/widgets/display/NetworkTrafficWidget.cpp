@@ -130,9 +130,14 @@ void NetworkTrafficWidget::drawArrow(int16_t cx, int16_t cy, bool up, uint16_t c
 
 uint16_t NetworkTrafficWidget::trafficColor(float mbps, float percent) {
     if (mbps < 0.2f)
-        return TFT_LIGHTGREY;  // idle — kInactiveText is too dark to read at this size
-    if (percent < 60.0f)
-        return TFT_GREEN;  // light/moderate
+        return getContext().getColors().getColorFromPercentGrayGreen(0);  // idle
+    if (percent < 60.0f) {
+        // Smooth light-grey-to-light-green ramp across the idle-to-moderate
+        // range, instead of an instant jump straight to full green the
+        // moment traffic ticks up from idle.
+        const uint8_t idx = static_cast<uint8_t>(percent / 60.0f * 99.0f + 0.5f);
+        return getContext().getColors().getColorFromPercentGrayGreen(idx);
+    }
     if (percent < 85.0f)
         return TFT_YELLOW;  // heavy
     if (percent < 100.0f)

@@ -1,10 +1,12 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <vector>
 
 #include "config/AppSettings.h"
+#include "core/events/EventTypes.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/ThreadStaggerScheduler.h"
@@ -15,9 +17,12 @@
 
 class ThreadsWidget : public Widget {
  public:
+    using ActionCallback = std::function<void(EventType)>;
+
     ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                   uint32_t updateIntervalMs, PcMetrics& pcMetrics, const AppSettings& config,
-                  ApplicationMetrics& systemMetrics);
+                  ApplicationMetrics& systemMetrics,
+                  EventType action = EventType::SHOW_CPU_CLOCK, ActionCallback callback = nullptr);
 
     void initialize(DisplayContext& context) override;
     bool handleTouch(uint16_t x, uint16_t y) override;
@@ -32,6 +37,8 @@ class ThreadsWidget : public Widget {
     PcMetrics& pcMetrics_;
     const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
+    EventType action_;
+    ActionCallback callback_;
     DataFreshnessGuard freshnessGuard_;
 
     uint16_t barWidth_ = 0;

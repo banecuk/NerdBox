@@ -14,12 +14,15 @@
 
 ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                             const AppSettings& config, ApplicationMetrics& systemMetrics)
+                             const AppSettings& config, ApplicationMetrics& systemMetrics,
+                             EventType action, ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       context_(context),
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
+      action_(action),
+      callback_(std::move(callback)),
       freshnessGuard_(pcMetrics.freshness) {}
 
 void ThreadsWidget::initialize(DisplayContext& context) {
@@ -222,5 +225,13 @@ bool ThreadsWidget::needsUpdate() const {
 }
 
 bool ThreadsWidget::handleTouch(uint16_t x, uint16_t y) {
+    if (!callback_)
+        return false;
+
+    if (x >= dimensions_.x && x < dimensions_.x + dimensions_.width && y >= dimensions_.y &&
+        y < dimensions_.y + dimensions_.height) {
+        callback_(action_);
+        return true;
+    }
     return false;
 }

@@ -6,6 +6,7 @@ uint16_t Colors::COLOR_GRADIENT[100] = {};
 uint16_t Colors::COLOR_GRADIENT_DIM[100] = {};
 uint16_t Colors::COLOR_GRADIENT_GPU[100] = {};
 uint16_t Colors::COLOR_GRADIENT_RAM[100] = {};
+uint16_t Colors::COLOR_GRADIENT_GRAY_GREEN[100] = {};
 
 Colors::Colors() {
     generateGradient();
@@ -56,6 +57,7 @@ void Colors::generateGradient() {
         COLOR_GRADIENT_DIM[i] = darken(COLOR_GRADIENT[i], 128);
         COLOR_GRADIENT_GPU[i] = generateColorFromPercentGpu(i);
         COLOR_GRADIENT_RAM[i] = generateColorFromPercentRam(i);
+        COLOR_GRADIENT_GRAY_GREEN[i] = generateColorFromPercentGrayGreen(i);
     }
 }
 
@@ -127,6 +129,23 @@ uint16_t Colors::generateColorFromPercentRam(uint8_t value) {
     }
 
     return blendRgb565(C1, C2, alpha);
+}
+
+uint16_t Colors::getColorFromPercentGrayGreen(uint8_t value) {
+    if (value > 99) {
+        value = 99;
+    }
+    return COLOR_GRADIENT_GRAY_GREEN[value];
+}
+
+uint16_t Colors::generateColorFromPercentGrayGreen(uint8_t value) {
+    // Light gray (low end of whatever scale the caller mapped its value
+    // into) to light green (high end). Web "lightgrey" (0xD3D3D3) and
+    // "lightgreen" (0x90EE90) in RGB565.
+    const uint16_t lightGray = 0xD6BA;
+    const uint16_t lightGreen = 0x9772;
+    const uint8_t alpha = static_cast<uint8_t>((value * 255) / 99);
+    return blendRgb565(lightGray, lightGreen, alpha);
 }
 
 // Disk activity color scale, in KB/s: <1 MB/s dark gray (idle), then a
