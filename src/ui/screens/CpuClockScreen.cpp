@@ -21,6 +21,14 @@ void CpuClockScreen::createWidgets() {
         0, EventType::SHOW_MAIN, [this](EventType action) { this->handleAction(action); },
         TFT_BLACK, TFT_WHITE)));
 
+    // Footer button — opens the process list screen; back from there returns
+    // here (not MAIN).
+    widgetManager_.addWidget(std::unique_ptr<ButtonWidget>(new ButtonWidget(
+        uiController_->getDisplayContext(), "Processes",
+        WidgetInterface::Dimensions{56, Layout::kBottomBarY, 120, Layout::kButtonSize},
+        0, EventType::SHOW_PROCESSES, [this](EventType a) { this->handleAction(a); },
+        TFT_BLACK, TFT_WHITE)));
+
     // Clock — same position/colors as the disk screen.
     widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
         new ClockWidget(WidgetInterface::Dimensions{328, 276, Layout::kClockW, 40}, 1000,

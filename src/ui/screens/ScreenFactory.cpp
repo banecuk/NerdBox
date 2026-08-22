@@ -8,6 +8,7 @@
 #include "ui/screens/DiskScreen.h"
 #include "ui/screens/GameScreen.h"
 #include "ui/screens/MainScreen.h"
+#include "ui/screens/ProcessesScreen.h"
 #include "ui/screens/SettingsScreen.h"
 #include "ui/screens/WeatherScreen.h"
 
@@ -32,6 +33,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::CPU_CLOCK:
             return std::make_unique<CpuClockScreen>(ctx.logger, ctx.cpuClockData, ctx.controller,
                                                     ctx.config);
+        case ScreenName::PROCESSES:
+            return std::make_unique<ProcessesScreen>(ctx.logger, ctx.processData, ctx.controller,
+                                                      ctx.config);
         case ScreenName::WEATHER:
             return std::make_unique<WeatherScreen>(ctx.logger, ctx.controller, ctx.config,
                                                    ctx.weatherData);

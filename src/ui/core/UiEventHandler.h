@@ -32,6 +32,7 @@ class UiEventHandler {
     void requestGameScreen();
     void requestDisksScreen();
     void requestCpuClockScreen();
+    void requestProcessesScreen();
     void requestWeatherScreen();
     void requestCalendarScreen();
 
@@ -43,6 +44,6 @@ class UiEventHandler {
         EventType type;
         EventBus::SubscriptionId id;
     };
-    static constexpr size_t kSubscriptionCount = 10;
+    static constexpr size_t kSubscriptionCount = 11;
     std::array<Subscription, kSubscriptionCount> subscriptions_{};
 };

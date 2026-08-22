@@ -10,6 +10,7 @@ enum class ScreenName : uint8_t {
     GAME,
     DISKS,
     CPU_CLOCK,
+    PROCESSES,
     WEATHER,
     CALENDAR
 };

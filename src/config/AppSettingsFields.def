@@ -109,6 +109,20 @@ AS_FIELD(U, size_t, cpuClockStreamMaxEventBufferBytes,
 AS_FIELD(U, uint16_t, cpuClockStreamMaxBytesPerPoll,
          AppConfig::internal::CpuClockStreamImpl::kMaxBytesPerPoll)
 AS_FIELD(S, const char*, cpuClockStreamPath, AppConfig::internal::CpuClockStreamImpl::kStreamPath)
+AS_FIELD(U, uint32_t, processStreamIntervalMs, AppConfig::internal::ProcessStreamImpl::kIntervalMs)
+AS_FIELD(U, uint16_t, processStreamConnectTimeoutMs,
+         AppConfig::internal::ProcessStreamImpl::kConnectTimeoutMs)
+AS_FIELD(U, uint16_t, processStreamHeaderTimeoutMs,
+         AppConfig::internal::ProcessStreamImpl::kHeaderTimeoutMs)
+AS_FIELD(U, uint32_t, processStreamReconnectBackoffMs,
+         AppConfig::internal::ProcessStreamImpl::kReconnectBackoffMs)
+AS_FIELD(U, uint32_t, processStreamStaleTimeoutMs,
+         AppConfig::internal::ProcessStreamImpl::kStaleTimeoutMs)
+AS_FIELD(U, size_t, processStreamMaxEventBufferBytes,
+         AppConfig::internal::ProcessStreamImpl::kMaxEventBufferBytes)
+AS_FIELD(U, uint16_t, processStreamMaxBytesPerPoll,
+         AppConfig::internal::ProcessStreamImpl::kMaxBytesPerPoll)
+AS_FIELD(S, const char*, processStreamPath, AppConfig::internal::ProcessStreamImpl::kStreamPath)
 
 AS_FIELD(U, uint32_t, audioStoppedMessageMs, AppConfig::internal::AudioImpl::kStoppedMessageMs)
 AS_FIELD(U, uint32_t, audioPausedTimeoutMs, AppConfig::internal::AudioImpl::kPausedTimeoutMs)

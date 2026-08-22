@@ -13,6 +13,7 @@
 #include "app/jobs/NtpRetryJob.h"
 #include "app/jobs/PcMetricsJob.h"
 #include "app/jobs/PcMetricsStreamJob.h"
+#include "app/jobs/ProcessStreamJob.h"
 #include "app/jobs/WeatherJob.h"
 #include "app/jobs/WifiReconnectJob.h"
 #include "config/AppSettings.h"
@@ -41,6 +42,10 @@ struct JobBundle {
     // same size.
     std::unique_ptr<CpuClockStreamJob> cpuClockStreamJob;
 
+    // Same heap-allocation rationale as cpuClockStreamJob — also carries an
+    // SseConnection plus a JsonDocument.
+    std::unique_ptr<ProcessStreamJob> processStreamJob;
+
     JobBundle(PlatformBundle& platform, DataBundle& data, ServiceBundle& services,
               const AppSettings& config)
         : wifiReconnectJob(platform.networkManager, data.systemState.core),
@@ -58,11 +63,14 @@ struct JobBundle {
                      platform.networkManager, config, platform.logger_),
           cpuClockStreamJob(std::make_unique<CpuClockStreamJob>(
               *data.cpuClockData, data.systemState.screen, platform.networkManager, config,
+              platform.logger_)),
+          processStreamJob(std::make_unique<ProcessStreamJob>(
+              *data.processData, data.systemState.screen, platform.networkManager, config,
               platform.logger_)) {}
 
     std::vector<BackgroundJob*> asVector() {
         return {&wifiReconnectJob,      &ntpRetryJob,      &pcMetricsJob,  &pcMetricsStreamJob,
                 &airQualityJob,         &networkStatusJob, &dimAtNightJob, &weatherJob,
-                cpuClockStreamJob.get()};
+                cpuClockStreamJob.get(), processStreamJob.get()};
     }
 };

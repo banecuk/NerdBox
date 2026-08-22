@@ -8,6 +8,7 @@
 #include "services/cpuClock/CpuClockData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
+#include "services/processes/ProcessData.h"
 #include "services/weather/WeatherData.h"
 
 // The shared data structs written by background services/jobs and read by
@@ -55,4 +56,10 @@ struct DataBundle {
     // the display driver's own DMA-capable allocations. A separate heap
     // allocation keeps ApplicationComponents' own block the same size.
     std::unique_ptr<CpuClockData> cpuClockData = std::make_unique<CpuClockData>();
+
+    // Written by ProcessStreamJob only while the PROCESSES screen is active,
+    // read by ProcessListWidget (screen task). Fixed arrays only — no mutex
+    // needed, same convention as CpuClockData above. Heap-allocated for the
+    // same size-sensitivity reason as cpuClockData.
+    std::unique_ptr<ProcessData> processData = std::make_unique<ProcessData>();
 };

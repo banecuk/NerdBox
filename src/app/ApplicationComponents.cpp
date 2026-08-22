@@ -12,7 +12,7 @@ ApplicationComponents::ApplicationComponents()
       uiController(platform.displayContext, platform.displayManager, services.systemMetrics,
                    data.pcMetrics, data.systemState.screen, config, platform.networkManager,
                    data.airQualityData, data.netStatus, data.weatherData, data.audioData,
-                   *data.cpuClockData),
+                   *data.cpuClockData, *data.processData),
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
       webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,

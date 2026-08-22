@@ -154,6 +154,21 @@ struct CpuClockStreamImpl {
     static constexpr const char* kStreamPath = "/api/v1/stream/cpu-clock";
 };
 
+// Process-list SSE streaming configuration — see
+// docs-local/PROCESSES-SCREEN-PLAN.md. Fetched only while the PROCESSES
+// screen is active (opt-in, no delta mode) — same rationale as
+// CpuClockStreamImpl.
+struct ProcessStreamImpl {
+    static constexpr uint32_t kIntervalMs = 2000;
+    static constexpr uint16_t kConnectTimeoutMs = 1000;
+    static constexpr uint16_t kHeaderTimeoutMs = 2000;
+    static constexpr uint32_t kReconnectBackoffMs = 2000;
+    static constexpr uint32_t kStaleTimeoutMs = 6000;
+    static constexpr size_t kMaxEventBufferBytes = 3072;
+    static constexpr uint16_t kMaxBytesPerPoll = 2048;
+    static constexpr const char* kStreamPath = "/api/v1/stream/processes";
+};
+
 // Audio (MusicBee mb_NerdBox plugin push) configuration — see
 // docs-local/NERDBOX_INTEGRATION.md.
 struct AudioImpl {
