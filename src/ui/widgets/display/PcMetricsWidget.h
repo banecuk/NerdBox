@@ -6,10 +6,10 @@
 
 #include "config/AppSettings.h"
 #include "core/events/EventTypes.h"
-#include "ui/widgets/display/MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"
+#include "ui/widgets/display/MetricWidget.h"
 #include "utils/MidpointInterpolator.h"
 
 // Composite CPU + GPU + RAM/VRAM tile grid plus up to two system-fan tiles,
@@ -20,9 +20,9 @@ class PcMetricsWidget : public PcDataCompositeWidget {
     using ActionCallback = std::function<void(EventType)>;
 
     // action/callback mirror AirQualityWidget/FpsWidget's tap-to-navigate
-    // pattern: a tap on any GPU tile (load/temp/power/fan/memory/3D/compute/
-    // decode) publishes `action` via `callback` (e.g. to open the game
-    // screen). No-op when either is left at its default.
+    // pattern: a tap on any GPU tile (load/temp/power/fan/memory/3D/compute)
+    // publishes `action` via `callback` (e.g. to open the game screen).
+    // No-op when either is left at its default.
     PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                     uint32_t updateIntervalMs, PcMetrics& pcMetrics,
                     EventType action = EventType::NONE, ActionCallback callback = nullptr);
@@ -72,7 +72,7 @@ class PcMetricsWidget : public PcDataCompositeWidget {
         kGpuMemory,
         kGpuFan,
         kMemoryLoad,
-        kGpuDecode,
+        kSwapUsed,
         kFixedTileCount
     };
 
@@ -87,11 +87,12 @@ class PcMetricsWidget : public PcDataCompositeWidget {
 
     // fixedTileDescriptors()'s kGetters/kDims are laid out CPU row (indices
     // 0-4: load/temp/power/fan/RAM), then GPU row + GPU-adjacent row 3 tiles
-    // (indices 5-12: load/temp/power/fan/memory/3D/compute/decode) — the
+    // (indices 5-12: load/temp/power/fan/memory/3D/compute/swap) — the
     // contiguous GPU range a tap check needs. FixedTile's own enum values are
-    // just names; they don't index these arrays.
+    // just names; they don't index these arrays. The swap tile (index 12) is
+    // not a GPU tile, so it sits outside the range, same as RAM (index 4).
     static constexpr uint8_t kGpuTileFirstIndex = 5;
-    static constexpr uint8_t kGpuTileLastIndex = 12;
+    static constexpr uint8_t kGpuTileLastIndex = 11;
 
     EventType action_;
     ActionCallback callback_;

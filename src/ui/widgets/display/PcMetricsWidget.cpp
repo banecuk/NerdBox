@@ -1,5 +1,7 @@
 #include "PcMetricsWidget.h"
 
+#include <cmath>
+
 #include "config/PcMetricsTilesConfig.h"
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
@@ -42,14 +44,16 @@ float valueGpuFan(const PcMetrics& m) {
 float valueMemoryLoad(const PcMetrics& m) {
     return m.mem_load;
 }
-float valueGpuDecode(const PcMetrics& m) {
-    return m.gpu_decode;
+float valueSwapUsed(const PcMetrics& m) {
+    // drawDynamicData() truncates with static_cast<int>, so round here:
+    // 2.6 GB must display as 3, not 2.
+    return roundf(m.mem_swap_used_gb);
 }
 }  // namespace
 
 PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                                 EventType action, ActionCallback callback)
+                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
+                                 ActionCallback callback)
     : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics),
       action_(action),
       callback_(std::move(callback)) {
@@ -65,7 +69,8 @@ PcMetricsWidget::fixedTileDescriptors() {
     // Layout (dims) and the PcMetrics field each tile reads (getValue) are
     // structural and live here; thresholds/colors/labels are data — see
     // config/PcMetricsTilesConfig.h. Position in each array must match: both
-    // are ordered CPU row, RAM, GPU row, VRAM, 3D/compute/decode.
+    // are ordered CPU row, RAM, GPU row, VRAM, 3D/compute/swap. The swap tile
+    // sits at kCol4 (not kCol2) — the fan slots take col2/col3 on row 3.
     static const std::array<WidgetInterface::Dimensions, kFixedTileCount> kDims = {
         WidgetInterface::Dimensions{kCol0, kRow1, kTileWidth, kRowH},
         {kCol1, kRow1, kTileWidth, kRowH},
@@ -79,12 +84,12 @@ PcMetricsWidget::fixedTileDescriptors() {
         {kCol4, kRow2, kTileWidth, kRowH},
         {kCol0, kRow3, kTileWidth, kRowH},
         {kCol1, kRow3, kTileWidth, kRowH},
-        {kCol2, kRow3, kTileWidth, kRowH},
+        {kCol4, kRow3, kTileWidth, kRowH},
     };
     static const std::array<float (*)(const PcMetrics&), kFixedTileCount> kGetters = {
-        valueCpuLoad, valueCpuTemperature, valueCpuPower,  valueCpuFan, valueMemoryLoad,
-        valueGpuLoad, valueGpuTemperature, valueGpuPower,  valueGpuFan, valueGpuMemory,
-        valueGpu3d,   valueGpuCompute,     valueGpuDecode,
+        valueCpuLoad, valueCpuTemperature, valueCpuPower, valueCpuFan, valueMemoryLoad,
+        valueGpuLoad, valueGpuTemperature, valueGpuPower, valueGpuFan, valueGpuMemory,
+        valueGpu3d,   valueGpuCompute,     valueSwapUsed,
     };
 
     static const std::array<FixedTileDescriptor, kFixedTileCount> kTiles = [] {
@@ -138,8 +143,8 @@ void PcMetricsWidget::ensureChildWidgetsCreated() {
     if (fanCount == 0)
         return;
 
-    // Two fixed slots at row 3, columns 3 and 4 (col 2 is GPU Decode).
-    static constexpr uint16_t kFanX[kMaxSystemFanWidgets] = {kCol3, kCol4};
+    // Two fixed slots at row 3, cols 2-3; col4 is the swap tile.
+    static constexpr uint16_t kFanX[kMaxSystemFanWidgets] = {kCol2, kCol3};
     static constexpr const char* kFanLabels[kMaxSystemFanWidgets] = {"R1", "F1"};
     const uint8_t slots =
         min(static_cast<uint8_t>(fanCount), static_cast<uint8_t>(kMaxSystemFanWidgets));

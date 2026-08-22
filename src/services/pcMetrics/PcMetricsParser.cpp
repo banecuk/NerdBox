@@ -18,6 +18,7 @@ void buildFilter(JsonDocument& filter) {
 
     JsonObject ram = metrics["Ram"].to<JsonObject>();
     ram["Load"] = true;
+    ram["SwapUsed"] = true;
 
     JsonObject gpu = metrics["Gpu"].to<JsonObject>();
     gpu["Load"] = true;
@@ -138,6 +139,9 @@ bool parseCpuExtendedData(JsonObjectConst cpuExtended, PcMetrics& outData) {
 bool parseRamData(JsonObjectConst ram, PcMetrics& outData) {
     if (!ram["Load"].isNull()) {
         outData.mem_load = static_cast<uint8_t>(ram["Load"].as<float>());
+    }
+    if (!ram["SwapUsed"].isNull()) {
+        outData.mem_swap_used_gb = ram["SwapUsed"].as<float>();
     }
     return true;
 }

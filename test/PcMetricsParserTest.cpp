@@ -41,7 +41,7 @@ static const char* kFullReportJson = R"({
   "Metrics": {
     "Cpu": {"Load": 42.5, "CoreLoads": [10,20,30,40,50,60,70,80,90,100,15,25,35,45,55,65,75,85,95,5,12,22,32,42]},
     "CpuExtended": {"TemperatureCoreMax": 65.3, "PackagePower": 95.7},
-    "Ram": {"Load": 55.1},
+    "Ram": {"Load": 55.1, "SwapUsed": 4.5},
     "Gpu": {"Load": 30.2, "Temperature": 60.9, "PackagePower": 120.4, "Fan": 1500.0,
             "D3d3d": 12.0, "D3dCompute": 3.0, "D3dVideoDecode": 7.0, "MemoryLoad": 50.0,
             "FullscreenFps": 155.40016},
@@ -71,6 +71,7 @@ TEST(PcMetricsParserTest, FullReportParsesEverySection) {
     EXPECT_EQ(m.cpu_temperature, 65);
     EXPECT_EQ(m.cpu_power, 95);
     EXPECT_EQ(m.mem_load, 55);
+    EXPECT_FLOAT_EQ(m.mem_swap_used_gb, 4.5f);
     EXPECT_EQ(m.gpu_load, 30);
     EXPECT_EQ(m.gpu_temperature, 60);
     EXPECT_EQ(m.gpu_3d, 12);
@@ -189,6 +190,31 @@ TEST(PcMetricsParserTest, PresentD3dVideoDecodeUpdatesGpuDecode) {
     PcMetricsParser::parseAllSections(metrics, m, 24, logger);
 
     EXPECT_EQ(m.gpu_decode, 63);
+}
+
+// ─── SwapUsed (RAM swap/pagefile usage) ─────────────────────────────────────
+
+TEST(PcMetricsParserTest, AbsentSwapUsedLeavesSwapUnchanged) {
+    JsonDocument doc;
+    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Ram": {"Load": 50.0}}})");
+
+    PcMetrics m;
+    m.mem_swap_used_gb = 7.0f;
+    NullLogger logger;
+    PcMetricsParser::parseAllSections(metrics, m, 24, logger);
+
+    EXPECT_FLOAT_EQ(m.mem_swap_used_gb, 7.0f);
+}
+
+TEST(PcMetricsParserTest, PresentSwapUsedUpdatesSwap) {
+    JsonDocument doc;
+    JsonObjectConst metrics = metricsOf(doc, R"({"Metrics": {"Ram": {"SwapUsed": 4.83}}})");
+
+    PcMetrics m;
+    NullLogger logger;
+    PcMetricsParser::parseAllSections(metrics, m, 24, logger);
+
+    EXPECT_NEAR(m.mem_swap_used_gb, 4.83f, 0.001f);
 }
 
 // ─── FullscreenFps float extraction ─────────────────────────────────────────

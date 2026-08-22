@@ -11,7 +11,7 @@
 // stay in PcMetricsWidget.cpp since they're structural, not data.
 //
 // Entry order must match the physical tile order PcMetricsWidget.cpp builds
-// its dims/getValue arrays in (CPU row, RAM, GPU row, VRAM, 3D/compute/decode) —
+// its dims/getValue arrays in (CPU row, RAM, GPU row, VRAM, 3D/compute/swap) —
 // see PcMetricsWidget::fixedTileDescriptors().
 namespace PcMetricsTilesConfig {
 
@@ -51,11 +51,13 @@ inline constexpr TileData kTiles[] = {
  // VRAM — end of GPU row
     {"%",       0, 100,  30.0f,  90.0f,   "VRM", 0xB471, true,  false, false},
 
- // Row 3 — 3D / compute / decode (fan slots are lazily created, see
-  // PcMetricsWidget::ensureChildWidgetsCreated())
+ // Row 3 — 3D / compute (fan slots R1/F1 occupy col2/col3 and are lazily
+  // created, see PcMetricsWidget::ensureChildWidgetsCreated())
     {"%",       0, 100,  10.0f,  90.0f,   "3D",  0xB471, true,  false, false},
     {"%",       0, 100,  10.0f,  90.0f,   "CMP", 0xB471, true,  false, false},
-    {"%",       0, 100,  10.0f,  90.0f,   "DEC", 0xB471, true,  false, false},
+
+ // Swap in use, absolute GB — col4
+    {" G",      0, 32,   4.0f,   16.0f,   "SWP", 0xADFB, false, false, true },
 };
 
 }  // namespace PcMetricsTilesConfig

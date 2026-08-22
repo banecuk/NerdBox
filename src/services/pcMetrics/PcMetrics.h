@@ -46,6 +46,7 @@ class PcMetrics {
     uint8_t cpu_load = 0;
     uint8_t gpu_load = 0;
     uint8_t mem_load = 0;
+    float mem_swap_used_gb = 0.0f;  // absolute GB, from Ram.SwapUsed
     uint8_t cpu_thread_load[AppConfig::Limits::kMaxThreads] = {};
     // Number of valid entries in cpu_thread_load, set once CoreLoads data
     // arrives — lets consumers size themselves to the actual reported thread
