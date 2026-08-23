@@ -181,6 +181,25 @@ struct AudioImpl {
     static constexpr uint32_t kPausedTimeoutMs = 10000;
 };
 
+// MultiWidget configuration — sparkline/forecast/audio priority rotation.
+// See docs-local/09-multiwidget-rotation-and-forecast-strip.md.
+struct MultiWidgetImpl {
+    // Sparkline takes over when CPU or GPU load holds at/above this...
+    static constexpr uint8_t kActivityEnterPct = 70;
+    // ...and hands back to the forecast only once both stay below this...
+    static constexpr uint8_t kActivityExitPct = 50;
+    // ...for this long (the requested 30 s quiet period).
+    static constexpr uint32_t kActivityQuietMs = 30000;
+    // Load must hold this long before the sparkline takes over, so a short
+    // burst (anything under 5 s) never pulls the forecast off screen. The
+    // hold clock tolerates dips down to kActivityExitPct — see
+    // ActivityDetector.
+    static constexpr uint32_t kActivityEnterHoldMs = 6000;
+    // Forecast columns in the 82px strip — fewer than Limits::kForecastDays
+    // on purpose; the full 7-day view lives on the weather screen.
+    static constexpr uint8_t kForecastDays = 6;
+};
+
 // Network configuration
 struct NetworkImpl {
     // Advertised via mDNS so the device is reachable as

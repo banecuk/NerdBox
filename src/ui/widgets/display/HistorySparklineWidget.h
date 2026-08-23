@@ -16,6 +16,15 @@ class HistorySparklineWidget : public Widget {
     HistorySparklineWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                            PcMetrics& pcMetrics);
 
+    // Feeds the ring histories one sample if kSampleIntervalMs has elapsed
+    // since the last one — the body of what used to be onDraw()'s private
+    // sampleIfNeeded(). MultiWidget calls this unconditionally on every tick
+    // regardless of which candidate is currently visible, so the history
+    // keeps advancing while this widget is hidden — otherwise reactivating it
+    // would splice pre-hide samples straight against post-hide ones with no
+    // time gap, a misleading chart rather than merely an empty one.
+    bool sampleTick();
+
  protected:
     void onDraw(bool forceRedraw) override;
     void onDrawStatic() override;
@@ -83,6 +92,18 @@ class HistorySparklineWidget : public Widget {
     // screen while PcMetrics is stale, and redraw captions once data returns.
     bool lastHasData_ = true;
 
+    // Set in onDrawStatic(), consumed (and cleared) as a forceRedraw on the
+    // next onDraw() — subsumes the lastHasData_ stale->fresh force path.
+    // Fixes a repaint bug: switching to this candidate mid-second used to
+    // leave the plot area blank (captions/borders only) until the next
+    // sample landed, since onDraw(forceRedraw=false) returns early when no
+    // new sample arrived.
+    bool pendingFullRepaint_ = false;
+
+    // Cached result of the most recent sampleTick() call, consumed by onDraw
+    // on the same tick to decide whether a redraw pass is needed.
+    bool sampledThisTick_ = false;
+
     uint8_t lastCpuCol_[kMaxColumns] = {0};
     uint8_t lastGpuCol_[kMaxColumns] = {0};
     uint8_t lastRamCol_[kMaxColumns] = {0};
@@ -94,7 +115,6 @@ class HistorySparklineWidget : public Widget {
     // in the constructor's initializer list, before computeLayout() runs.
     static uint16_t plotWidthForHalf(const WidgetInterface::Dimensions& dims, bool leftHalf);
     void computeLayout();
-    bool sampleIfNeeded();
     void drawRowBorders();
     void drawRow(uint16_t plotX, uint16_t plotY, uint16_t cols,
                  const HeapRingHistory<uint8_t>& history, uint8_t* lastCol, uint16_t color,

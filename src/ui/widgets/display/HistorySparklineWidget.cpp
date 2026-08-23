@@ -105,6 +105,8 @@ void HistorySparklineWidget::onDrawStatic() {
 
     drawRowBorders();
 
+    pendingFullRepaint_ = true;
+
     for (auto& h : lastCpuCol_)
         h = 0;
     for (auto& h : lastGpuCol_)
@@ -134,12 +136,16 @@ void HistorySparklineWidget::drawRowBorders() {
     lcd->drawFastHLine(rightPlotX_, bottomBorder, rightPlotWidth_, kRowBorderColor);
 }
 
-bool HistorySparklineWidget::sampleIfNeeded() {
-    if (!freshnessGuard_.isFresh())
+bool HistorySparklineWidget::sampleTick() {
+    if (!freshnessGuard_.isFresh()) {
+        sampledThisTick_ = false;
         return false;
+    }
     const uint32_t now = millis();
-    if (now - lastSampleMs_ < kSampleIntervalMs)
+    if (now - lastSampleMs_ < kSampleIntervalMs) {
+        sampledThisTick_ = false;
         return false;
+    }
 
     lastSampleMs_ = now;
     cpuLoadHistory_.push(pcMetrics_.cpu_load);
@@ -149,6 +155,7 @@ bool HistorySparklineWidget::sampleIfNeeded() {
     // sparkline's fixed 0-100 scale.
     const uint16_t vram = pcMetrics_.gpu_mem;
     vramLoadHistory_.push(vram > kScaleMax ? kScaleMax : static_cast<uint8_t>(vram));
+    sampledThisTick_ = true;
     return true;
 }
 
@@ -264,11 +271,20 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
     // resuming normal per-column diffing.
     if (!lastHasData_) {
         onDrawStatic();
-        forceRedraw = true;
     }
     lastHasData_ = true;
 
-    const bool sampled = sampleIfNeeded();
+    if (pendingFullRepaint_) {
+        forceRedraw = true;
+        pendingFullRepaint_ = false;
+    }
+
+    // Sampling is driven externally now — MultiWidget calls sampleTick()
+    // unconditionally every tick, even while this candidate is hidden, so the
+    // ring histories keep advancing. onDraw only consumes whether a new
+    // sample landed on *this* tick (sampleTick()'s own cached result) to
+    // decide whether to skip redrawing, rather than sampling again itself.
+    const bool sampled = sampledThisTick_;
     if (!sampled && !forceRedraw) {
         // No new sample landed and nothing else forces a repaint — the
         // per-column diff in drawRow would just re-encode every column to

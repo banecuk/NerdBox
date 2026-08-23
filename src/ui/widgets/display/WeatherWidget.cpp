@@ -1,6 +1,7 @@
 #include "WeatherWidget.h"
 
 #include "ui/core/UiText.h"
+#include "ui/widgets/display/WeatherFormat.h"
 
 // ---------------------------------------------------------------------------
 // Static styling
@@ -11,19 +12,8 @@ static constexpr uint16_t kDateColor = TFT_LIGHTGREY;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kTempColor = TFT_WHITE;
 static constexpr uint16_t kValueColor = TFT_LIGHTGREY;
-static constexpr uint16_t kWeekendColor = 0xFBCF;  // light red for SAT/SUN day names
-static constexpr uint16_t kRainColor = 0x867F;     // light blue, matches AirQuality humidity
-
-// Abbreviated day names indexed by tm_wday (0 = Sunday).
-static const char* const kDayNames[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
-
-// Converts a *10-scaled temperature to whole degrees, rounding to the nearest
-// integer (half away from zero) instead of truncating — plain integer
-// division on a negative X10 value truncates toward zero and displays up to
-// 1° too warm.
-static int16_t roundX10ToWhole(int16_t x10) {
-    return static_cast<int16_t>(x10 >= 0 ? (x10 + 5) / 10 : (x10 - 5) / 10);
-}
+static constexpr uint16_t kWeekendColor = kWeatherWeekendColor;
+static constexpr uint16_t kRainColor = kWeatherRainColor;
 
 // ---------------------------------------------------------------------------
 // Constructor
@@ -107,9 +97,9 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         snprintf(tempMin, sizeof(tempMin), "%d\xc2\xb0", roundX10ToWhole(day.tempMinX10));
 
         char rain[12];
-        snprintf(rain, sizeof(rain), "%d.%d", day.rainX10 / 10, day.rainX10 % 10);
+        formatX10OneDecimal(rain, sizeof(rain), day.rainX10);
         char wind[12];
-        snprintf(wind, sizeof(wind), "%d.%d", day.windMaxX10 / 10, day.windMaxX10 % 10);
+        formatX10OneDecimal(wind, sizeof(wind), day.windMaxX10);
 
         const bool iconChanged = forceRedraw || day.weatherCode != cache.iconWmo;
         const bool headerChanged =

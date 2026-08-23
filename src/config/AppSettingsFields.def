@@ -127,6 +127,16 @@ AS_FIELD(S, const char*, processStreamPath, AppConfig::internal::ProcessStreamIm
 AS_FIELD(U, uint32_t, audioStoppedMessageMs, AppConfig::internal::AudioImpl::kStoppedMessageMs)
 AS_FIELD(U, uint32_t, audioPausedTimeoutMs, AppConfig::internal::AudioImpl::kPausedTimeoutMs)
 
+AS_FIELD(U, uint8_t, multiWidgetActivityEnterPct,
+         AppConfig::internal::MultiWidgetImpl::kActivityEnterPct)
+AS_FIELD(U, uint8_t, multiWidgetActivityExitPct,
+         AppConfig::internal::MultiWidgetImpl::kActivityExitPct)
+AS_FIELD(U, uint32_t, multiWidgetActivityQuietMs,
+         AppConfig::internal::MultiWidgetImpl::kActivityQuietMs)
+AS_FIELD(U, uint32_t, multiWidgetActivityEnterHoldMs,
+         AppConfig::internal::MultiWidgetImpl::kActivityEnterHoldMs)
+AS_FIELD(U, uint8_t, multiWidgetForecastDays, AppConfig::internal::MultiWidgetImpl::kForecastDays)
+
 AS_FIELD(S, const char*, networkMdnsHostname, AppConfig::internal::NetworkImpl::kMdnsHostname)
 
 AS_FIELD(U, uint32_t, uiTransitionTimeoutMs, AppConfig::internal::UiImpl::kTransitionTimeoutMs)

@@ -5,13 +5,14 @@
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
                        const AirQualityData& airQualityData, const NetworkStatus& netStatus,
-                       const AudioData& audioData)
+                       const AudioData& audioData, WeatherData& weatherData)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
       systemMetrics_(systemMetrics),
       airQualityData_(airQualityData),
       netStatus_(netStatus),
-      audioData_(audioData) {}
+      audioData_(audioData),
+      weatherData_(weatherData) {}
 
 void MainScreen::createWidgets() {
     // Threads — reduced-width row filling the left side of the top band.
@@ -48,7 +49,8 @@ void MainScreen::createWidgets() {
     // dropped from a 4px write line + 4px read line to one shared 2px line.
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(new MultiWidget(
         WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 82}, 200, pcMetrics_, audioData_,
-        config_)));
+        weatherData_, config_, EventType::SHOW_WEATHER,
+        [this](EventType action) { this->handleAction(action); })));
 
     // Disk band — slim strip, tappable to the disk screen. 25px tall: one
     // shared 2px read/write activity line at the top (split left/right, see
