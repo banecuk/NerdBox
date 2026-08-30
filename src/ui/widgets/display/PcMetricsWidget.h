@@ -13,8 +13,8 @@
 #include "utils/MidpointInterpolator.h"
 
 // Composite CPU + GPU + RAM/VRAM tile grid plus up to two system-fan tiles,
-// in a 5-column x 3-row, 96px-wide grid. Shared by MainScreen (106px tall)
-// and GameScreen (130px tall) via the rowHeight() rescale in toScreenSpace().
+// in a 5-column x 3-row, 96px-wide grid. Shared by MainScreen and GameScreen,
+// both 84px tall (28px rows), via the rowHeight() rescale in toScreenSpace().
 class PcMetricsWidget : public PcDataCompositeWidget {
  public:
     using ActionCallback = std::function<void(EventType)>;
@@ -44,10 +44,14 @@ class PcMetricsWidget : public PcDataCompositeWidget {
     // at any position. Absolute screen pixels are computed via toScreenSpace().
     // kRowH is the reference tile height for a 3-row grid at a 90px widget
     // height; rowHeight() rescales it from the widget's actual dimensions_, so
-    // shorter instances (e.g. MainScreen's 72px) get tighter 24px rows.
+    // shorter instances (e.g. MainScreen's 84px) get tighter 28px rows.
     static constexpr uint16_t kTileWidth = 96;
     static constexpr uint16_t kRowH = 30;
     static constexpr uint8_t kRowCount = 3;
+    // Minimum row height that keeps NotoSans18's 23px text background box
+    // inside a borderMargin=0 tile — see docs-local/10-pcmetrics-tile-height.md.
+    // Below this, per-glyph background fill bleeds into the neighbouring tile.
+    static constexpr uint16_t kMinRowH = 24;
     static constexpr uint16_t kCol0 = 0;
     static constexpr uint16_t kCol1 = kTileWidth;
     static constexpr uint16_t kCol2 = kTileWidth * 2;

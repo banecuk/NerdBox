@@ -17,7 +17,7 @@
 // it. Shows day name / max temp / min temp / rain per column, no icon —
 // weather severity is conveyed by the rain value's colour instead.
 //
-// Layout (480 x 82, one column per day, config_.multiWidgetForecastDays of
+// Layout (480 x 104, one column per day, config_.multiWidgetForecastDays of
 // them — 6 by default, 80px each — up to kMaxColumns):
 //
 //   MON   TUE   WED   THU   FRI     <- day name (weekend in red), today underlined
@@ -43,10 +43,13 @@ class ForecastStripWidget : public Widget {
  private:
     static constexpr uint8_t kMaxColumns = AppConfig::Limits::kForecastDays;
 
-    static constexpr int16_t kDayY = 9;   // MC_DATUM centre for the 12pt day name
-    static constexpr int16_t kMaxY = 29;  // 15pt max temp
-    static constexpr int16_t kMinY = 48;  // 12pt min temp
-    static constexpr int16_t kRainY = 67;  // 12pt rain
+    // Row gaps (20/19/19) sized for the fonts; +11px top/bottom padding vs.
+    // the original 82px-tall layout, centering the rows in MultiWidget's
+    // current 104px height.
+    static constexpr int16_t kDayY = 20;   // MC_DATUM centre for the 12pt day name
+    static constexpr int16_t kMaxY = 40;  // 15pt max temp
+    static constexpr int16_t kMinY = 59;  // 12pt min temp
+    static constexpr int16_t kRainY = 78;  // 12pt rain
 
     static constexpr uint16_t kDividerColor = 0x18C3;   // same very-dark-grey row-border color
     static constexpr uint16_t kTodayUnderlineColor = 0x2965;

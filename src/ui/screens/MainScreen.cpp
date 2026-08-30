@@ -42,23 +42,26 @@ void MainScreen::createWidgets() {
         EventType::SHOW_WEATHER, [this](EventType action) { this->handleAction(action); })));
 
     // Game metrics grid — replaces PcMetricsWidget, directly below threads.
-    // Moved up (y=56) since the top band got shorter. Tapping any GPU tile
-    // opens the game screen (requestScreen() no-ops if already there).
+    // Moved up (y=56) since the top band got shorter. 84px tall (28px rows,
+    // borderMargin=0 on every tile) — see docs-local/10-pcmetrics-tile-height.md.
+    // 28px rows (rather than the 26px floor) leave a bit more breathing room
+    // around the digits. Tapping any GPU tile opens the game screen
+    // (requestScreen() no-ops if already there).
     auto gameMetricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
         uiController_->getDisplayContext(),
-        WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 106}, 100, pcMetrics_,
+        WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 84}, 100, pcMetrics_,
         EventType::SHOW_GAME, [this](EventType action) { this->handleAction(action); }));
     gameMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(gameMetricsWidget));
 
     // Multifunctional widget — full screen width now that the FPS tile is
     // gone from the main screen (still shown on the game screen via
-    // FpsWidget/GameFpsWidget). Moved up to y=162 (where the disk band used
-    // to sit) so the disk band can move below it. 82px tall: 2px taller than
-    // before, absorbing the 2px DiskBandWidget's activity line shed when it
-    // dropped from a 4px write line + 4px read line to one shared 2px line.
+    // FpsWidget/GameFpsWidget). Moved up to y=140 (PcMetricsWidget's new
+    // bottom edge) and grown to 104px tall, absorbing the remaining 22px
+    // freed by PcMetricsWidget's height cut — see
+    // docs-local/10-pcmetrics-tile-height.md.
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 82}, 200, pcMetrics_,
+        new MultiWidget(WidgetInterface::Dimensions{0, 140, Layout::kScreenW, 104}, 200, pcMetrics_,
                         audioData_, weatherData_, config_, EventType::SHOW_WEATHER,
                         [this](EventType action) { this->handleAction(action); })));
 

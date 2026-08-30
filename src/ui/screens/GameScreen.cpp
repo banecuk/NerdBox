@@ -12,17 +12,20 @@ void GameScreen::createWidgets() {
         uiController_->getDisplayContext(),
         WidgetInterface::Dimensions{0, 0, Layout::kScreenW, 130}, 250, pcMetrics_)));
 
-    // CPU/GPU/RAM/VRAM/fan tile grid
+    // CPU/GPU/RAM/VRAM/fan tile grid — 84px tall (28px rows), matching
+    // MainScreen's PcMetricsWidget so both screens use the same row height.
     auto metricsWidget = std::unique_ptr<PcMetricsWidget>(new PcMetricsWidget(
         uiController_->getDisplayContext(),
-        WidgetInterface::Dimensions{0, 130, Layout::kScreenW, 90}, 100, pcMetrics_));
+        WidgetInterface::Dimensions{0, 130, Layout::kScreenW, 84}, 100, pcMetrics_));
     metricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(metricsWidget));
 
-    // CPU + GPU load history strip
+    // CPU + GPU load history strip — grown from 46 to 52px to absorb the 6px
+    // freed by the tile grid's height cut above; keeps the same 2px gap above
+    // it and the same bottom edge (268).
     widgetManager_.addWidget(std::unique_ptr<LoadHistoryWidget>(new LoadHistoryWidget(
         uiController_->getDisplayContext(),
-        WidgetInterface::Dimensions{0, 222, Layout::kScreenW, 46}, 250, pcMetrics_)));
+        WidgetInterface::Dimensions{0, 216, Layout::kScreenW, 52}, 250, pcMetrics_)));
 
     // Back button — flush with the left screen edge (x=0), in the shared
     // bottom band (center matches MainScreen's settings button, offset by 3px).

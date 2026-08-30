@@ -108,6 +108,7 @@ PcMetricsWidget::fixedTileDescriptors() {
             config.useGpuColors = t.useGpuColors;
             config.useDimColors = t.useDimColors;
             config.useRamColors = t.useRamColors;
+            config.borderMargin = 0;
             tiles[i] = {kDims[i], config, kGetters[i]};
         }
         return tiles;
@@ -159,6 +160,7 @@ void PcMetricsWidget::ensureChildWidgetsCreated() {
         config.labelWidth = kLabelWidth;
         config.labelColor = 0xC618;
         config.useDimColors = true;
+        config.borderMargin = 0;
 
         auto w = std::make_unique<MetricWidget>(
             toScreenSpace(WidgetInterface::Dimensions{kFanX[i], kRow3, kTileWidth, kRowH}),
