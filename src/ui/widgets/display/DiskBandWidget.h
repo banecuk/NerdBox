@@ -48,7 +48,7 @@ class DiskBandWidget : public PcDataCompositeWidget {
  private:
     // Height (px) of the single read/write activity line at the top of
     // each tile.
-    static constexpr uint16_t kActivityLineHeight = 2;
+    static constexpr uint16_t kActivityLineHeight = 3;
 
     // Gap (px) between the activity line and the value tile below it.
     static constexpr uint16_t kActivityGap = 1;

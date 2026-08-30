@@ -12,8 +12,10 @@
 // CPU + GPU load history strip for the game screen — fixed 0-100% scale dual
 // sparkline. CPU load (0xC618, near-white) is drawn as a filled bar; GPU load
 // (0xB471, muted desaturated red — same GPU accent color used elsewhere in the app) as
-// a bright marker line on top of it. One sample recorded per PcMetrics fetch,
-// same timestamp-gated sampling as GameFpsWidget.
+// a bright marker line on top of it, switching to the shared alert red (same
+// threshold as HistorySparklineWidget's GPU row) once GPU load reaches 90%.
+// One sample recorded per PcMetrics fetch, same timestamp-gated sampling as
+// GameFpsWidget.
 //
 // kHistorySize is sized so kCaptionWidth + kHistorySize*kColWidth + margin
 // exactly fills the widget's designed 480px width (see computePlotLayout) —

@@ -59,20 +59,21 @@ void MainScreen::createWidgets() {
     // FpsWidget/GameFpsWidget). Moved up to y=140 (PcMetricsWidget's new
     // bottom edge) and grown to 104px tall, absorbing the remaining 22px
     // freed by PcMetricsWidget's height cut — see
-    // docs-local/10-pcmetrics-tile-height.md.
+    // docs-local/10-pcmetrics-tile-height.md. Trimmed to 103px to hand the
+    // freed pixel to DiskBandWidget's activity lines below.
     widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
-        new MultiWidget(WidgetInterface::Dimensions{0, 140, Layout::kScreenW, 104}, 200, pcMetrics_,
+        new MultiWidget(WidgetInterface::Dimensions{0, 140, Layout::kScreenW, 103}, 200, pcMetrics_,
                         audioData_, weatherData_, config_, EventType::SHOW_WEATHER,
                         [this](EventType action) { this->handleAction(action); })));
 
-    // Disk band — slim strip, tappable to the disk screen. 25px tall: one
-    // shared 2px read/write activity line at the top (split left/right, see
+    // Disk band — slim strip, tappable to the disk screen. 26px tall: one
+    // shared 3px read/write activity line at the top (split left/right, see
     // DiskBandWidget), a 1px gap, then a ~22px borderless per-drive tile area
     // that fits the NotoSans15 value font. Moved below the MultiWidget/FpsWidget
-    // row (y=244..269, right above the bottom band).
+    // row (y=243..269, right above the bottom band).
     widgetManager_.addWidget(std::unique_ptr<DiskBandWidget>(new DiskBandWidget(
         uiController_->getDisplayContext(),
-        WidgetInterface::Dimensions{0, 244, Layout::kScreenW, 25}, 100, pcMetrics_,
+        WidgetInterface::Dimensions{0, 243, Layout::kScreenW, 26}, 100, pcMetrics_,
         EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); })));
 
     // ── Bottom band is unchanged below this point ──────────────────────────────

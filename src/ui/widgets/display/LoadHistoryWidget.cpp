@@ -7,6 +7,9 @@
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = 0xC618;
 static constexpr uint16_t kGpuColor = 0xB471;
+// Same alert color/threshold HistorySparklineWidget uses for its GPU row.
+static constexpr uint16_t kHighUsageColor = TFT_RED;
+static constexpr uint8_t kGpuHighUsageThreshold = 90;
 
 LoadHistoryWidget::LoadHistoryWidget(DisplayContext& context,
                                      const WidgetInterface::Dimensions& dims,
@@ -55,10 +58,16 @@ void LoadHistoryWidget::drawPlot(bool forceFullRepaint) {
     const size_t count = cpuHistory_.size();
     const size_t offset = kHistorySize - count;
 
+    // GPU high-usage state is packed into the top bit of the stored height
+    // byte so the redraw-skip check below also catches a color-only change
+    // (crossing the threshold at an unchanged pixel height).
+    static constexpr uint8_t kGpuHighBit = 0x80;
+
     lcd->startWrite();
     for (size_t col = 0; col < kHistorySize; ++col) {
         uint8_t cpuHeight = 0;
         uint8_t gpuHeight = 0;
+        bool gpuHigh = false;
         if (col >= offset) {
             const size_t idx = col - offset;
             const uint32_t cpuH =
@@ -67,11 +76,14 @@ void LoadHistoryWidget::drawPlot(bool forceFullRepaint) {
                 (static_cast<uint32_t>(gpuHistory_.at(idx)) * (plotHeight_ - 1)) / 100;
             cpuHeight = static_cast<uint8_t>((cpuH > plotHeight_ - 1 ? plotHeight_ - 1 : cpuH) + 1);
             gpuHeight = static_cast<uint8_t>((gpuH > plotHeight_ - 1 ? plotHeight_ - 1 : gpuH) + 1);
+            gpuHigh = gpuHistory_.at(idx) >= kGpuHighUsageThreshold;
         }
 
+        const uint8_t encodedGpu =
+            static_cast<uint8_t>(gpuHeight | (gpuHigh ? kGpuHighBit : 0));
         const uint8_t oldCpu = lastCpuHeight_[col];
         const uint8_t oldGpu = lastGpuHeight_[col];
-        if (!forceFullRepaint && cpuHeight == oldCpu && gpuHeight == oldGpu)
+        if (!forceFullRepaint && cpuHeight == oldCpu && encodedGpu == oldGpu)
             continue;
 
         const uint16_t x = plotX_ + static_cast<uint16_t>(col) * kColWidth;
@@ -83,11 +95,11 @@ void LoadHistoryWidget::drawPlot(bool forceFullRepaint) {
             lcd->fillRect(x, plotY_ + plotHeight_ - cpuHeight, w, cpuHeight, kCpuColor);
         if (gpuHeight > 0) {
             const uint16_t gpuY = plotY_ + plotHeight_ - gpuHeight;
-            lcd->fillRect(x, gpuY, w, 1, kGpuColor);
+            lcd->fillRect(x, gpuY, w, 1, gpuHigh ? kHighUsageColor : kGpuColor);
         }
 
         lastCpuHeight_[col] = cpuHeight;
-        lastGpuHeight_[col] = gpuHeight;
+        lastGpuHeight_[col] = encodedGpu;
     }
     lcd->endWrite();
 }
