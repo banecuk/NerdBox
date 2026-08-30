@@ -34,6 +34,11 @@ class MetricWidget : public Widget {
         // DiskBandWidget so its metric tiles sit immediately against the
         // activity lines).
         uint16_t borderMargin = 1;
+        // Instead of a flat fill, shade the value area from pure black at the
+        // top to calculateBackgroundColor()'s color at the bottom. Used by
+        // DiskBandWidget's free-space tiles; every other caller keeps the
+        // flat fill.
+        bool gradientBackground = false;
     };
 
     MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
@@ -93,6 +98,7 @@ class MetricWidget : public Widget {
     uint16_t borderMargin_;
     bool hasLabel_;
     bool verticalLabel_;
+    bool gradientBackground_;
 
     // State
     int16_t valueX_ = 0;
@@ -142,6 +148,16 @@ class MetricWidget : public Widget {
 
     // Helper methods
     uint16_t calculateBackgroundColor() const;
+    // Fills [x,y,w,h] with calculateBackgroundColor()'s color — a flat fill
+    // normally, or (when gradientBackground_ is set) a top-to-bottom shade
+    // from pure black to that color, drawn one scanline at a time.
+    void fillBackgroundArea(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t bottomColor) const;
+    // The color fillBackgroundArea() would draw at a given y — used so text
+    // drawn over a gradient background gets a matching (rather than flat)
+    // bg color param, keeping glyph edges clean. Returns bottomColor
+    // unchanged when gradientBackground_ is not set.
+    uint16_t backgroundColorAtY(int16_t y, int16_t areaY, int16_t areaHeight,
+                                uint16_t bottomColor) const;
     void updateDimensionCache();
     const char* getFormattedValueText() const;
     void refreshUnitWidthIfNeeded() const;

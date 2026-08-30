@@ -25,7 +25,8 @@ MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t upd
       textAlignment_(config.textAlignment),
       borderMargin_(config.borderMargin),
       hasLabel_(config.label[0] != '\0'),
-      verticalLabel_(config.verticalLabel) {
+      verticalLabel_(config.verticalLabel),
+      gradientBackground_(config.gradientBackground) {
     safeStringCopy(unit_, config.unit, sizeof(unit_));
     safeStringCopy(label_, config.label, sizeof(label_));
     updateDimensionCache();
@@ -123,7 +124,7 @@ void MetricWidget::renderValueArea() {
     getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
 
     // Clear value area with background color
-    lcd->fillRect(areaX, areaY, areaWidth, areaHeight, lastBgColor_);
+    fillBackgroundArea(areaX, areaY, areaWidth, areaHeight, lastBgColor_);
 
     // Get formatted value text
     const char* displayText = getFormattedValueText();
@@ -141,13 +142,14 @@ void MetricWidget::renderValueArea() {
     // Calculate the combined [value][unit] block position based on alignment
     const int16_t startX = computeStartX(areaX, areaWidth, totalW);
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
+    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaHeight, lastBgColor_);
 
-    drawValueText(displayText, startX, textY, lastBgColor_);
+    drawValueText(displayText, startX, textY, textBgColor);
     unloadValueFont();
 
     if (unitW > 0) {
         Fonts::loadLabel(lcd);
-        drawValueText(unit_, startX + valW, textY, lastBgColor_);
+        drawValueText(unit_, startX + valW, textY, textBgColor);
         Fonts::unload(lcd);
     }
 
@@ -174,6 +176,7 @@ void MetricWidget::renderValueTextOnly() {
     getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
+    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaHeight, newBgColor);
 
     // Value font stays loaded across the measure, background clear, and draw
     // below — fewer setFont() calls, even though FontRegistry preloads every
@@ -186,21 +189,21 @@ void MetricWidget::renderValueTextOnly() {
     // leaving stale unit pixels behind at the old position.
     const bool shifted = layoutShifted(newTextW, unitW);
     if (shifted) {
-        lcd->fillRect(areaX, areaY, areaWidth, areaHeight, newBgColor);
+        fillBackgroundArea(areaX, areaY, areaWidth, areaHeight, newBgColor);
     }
     lastTextWidth_ = newTextW;
 
     const int16_t totalW = newTextW + unitW;
     const int16_t startX = computeStartX(areaX, areaWidth, totalW);
 
-    drawValueText(displayText, startX, textY, newBgColor);
+    drawValueText(displayText, startX, textY, textBgColor);
     unloadValueFont();
 
     // The unit only needs to be repainted when the layout actually shifted —
     // otherwise the previously drawn glyphs are still valid on screen.
     if (shifted && unitW > 0) {
         Fonts::loadLabel(lcd);
-        drawValueText(unit_, startX + newTextW, textY, newBgColor);
+        drawValueText(unit_, startX + newTextW, textY, textBgColor);
         Fonts::unload(lcd);
     }
 }
@@ -237,6 +240,7 @@ void MetricWidget::drawValueWithLoadedFont() {
     getValueAreaBounds(areaX, areaY, areaWidth, areaH);
 
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
+    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaH, newBgColor);
 
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
     const bool bgChanged = (newBgColor != lastBgColor_);
@@ -246,7 +250,7 @@ void MetricWidget::drawValueWithLoadedFont() {
     const bool shifted = layoutShifted(newTextW, unitW);
 
     if (bgChanged || shifted) {
-        lcd->fillRect(areaX, areaY, areaWidth, areaH, newBgColor);
+        fillBackgroundArea(areaX, areaY, areaWidth, areaH, newBgColor);
     }
     lastBgColor_ = newBgColor;
     lastTextWidth_ = newTextW;
@@ -256,13 +260,13 @@ void MetricWidget::drawValueWithLoadedFont() {
 
     // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a
     // single pass — no blank frame, no flash, even after a background change.
-    drawValueText(displayText, startX, textY, newBgColor);
+    drawValueText(displayText, startX, textY, textBgColor);
 
     // Stash the position for the paired drawUnitWithLoadedFont() call; only
     // flag it when the unit actually needs to move/recolour.
     unitDrawX_ = startX + newTextW;
     unitDrawY_ = textY;
-    unitBgColor_ = newBgColor;
+    unitBgColor_ = textBgColor;
     unitNeedsRedraw_ = unitW > 0 && (bgChanged || shifted);
 
     lastDrawnValue_ = value_;
@@ -355,6 +359,49 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
         return getContext().getColors().getColorFromPercentRam(normalizedValue);
     }
     return getContext().getColors().getColorFromPercent(normalizedValue, useDimColors_);
+}
+
+void MetricWidget::fillBackgroundArea(int16_t x, int16_t y, int16_t w, int16_t h,
+                                      uint16_t bottomColor) const {
+    LGFX* lcd = getLcd();
+    if (!lcd || w <= 0 || h <= 0)
+        return;
+
+    if (!gradientBackground_) {
+        lcd->fillRect(x, y, w, h, bottomColor);
+        return;
+    }
+
+    // One scanline per row, black at the top shading down to bottomColor —
+    // only reached on a full-area redraw (background change or first
+    // render), so the extra draw calls versus a single fillRect don't show
+    // up on the per-tick hot path.
+    for (int16_t row = 0; row < h; ++row) {
+        lcd->drawFastHLine(x, y + row, w, backgroundColorAtY(y + row, y, h, bottomColor));
+    }
+}
+
+uint16_t MetricWidget::backgroundColorAtY(int16_t y, int16_t areaY, int16_t areaHeight,
+                                          uint16_t bottomColor) const {
+    if (!gradientBackground_ || areaHeight <= 1)
+        return bottomColor;
+
+    const int16_t span = areaHeight - 1;
+    int16_t offset = y - areaY;
+    if (offset < 0)
+        offset = 0;
+    if (offset > span)
+        offset = span;
+
+    // RGB565: 5 bits R, 6 bits G, 5 bits B — interpolate each channel from 0
+    // (pure black) to bottomColor's channel value.
+    const uint8_t r2 = (bottomColor >> 11) & 0x1F;
+    const uint8_t g2 = (bottomColor >> 5) & 0x3F;
+    const uint8_t b2 = bottomColor & 0x1F;
+    const uint8_t r = static_cast<uint8_t>((r2 * offset) / span);
+    const uint8_t g = static_cast<uint8_t>((g2 * offset) / span);
+    const uint8_t b = static_cast<uint8_t>((b2 * offset) / span);
+    return static_cast<uint16_t>((r << 11) | (g << 5) | b);
 }
 
 void MetricWidget::getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& areaWidth,

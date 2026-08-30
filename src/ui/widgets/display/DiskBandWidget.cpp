@@ -121,6 +121,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
         config.borderMargin = 0;  // flush against the activity lines — no edge gaps
         config.lowerThreshold = 0.0f;
         config.upperThreshold = 95.0f;
+        config.gradientBackground = true;
 
         auto w = std::make_unique<MetricWidget>(
             WidgetInterface::Dimensions{xPos, static_cast<uint16_t>(dimensions_.y + kDiskAreaY),
