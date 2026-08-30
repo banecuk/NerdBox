@@ -25,10 +25,11 @@ float roundToDecimals(float value, int decimals) {
 
 WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetrics,
                                PcMetrics& pcMetrics, PcMetricsService& pcMetricsService,
-                               SseStreamJob& pcMetricsStreamJob, SseStreamJob& cpuClockStreamJob,
-                               SseStreamJob& processStreamJob, const NetworkStatus& netStatus,
+                               IStreamHealth& pcMetricsStreamJob, IStreamHealth& cpuClockStreamJob,
+                               IStreamHealth& processStreamJob, const NetworkStatus& netStatus,
                                const SystemState& systemState, const WeatherData& weatherData,
-                               const AppSettings& config, const TaskManager& taskManager,
+                               const AppSettings& config,
+                               const ITaskStackReporter& taskStackReporter,
                                const AudioData& audioData, const RoomClimateData& roomClimateData)
     : server_(server),
       systemMetrics_(systemMetrics),
@@ -41,7 +42,7 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
       systemState_(systemState),
       weatherData_(weatherData),
       config_(config),
-      taskManager_(taskManager),
+      taskStackReporter_(taskStackReporter),
       audioData_(audioData),
       roomClimateData_(roomClimateData) {}
 
@@ -56,19 +57,6 @@ const char* WebApiHandlers::internetStatusToString(NetworkStatus::Internet statu
         case NetworkStatus::Internet::DOWN:
             return "DOWN";
         case NetworkStatus::Internet::UNKNOWN:
-        default:
-            return "UNKNOWN";
-    }
-}
-
-const char* WebApiHandlers::sseStateToString(SseConnection::State state) {
-    switch (state) {
-        case SseConnection::State::Disconnected:
-            return "DISCONNECTED";
-        case SseConnection::State::Connected:
-            return "CONNECTED";
-        case SseConnection::State::Error:
-            return "ERROR";
         default:
             return "UNKNOWN";
     }
@@ -194,30 +182,26 @@ void WebApiHandlers::handleApiStatus() {
     // the job's nextDue() is always Never.
     JsonObject pcStream = doc["pc_stream"].to<JsonObject>();
     pcStream["enabled"] = config_.pcMetricsStreamEnabled;
-    pcStream["state"] = sseStateToString(pcMetricsStreamJob_.connectionState());
-    pcStream["reconnect_count"] = static_cast<unsigned long>(pcMetricsStreamJob_.reconnectCount());
+    pcStream["state"] = pcMetricsStreamJob_.stateName();
+    pcStream["reconnect_count"] = pcMetricsStreamJob_.reconnectCount();
     pcStream["last_event_age_ms"] = pcMetricsStreamJob_.lastEventAgeMs();
-    pcStream["overflow_count"] = static_cast<unsigned long>(pcMetricsStreamJob_.overflowCount());
+    pcStream["overflow_count"] = pcMetricsStreamJob_.overflowCount();
 
     // cpu_clock_stream / process_stream — same shape as pc_stream, for the
     // two opt-in, screen-gated streams. State is meaningful even when their
     // screen isn't active: it just stays DISCONNECTED since the job's
     // nextDue() is Never off-screen.
     JsonObject cpuClockStream = doc["cpu_clock_stream"].to<JsonObject>();
-    cpuClockStream["state"] = sseStateToString(cpuClockStreamJob_.connectionState());
-    cpuClockStream["reconnect_count"] =
-        static_cast<unsigned long>(cpuClockStreamJob_.reconnectCount());
+    cpuClockStream["state"] = cpuClockStreamJob_.stateName();
+    cpuClockStream["reconnect_count"] = cpuClockStreamJob_.reconnectCount();
     cpuClockStream["last_event_age_ms"] = cpuClockStreamJob_.lastEventAgeMs();
-    cpuClockStream["overflow_count"] =
-        static_cast<unsigned long>(cpuClockStreamJob_.overflowCount());
+    cpuClockStream["overflow_count"] = cpuClockStreamJob_.overflowCount();
 
     JsonObject processStream = doc["process_stream"].to<JsonObject>();
-    processStream["state"] = sseStateToString(processStreamJob_.connectionState());
-    processStream["reconnect_count"] =
-        static_cast<unsigned long>(processStreamJob_.reconnectCount());
+    processStream["state"] = processStreamJob_.stateName();
+    processStream["reconnect_count"] = processStreamJob_.reconnectCount();
     processStream["last_event_age_ms"] = processStreamJob_.lastEventAgeMs();
-    processStream["overflow_count"] =
-        static_cast<unsigned long>(processStreamJob_.overflowCount());
+    processStream["overflow_count"] = processStreamJob_.overflowCount();
 
     JsonObject ui = doc["ui"].to<JsonObject>();
     ui["screen"] = screenNameToString(systemState_.screen.activeScreen);
@@ -274,12 +258,9 @@ void WebApiHandlers::handleApiStatus() {
     // Stack high-water marks — early warning before a tight task stack
     // (6144/8192 B) overflows and reboots the device. 0 means the task
     // hasn't been created yet.
-    const TaskHandle_t screenTask = taskManager_.getScreenTaskHandle();
-    const TaskHandle_t backgroundTask = taskManager_.getBackgroundTaskHandle();
     JsonObject tasks = doc["tasks"].to<JsonObject>();
-    tasks["screen_stack_free"] = screenTask ? uxTaskGetStackHighWaterMark(screenTask) : 0;
-    tasks["background_stack_free"] =
-        backgroundTask ? uxTaskGetStackHighWaterMark(backgroundTask) : 0;
+    tasks["screen_stack_free"] = taskStackReporter_.screenTaskStackFree();
+    tasks["background_stack_free"] = taskStackReporter_.backgroundTaskStackFree();
 
     ChunkedPrint output(server_);
     serializeJson(doc, output);

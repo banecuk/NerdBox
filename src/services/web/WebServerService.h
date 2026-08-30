@@ -2,10 +2,10 @@
 
 #include <WebServer.h>
 
-#include "app/jobs/SseStreamJob.h"
-#include "app/TaskManager.h"
 #include "config/AppSettings.h"
 #include "core/IScreenNavigator.h"
+#include "core/IStreamHealth.h"
+#include "core/ITaskStackReporter.h"
 #include "core/state/SystemState.h"
 #include "services/audio/AudioData.h"
 #include "services/audio/AudioService.h"
@@ -28,11 +28,11 @@ class WebServerService {
  public:
     WebServerService(WebServer& server, IScreenNavigator& screenNavigator,
                      ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                     PcMetricsService& pcMetricsService, SseStreamJob& pcMetricsStreamJob,
-                     SseStreamJob& cpuClockStreamJob, SseStreamJob& processStreamJob,
+                     PcMetricsService& pcMetricsService, IStreamHealth& pcMetricsStreamJob,
+                     IStreamHealth& cpuClockStreamJob, IStreamHealth& processStreamJob,
                      const NetworkStatus& netStatus, const SystemState& systemState,
                      const WeatherData& weatherData, const AppSettings& config,
-                     const TaskManager& taskManager, LoggerInterface& logger,
+                     const ITaskStackReporter& taskStackReporter, LoggerInterface& logger,
                      RecentLogView& recentLogView, const AudioData& audioData,
                      AudioService& audioService, const RoomClimateData& roomClimateData);
     void begin();
@@ -44,11 +44,11 @@ class WebServerService {
     LoggerInterface& logger_;
     AudioService& audioService_;
 
-    // PcMetrics, PcMetricsService, the three SseStreamJobs, NetworkStatus,
-    // SystemState, WeatherData, and TaskManager are only needed by
-    // apiHandlers_; ApplicationMetrics/AppSettings/RecentLogView only by
-    // pageHandlers_ — so WebServerService takes them as constructor
-    // parameters without keeping its own members.
+    // PcMetrics, PcMetricsService, the three IStreamHealth streams,
+    // NetworkStatus, SystemState, WeatherData, and ITaskStackReporter are
+    // only needed by apiHandlers_; ApplicationMetrics/AppSettings/
+    // RecentLogView only by pageHandlers_ — so WebServerService takes them as
+    // constructor parameters without keeping its own members.
     WebApiHandlers apiHandlers_;
     WebPageHandlers pageHandlers_;
 

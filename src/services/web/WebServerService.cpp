@@ -20,19 +20,19 @@ constexpr ScreenRoute kScreenRoutes[] = {
 
 WebServerService::WebServerService(
     WebServer& server, IScreenNavigator& screenNavigator, ApplicationMetrics& systemMetrics,
-    PcMetrics& pcMetrics, PcMetricsService& pcMetricsService, SseStreamJob& pcMetricsStreamJob,
-    SseStreamJob& cpuClockStreamJob, SseStreamJob& processStreamJob,
+    PcMetrics& pcMetrics, PcMetricsService& pcMetricsService, IStreamHealth& pcMetricsStreamJob,
+    IStreamHealth& cpuClockStreamJob, IStreamHealth& processStreamJob,
     const NetworkStatus& netStatus, const SystemState& systemState, const WeatherData& weatherData,
-    const AppSettings& config, const TaskManager& taskManager, LoggerInterface& logger,
-    RecentLogView& recentLogView, const AudioData& audioData, AudioService& audioService,
-    const RoomClimateData& roomClimateData)
+    const AppSettings& config, const ITaskStackReporter& taskStackReporter,
+    LoggerInterface& logger, RecentLogView& recentLogView, const AudioData& audioData,
+    AudioService& audioService, const RoomClimateData& roomClimateData)
     : server_(server),
       screenNavigator_(screenNavigator),
       logger_(logger),
       audioService_(audioService),
       apiHandlers_(server, systemMetrics, pcMetrics, pcMetricsService, pcMetricsStreamJob,
                    cpuClockStreamJob, processStreamJob, netStatus, systemState, weatherData,
-                   config, taskManager, audioData, roomClimateData),
+                   config, taskStackReporter, audioData, roomClimateData),
       pageHandlers_(server, systemMetrics, config, recentLogView) {}
 
 void WebServerService::begin() {

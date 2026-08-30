@@ -2,9 +2,9 @@
 
 #include <WebServer.h>
 
-#include "app/jobs/SseStreamJob.h"
-#include "app/TaskManager.h"
 #include "config/AppSettings.h"
+#include "core/ITaskStackReporter.h"
+#include "core/IStreamHealth.h"
 #include "core/state/SystemState.h"
 #include "services/audio/AudioData.h"
 #include "services/network/NetworkStatus.h"
@@ -22,11 +22,11 @@
 class WebApiHandlers {
  public:
     WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                   PcMetricsService& pcMetricsService, SseStreamJob& pcMetricsStreamJob,
-                   SseStreamJob& cpuClockStreamJob, SseStreamJob& processStreamJob,
+                   PcMetricsService& pcMetricsService, IStreamHealth& pcMetricsStreamJob,
+                   IStreamHealth& cpuClockStreamJob, IStreamHealth& processStreamJob,
                    const NetworkStatus& netStatus, const SystemState& systemState,
                    const WeatherData& weatherData, const AppSettings& config,
-                   const TaskManager& taskManager, const AudioData& audioData,
+                   const ITaskStackReporter& taskStackReporter, const AudioData& audioData,
                    const RoomClimateData& roomClimateData);
 
     void handleApiStatus();
@@ -37,21 +37,20 @@ class WebApiHandlers {
  private:
     static const char* internetStatusToString(NetworkStatus::Internet status);
     static const char* screenNameToString(ScreenName screen);
-    static const char* sseStateToString(SseConnection::State state);
     static const char* playStateToString(AudioData::PlayState state);
 
     WebServer& server_;
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     PcMetricsService& pcMetricsService_;
-    SseStreamJob& pcMetricsStreamJob_;
-    SseStreamJob& cpuClockStreamJob_;
-    SseStreamJob& processStreamJob_;
+    IStreamHealth& pcMetricsStreamJob_;
+    IStreamHealth& cpuClockStreamJob_;
+    IStreamHealth& processStreamJob_;
     const NetworkStatus& netStatus_;
     const SystemState& systemState_;
     const WeatherData& weatherData_;
     const AppSettings& config_;
-    const TaskManager& taskManager_;
+    const ITaskStackReporter& taskStackReporter_;
     const AudioData& audioData_;
     const RoomClimateData& roomClimateData_;
 };

@@ -7,11 +7,12 @@
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/IScreenUpdater.h"
+#include "core/ITaskStackReporter.h"
 #include "core/JobScheduler.h"
 #include "core/state/SystemState.h"
 #include "utils/logging/Logger.h"
 
-class TaskManager {
+class TaskManager : public ITaskStackReporter {
  public:
     // `jobs` is a flat list of periodic background jobs (see BackgroundJob) —
     // adding a new periodic service means writing a job adapter and appending
@@ -29,6 +30,14 @@ class TaskManager {
     // Exposed for /api/status — nullptr before createTasks() succeeds.
     TaskHandle_t getScreenTaskHandle() const { return screenTaskHandle_; }
     TaskHandle_t getBackgroundTaskHandle() const { return backgroundTaskHandle_; }
+
+    // ITaskStackReporter — 0 means the task hasn't been created yet.
+    uint32_t screenTaskStackFree() const override {
+        return screenTaskHandle_ ? uxTaskGetStackHighWaterMark(screenTaskHandle_) : 0;
+    }
+    uint32_t backgroundTaskStackFree() const override {
+        return backgroundTaskHandle_ ? uxTaskGetStackHighWaterMark(backgroundTaskHandle_) : 0;
+    }
 
  private:
     // Constants

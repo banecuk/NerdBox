@@ -15,6 +15,19 @@ SseStreamJob::SseStreamJob(LoggerInterface& logger, NetworkManager& networkManag
     UrlUtils::parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
 }
 
+const char* SseStreamJob::stateName() const {
+    switch (connection_.state()) {
+        case SseConnection::State::Disconnected:
+            return "DISCONNECTED";
+        case SseConnection::State::Connected:
+            return "CONNECTED";
+        case SseConnection::State::Error:
+            return "ERROR";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 void SseStreamJob::setPath(const char* pathWithQuery) {
     strncpy(path_, pathWithQuery, sizeof(path_) - 1);
     path_[sizeof(path_) - 1] = '\0';

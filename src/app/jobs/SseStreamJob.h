@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "core/BackgroundJob.h"
+#include "core/IStreamHealth.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/SseConnection.h"
 #include "services/pcMetrics/SseEventParser.h"
@@ -22,7 +23,7 @@
 // resolved here), its own screenGateOpen() rule, and an onEvent() that
 // forwards to its *StreamService. nextDue()/run() are `final` — the
 // scheduling shape is exactly the point of sharing this base.
-class SseStreamJob : public BackgroundJob {
+class SseStreamJob : public BackgroundJob, public IStreamHealth {
  public:
     struct Config {
         const char* logPrefix;       // e.g. "SSE stream", "CPU clock SSE stream" — static storage
@@ -40,9 +41,14 @@ class SseStreamJob : public BackgroundJob {
     void run() final;
 
     SseConnection::State connectionState() const { return connection_.state(); }
-    uint32_t reconnectCount() const { return reconnectCount_; }
-    unsigned long lastEventAgeMs() const { return millis() - lastEventMs_; }
-    uint32_t overflowCount() const { return connection_.overflowCount(); }
+
+    // IStreamHealth
+    const char* stateName() const override;
+    uint32_t reconnectCount() const override { return reconnectCount_; }
+    uint32_t lastEventAgeMs() const override {
+        return static_cast<uint32_t>(millis() - lastEventMs_);
+    }
+    uint32_t overflowCount() const override { return connection_.overflowCount(); }
 
  protected:
     // Whether the screen this stream feeds is currently active. Off-screen,
