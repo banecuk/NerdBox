@@ -100,8 +100,11 @@ void MetricWidget::onDraw(bool forceRedraw) {
         return;  // Nothing to do
     }
 
-    if (valueChanged && hasDrawnOnce_ && !forceRedraw && !valueAreaDirty_) {
-        // Optimization: only redraw text if just the value changed
+    if (valueChanged && hasDrawnOnce_ && !forceRedraw && !valueAreaDirty_ && !gradientBackground_) {
+        // Optimization: only redraw text if just the value changed. Skipped
+        // for gradientBackground_ tiles — a per-glyph opaque bg fill would
+        // flatten the gradient into a solid block behind the new digits, so
+        // those always retake the full background+text path below.
         renderValueTextOnly();
     } else {
         // Full value area redraw (background + text)
@@ -144,12 +147,12 @@ void MetricWidget::renderValueArea() {
     const int16_t textY = dimensions_.y + dimensions_.height / 2;
     const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaHeight, lastBgColor_);
 
-    drawValueText(displayText, startX, textY, textBgColor);
+    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_);
     unloadValueFont();
 
     if (unitW > 0) {
         Fonts::loadLabel(lcd);
-        drawValueText(unit_, startX + valW, textY, textBgColor);
+        drawValueText(unit_, startX + valW, textY, textBgColor, gradientBackground_);
         Fonts::unload(lcd);
     }
 
@@ -249,7 +252,11 @@ void MetricWidget::drawValueWithLoadedFont() {
     // stale unit pixels are left behind at the old position.
     const bool shifted = layoutShifted(newTextW, unitW);
 
-    if (bgChanged || shifted) {
+    // A gradient background can't be preserved by a per-glyph opaque bg
+    // fill (that would flatten the glyph's rows to one solid color instead
+    // of the gradient sweeping behind it), so every redraw repaints the
+    // whole gradient first and then draws the glyphs transparently on top.
+    if (bgChanged || shifted || gradientBackground_) {
         fillBackgroundArea(areaX, areaY, areaWidth, areaH, newBgColor);
     }
     lastBgColor_ = newBgColor;
@@ -260,14 +267,16 @@ void MetricWidget::drawValueWithLoadedFont() {
 
     // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a
     // single pass — no blank frame, no flash, even after a background change.
-    drawValueText(displayText, startX, textY, textBgColor);
+    // Gradient tiles instead redraw the background above and then draw text
+    // transparently, since the background was just freshly painted.
+    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_);
 
     // Stash the position for the paired drawUnitWithLoadedFont() call; only
     // flag it when the unit actually needs to move/recolour.
     unitDrawX_ = startX + newTextW;
     unitDrawY_ = textY;
     unitBgColor_ = textBgColor;
-    unitNeedsRedraw_ = unitW > 0 && (bgChanged || shifted);
+    unitNeedsRedraw_ = unitW > 0 && (bgChanged || shifted || gradientBackground_);
 
     lastDrawnValue_ = value_;
     hasDrawnOnce_ = true;
@@ -285,7 +294,7 @@ void MetricWidget::drawUnitWithLoadedFont() {
     if (!getLcd())
         return;
 
-    drawValueText(unit_, unitDrawX_, unitDrawY_, unitBgColor_);
+    drawValueText(unit_, unitDrawX_, unitDrawY_, unitBgColor_, gradientBackground_);
 
     unitNeedsRedraw_ = false;
 }
@@ -417,11 +426,16 @@ void MetricWidget::getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& a
     areaHeight = dimensions_.height - (2 * borderMargin_);
 }
 
-void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor) {
+void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor,
+                                 bool transparent) {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
-    lcd->setTextColor(TFT_WHITE, bgColor);
+    if (transparent) {
+        lcd->setTextColor(TFT_WHITE);
+    } else {
+        lcd->setTextColor(TFT_WHITE, bgColor);
+    }
     lcd->setTextDatum(ML_DATUM);
     lcd->drawString(text, x, y);
 }

@@ -171,8 +171,13 @@ class MetricWidget : public Widget {
 
     // setTextColor/setTextDatum/drawString triple shared by every value- and
     // unit-suffix draw across all three render paths. Caller owns loading
-    // the correct font first.
-    void drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor);
+    // the correct font first. When transparent is true, bgColor is ignored
+    // and no background pixels are drawn — used for gradientBackground_
+    // tiles, where the gradient itself must already be freshly painted
+    // underneath (a flat bgColor would flatten the gradient into a solid
+    // block behind the glyphs).
+    void drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor,
+                       bool transparent = false);
 
     // Start X of the [value][unit] block for the current textAlignment_,
     // given the value area bounds and the combined value+unit width.
