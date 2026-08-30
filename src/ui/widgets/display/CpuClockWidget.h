@@ -42,7 +42,11 @@ class CpuClockWidget : public Widget {
     uint16_t cellHeight_ = 0;
     uint16_t gridRows_ = 0;
 
-    std::vector<float> previousClockMHz_;
+    // Rounded to the displayed int (same rounding drawCell() renders with),
+    // not the raw MHz sample — a live per-core clock jitters (e.g. 4200.1 ->
+    // 4200.3) essentially every tick, which fails an exact float compare and
+    // redraws a pixel-identical cell (see 07-performance.md P1-21).
+    std::vector<int16_t> previousClockMHz_;
     float previousBusSpeedMHz_ = -1.0f;
     bool wasFresh_ = false;
 

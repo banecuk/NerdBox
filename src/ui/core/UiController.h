@@ -62,6 +62,7 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
 
     // Display access methods
     DisplayContext& getDisplayContext() { return context_; }
+    ApplicationMetrics& getSystemMetrics() { return systemMetrics_; }
     DisplayManager* getDisplayManager() const { return &displayManager_; }
     bool tryAcquireDisplayLock();
     void releaseDisplayLock();

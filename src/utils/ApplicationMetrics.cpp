@@ -140,3 +140,27 @@ float ApplicationMetrics::getThreadWidgetFPS() const {
 size_t ApplicationMetrics::getThreadWidgetFrameCount() const {
     return threadWidgetFrameCount_;
 }
+
+void ApplicationMetrics::setWidgetDrawStats(const WidgetDrawStat* stats, size_t count) {
+    widgetDrawStatsCount_ = std::min(count, kWidgetStatsCapacity);
+    for (size_t i = 0; i < widgetDrawStatsCount_; ++i) {
+        widgetDrawStats_[i] = stats[i];
+    }
+}
+
+const std::array<ApplicationMetrics::WidgetDrawStat, ApplicationMetrics::kWidgetStatsCapacity>&
+ApplicationMetrics::getWidgetDrawStats() const {
+    return widgetDrawStats_;
+}
+
+size_t ApplicationMetrics::getWidgetDrawStatsCount() const {
+    return widgetDrawStatsCount_;
+}
+
+void ApplicationMetrics::incrementNoopDirtyFrames() {
+    noopDirtyFrames_++;
+}
+
+uint32_t ApplicationMetrics::getNoopDirtyFrames() const {
+    return noopDirtyFrames_;
+}

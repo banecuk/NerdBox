@@ -108,8 +108,9 @@ class PcMetricsWidget : public PcDataCompositeWidget {
 
     // CPU load moves much faster than the other tiles between fetches, so it
     // alone gets a mid-cycle interpolated redraw — see MidpointInterpolator.
-    // mutable: needsUpdate() (const) consumes its one-shot reveal deadline.
-    mutable MidpointInterpolator cpuLoadInterpolator_;
+    // needsUpdate() only peeks (isRevealDue()); drawDynamicData() is the sole
+    // caller of the mutating consumeRevealDue() — see 07-performance.md P1-20.
+    MidpointInterpolator cpuLoadInterpolator_;
 
     // Row height derived from this widget's actual height (3-row grid). At the
     // nominal 90px instance this equals kRowH (30px); a shorter instance yields

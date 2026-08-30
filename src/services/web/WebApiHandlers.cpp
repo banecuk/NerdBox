@@ -142,6 +142,25 @@ void WebApiHandlers::handleApiStatus() {
     // ThreadsWidget::onDraw.
     app["threads_bar_draw_us"] = systemMetrics_.getThreadsBarDrawTimeUs();
 
+    // Per-widget cumulative draw-time breakdown, top few by total µs — see
+    // 07-performance.md P1-22. Resets on a screen transition (each screen
+    // owns its own WidgetManager), so this reflects the currently active
+    // screen's widgets since it was entered, not boot-to-now.
+    JsonArray widgets = app["widgets"].to<JsonArray>();
+    const auto& widgetStats = systemMetrics_.getWidgetDrawStats();
+    const size_t widgetStatsCount = systemMetrics_.getWidgetDrawStatsCount();
+    for (size_t i = 0; i < widgetStatsCount; ++i) {
+        JsonObject w = widgets.add<JsonObject>();
+        w["label"] = widgetStats[i].label;
+        w["calls"] = widgetStats[i].calls;
+        w["total_us"] = widgetStats[i].totalUs;
+    }
+    // Frames where a widget was found dirty but nothing ended up drawn — see
+    // ApplicationMetrics::incrementNoopDirtyFrames()'s comment; P1-20 was
+    // exactly this shape and would have shown up here as a steadily
+    // incrementing counter instead of needing to be found by reading code.
+    app["noop_dirty_frames"] = systemMetrics_.getNoopDirtyFrames();
+
     JsonArray drawTimes = app["draw_times_us"].to<JsonArray>();
     const auto& screenDrawTimes = systemMetrics_.getScreenDrawTimesUs();
     const size_t drawCount = systemMetrics_.getScreenDrawCount();

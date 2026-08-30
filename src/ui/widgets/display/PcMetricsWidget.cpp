@@ -193,10 +193,17 @@ void PcMetricsWidget::drawDynamicData() {
     // wake-up) exactly when the shared freshness timestamp is about to move —
     // lastUpdateTimestamp_ still holds the previous value here; the caller
     // (PcDataCompositeWidget::onDraw) only updates it after this call returns.
+    const uint32_t now = millis();
     const bool newSampleArrived = pcMetrics_.freshness.lastUpdateMs() != lastUpdateTimestamp_;
     if (newSampleArrived) {
-        cpuLoadInterpolator_.onSample(valueCpuLoad(pcMetrics_), millis());
+        cpuLoadInterpolator_.onSample(valueCpuLoad(pcMetrics_), now);
     }
+    // Consume the one-shot reveal here, on the actual draw path — never from
+    // needsUpdate() (see needsUpdate()'s isRevealDue() peek below). A no-op
+    // when this call was triggered by newSampleArrived instead: onSample()
+    // just started a new pending interval, so isRevealDue() is false here
+    // regardless of call order.
+    cpuLoadInterpolator_.consumeRevealDue(now);
 
     LGFX* lcd = getLcd();
 
@@ -206,7 +213,7 @@ void PcMetricsWidget::drawDynamicData() {
         auto& widget = fixedWidgets_[i];
         if (!widget)
             continue;
-        const float raw = (i == kCpuLoad) ? cpuLoadInterpolator_.displayValue(millis())
+        const float raw = (i == kCpuLoad) ? cpuLoadInterpolator_.displayValue(now)
                                           : descriptors[i].getValue(pcMetrics_);
         widget->setValue(static_cast<int>(raw));
         widget->drawValueWithLoadedFont();
@@ -256,10 +263,12 @@ bool PcMetricsWidget::needsUpdate() const {
         return true;
     // One extra wake-up per cycle, right at the interpolator's midpoint
     // deadline, to snap the CPU tile from the averaged value to the actual
-    // sample — see MidpointInterpolator. consumeRevealDue() is one-shot, so
-    // this doesn't degrade into a continuous time-elapsed poll once the
-    // deadline has passed (see 07-performance.md P0-3).
-    return hasFreshData() && cpuLoadInterpolator_.consumeRevealDue(millis());
+    // sample — see MidpointInterpolator. This is a non-mutating peek: it is
+    // called up to three times per frame (WidgetManager::hasAnyDirtyWidgets(),
+    // Widget::draw(), PcDataCompositeWidget::onDraw()), so it must never
+    // consume the one-shot itself — drawDynamicData() does that on the
+    // actual draw path (see 07-performance.md P1-20).
+    return hasFreshData() && cpuLoadInterpolator_.isRevealDue(millis());
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {

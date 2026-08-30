@@ -44,13 +44,22 @@ class MidpointInterpolator {
         return static_cast<int32_t>(revealAtMs_ - nowMs) > 0;
     }
 
+    // Non-mutating peek: true once nowMs has passed the reveal deadline and
+    // the reveal hasn't been consumed yet since the last onSample(). Safe to
+    // call any number of times per frame (e.g. from a needsUpdate()-style
+    // query invoked more than once per tick) — unlike consumeRevealDue(),
+    // calling this never affects its own or consumeRevealDue()'s result.
+    bool isRevealDue(uint32_t nowMs) const { return !revealed_ && !isPending(nowMs); }
+
     // One-shot: true only the first call at/after the reveal deadline since
     // the last onSample() (false before the deadline, and false again on any
     // repeat call after it). Lets a caller schedule exactly one extra redraw
     // per cycle — to snap from the averaged value to the real one — instead
-    // of polling every tick.
+    // of polling every tick. Call this only from the actual draw path, once
+    // the reveal has been rendered; use isRevealDue() for a query that may
+    // run more than once per frame without triggering the draw itself.
     bool consumeRevealDue(uint32_t nowMs) {
-        if (revealed_ || isPending(nowMs))
+        if (!isRevealDue(nowMs))
             return false;
         revealed_ = true;
         return true;

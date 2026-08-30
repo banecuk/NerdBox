@@ -4,8 +4,11 @@
 
 #include "utils/logging/LogMacros.h"
 
-WidgetManager::WidgetManager(DisplayContext& context)
-    : context_(context), logger_(context.getLogger()), lcd_(&context.getDisplay()) {
+WidgetManager::WidgetManager(DisplayContext& context, ApplicationMetrics& systemMetrics)
+    : context_(context),
+      logger_(context.getLogger()),
+      lcd_(&context.getDisplay()),
+      systemMetrics_(systemMetrics) {
     if (!lcd_) {
         logger_.error("WidgetManager created with null LGFX pointer!");
     }
@@ -15,7 +18,7 @@ WidgetManager::~WidgetManager() {
     cleanupWidgets();
 }
 
-void WidgetManager::addWidget(std::unique_ptr<WidgetInterface> widget) {
+void WidgetManager::addWidget(std::unique_ptr<WidgetInterface> widget, const char* label) {
     if (!widget) {
         logger_.error("Null widget rejected");
         return;
@@ -23,6 +26,7 @@ void WidgetManager::addWidget(std::unique_ptr<WidgetInterface> widget) {
 
     WidgetCacheEntry entry;
     entry.widget = std::move(widget);
+    entry.label = label;
     entry.cachedDims = entry.widget->getDimensions();
     entry.isDirty = true;  // New widgets start dirty
 
@@ -66,6 +70,7 @@ bool WidgetManager::hasAnyDirtyWidgets() {
             anyWork = true;
         }
     }
+    lastHasAnyDirtyWidgetsResult_ = anyWork;
     return anyWork;
 }
 
@@ -118,7 +123,10 @@ void WidgetManager::updateDirtyWidgets() {
             entry.widget->clearDirty();
         }
 
+        const uint32_t drawStartUs = micros();
         entry.widget->draw(chromeDirty);  // pass forceRedraw when chrome was just cleared
+        entry.drawTotalUs += micros() - drawStartUs;
+        entry.drawCalls++;
         entry.lastUpdateTime = millis();
         updatedCount++;
     }
@@ -126,6 +134,17 @@ void WidgetManager::updateDirtyWidgets() {
     lcd_->endWrite();
 
     allDirty_ = false;
+
+    // P1-20's exact failure shape, tracked generically: hasAnyDirtyWidgets()
+    // found work, but this pass drew nothing (every widget's chromeDirty and
+    // valueDirty ended up false by the time draw() actually ran).
+    if (lastHasAnyDirtyWidgetsResult_ && updatedCount == 0) {
+        systemMetrics_.incrementNoopDirtyFrames();
+    }
+
+    if (dirtyCount > 0) {
+        publishWidgetStats();
+    }
 
     uint32_t currentTime = millis();
     if (currentTime - lastStatsLogTime_ > 10000 && !widgetCache_.empty()) {  // Every 10 seconds
@@ -136,6 +155,30 @@ void WidgetManager::updateDirtyWidgets() {
 #endif
         lastStatsLogTime_ = currentTime;
     }
+}
+
+void WidgetManager::publishWidgetStats() const {
+    // widgetCache_ is typically well under kWidgetStatsCapacity*4 entries
+    // (MAIN, the largest screen, has ~13); a partial_sort over that is
+    // cheaper than a full sort and this only runs when a pass actually drew
+    // something, never on an idle frame.
+    std::vector<const WidgetCacheEntry*> ranked;
+    ranked.reserve(widgetCache_.size());
+    for (const auto& entry : widgetCache_) {
+        ranked.push_back(&entry);
+    }
+    const size_t topN = std::min(ranked.size(), ApplicationMetrics::kWidgetStatsCapacity);
+    std::partial_sort(
+        ranked.begin(), ranked.begin() + topN, ranked.end(),
+        [](const WidgetCacheEntry* a, const WidgetCacheEntry* b) {
+            return a->drawTotalUs > b->drawTotalUs;
+        });
+
+    std::array<ApplicationMetrics::WidgetDrawStat, ApplicationMetrics::kWidgetStatsCapacity> stats{};
+    for (size_t i = 0; i < topN; ++i) {
+        stats[i] = {ranked[i]->label, ranked[i]->drawCalls, ranked[i]->drawTotalUs};
+    }
+    systemMetrics_.setWidgetDrawStats(stats.data(), topN);
 }
 
 void WidgetManager::markAllDirty() {

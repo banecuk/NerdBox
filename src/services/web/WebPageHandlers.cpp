@@ -159,7 +159,10 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"GET",  "/api/status",
      "Compact JSON snapshot: system health, app metrics, network, PC-metrics feed "
      "status, current screen, task stack high-water marks. Cache-Control: no-store. "
-     "app.threads_bar_draw_us is 0 on release builds by design (DEBUG_MODE-gated)."    },
+     "app.threads_bar_draw_us is 0 on release builds by design (DEBUG_MODE-gated). "
+     "app.widgets is the current screen's top widgets by cumulative draw time "
+     "(resets on a screen change); app.noop_dirty_frames counts frames where a "
+     "widget was found dirty but nothing was actually drawn."                        },
     {"GET",  "/api/raw",
      "Last raw NerdWinSense payload, unfiltered — for debugging a field that reads "
      "0 or -1. Triggers a dedicated fetch; not the same connection as the regular "

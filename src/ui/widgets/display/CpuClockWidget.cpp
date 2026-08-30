@@ -45,14 +45,14 @@ bool CpuClockWidget::ensureLayoutInitialized() {
     cellWidth_ = dimensions_.width / kColumns;
     const uint16_t gridHeight = dimensions_.height - kBusLineHeight;
     cellHeight_ = gridRows_ > 0 ? gridHeight / gridRows_ : gridHeight;
-    previousClockMHz_.assign(coreCount_, -1.0f);
+    previousClockMHz_.assign(coreCount_, -1);
     return true;
 }
 
 void CpuClockWidget::onDrawStatic() {
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        kBgColor);
-    std::fill(previousClockMHz_.begin(), previousClockMHz_.end(), -1.0f);
+    std::fill(previousClockMHz_.begin(), previousClockMHz_.end(), -1);
     previousBusSpeedMHz_ = -1.0f;
 }
 
@@ -83,9 +83,10 @@ void CpuClockWidget::drawGrid(bool forceRedraw) {
     // (clock value) per cell, so no batch font load here — see its comment.
     for (uint8_t i = 0; i < coreCount_; ++i) {
         const float mhz = data_.coreClockMHz[i];
-        if (forceRedraw || mhz != previousClockMHz_[i]) {
+        const int16_t rounded = static_cast<int16_t>(mhz + 0.5f);
+        if (forceRedraw || rounded != previousClockMHz_[i]) {
             drawCell(i, mhz);
-            previousClockMHz_[i] = mhz;
+            previousClockMHz_[i] = rounded;
         }
     }
 }

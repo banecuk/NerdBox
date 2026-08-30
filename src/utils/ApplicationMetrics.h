@@ -62,6 +62,40 @@ class ApplicationMetrics {
     float getThreadWidgetFPS() const;
     size_t getThreadWidgetFrameCount() const;
 
+    // Per-widget cumulative draw-time breakdown — see 07-performance.md
+    // P1-22. Whichever screen's WidgetManager is currently active publishes
+    // its top few widgets by total draw time here after every
+    // updateDirtyWidgets() pass; each screen owns its own WidgetManager (see
+    // BaseWidgetScreen), so this resets on a screen transition rather than
+    // accumulating across the device's whole uptime — fine for the intended
+    // use (attributing a screen's frame-time regression to a widget), since
+    // the ratios between widgets converge within seconds at 60 fps. `label`
+    // points at a call site's string literal (static storage), so copying
+    // the pointer across the screen/main-loop task boundary is safe; the
+    // struct itself is written on the screen task and read on the main-loop
+    // task without a mutex, same "scalar fields, no mutex" convention as the
+    // rest of this class — a torn read is cosmetic (self-heals next publish),
+    // not a crash risk.
+    struct WidgetDrawStat {
+        const char* label = "";
+        uint32_t calls = 0;
+        uint64_t totalUs = 0;
+    };
+    static constexpr size_t kWidgetStatsCapacity = 8;
+
+    void setWidgetDrawStats(const WidgetDrawStat* stats, size_t count);
+    const std::array<WidgetDrawStat, kWidgetStatsCapacity>& getWidgetDrawStats() const;
+    size_t getWidgetDrawStatsCount() const;
+
+    // Frames where WidgetManager::hasAnyDirtyWidgets() found work but
+    // updateDirtyWidgets() went on to draw nothing — P1-20's exact failure
+    // shape (a needsUpdate() override that consumes a one-shot signal on the
+    // pre-check but returns false again on the actual draw call), tracked
+    // generically so a future regression of the same shape shows up here
+    // instead of needing to be re-discovered by reading code.
+    void incrementNoopDirtyFrames();
+    uint32_t getNoopDirtyFrames() const;
+
  private:
     uint32_t pcMetricsJsonParseTime_ = 0;
     uint32_t pcMetricsStreamParseTimeUs_ = 0;
@@ -80,4 +114,8 @@ class ApplicationMetrics {
     // check measures against millis()==0 instead of "now", reporting a
     // nonsense FPS for the whole uptime-so-far (see B24).
     bool threadWidgetFpsSeeded_ = false;
+
+    std::array<WidgetDrawStat, kWidgetStatsCapacity> widgetDrawStats_{};
+    size_t widgetDrawStatsCount_ = 0;
+    uint32_t noopDirtyFrames_ = 0;
 };
