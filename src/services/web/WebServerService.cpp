@@ -10,11 +10,14 @@ struct ScreenRoute {
 
 // One entry per POST /screen/<name> route — see begin()'s registration loop.
 constexpr ScreenRoute kScreenRoutes[] = {
-    {"/screen/main",     ScreenName::MAIN    },
-    {"/screen/settings", ScreenName::SETTINGS},
-    {"/screen/game",     ScreenName::GAME    },
-    {"/screen/weather",  ScreenName::WEATHER },
-    {"/screen/calendar", ScreenName::CALENDAR},
+    {"/screen/main",       ScreenName::MAIN     },
+    {"/screen/settings",   ScreenName::SETTINGS },
+    {"/screen/game",       ScreenName::GAME     },
+    {"/screen/weather",    ScreenName::WEATHER  },
+    {"/screen/calendar",   ScreenName::CALENDAR },
+    {"/screen/disks",      ScreenName::DISKS    },
+    {"/screen/cpu-clock",  ScreenName::CPU_CLOCK},
+    {"/screen/processes",  ScreenName::PROCESSES},
 };
 }  // namespace
 

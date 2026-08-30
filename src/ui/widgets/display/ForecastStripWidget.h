@@ -77,6 +77,8 @@ class ForecastStripWidget : public Widget {
     bool lastHasData_ = false;
 
     unsigned long lastTimeCheckMs_ = 0;
+    unsigned long lastDataUpdateMs_ = 0;
+    bool lastDataUpdateMsValid_ = false;
 
     uint16_t colWidth_ = 0;
     int16_t leftPad_ = 0;

@@ -31,6 +31,7 @@ void ForecastStripWidget::onDrawStatic() {
 
     columns_ = 0;
     lastHasData_ = false;
+    lastDataUpdateMsValid_ = false;
     for (auto& cache : lastColumns_) {
         cache = ColumnCache{};
     }
@@ -57,12 +58,24 @@ void ForecastStripWidget::onDraw(bool forceRedraw) {
     if (count > kMaxColumns)
         count = kMaxColumns;
 
-    if (forceRedraw || !lastHasData_ || count != columns_) {
+    const bool layoutChanged = forceRedraw || !lastHasData_ || count != columns_;
+    if (layoutChanged) {
         drawStatic();
         lastHasData_ = true;
         columns_ = count;
         recomputeLayout(count);
     }
+
+    const unsigned long dataUpdateMs = weatherData_.freshness.lastUpdateMs();
+    if (!layoutChanged && lastDataUpdateMsValid_ && dataUpdateMs == lastDataUpdateMs_) {
+        // Forecast data hasn't changed since the last pass — nothing to
+        // recompute (see P2-23: the field-diff checks below all evaluate
+        // false anyway, so skip the mutex/localtime_r/snprintf work
+        // entirely rather than paying it every 200ms tick).
+        return;
+    }
+    lastDataUpdateMs_ = dataUpdateMs;
+    lastDataUpdateMsValid_ = true;
 
     for (uint8_t i = 0; i < count; ++i) {
         WeatherForecastDay day;

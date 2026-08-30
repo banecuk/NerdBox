@@ -179,6 +179,9 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"POST", "/screen/game",     "Switches the display to the Game screen."            },
     {"POST", "/screen/weather",  "Switches the display to the Weather screen."         },
     {"POST", "/screen/calendar", "Switches the display to the Calendar screen."        },
+    {"POST", "/screen/disks",    "Switches the display to the Disks screen."           },
+    {"POST", "/screen/cpu-clock", "Switches the display to the CPU Clock screen."      },
+    {"POST", "/screen/processes", "Switches the display to the Processes screen."      },
 };
 }  // namespace
 
