@@ -22,8 +22,24 @@ static inline int16_t roundX10ToWhole(int16_t x10) {
     return static_cast<int16_t>(x10 >= 0 ? (x10 + 5) / 10 : (x10 - 5) / 10);
 }
 
-// Formats an X10-scaled value (rain mm, wind m/s) as "%d.%d" — one decimal
-// place — into the caller's buffer.
+// Formats an X10-scaled value (rain mm, wind m/s, room temperature) as
+// "%d.%d" — one decimal place — into the caller's buffer. Handles negative
+// values explicitly: plain "%d.%d" on x10/10 and x10%10 would print -0.5 as
+// "0.-5" (integer division truncates toward zero, so both parts keep their
+// own sign) — every current caller's values are non-negative in practice,
+// but RoomClimateWidget's outdoor-adjacent sensor is not.
 static inline void formatX10OneDecimal(char* buf, size_t bufSize, int16_t x10) {
-    snprintf(buf, bufSize, "%d.%d", x10 / 10, x10 % 10);
+    const bool negative = x10 < 0;
+    const int16_t absX10 = negative ? static_cast<int16_t>(-x10) : x10;
+    // Worst case ("-3276.7", the full int16_t range) is 7 chars + a null —
+    // every caller's buffer is >= 8 bytes. GCC can't see that across the
+    // bufSize parameter, hence the -Wformat-truncation false positive.
+#if defined(__GNUC__) && !defined(__clang__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+    snprintf(buf, bufSize, "%s%d.%d", negative ? "-" : "", absX10 / 10, absX10 % 10);
+#if defined(__GNUC__) && !defined(__clang__)
+    #pragma GCC diagnostic pop
+#endif
 }

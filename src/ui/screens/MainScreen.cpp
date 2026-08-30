@@ -5,30 +5,40 @@
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
                        const AirQualityData& airQualityData, const NetworkStatus& netStatus,
-                       const AudioData& audioData, WeatherData& weatherData)
+                       const AudioData& audioData, WeatherData& weatherData,
+                       const RoomClimateData& roomClimateData)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
       systemMetrics_(systemMetrics),
       airQualityData_(airQualityData),
       netStatus_(netStatus),
       audioData_(audioData),
-      weatherData_(weatherData) {}
+      weatherData_(weatherData),
+      roomClimateData_(roomClimateData) {}
 
 void MainScreen::createWidgets() {
-    // Threads — reduced-width row filling the left side of the top band.
-    // AirQualityWidget sits to its right at the same height. Both kept short
-    // (56px) so downstream rows get more room.
+    // Threads — reduced-width row filling the left side of the top band, so
+    // RoomClimateWidget's 64px column fits between it and AirQualityWidget.
+    // 224/28 cores = 8px pitch, unchanged from before the room widget's space
+    // was carved out of AirQualityWidget instead.
     auto threadsWidget = std::unique_ptr<ThreadsWidget>(new ThreadsWidget(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 240, 56},
+        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 224, 56},
         config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_,
         EventType::SHOW_CPU_CLOCK, [this](EventType action) { this->handleAction(action); }));
     widgetManager_.addWidget(std::move(threadsWidget));
 
-    // Air quality block — right of the threads, same top band. Reorganized
-    // into four compact columns (icon | temp+humidity | pressure+wind | AQI).
-    // Tappable to the weather forecast screen.
+    // Room climate — local temperature/humidity sensor, between the threads
+    // and air quality blocks on the same top band. One decimal place, always
+    // positive (indoor sensor) — worst case "99.9°C" still needs the full
+    // 64px column despite never needing a sign.
+    widgetManager_.addWidget(std::unique_ptr<RoomClimateWidget>(new RoomClimateWidget(
+        WidgetInterface::Dimensions{224, 0, 64, 56}, 5000, roomClimateData_)));
+
+    // Air quality block — right of the room climate widget, same top band.
+    // Reorganized into four compact columns (icon | temp+humidity |
+    // pressure+wind | AQI). Tappable to the weather forecast screen.
     widgetManager_.addWidget(std::unique_ptr<AirQualityWidget>(new AirQualityWidget(
-        WidgetInterface::Dimensions{240, 0, 240, 56}, 5000, airQualityData_,
+        WidgetInterface::Dimensions{288, 0, 192, 56}, 5000, airQualityData_,
         EventType::SHOW_WEATHER, [this](EventType action) { this->handleAction(action); })));
 
     // Game metrics grid — replaces PcMetricsWidget, directly below threads.
@@ -47,10 +57,10 @@ void MainScreen::createWidgets() {
     // to sit) so the disk band can move below it. 82px tall: 2px taller than
     // before, absorbing the 2px DiskBandWidget's activity line shed when it
     // dropped from a 4px write line + 4px read line to one shared 2px line.
-    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(new MultiWidget(
-        WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 82}, 200, pcMetrics_, audioData_,
-        weatherData_, config_, EventType::SHOW_WEATHER,
-        [this](EventType action) { this->handleAction(action); })));
+    widgetManager_.addWidget(std::unique_ptr<MultiWidget>(
+        new MultiWidget(WidgetInterface::Dimensions{0, 162, Layout::kScreenW, 82}, 200, pcMetrics_,
+                        audioData_, weatherData_, config_, EventType::SHOW_WEATHER,
+                        [this](EventType action) { this->handleAction(action); })));
 
     // Disk band — slim strip, tappable to the disk screen. 25px tall: one
     // shared 2px read/write activity line at the top (split left/right, see

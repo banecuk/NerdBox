@@ -18,9 +18,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::BOOT:
             return std::make_unique<BootScreen>(ctx.screenLogQueue, ctx.display->getDisplay());
         case ScreenName::MAIN:
-            return std::make_unique<MainScreen>(ctx.logger, ctx.metrics, ctx.controller, ctx.config,
-                                                ctx.systemMetrics, ctx.airQualityData,
-                                                ctx.netStatus, ctx.audioData, ctx.weatherData);
+            return std::make_unique<MainScreen>(
+                ctx.logger, ctx.metrics, ctx.controller, ctx.config, ctx.systemMetrics,
+                ctx.airQualityData, ctx.netStatus, ctx.audioData, ctx.weatherData, ctx.roomClimate);
         case ScreenName::SETTINGS:
             return std::make_unique<SettingsScreen>(ctx.logger, ctx.controller, ctx.config,
                                                     ctx.networkManager, ctx.systemMetrics);
@@ -35,7 +35,7 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                                                     ctx.config);
         case ScreenName::PROCESSES:
             return std::make_unique<ProcessesScreen>(ctx.logger, ctx.processData, ctx.controller,
-                                                      ctx.config);
+                                                     ctx.config);
         case ScreenName::WEATHER:
             return std::make_unique<WeatherScreen>(ctx.logger, ctx.controller, ctx.config,
                                                    ctx.weatherData);

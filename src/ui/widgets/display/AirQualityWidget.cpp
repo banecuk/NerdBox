@@ -5,6 +5,7 @@
 
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 // ---------------------------------------------------------------------------
 // Constructor
@@ -164,46 +165,11 @@ void AirQualityWidget::drawValueWithUnit(uint8_t col, bool bottomRow, const char
     if (!lcd)
         return;
 
-    const int16_t cx = dimensions_.x + kColCenter[col];
-    const int16_t cy = rowCenterY(bottomRow);
-
     clearCell(col, bottomRow);
 
-    if (!unit || unit[0] == '\0') {
-        Fonts::loadMetric(lcd);
-        lcd->setTextColor(valueColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(value, cx, cy);
-        Fonts::unload(lcd);
-        return;
-    }
-
-    int16_t valueW, valueH, unitW;
-    Fonts::loadMetric(lcd);
-    valueW = static_cast<int16_t>(lcd->textWidth(value));
-    valueH = static_cast<int16_t>(lcd->fontHeight());
-    Fonts::unload(lcd);
-    Fonts::loadLabel(lcd);
-    unitW = static_cast<int16_t>(lcd->textWidth(unit));
-    Fonts::unload(lcd);
-
-    const int16_t startX = cx - (valueW + unitW) / 2;
-    // Draw both on the same baseline so the unit sits at the bottom of the
-    // value digits. The baseline of a MC_DATUM draw is ~half the value's own
-    // glyph height below its vertical centre.
-    const int16_t baselineY = cy + valueH / 2;
-
-    Fonts::loadMetric(lcd);
-    lcd->setTextColor(valueColor, TFT_BLACK);
-    lcd->setTextDatum(L_BASELINE);
-    lcd->drawString(value, startX, baselineY);
-    Fonts::unload(lcd);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(kUnitColor, TFT_BLACK);
-    lcd->setTextDatum(L_BASELINE);
-    lcd->drawString(unit, startX + valueW, baselineY);
-    Fonts::unload(lcd);
+    const int16_t cx = dimensions_.x + kColCenter[col];
+    const int16_t cy = rowCenterY(bottomRow);
+    WidgetPainter::drawValueWithUnit(lcd, cx, cy, value, unit, valueColor, kUnitColor);
 }
 
 // ---------------------------------------------------------------------------

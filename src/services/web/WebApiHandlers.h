@@ -10,6 +10,7 @@
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
+#include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
 #include "utils/ApplicationMetrics.h"
 
@@ -24,7 +25,8 @@ class WebApiHandlers {
                    PcMetricsService& pcMetricsService, PcMetricsStreamJob& pcMetricsStreamJob,
                    const NetworkStatus& netStatus, const SystemState& systemState,
                    const WeatherData& weatherData, const AppSettings& config,
-                   const TaskManager& taskManager, const AudioData& audioData);
+                   const TaskManager& taskManager, const AudioData& audioData,
+                   const RoomClimateData& roomClimateData);
 
     void handleApiStatus();
     void handleApiRaw();
@@ -48,4 +50,5 @@ class WebApiHandlers {
     const AppSettings& config_;
     const TaskManager& taskManager_;
     const AudioData& audioData_;
+    const RoomClimateData& roomClimateData_;
 };

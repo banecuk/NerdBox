@@ -28,7 +28,8 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
                                PcMetricsStreamJob& pcMetricsStreamJob,
                                const NetworkStatus& netStatus, const SystemState& systemState,
                                const WeatherData& weatherData, const AppSettings& config,
-                               const TaskManager& taskManager, const AudioData& audioData)
+                               const TaskManager& taskManager, const AudioData& audioData,
+                               const RoomClimateData& roomClimateData)
     : server_(server),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
@@ -39,7 +40,8 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
       weatherData_(weatherData),
       config_(config),
       taskManager_(taskManager),
-      audioData_(audioData) {}
+      audioData_(audioData),
+      roomClimateData_(roomClimateData) {}
 
 const char* WebApiHandlers::internetStatusToString(NetworkStatus::Internet status) {
     switch (status) {
@@ -210,6 +212,18 @@ void WebApiHandlers::handleApiStatus() {
     weather["age_ms"] = weatherAgeMs;
     weather["days"] = weatherData_.dayCount;
     weather["refresh_pending"] = weatherData_.refreshRequested.load();
+
+    // room — local LAN temperature/humidity sensor feed, so the room widget's
+    // data path can be observed without a serial monitor — same rationale as
+    // pc_stream/audio above.
+    const unsigned long roomAgeMs = roomClimateData_.freshness.available()
+                                        ? millis() - roomClimateData_.freshness.lastUpdateMs()
+                                        : 0;
+    JsonObject room = doc["room"].to<JsonObject>();
+    room["available"] = roomClimateData_.freshness.available();
+    room["temperature_x10"] = roomClimateData_.temperature_x10;
+    room["humidity"] = roomClimateData_.humidity;
+    room["last_event_age_ms"] = roomAgeMs;
 
     // audio — mb_NerdBox MusicBee plugin push feed state, so the push path
     // (POST /audio) can be observed without a serial monitor or a visible
@@ -483,6 +497,13 @@ void WebApiHandlers::handleMetrics() {
     writeHeader(out, "nerdbox_weather_available", "Whether a weather forecast has been fetched.",
                 "gauge");
     out.printf("nerdbox_weather_available %d\n", weatherData_.freshness.available() ? 1 : 0);
+
+    // ---- room climate (local LAN sensor) ----
+    writeHeader(out, "nerdbox_room_temperature_celsius", "Local room temperature.", "gauge");
+    out.printf("nerdbox_room_temperature_celsius %.1f\n", roomClimateData_.temperature_x10 / 10.0);
+
+    writeHeader(out, "nerdbox_room_humidity_percent", "Local room relative humidity.", "gauge");
+    out.printf("nerdbox_room_humidity_percent %u\n", roomClimateData_.humidity);
 
     out.flush();
     server_.sendContent("");  // flush / end chunked transfer

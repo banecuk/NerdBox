@@ -9,6 +9,7 @@
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/processes/ProcessData.h"
+#include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
 
 // The shared data structs written by background services/jobs and read by
@@ -27,6 +28,11 @@ struct DataBundle {
     // AirQualityWidget in the screen task. All fields are scalar so no mutex
     // is required (Xtensa word reads are atomic).
     AirQualityData airQualityData;
+
+    // Written by RoomClimateService in the background task, read by
+    // RoomClimateWidget in the screen task. Scalars only — no mutex needed,
+    // same convention as AirQualityData.
+    RoomClimateData roomClimateData;
 
     // Written by NetworkStatusService (background + probe tasks), read by
     // NetworkWidget (screen task). All scalar fields — no mutex needed.

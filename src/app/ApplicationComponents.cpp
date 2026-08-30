@@ -12,13 +12,14 @@ ApplicationComponents::ApplicationComponents()
       uiController(platform.displayContext, platform.displayManager, services.systemMetrics,
                    data.pcMetrics, data.systemState.screen, config, platform.networkManager,
                    data.airQualityData, data.netStatus, data.weatherData, data.audioData,
-                   *data.cpuClockData, *data.processData),
+                   *data.cpuClockData, *data.processData, data.roomClimateData),
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
       webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
                        services.pcMetricsService, jobs.pcMetricsStreamJob, data.netStatus,
                        data.systemState, data.weatherData, config, taskManager, platform.logger_,
-                       platform.logger_, data.audioData, services.audioService),
+                       platform.logger_, data.audioData, services.audioService,
+                       data.roomClimateData),
       initStateMachine(*this) {}
 
 // -----------------------------------------------------------------------

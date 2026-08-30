@@ -82,6 +82,12 @@ struct AirQualityImpl {
     static constexpr uint32_t kFailureBackoffMs = 60000;
 };
 
+// RoomClimate (local LAN sensor) configuration
+struct RoomClimateImpl {
+    // LAN device — retry sooner than the internet-facing APIs do.
+    static constexpr uint32_t kFailureBackoffMs = 15000;
+};
+
 // Weather (open-meteo forecast) configuration
 struct WeatherImpl {
     // Forecast columns to render: 7 if the layout fits, otherwise drop to 5.
@@ -149,7 +155,8 @@ struct CpuClockStreamImpl {
     static constexpr uint16_t kHeaderTimeoutMs = 2000;
     static constexpr uint32_t kReconnectBackoffMs = 2000;
     static constexpr uint32_t kStaleTimeoutMs = 5000;
-    static constexpr size_t kMaxEventBufferBytes = 1024;  // payload is tiny vs. the main stream's 4096
+    static constexpr size_t kMaxEventBufferBytes =
+        1024;  // payload is tiny vs. the main stream's 4096
     static constexpr uint16_t kMaxBytesPerPoll = 1024;
     static constexpr const char* kStreamPath = "/api/v1/stream/cpu-clock";
 };

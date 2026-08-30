@@ -65,6 +65,9 @@ AS_FIELD(U, uint32_t, hardwareMonitorThreadsStaggerMaxPeriodMs,
 AS_FIELD(U, uint32_t, airQualityFailureBackoffMs,
          AppConfig::internal::AirQualityImpl::kFailureBackoffMs)
 
+AS_FIELD(U, uint32_t, roomClimateFailureBackoffMs,
+         AppConfig::internal::RoomClimateImpl::kFailureBackoffMs)
+
 AS_FIELD(U, uint32_t, weatherRefreshIntervalMs,
          AppConfig::internal::WeatherImpl::kRefreshIntervalMs)
 AS_FIELD(U, uint32_t, weatherTimeCheckIntervalMs,
@@ -95,7 +98,8 @@ AS_FIELD(U, uint16_t, pcMetricsStreamMaxBytesPerPoll,
          AppConfig::internal::PcMetricsStreamImpl::kMaxBytesPerPoll)
 AS_FIELD(S, const char*, pcMetricsStreamPath, AppConfig::internal::PcMetricsStreamImpl::kStreamPath)
 
-AS_FIELD(U, uint32_t, cpuClockStreamIntervalMs, AppConfig::internal::CpuClockStreamImpl::kIntervalMs)
+AS_FIELD(U, uint32_t, cpuClockStreamIntervalMs,
+         AppConfig::internal::CpuClockStreamImpl::kIntervalMs)
 AS_FIELD(U, uint16_t, cpuClockStreamConnectTimeoutMs,
          AppConfig::internal::CpuClockStreamImpl::kConnectTimeoutMs)
 AS_FIELD(U, uint16_t, cpuClockStreamHeaderTimeoutMs,

@@ -14,6 +14,7 @@
 #include "app/jobs/PcMetricsJob.h"
 #include "app/jobs/PcMetricsStreamJob.h"
 #include "app/jobs/ProcessStreamJob.h"
+#include "app/jobs/RoomClimateJob.h"
 #include "app/jobs/WeatherJob.h"
 #include "app/jobs/WifiReconnectJob.h"
 #include "config/AppSettings.h"
@@ -28,6 +29,7 @@ struct JobBundle {
     PcMetricsJob pcMetricsJob;
     PcMetricsStreamJob pcMetricsStreamJob;
     AirQualityJob airQualityJob;
+    RoomClimateJob roomClimateJob;
     NetworkStatusJob networkStatusJob;
     DimAtNightJob dimAtNightJob;
     WeatherJob weatherJob;
@@ -57,6 +59,8 @@ struct JobBundle {
                              services.systemMetrics),
           airQualityJob(services.airQualityService, data.airQualityData, data.systemState.core,
                         platform.networkManager, config, platform.logger_),
+          roomClimateJob(services.roomClimateService, data.roomClimateData, data.systemState.core,
+                         platform.networkManager, config, platform.logger_),
           networkStatusJob(services.networkStatusService, data.netStatus),
           dimAtNightJob(platform.ntpService, platform.displayManager, config),
           weatherJob(services.weatherService, data.weatherData, data.systemState.core,
@@ -69,8 +73,9 @@ struct JobBundle {
               platform.logger_)) {}
 
     std::vector<BackgroundJob*> asVector() {
-        return {&wifiReconnectJob,      &ntpRetryJob,      &pcMetricsJob,  &pcMetricsStreamJob,
-                &airQualityJob,         &networkStatusJob, &dimAtNightJob, &weatherJob,
+        return {&wifiReconnectJob,       &ntpRetryJob,          &pcMetricsJob,
+                &pcMetricsStreamJob,     &airQualityJob,        &roomClimateJob,
+                &networkStatusJob,       &dimAtNightJob,        &weatherJob,
                 cpuClockStreamJob.get(), processStreamJob.get()};
     }
 };

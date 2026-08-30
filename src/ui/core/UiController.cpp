@@ -13,7 +13,7 @@ UiController::UiController(DisplayContext& context, DisplayManager& displayManag
                            NetworkManager& networkManager, const AirQualityData& airQualityData,
                            const NetworkStatus& netStatus, WeatherData& weatherData,
                            const AudioData& audioData, CpuClockData& cpuClockData,
-                           ProcessData& processData)
+                           ProcessData& processData, const RoomClimateData& roomClimateData)
     : logger_(context.getLogger()),
       displayManager_(displayManager),
       context_(context),
@@ -28,6 +28,7 @@ UiController::UiController(DisplayContext& context, DisplayManager& displayManag
       audioData_(audioData),
       cpuClockData_(cpuClockData),
       processData_(processData),
+      roomClimateData_(roomClimateData),
       actionHandler_(std::make_unique<UiEventHandler>(this, context.getLogger())),
       touchManager_(
           std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)),
@@ -199,7 +200,8 @@ void UiController::loadAndActivateScreen() {
                               weatherData_,
                               audioData_,
                               cpuClockData_,
-                              processData_};
+                              processData_,
+                              roomClimateData_};
     newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, ctx);
 
     if (newScreen) {

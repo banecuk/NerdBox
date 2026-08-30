@@ -12,6 +12,7 @@
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
+#include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
 #include "services/web/WebApiHandlers.h"
 #include "services/web/WebPageHandlers.h"
@@ -32,7 +33,7 @@ class WebServerService {
                      const WeatherData& weatherData, const AppSettings& config,
                      const TaskManager& taskManager, LoggerInterface& logger,
                      RecentLogView& recentLogView, const AudioData& audioData,
-                     AudioService& audioService);
+                     AudioService& audioService, const RoomClimateData& roomClimateData);
     void begin();
     void processRequests();
 

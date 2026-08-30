@@ -8,6 +8,7 @@
 #include "services/audio/AudioService.h"
 #include "services/network/NetworkStatusService.h"
 #include "services/pcMetrics/PcMetricsService.h"
+#include "services/roomClimate/RoomClimateService.h"
 #include "services/weather/WeatherService.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/logging/LoggerInterface.h"
@@ -29,6 +30,7 @@ struct ServiceBundle {
 
     PcMetricsService pcMetricsService;
     AirQualityService airQualityService;
+    RoomClimateService roomClimateService;
     WeatherService weatherService;
     NetworkStatusService networkStatusService;
     // Push-driven (not fetch-driven, unlike its siblings above), so it only
@@ -39,6 +41,7 @@ struct ServiceBundle {
                   const AppSettings& config, AudioData& audioData)
         : pcMetricsService(networkManager, systemMetrics, logger, config),
           airQualityService(networkManager, logger),
+          roomClimateService(networkManager, logger),
           weatherService(networkManager, logger),
           networkStatusService(logger),
           audioService(audioData, logger) {}

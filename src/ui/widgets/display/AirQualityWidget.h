@@ -10,9 +10,10 @@
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 
-// Four-column block shown to the right of ThreadsWidget on the main screen.
+// Four-column block shown to the right of RoomClimateWidget on the main
+// screen.
 //
-// Layout (right-aligned band, 240 px wide):
+// Layout (right-aligned band, 192 px wide):
 //
 //   col 1        col 2        col 3       col 4
 //  [icon 44px]  [ 22 °C ]    [1013 hPa]   [  AQI ]
@@ -43,7 +44,7 @@ class AirQualityWidget : public Widget {
     // -----------------------------------------------------------------------
     // Layout
     // -----------------------------------------------------------------------
-    static constexpr uint16_t kColWidth[4] = {44, 52, 88, 56};
+    static constexpr uint16_t kColWidth[4] = {44, 46, 66, 36};
 
     static constexpr uint16_t kIconW = kColWidth[0];
 
