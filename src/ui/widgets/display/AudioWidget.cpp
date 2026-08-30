@@ -14,7 +14,12 @@ constexpr uint16_t kAlbumRowH = 14;
 constexpr uint16_t kTimeRowH = 14;
 // Gap between the quality label and the time text on the same row.
 constexpr int32_t kQualityTimeGap = 10;
-constexpr uint16_t kBarH = 8;
+// Thicker than a minimal progress bar so the bar (anchored to the bottom of
+// the widget's slot in computeLayout()) reads as a deliberate part of the
+// layout rather than a stray line — was 8, but that left MultiWidget's
+// bottom ~20px empty since the bar sat right under the fixed text rows.
+constexpr uint16_t kBarH = 12;
+constexpr uint16_t kBottomPadding = 6;
 // Deliberately no left padding — the widget sits flush against the left
 // edge of its slot. kRightPadding keeps right-aligned text/the progress bar
 // off the right edge only.
@@ -30,12 +35,15 @@ AudioWidget::AudioWidget(const WidgetInterface::Dimensions& dims, uint32_t updat
     : Widget(dims, updateIntervalMs), audioData_(audioData) {}
 
 void AudioWidget::computeLayout() {
-    titleY_ = dimensions_.y + 2;
-    artistY_ = titleY_ + kTitleRowH + 1;
-    albumY_ = artistY_ + kArtistRowH + 1;
-    timeY_ = albumY_ + kAlbumRowH + 2;
+    titleY_ = dimensions_.y + 3;
+    artistY_ = titleY_ + kTitleRowH + 2;
+    albumY_ = artistY_ + kArtistRowH + 2;
+    timeY_ = albumY_ + kAlbumRowH + 4;
     barH_ = kBarH;
-    barY_ = timeY_ + kTimeRowH + 2;
+    // Anchored to the bottom of whatever height the widget is given (rather
+    // than stacked directly under timeY_) so the widget's content fills the
+    // full slot MultiWidget hands it instead of leaving the bottom blank.
+    barY_ = dimensions_.y + dimensions_.height - kBarH - kBottomPadding;
     barX_ = dimensions_.x;
     barW_ = dimensions_.width > kRightPadding ? dimensions_.width - kRightPadding : 0;
 }

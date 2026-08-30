@@ -43,13 +43,13 @@ class ForecastStripWidget : public Widget {
  private:
     static constexpr uint8_t kMaxColumns = AppConfig::Limits::kForecastDays;
 
-    // Row gaps (24/19/19) sized for the fonts, with extra breathing room
-    // between the day name and the max-temp row below it; flow re-centered
-    // in MultiWidget's current 103px height.
+    // Row gaps sized for the fonts, with extra breathing room between the
+    // day name and the max-temp row below it; flow re-centered in
+    // MultiWidget's current 103px height.
     static constexpr int16_t kDayY = 18;   // MC_DATUM centre for the 12pt day name
-    static constexpr int16_t kMaxY = 42;  // 15pt max temp
-    static constexpr int16_t kMinY = 61;  // 12pt min temp
-    static constexpr int16_t kRainY = 80;  // 12pt rain
+    static constexpr int16_t kMaxY = 43;  // 18pt max temp
+    static constexpr int16_t kMinY = 64;  // 15pt min temp
+    static constexpr int16_t kRainY = 85;  // 12pt rain
 
     static constexpr uint16_t kDividerColor = 0x18C3;   // same very-dark-grey row-border color
     static constexpr uint16_t kTodayUnderlineColor = 0x2965;

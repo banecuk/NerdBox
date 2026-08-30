@@ -183,8 +183,8 @@ void ForecastStripWidget::drawColumn(uint8_t col, bool dayChanged, bool maxChang
     }
 
     if (maxChanged) {
-        lcd->fillRect(colX + 1, dimensions_.y + kMaxY - 10, colWidth_ - 2, 19, TFT_BLACK);
-        Fonts::loadValue(lcd);
+        lcd->fillRect(colX + 1, dimensions_.y + kMaxY - 12, colWidth_ - 2, 23, TFT_BLACK);
+        Fonts::loadMetric(lcd);
         lcd->setTextColor(kTempMaxColor, TFT_BLACK);
         lcd->setTextDatum(MC_DATUM);
         lcd->drawString(tempMax, cx, dimensions_.y + kMaxY);
@@ -192,8 +192,8 @@ void ForecastStripWidget::drawColumn(uint8_t col, bool dayChanged, bool maxChang
     }
 
     if (minChanged) {
-        lcd->fillRect(colX + 1, dimensions_.y + kMinY - 9, colWidth_ - 2, 18, TFT_BLACK);
-        Fonts::loadLabel(lcd);
+        lcd->fillRect(colX + 1, dimensions_.y + kMinY - 10, colWidth_ - 2, 20, TFT_BLACK);
+        Fonts::loadValue(lcd);
         lcd->setTextColor(kTempMinColor, TFT_BLACK);
         lcd->setTextDatum(MC_DATUM);
         lcd->drawString(tempMin, cx, dimensions_.y + kMinY);
