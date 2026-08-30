@@ -16,10 +16,10 @@ ApplicationComponents::ApplicationComponents()
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
       webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
-                       services.pcMetricsService, jobs.pcMetricsStreamJob, data.netStatus,
-                       data.systemState, data.weatherData, config, taskManager, platform.logger_,
-                       platform.logger_, data.audioData, services.audioService,
-                       data.roomClimateData),
+                       services.pcMetricsService, *jobs.pcMetricsStreamJob, *jobs.cpuClockStreamJob,
+                       *jobs.processStreamJob, data.netStatus, data.systemState, data.weatherData,
+                       config, taskManager, platform.logger_, platform.logger_, data.audioData,
+                       services.audioService, data.roomClimateData),
       initStateMachine(*this) {}
 
 // -----------------------------------------------------------------------

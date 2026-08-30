@@ -18,6 +18,11 @@
 // displayContext on display/colors/logger_, displayManager on
 // display/logger_/config, networkManager on logger_/httpClient/config).
 // Keep new members near what they depend on, before whatever depends on them.
+//
+// SIZE-SENSITIVE: this bundle is embedded inline in ApplicationComponents —
+// see the warning at the top of app/ApplicationComponents.h before adding or
+// growing a member. Colors is the one member that already hit this (its
+// lookup tables are `static`, not per-instance, for exactly this reason).
 struct PlatformBundle {
     LGFX display;
     Colors colors;

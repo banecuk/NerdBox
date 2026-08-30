@@ -13,6 +13,48 @@
 #include "services/web/WebServerService.h"
 #include "ui/core/UiController.h"
 
+// *** SIZE-SENSITIVE ON REAL HARDWARE — READ BEFORE ADDING/GROWING A MEMBER ***
+//
+// ApplicationComponents (heap-allocated as one block via
+// std::make_unique<ApplicationComponents>() in main.cpp, alongside the LGFX
+// display) has, three separate times, corrupted the whole LCD on real
+// hardware (scattered pixels, no clear on screen transitions) after a change
+// that grew the size of something embedded *inline* inside it or one of its
+// bundles (DataBundle/PlatformBundle/ServiceBundle/JobBundle) — even though
+// the change built cleanly and every `[env:native]` host test passed. Root
+// cause isn't fully pinned down (plausibly a tight internal-RAM margin
+// against the display driver's own DMA-capable allocations), but the size
+// correlation has been confirmed by hardware bisection every time: adding a
+// couple hundred bytes of new per-instance state reproduces it, and moving
+// that same state behind a heap pointer fixes it.
+//
+// So: a new field on any struct embedded here, a bigger fixed array, an
+// added scratch buffer (SseConnection, JsonDocument, etc.) — anything that
+// grows `sizeof()` of a member of ApplicationComponents or one of its
+// bundles — needs either:
+//   1. std::unique_ptr<T> (heap-allocated, e.g. via std::make_unique) instead
+//      of an inline T member, or
+//   2. a `static` member instead of per-instance state, if the type is only
+//      ever constructed once (no state actually needs to live per-instance).
+// A clean debug/release build and passing `pio test -e native` are NOT
+// sufficient evidence the change is safe — they were passing all three times
+// this broke. Flash the device and visually check the display before
+// reporting such a change as complete; if hardware isn't available, say the
+// change is unverified rather than "done".
+//
+// When a feature adds new members across *multiple* bundles, convert every
+// new embedded member to a heap pointer up front — fixing just one and
+// reflashing to check is not a valid way to bisect which one mattered (see
+// the CPU-clock-screen incident: CpuClockData alone wasn't enough; the
+// paired CpuClockStreamJob also had to move to the heap).
+//
+// History: Colors' two lookup tables (2026-08-15, docs-local/07-performance
+// P1-6); DataBundle::cpuClockData + JobBundle::cpuClockStreamJob
+// (2026-08-21, CPU-clock screen); JobBundle::pcMetricsStreamJob growing a
+// path_[96] member when it moved onto the shared SseStreamJob base
+// (2026-08-30, docs-local/11-code-quality.md Q1) — see
+// [[applicationcomponents-size-sensitive]] in memory for the full incident
+// log.
 class ApplicationComponents : public IInitializationTarget {
  public:
     ApplicationComponents();

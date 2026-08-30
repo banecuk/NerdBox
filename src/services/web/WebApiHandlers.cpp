@@ -25,16 +25,18 @@ float roundToDecimals(float value, int decimals) {
 
 WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetrics,
                                PcMetrics& pcMetrics, PcMetricsService& pcMetricsService,
-                               PcMetricsStreamJob& pcMetricsStreamJob,
-                               const NetworkStatus& netStatus, const SystemState& systemState,
-                               const WeatherData& weatherData, const AppSettings& config,
-                               const TaskManager& taskManager, const AudioData& audioData,
-                               const RoomClimateData& roomClimateData)
+                               SseStreamJob& pcMetricsStreamJob, SseStreamJob& cpuClockStreamJob,
+                               SseStreamJob& processStreamJob, const NetworkStatus& netStatus,
+                               const SystemState& systemState, const WeatherData& weatherData,
+                               const AppSettings& config, const TaskManager& taskManager,
+                               const AudioData& audioData, const RoomClimateData& roomClimateData)
     : server_(server),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
       pcMetricsService_(pcMetricsService),
       pcMetricsStreamJob_(pcMetricsStreamJob),
+      cpuClockStreamJob_(cpuClockStreamJob),
+      processStreamJob_(processStreamJob),
       netStatus_(netStatus),
       systemState_(systemState),
       weatherData_(weatherData),
@@ -196,6 +198,26 @@ void WebApiHandlers::handleApiStatus() {
     pcStream["reconnect_count"] = static_cast<unsigned long>(pcMetricsStreamJob_.reconnectCount());
     pcStream["last_event_age_ms"] = pcMetricsStreamJob_.lastEventAgeMs();
     pcStream["overflow_count"] = static_cast<unsigned long>(pcMetricsStreamJob_.overflowCount());
+
+    // cpu_clock_stream / process_stream — same shape as pc_stream, for the
+    // two opt-in, screen-gated streams. State is meaningful even when their
+    // screen isn't active: it just stays DISCONNECTED since the job's
+    // nextDue() is Never off-screen.
+    JsonObject cpuClockStream = doc["cpu_clock_stream"].to<JsonObject>();
+    cpuClockStream["state"] = sseStateToString(cpuClockStreamJob_.connectionState());
+    cpuClockStream["reconnect_count"] =
+        static_cast<unsigned long>(cpuClockStreamJob_.reconnectCount());
+    cpuClockStream["last_event_age_ms"] = cpuClockStreamJob_.lastEventAgeMs();
+    cpuClockStream["overflow_count"] =
+        static_cast<unsigned long>(cpuClockStreamJob_.overflowCount());
+
+    JsonObject processStream = doc["process_stream"].to<JsonObject>();
+    processStream["state"] = sseStateToString(processStreamJob_.connectionState());
+    processStream["reconnect_count"] =
+        static_cast<unsigned long>(processStreamJob_.reconnectCount());
+    processStream["last_event_age_ms"] = processStreamJob_.lastEventAgeMs();
+    processStream["overflow_count"] =
+        static_cast<unsigned long>(processStreamJob_.overflowCount());
 
     JsonObject ui = doc["ui"].to<JsonObject>();
     ui["screen"] = screenNameToString(systemState_.screen.activeScreen);

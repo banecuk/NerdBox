@@ -25,6 +25,10 @@ static_assert(ApplicationMetrics::kDrawTimesCapacity == AppConfig::Limits::kMaxS
 // aggregator they report through. Declaration order: systemMetrics has no
 // dependencies; every service below depends on networkManager/logger_/config
 // (and pcMetricsService additionally on systemMetrics).
+//
+// SIZE-SENSITIVE: this bundle is embedded inline in ApplicationComponents —
+// see the warning at the top of app/ApplicationComponents.h before adding or
+// growing a member.
 struct ServiceBundle {
     ApplicationMetrics systemMetrics;
 

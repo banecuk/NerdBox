@@ -2,7 +2,7 @@
 
 #include <WebServer.h>
 
-#include "app/jobs/PcMetricsStreamJob.h"
+#include "app/jobs/SseStreamJob.h"
 #include "app/TaskManager.h"
 #include "config/AppSettings.h"
 #include "core/state/SystemState.h"
@@ -22,7 +22,8 @@
 class WebApiHandlers {
  public:
     WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                   PcMetricsService& pcMetricsService, PcMetricsStreamJob& pcMetricsStreamJob,
+                   PcMetricsService& pcMetricsService, SseStreamJob& pcMetricsStreamJob,
+                   SseStreamJob& cpuClockStreamJob, SseStreamJob& processStreamJob,
                    const NetworkStatus& netStatus, const SystemState& systemState,
                    const WeatherData& weatherData, const AppSettings& config,
                    const TaskManager& taskManager, const AudioData& audioData,
@@ -43,7 +44,9 @@ class WebApiHandlers {
     ApplicationMetrics& systemMetrics_;
     PcMetrics& pcMetrics_;
     PcMetricsService& pcMetricsService_;
-    PcMetricsStreamJob& pcMetricsStreamJob_;
+    SseStreamJob& pcMetricsStreamJob_;
+    SseStreamJob& cpuClockStreamJob_;
+    SseStreamJob& processStreamJob_;
     const NetworkStatus& netStatus_;
     const SystemState& systemState_;
     const WeatherData& weatherData_;

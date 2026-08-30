@@ -16,6 +16,10 @@
 // UI widgets. Grouped here only because they have no construction-order
 // dependency on anything else in ApplicationComponents — every member below
 // is independently default-constructible.
+//
+// SIZE-SENSITIVE: this bundle is embedded inline in ApplicationComponents —
+// see the warning at the top of app/ApplicationComponents.h before adding or
+// growing a member.
 struct DataBundle {
     SystemState systemState;
 
