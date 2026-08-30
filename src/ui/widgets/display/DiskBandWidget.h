@@ -62,6 +62,15 @@ class DiskBandWidget : public PcDataCompositeWidget {
     // Maximum single-drive tile width; on narrower multipliers drives are inset.
     static constexpr uint16_t kMaxWidgetWidth = 120;
 
+    // Drive-letter label column width (mirrors the MetricWidget tile's own
+    // config.labelWidth), plus MetricWidget::SEPARATOR_WIDTH (1px) between
+    // its label and value areas. The activity line above each tile is split
+    // to match: the read half spans this label column, the write half spans
+    // the rest (the larger value-display area) — so read/write widths line
+    // up with what's underneath them.
+    static constexpr uint16_t kLabelWidth = 14;
+    static constexpr uint16_t kLabelColumnWidth = kLabelWidth + 1;
+
     EventType action_;
     ActionCallback callback_;
 

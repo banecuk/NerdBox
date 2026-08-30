@@ -117,7 +117,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
         config.useDimColors = true;
         config.useSmallFont = true;
         config.label = snapshot[i].name;
-        config.labelWidth = 14;   // narrow: the label is a single drive letter
+        config.labelWidth = kLabelWidth;  // narrow: the label is a single drive letter
         config.borderMargin = 0;  // flush against the activity lines — no edge gaps
         config.lowerThreshold = 0.0f;
         config.upperThreshold = 95.0f;
@@ -214,22 +214,24 @@ void DiskBandWidget::drawDynamicData() {
         if (i >= diskWriteLineColor_.size())
             continue;
 
-        // Activity line is split left/right within the tile: left half reads,
-        // right half writes. The right half absorbs any odd leftover pixel so
-        // the two halves always cover the tile's full width with no gap.
-        const uint16_t readHalfWidth = static_cast<uint16_t>(dims.width / 2);
-        const uint16_t writeHalfWidth = static_cast<uint16_t>(dims.width - readHalfWidth);
+        // Activity line is split left/right within the tile to mirror the
+        // MetricWidget label/value split below it: the read half spans the
+        // drive-letter label column, the write half fills the rest (the
+        // larger value-display area).
+        const uint16_t readWidth = static_cast<uint16_t>(
+            dims.width < kLabelColumnWidth ? dims.width : kLabelColumnWidth);
+        const uint16_t writeWidth = static_cast<uint16_t>(dims.width - readWidth);
         const uint16_t lineY = dimensions_.y;
 
         const uint16_t readColor = bandActivityColor(readSnapshot[i], /*isWrite=*/false);
         if (diskReadLineColor_[i] != readColor) {
-            getLcd()->fillRect(dims.x, lineY, readHalfWidth, kActivityLineHeight, readColor);
+            getLcd()->fillRect(dims.x, lineY, readWidth, kActivityLineHeight, readColor);
             diskReadLineColor_[i] = readColor;
         }
 
         const uint16_t writeColor = bandActivityColor(writeSnapshot[i], /*isWrite=*/true);
         if (diskWriteLineColor_[i] != writeColor) {
-            getLcd()->fillRect(static_cast<int32_t>(dims.x + readHalfWidth), lineY, writeHalfWidth,
+            getLcd()->fillRect(static_cast<int32_t>(dims.x + readWidth), lineY, writeWidth,
                                kActivityLineHeight, writeColor);
             diskWriteLineColor_[i] = writeColor;
         }
