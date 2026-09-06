@@ -30,7 +30,7 @@ static constexpr uint8_t kMaxScreenDrawTimes = 30;
 // /api/status "probes" array). Single source of truth so adding/removing a
 // probe URL can't leave endpoint_ok[] under/over-sized relative to the count
 // that actually gets written.
-static constexpr uint8_t kNetworkProbeEndpoints = 6;
+static constexpr uint8_t kNetworkProbeEndpoints = 8;
 
 // Logical CPU thread count this build expects NerdWinSense to report.
 static constexpr uint8_t kCores = 28;

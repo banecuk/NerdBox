@@ -4,6 +4,7 @@
 #include <string>
 
 #include "core/events/EventTypes.h"
+#include "ui/core/Colors.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/resources/gear_icon_40.h"
 #include "ui/widgets/base/Widget.h"
@@ -54,7 +55,7 @@ class ButtonWidget : public Widget {
     unsigned long pressStartTime_ = 0;
 
     // Border colour — very dark grey, barely visible against black background
-    static constexpr uint16_t kBorderColor = 0x2965;  // ~RGB(40,44,40)
+    static constexpr uint16_t kBorderColor = Colors::kBorderGrey;
     static constexpr uint16_t kBorderRadius = 5;
     static constexpr uint8_t kIconPad = 4;  // px between icon and label
 

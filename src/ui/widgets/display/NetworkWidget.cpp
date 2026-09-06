@@ -25,7 +25,7 @@ void NetworkWidget::onDrawStatic() {
     lastConnected_ = false;
     lastRssiBracket_ = -1;
     lastInternet_ = NetworkStatus::Internet::UNKNOWN;
-    for (uint8_t i = 0; i < 6; ++i)
+    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i)
         lastEndpointOk_[i] = false;
     lastInitialized_ = false;
 }
@@ -56,7 +56,7 @@ void NetworkWidget::onDraw(bool forceRedraw) {
     lastConnected_ = connected;
     lastRssiBracket_ = bracket;
     lastInternet_ = internet;
-    for (uint8_t i = 0; i < 6; ++i)
+    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i)
         lastEndpointOk_[i] = status_.endpoint_ok[i];
     lastInitialized_ = true;
 }
@@ -130,7 +130,7 @@ void NetworkWidget::drawGlobe() {
 }
 
 // ---------------------------------------------------------------------------
-// drawDotGrid — 3 columns × 2 rows, one dot per endpoint
+// drawDotGrid — 4 columns × 2 rows, one dot per endpoint
 //              white = OK, red = failed/unknown
 // ---------------------------------------------------------------------------
 
@@ -143,8 +143,8 @@ void NetworkWidget::drawDotGrid() {
     const int16_t secX = dimensions_.x + kWifiSectionW + kSepW + kGlobeSectionW;
     lcd->fillRect(secX, dimensions_.y, kDotSectionW, dimensions_.height, TFT_BLACK);
 
-    // Centre the 3×2 grid within the dot section
-    // Total grid width  = 3 cols, gap between centres = kDotSpacX
+    // Centre the 4×2 grid within the dot section
+    // Total grid width  = 4 cols, gap between centres = kDotSpacX
     // Total grid height = 2 rows, gap between centres = kDotSpacY
     const int16_t gridW = (kDotCols - 1) * kDotSpacX;
     const int16_t gridH = (kDotRows - 1) * kDotSpacY;
@@ -209,7 +209,7 @@ int8_t NetworkWidget::rssiBracket() const {
 }
 
 bool NetworkWidget::endpointsDirty() const {
-    for (uint8_t i = 0; i < 6; ++i) {
+    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i) {
         if (status_.endpoint_ok[i] != lastEndpointOk_[i])
             return true;
     }

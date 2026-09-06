@@ -7,6 +7,7 @@
 #include "config/Limits.h"
 #include "core/events/EventTypes.h"
 #include "services/weather/WeatherData.h"
+#include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 
@@ -52,7 +53,7 @@ class ForecastStripWidget : public Widget {
     static constexpr int16_t kRainY = 85;  // 12pt rain
 
     static constexpr uint16_t kDividerColor = 0x18C3;   // same very-dark-grey row-border color
-    static constexpr uint16_t kTodayUnderlineColor = 0x2965;
+    static constexpr uint16_t kTodayUnderlineColor = Colors::kBorderGrey;
 
     // Per-column cached snapshot for dirty detection.
     struct ColumnCache {

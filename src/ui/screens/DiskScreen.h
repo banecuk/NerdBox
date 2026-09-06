@@ -3,9 +3,7 @@
 #include "config/AppSettings.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/screens/base/BaseWidgetScreen.h"
-#include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/display/DiskInfoWidget.h"
-#include "ui/widgets/interactive/ButtonWidget.h"
 
 // Disk info screen: per-drive free space, live read/write rates. Entered by
 // tapping the disk-drive tiles on the main screen; back button bottom-left.

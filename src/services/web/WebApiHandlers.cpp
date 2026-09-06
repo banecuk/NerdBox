@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "core/ScreenRegistry.h"
 #include "services/network/NetworkStatusService.h"
 #include "services/web/ChunkedPrint.h"
 #include "utils/DataFreshnessGuard.h"
@@ -79,25 +80,7 @@ const char* WebApiHandlers::playStateToString(AudioData::PlayState state) {
 }
 
 const char* WebApiHandlers::screenNameToString(ScreenName screen) {
-    switch (screen) {
-        case ScreenName::BOOT:
-            return "BOOT";
-        case ScreenName::MAIN:
-            return "MAIN";
-        case ScreenName::SETTINGS:
-            return "SETTINGS";
-        case ScreenName::GAME:
-            return "GAME";
-        case ScreenName::DISKS:
-            return "DISKS";
-        case ScreenName::WEATHER:
-            return "WEATHER";
-        case ScreenName::CALENDAR:
-            return "CALENDAR";
-        case ScreenName::NONE:
-        default:
-            return "NONE";
-    }
+    return screenName(screen);
 }
 
 // ---------------------------------------------------------------------------

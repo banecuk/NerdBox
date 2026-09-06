@@ -5,7 +5,7 @@
 
 #include "utils/logging/LogMacros.h"
 
-// Six lightweight connectivity-check endpoints, tried in rotation.
+// Eight lightweight connectivity-check endpoints, tried in rotation.
 // All return quickly and are operated by highly reliable providers.
 const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints] = {
     "http://connectivitycheck.gstatic.com/generate_204",  // Google        — expect 204
@@ -14,6 +14,8 @@ const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints
     "http://connectivitycheck.android.com/generate_204",  // Android AOSP   — expect 204
     "http://clients3.google.com/generate_204",            // Google alt     — expect 204
     "http://nmcheck.gnome.org/check_network_status.txt",  // GNOME          — expect 200
+    "http://detectportal.firefox.com/success.txt",        // Mozilla        — expect 200
+    "http://cp.cloudflare.com/generate_204",              // Cloudflare     — expect 204
 };
 
 // ---------------------------------------------------------------------------
@@ -116,10 +118,13 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
 // status accurate during the ~kNumEndpoints * kProbeIntervalMs warm-up window
 // right after boot, when most slots haven't been probed yet.
 //
-// OK       — every probed slot passed
 // DOWN     — every probed slot failed
-// WARNING  — exactly 1 probed slot failed, the rest passed
-// DEGRADED — 2 or more probed slots failed, but not all of them
+// OK       — at most 1 probed slot failed. These are third-party endpoints;
+//            one of them going down (or rate-limiting us) says nothing about
+//            this device's connectivity, so a lone failure is not flagged —
+//            its dot still turns red in NetworkWidget, the globe stays white.
+// WARNING  — exactly 2 probed slots failed
+// DEGRADED — 3 or more probed slots failed, but not all of them
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointIdx, bool success) {
@@ -138,11 +143,13 @@ void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointI
 
     const uint8_t failures = probedCount - passes;
 
-    if (failures == 0) {
-        status.internet = NetworkStatus::Internet::OK;
+    if (probedCount == 0) {
+        status.internet = NetworkStatus::Internet::UNKNOWN;
     } else if (failures == probedCount) {
         status.internet = NetworkStatus::Internet::DOWN;
-    } else if (failures == 1) {
+    } else if (failures <= 1) {
+        status.internet = NetworkStatus::Internet::OK;
+    } else if (failures == 2) {
         status.internet = NetworkStatus::Internet::WARNING;
     } else {
         status.internet = NetworkStatus::Internet::DEGRADED;

@@ -2,6 +2,7 @@
 
 #include "services/roomClimate/RoomClimateData.h"
 #include "services/roomClimate/RoomClimateService.h"
+#include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 
@@ -31,7 +32,7 @@ class RoomClimateWidget : public Widget {
  private:
     // Unit text colour — same dim shade AirQualityWidget uses for every
     // unit/label on its band.
-    static constexpr uint16_t kUnitColor = 0x8410;
+    static constexpr uint16_t kUnitColor = Colors::kDimLabelGrey;
     // Humidity value colour — matches AirQualityWidget's humidity cyan.
     static constexpr uint16_t kHumidityColor = 0x867F;
 

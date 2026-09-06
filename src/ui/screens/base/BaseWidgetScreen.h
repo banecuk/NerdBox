@@ -22,6 +22,14 @@ class BaseWidgetScreen : public ScreenInterface {
     virtual void createWidgets() = 0;
     void handleAction(EventType action);
 
+    // Shared screen chrome — bottom-left back button and bottom-right clock,
+    // same box every screen but MainScreen (shares its band with
+    // NetworkWidget/NetworkTrafficWidget) and SettingsScreen (its own
+    // colour/height/position) used verbatim. Call at the end of
+    // createWidgets(); see docs-local/12-code-architecture.md, C3.
+    void addBackButton(EventType target = EventType::SHOW_MAIN);
+    void addBottomClock();
+
     LoggerInterface& logger_;
     const AppSettings& config_;
 

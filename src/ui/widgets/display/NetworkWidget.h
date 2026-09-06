@@ -9,12 +9,18 @@
 //
 // Layout (148 × 24 px):
 //
-//   [ WiFi bars  68px ] [1px sep] [ Globe 36px ] [ 3×2 dots 40px ] [3px pad]
+//   [ WiFi bars  68px ] [1px sep] [ Globe 36px ] [ 4×2 dots 40px ] [3px pad]
 //
 // WiFi section  : 4-bar signal-strength indicator.
 // Globe section : internet reachability state coloured by severity.
-// Dot grid      : 3 columns × 2 rows — one dot per probe endpoint.
+// Dot grid      : 4 columns × 2 rows — one dot per probe endpoint. The dots
+//                 are deliberately small so eight of them fit the same 40px
+//                 section the previous six occupied — the widget's overall
+//                 footprint is unchanged.
 //                 White = endpoint OK, red = endpoint failed.
+//
+// A single failing endpoint does not colour the globe — see
+// NetworkStatusService::recordResult(). Its dot still shows red.
 //
 // Internet state colours (globe):
 //   OK       — white  (0xFFFF)
@@ -43,7 +49,7 @@ class NetworkWidget : public Widget {
     static constexpr uint16_t kWifiSectionW = 68;  // left — signal bars
     static constexpr uint16_t kSepW = 1;
     static constexpr uint16_t kGlobeSectionW = 36;  // globe icon
-    static constexpr uint16_t kDotSectionW = 40;    // 3×2 endpoint dots
+    static constexpr uint16_t kDotSectionW = 40;    // 4×2 endpoint dots
     static constexpr uint16_t kPadRight = 3;
 
     // Bar geometry (WiFi signal bars)
@@ -56,13 +62,18 @@ class NetworkWidget : public Widget {
     static constexpr uint8_t kGlobeR = 9;  // radius px
 
     // Dot grid geometry
-    static constexpr uint8_t kDotR = 3;  // radius of each dot
-    static constexpr uint8_t kDotCols = 3;
+    static constexpr uint8_t kDotR = 2;  // radius of each dot
+    static constexpr uint8_t kDotCols = 4;
     static constexpr uint8_t kDotRows = 2;
-    static constexpr uint8_t kDotSpacX = 12;  // centre-to-centre horizontal
+    static constexpr uint8_t kDotSpacX = 9;   // centre-to-centre horizontal
     static constexpr uint8_t kDotSpacY = 11;  // centre-to-centre vertical
 
-    // This grid is a fixed 3x2 layout, one dot per probe endpoint — it does
+    // The grid must stay inside its section — kDotSectionW never grows, the
+    // dots shrink instead.
+    static_assert((kDotCols - 1) * kDotSpacX + 2 * kDotR + 1 <= kDotSectionW,
+                  "NetworkWidget's dot grid must fit within kDotSectionW");
+
+    // This grid is a fixed 4x2 layout, one dot per probe endpoint — it does
     // not resize itself. If NetworkStatusService::kNumEndpoints ever changes,
     // this fails the build instead of silently drawing/reading past the grid.
     static_assert(static_cast<uint8_t>(kDotCols * kDotRows) == NetworkStatusService::kNumEndpoints,
@@ -84,7 +95,7 @@ class NetworkWidget : public Widget {
     bool lastConnected_ = false;
     int8_t lastRssiBracket_ = -1;
     NetworkStatus::Internet lastInternet_ = NetworkStatus::Internet::UNKNOWN;
-    bool lastEndpointOk_[6] = {false, false, false, false, false, false};
+    bool lastEndpointOk_[NetworkStatusService::kNumEndpoints] = {};
     bool lastInitialized_ = false;
 
     // -----------------------------------------------------------------------

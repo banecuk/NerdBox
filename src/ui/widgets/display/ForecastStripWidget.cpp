@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/display/WeatherFormat.h"
@@ -9,7 +10,7 @@
 
 #include <time.h>
 
-static constexpr uint16_t kDayColor = 0x8410;  // dim grey — same shade AirQualityWidget uses for unit labels
+static constexpr uint16_t kDayColor = Colors::kDimLabelGrey;
 static constexpr uint16_t kTempMaxColor = TFT_WHITE;
 static constexpr uint16_t kTempMinColor = TFT_LIGHTGREY;
 static constexpr uint16_t kRainColor = kWeatherRainColor;

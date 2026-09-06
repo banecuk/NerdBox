@@ -5,8 +5,8 @@
 #include "ui/widgets/base/WidgetPainter.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
-static constexpr uint16_t kCpuColor = 0xC618;
-static constexpr uint16_t kGpuColor = 0xB471;
+static constexpr uint16_t kCpuColor = Colors::kCpuAccent;
+static constexpr uint16_t kGpuColor = Colors::kGpuAccent;
 // Same alert color/threshold HistorySparklineWidget uses for its GPU row.
 static constexpr uint16_t kHighUsageColor = TFT_RED;
 static constexpr uint8_t kGpuHighUsageThreshold = 90;

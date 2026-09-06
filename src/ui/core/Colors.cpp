@@ -14,6 +14,22 @@ Colors::Colors() {
 
 Colors::~Colors() {}
 
+/* static */ uint16_t Colors::sampleRamp(const GradientStop* stops, size_t n, uint8_t value) {
+    if (value <= stops[0].at)
+        return stops[0].color;
+    if (value >= stops[n - 1].at)
+        return stops[n - 1].color;
+
+    for (size_t i = 0; i + 1 < n; ++i) {
+        if (value <= stops[i + 1].at) {
+            const uint8_t alpha = static_cast<uint8_t>(
+                ((value - stops[i].at) * 255) / (stops[i + 1].at - stops[i].at));
+            return blendRgb565(stops[i].color, stops[i + 1].color, alpha);
+        }
+    }
+    return stops[n - 1].color;  // unreachable given sorted stops
+}
+
 uint16_t Colors::getColorFromPercent(uint8_t value, bool dim) {
     if (value > 99) {
         value = 99;
@@ -21,43 +37,53 @@ uint16_t Colors::getColorFromPercent(uint8_t value, bool dim) {
     return dim ? COLOR_GRADIENT_DIM[value] : COLOR_GRADIENT[value];
 }
 
-uint16_t Colors::generateColorFromPercent(uint8_t value) {
-    // Define colors in RGB565 format
-    const uint16_t blue = 0x0947;    // RGB(8, 40, 56) — dark, muted blue (base)
-    const uint16_t green = 0x3BA2;   // RGB(7, 180, 2)
-    const uint16_t yellow = 0x9CC0;  // RGB(19, 248, 0) - actually more green-yellow
-    const uint16_t red = 0xF800;     // RGB(31, 0, 0)
-
-    uint16_t C1, C2;
-    uint8_t alpha;
-
-    if (value < 25) {
-        // Blue to Green: 0-24% (25 values)
-        C1 = blue;
-        C2 = green;
-        alpha = (value * 255) / 24;  // Proper linear interpolation
-    } else if (value < 60) {
-        // Green to Yellow: 25-59% (35 values)
-        C1 = green;
-        C2 = yellow;
-        alpha = ((value - 25) * 255) / 34;  // 59-25=34 range
-    } else {
-        // Yellow to Red: 60-99% (40 values)
-        C1 = yellow;
-        C2 = red;
-        alpha = ((value - 60) * 255) / 39;  // 99-60=39 range
-    }
-
-    return blendRgb565(C1, C2, alpha);
-}
-
 void Colors::generateGradient() {
+    // CPU/default gradient: dark, muted blue (idle) -> green -> yellow-green
+    // -> red (alert).
+    static constexpr GradientStop kDefaultStops[] = {
+        {0, 0x0947},   // dark, muted blue
+        {25, 0x3BA2},  // green
+        {60, 0x9CC0},  // yellow-green
+        {99, 0xF800},  // red
+    };
+
+    // GPU gradient: dark red (idle) -> mid red -> deep red -> bright alert
+    // red. Pure red hue throughout (no green/blue channel) so it never
+    // drifts into brownish/olive territory, and idle stays dark enough to be
+    // clearly distinct from the bright red used at heavy load.
+    static constexpr GradientStop kGpuStops[] = {
+        {0, 0x1041},   // idle, dark desaturated red
+        {40, 0x5000},  // mid red
+        {70, 0x8800},  // deep red
+        {99, 0xF800},  // bright alert red
+    };
+
+    // RAM gradient: dark teal (idle) -> muted teal -> bright cyan (high
+    // load). Teal keeps the cool blue family of the old slate/steel RAM ramp
+    // but is far enough from the CPU's muted blue and the GPU's red to be
+    // told apart at a glance.
+    static constexpr GradientStop kRamStops[] = {
+        {0, 0x08C3},   // idle, near-black teal
+        {50, 0x11E7},  // low-moderate load
+        {99, 0x4C71},  // bright alert cyan
+    };
+
+    // Light gray (low end of whatever scale the caller mapped its value
+    // into) to light green (high end). Web "lightgrey" (0xD3D3D3) and
+    // "lightgreen" (0x90EE90) in RGB565.
+    static constexpr GradientStop kGrayGreenStops[] = {
+        {0, 0xD6BA},
+        {99, 0x9772},
+    };
+
     for (int i = 0; i < 100; i++) {
-        COLOR_GRADIENT[i] = generateColorFromPercent(i);
+        const uint8_t v = static_cast<uint8_t>(i);
+        COLOR_GRADIENT[i] = sampleRamp(kDefaultStops, sizeof(kDefaultStops) / sizeof(GradientStop), v);
         COLOR_GRADIENT_DIM[i] = darken(COLOR_GRADIENT[i], 128);
-        COLOR_GRADIENT_GPU[i] = generateColorFromPercentGpu(i);
-        COLOR_GRADIENT_RAM[i] = generateColorFromPercentRam(i);
-        COLOR_GRADIENT_GRAY_GREEN[i] = generateColorFromPercentGrayGreen(i);
+        COLOR_GRADIENT_GPU[i] = sampleRamp(kGpuStops, sizeof(kGpuStops) / sizeof(GradientStop), v);
+        COLOR_GRADIENT_RAM[i] = sampleRamp(kRamStops, sizeof(kRamStops) / sizeof(GradientStop), v);
+        COLOR_GRADIENT_GRAY_GREEN[i] =
+            sampleRamp(kGrayGreenStops, sizeof(kGrayGreenStops) / sizeof(GradientStop), v);
     }
 }
 
@@ -75,62 +101,6 @@ uint16_t Colors::getColorFromPercentRam(uint8_t value) {
     return COLOR_GRADIENT_RAM[value];
 }
 
-uint16_t Colors::generateColorFromPercentGpu(uint8_t value) {
-    // GPU gradient: dark red (idle) → mid red → deep red → bright alert red.
-    // Pure red hue throughout (no green/blue channel) so it never drifts
-    // into the brownish/olive territory a warm-grey/amber ramp produces.
-    // Idle stays dark enough to be clearly distinct from the bright red
-    // used at heavy load.
-    const uint16_t darkRed = 0x1041;  // RGB(16,  8,  8) — idle, dark desaturated red
-    const uint16_t midRed = 0x5000;   // RGB(82,   0,   0)
-    const uint16_t deepRed = 0x8800;  // RGB(140,   0,   0)
-    const uint16_t red = 0xF800;      // RGB(255,   0,   0) — bright alert red
-
-    uint16_t C1, C2;
-    uint8_t alpha;
-
-    if (value < 40) {
-        C1 = darkRed;
-        C2 = midRed;
-        alpha = (value * 255) / 39;
-    } else if (value < 70) {
-        C1 = midRed;
-        C2 = deepRed;
-        alpha = ((value - 40) * 255) / 29;
-    } else {
-        C1 = deepRed;
-        C2 = red;
-        alpha = ((value - 70) * 255) / 29;
-    }
-
-    return blendRgb565(C1, C2, alpha);
-}
-
-uint16_t Colors::generateColorFromPercentRam(uint8_t value) {
-    // RAM gradient: dark teal (idle) → muted teal → bright cyan (high load).
-    // Teal keeps the cool blue family of the old slate/steel RAM ramp but is
-    // far enough from the CPU's muted blue and the GPU's red to be told apart
-    // at a glance. Idle stays near-black so it never reads as "active".
-    const uint16_t darkTeal = 0x08C3;    // RGB(  8,  24,  25) — idle, near-black teal
-    const uint16_t midTeal = 0x11E7;     // RGB( 16,  61,  58) — low-moderate load
-    const uint16_t brightCyan = 0x4C71;  // RGB( 74, 142, 140) — bright alert cyan
-
-    uint16_t C1, C2;
-    uint8_t alpha;
-
-    if (value < 50) {
-        C1 = darkTeal;
-        C2 = midTeal;
-        alpha = (value * 255) / 49;
-    } else {
-        C1 = midTeal;
-        C2 = brightCyan;
-        alpha = ((value - 50) * 255) / 49;
-    }
-
-    return blendRgb565(C1, C2, alpha);
-}
-
 uint16_t Colors::getColorFromPercentGrayGreen(uint8_t value) {
     if (value > 99) {
         value = 99;
@@ -138,14 +108,19 @@ uint16_t Colors::getColorFromPercentGrayGreen(uint8_t value) {
     return COLOR_GRADIENT_GRAY_GREEN[value];
 }
 
-uint16_t Colors::generateColorFromPercentGrayGreen(uint8_t value) {
-    // Light gray (low end of whatever scale the caller mapped its value
-    // into) to light green (high end). Web "lightgrey" (0xD3D3D3) and
-    // "lightgreen" (0x90EE90) in RGB565.
-    const uint16_t lightGray = 0xD6BA;
-    const uint16_t lightGreen = 0x9772;
-    const uint8_t alpha = static_cast<uint8_t>((value * 255) / 99);
-    return blendRgb565(lightGray, lightGreen, alpha);
+uint16_t Colors::utilizationColor(float percent) {
+    if (percent < 60.0f) {
+        // Smooth light-grey-to-light-green ramp across the idle-to-moderate
+        // range, instead of an instant jump straight to full green the
+        // moment utilisation ticks up from idle.
+        const uint8_t idx = static_cast<uint8_t>(percent / 60.0f * 99.0f + 0.5f);
+        return getColorFromPercentGrayGreen(idx);
+    }
+    if (percent < 85.0f)
+        return TFT_YELLOW;  // heavy
+    if (percent < 100.0f)
+        return TFT_ORANGE;                    // near saturation
+    return blendRgb565(TFT_RED, TFT_WHITE, 90);  // at/over the configured cap
 }
 
 // Disk activity color scale, in KB/s: <1 MB/s dark gray (idle), then a

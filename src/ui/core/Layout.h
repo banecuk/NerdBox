@@ -28,4 +28,20 @@ constexpr uint16_t kButtonSize = 48;
 // vary slightly per screen (row height, gutters) and stay local to each.
 constexpr uint16_t kClockW = 150;
 
+// Content area above the bottom band — every screen with a single
+// full-width content widget (DiskScreen, CpuClockScreen, WeatherScreen,
+// ProcessesScreen, CalendarScreen, GameScreen's FPS tile) sizes it to
+// {0, 0, kScreenW, kContentH}.
+constexpr uint16_t kContentH = kBottomBarY;
+
+// Standard bottom-band clock — same box (position/size) on every screen
+// that uses BaseWidgetScreen::addBottomClock() (everything except
+// MainScreen, which shares its band with NetworkWidget/NetworkTrafficWidget
+// and derives a narrower box locally, and SettingsScreen, whose clock has
+// its own colour/height/position). Derived, not hardcoded, so the two bands
+// can't drift 3px apart by accident (see N1).
+constexpr uint16_t kClockH = 40;
+constexpr uint16_t kClockX = kScreenW - kClockW - 2;
+constexpr uint16_t kClockY = kBottomBarY + (kBottomBarH - kClockH) / 2;
+
 }  // namespace Layout

@@ -16,16 +16,19 @@
 // Internet    — call maybeTriggerProbe() from the background task every tick.
 //               When the probe interval has elapsed and no probe is running, a
 //               one-shot FreeRTOS task is spawned that does a single HTTP GET
-//               to one of six rotating endpoints, then self-deletes.
-//               The rolling 6-slot result buffer prevents a single slow response
+//               to one of eight rotating endpoints, then self-deletes.
+//               The rolling 8-slot result buffer prevents a single slow response
 //               from flipping the state.
-//               Until all 6 endpoints have been probed once, probing runs at
+//               Until all 8 endpoints have been probed once, probing runs at
 //               the fast kWarmupProbeIntervalMs cadence so the status is
 //               accurate within a few seconds of boot; afterwards it settles
 //               into the slow kProbeIntervalMs cadence.
-//               WARNING  — exactly 1 of the 6 last results failed.
-//               DEGRADED — 2 or more failed, but not all.
-//               DOWN     — all 6 failed.
+//               OK       — at most 1 of the 8 last results failed. A single
+//                          third-party endpoint being flaky says nothing about
+//                          this device's connectivity, so it isn't flagged.
+//               WARNING  — exactly 2 failed.
+//               DEGRADED — 3 or more failed, but not all.
+//               DOWN     — all 8 failed.
 class NetworkStatusService {
  public:
     NetworkStatusService(LoggerInterface& logger);
@@ -88,14 +91,14 @@ class NetworkStatusService {
     LoggerInterface& logger_;
 
     uint8_t probeTarget_ = 0;  // round-robin index into kProbeUrls
-    uint8_t results_[kNumEndpoints] = {0, 0, 0, 0,
-                                       0, 0};  // rolling pass/fail buffer (one slot per endpoint)
+    // Rolling pass/fail buffer, one slot per endpoint.
+    uint8_t results_[kNumEndpoints] = {};
     // Tracks which slots have received at least one real result. Until every
     // slot has been probed once (kNumEndpoints * kProbeIntervalMs after boot),
     // recordResult() must only weigh the slots that have actually been probed
     // — otherwise never-probed slots default to "fail" and the status is
     // misreported as DEGRADED/DOWN during the warm-up window.
-    bool probed_[kNumEndpoints] = {false, false, false, false, false, false};
+    bool probed_[kNumEndpoints] = {};
 
     static constexpr uint32_t kProbeStack = 4096;
     static constexpr uint32_t kProbeTimeoutMs = 1500;

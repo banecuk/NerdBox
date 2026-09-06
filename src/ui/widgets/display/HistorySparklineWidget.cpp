@@ -4,8 +4,8 @@
 #include "ui/resources/FontRegistry.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
-static constexpr uint16_t kCpuColor = 0xC618;
-static constexpr uint16_t kGpuColor = 0xB471;
+static constexpr uint16_t kCpuColor = Colors::kCpuAccent;
+static constexpr uint16_t kGpuColor = Colors::kGpuAccent;
 static constexpr uint16_t kRamColor = 0xADFB;
 static constexpr uint16_t kVramColor = kGpuColor;  // same GPU accent used in PcMetricsTilesConfig
 static constexpr uint16_t kHighUsageColor = TFT_RED;  // shared alert color, any metric >= 90%

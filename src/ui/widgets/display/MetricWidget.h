@@ -7,6 +7,11 @@
 
 class MetricWidget : public Widget {
  public:
+    // Which color ramp calculateBackgroundColor() samples. Replaces three
+    // mutually-exclusive booleans (useGpuColors/useDimColors/useRamColors) —
+    // see docs-local/12-code-architecture.md, C5.
+    enum class Palette : uint8_t { Default, Dim, Gpu, Ram };
+
     // Every tunable knob in one place, with default member initializers
     // matching MetricWidget's own historical defaults. Passed to the
     // constructor once instead of chained through per-field setters, so the
@@ -20,10 +25,8 @@ class MetricWidget : public Widget {
         float lowerThreshold = 50.0f;
         float upperThreshold = 90.0f;
         bool reverseThresholds = false;
-        bool useDimColors = false;
         bool useSmallFont = false;  // Use NotoSansDisplay15 instead of NotoSans18
-        bool useGpuColors = false;
-        bool useRamColors = false;
+        Palette palette = Palette::Default;
         uint16_t labelColor = TFT_WHITE;
         const char* label = "";  // copied into a fixed buffer by the constructor
         uint16_t labelWidth = 0;
@@ -71,7 +74,6 @@ class MetricWidget : public Widget {
     const char* getUnit() const { return unit_; }
     float getLowerThreshold() const { return lowerThreshold_; }
     float getUpperThreshold() const { return upperThreshold_; }
-    bool getUseDimColors() const { return useDimColors_; }
     bool isSmallFont() const { return useSmallFont_; }
 
  protected:
@@ -87,10 +89,8 @@ class MetricWidget : public Widget {
     float lowerThreshold_;
     float upperThreshold_;
     bool reverseThresholds_;
-    bool useDimColors_;
     bool useSmallFont_;
-    bool useGpuColors_;
-    bool useRamColors_;
+    Palette palette_;
     uint16_t labelColor_;
     char label_[32];  // Stack-allocated buffer
     uint16_t labelWidth_;
@@ -136,15 +136,27 @@ class MetricWidget : public Widget {
     static constexpr uint16_t TEXT_MARGIN = 10;
     static constexpr uint16_t SEPARATOR_WIDTH = 1;
 
-    // Load/unload the correct value font based on useSmallFont_.
-    // All three render paths (renderValueArea, renderValueTextOnly,
-    // drawValueWithLoadedFont) must use the same font to stay consistent.
+    // Load/unload the correct value font based on useSmallFont_. Both
+    // onDraw() callers of renderValue() route through this; the batch
+    // (fontsLoadedByCaller) path skips it since the caller already loaded
+    // the font for the whole tile pass.
     void loadValueFont() const;
     void unloadValueFont() const;
 
-    // Rendering methods
-    void renderValueArea();
-    void renderValueTextOnly();
+    // Single render core behind onDraw()'s two paths and the public
+    // drawValueWithLoadedFont(): recompute background colour, clear the
+    // value area (fully, or only when something that actually moved/
+    // recoloured demands it), then draw value + unit.
+    //   fontsLoadedByCaller: skip load/unload (the PcMetricsWidget/
+    //     DiskBandWidget batch path, which loads once for the whole tile
+    //     pass) and defer the unit draw to drawUnitWithLoadedFont() instead
+    //     of drawing it inline.
+    //   clearWholeArea: force a full-area clear regardless of whether the
+    //     background colour or text width actually changed (drawStatic() /
+    //     first render / any other case that can't rely on the previous
+    //     frame's cached state).
+    // See docs-local/12-code-architecture.md, C5.
+    void renderValue(bool fontsLoadedByCaller, bool clearWholeArea);
 
     // Helper methods
     uint16_t calculateBackgroundColor() const;

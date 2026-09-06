@@ -41,7 +41,8 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                                                    ctx.weatherData);
         case ScreenName::CALENDAR:
             return std::make_unique<CalendarScreen>(ctx.logger, ctx.controller, ctx.config);
-        default:
+        case ScreenName::NONE:
             return nullptr;
     }
+    return nullptr;
 }

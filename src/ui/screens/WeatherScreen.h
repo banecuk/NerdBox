@@ -4,7 +4,6 @@
 #include "services/weather/WeatherData.h"
 #include "ui/screens/base/BaseWidgetScreen.h"
 #include "ui/widgets/display/WeatherWidget.h"
-#include "ui/widgets/interactive/ButtonWidget.h"
 
 // Weather forecast screen: full-width daily column strip (up to 7 days) plus
 // a back button. Entered by tapping the AirQualityWidget on the main screen.

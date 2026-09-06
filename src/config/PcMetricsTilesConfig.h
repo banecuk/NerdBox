@@ -32,6 +32,11 @@ inline constexpr const char* kDegreesC =
     "\xC2\xB0"
     "C";
 
+// Label colors mirror Colors::kCpuAccent (0xC618) / Colors::kGpuAccent
+// (0xB471) in ui/core/Colors.h, repeated as raw literals here rather than
+// referencing that class directly: config/ must not depend on ui/ (see
+// CLAUDE.md's layering rule). Keep the two in sync by hand if either shade
+// changes.
 inline constexpr TileData kTiles[] = {
   // CPU row
     {"%",       0, 100,  10.0f,  90.0f,   "CPU", 0xC618, false, false, false},

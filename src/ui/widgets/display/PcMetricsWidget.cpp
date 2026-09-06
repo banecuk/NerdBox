@@ -105,9 +105,10 @@ PcMetricsWidget::fixedTileDescriptors() {
             config.label = t.label;
             config.labelWidth = kLabelWidth;
             config.labelColor = t.labelColor;
-            config.useGpuColors = t.useGpuColors;
-            config.useDimColors = t.useDimColors;
-            config.useRamColors = t.useRamColors;
+            config.palette = t.useGpuColors  ? MetricWidget::Palette::Gpu
+                            : t.useRamColors  ? MetricWidget::Palette::Ram
+                            : t.useDimColors  ? MetricWidget::Palette::Dim
+                                              : MetricWidget::Palette::Default;
             config.borderMargin = 0;
             tiles[i] = {kDims[i], config, kGetters[i]};
         }
@@ -158,8 +159,8 @@ void PcMetricsWidget::ensureChildWidgetsCreated() {
         config.upperThreshold = 1200.0f;
         config.label = kFanLabels[i];
         config.labelWidth = kLabelWidth;
-        config.labelColor = 0xC618;
-        config.useDimColors = true;
+        config.labelColor = Colors::kCpuAccent;
+        config.palette = MetricWidget::Palette::Dim;
         config.borderMargin = 0;
 
         auto w = std::make_unique<MetricWidget>(

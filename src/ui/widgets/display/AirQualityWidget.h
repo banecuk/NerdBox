@@ -5,6 +5,7 @@
 #include "core/events/EventTypes.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/airQuality/AirQualityService.h"
+#include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/resources/weather_icons_44.h"
 #include "ui/widgets/base/Widget.h"
@@ -59,9 +60,9 @@ class AirQualityWidget : public Widget {
                                                kCol3X + kColWidth[2] / 2,
                                                kCol4X + kColWidth[3] / 2};
 
-    // Unit text colour — same as the "AQI" label (0x8410) so every unit/label
-    // on the widget shares one dim shade beneath its value.
-    static constexpr uint16_t kUnitColor = 0x8410;
+    // Unit text colour — same as the "AQI" label so every unit/label on the
+    // widget shares one dim shade beneath its value.
+    static constexpr uint16_t kUnitColor = Colors::kDimLabelGrey;
 
     // -----------------------------------------------------------------------
     const AirQualityData& airData_;

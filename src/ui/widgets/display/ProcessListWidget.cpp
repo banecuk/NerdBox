@@ -11,7 +11,7 @@ namespace {
 constexpr uint16_t kBgColor = TFT_BLACK;
 constexpr uint16_t kHeaderColor = TFT_DARKGREY;
 constexpr uint16_t kValueColor = TFT_WHITE;
-constexpr uint16_t kSeparatorColor = 0x2965;  // matches ButtonWidget's border grey
+constexpr uint16_t kSeparatorColor = Colors::kBorderGrey;
 }  // namespace
 
 ProcessListWidget::ProcessListWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,

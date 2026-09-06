@@ -1,5 +1,8 @@
 #include "BaseWidgetScreen.h"
 
+#include "ui/core/Layout.h"
+#include "ui/widgets/display/ClockWidget.h"
+#include "ui/widgets/interactive/ButtonWidget.h"
 #include "utils/logging/LogMacros.h"
 
 BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
@@ -54,4 +57,24 @@ void BaseWidgetScreen::handleTouch(uint16_t x, uint16_t y) {
 
 void BaseWidgetScreen::handleAction(EventType action) {
     EventBus::getInstance().publish(action);
+}
+
+void BaseWidgetScreen::addBackButton(EventType target) {
+    widgetManager_.addWidget(
+        std::make_unique<ButtonWidget>(
+            uiController_->getDisplayContext(), "<",
+            WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
+                                        Layout::kButtonSize},
+            0, target, [this](EventType action) { this->handleAction(action); }, TFT_BLACK,
+            TFT_WHITE),
+        "back_button");
+}
+
+void BaseWidgetScreen::addBottomClock() {
+    widgetManager_.addWidget(
+        std::make_unique<ClockWidget>(
+            WidgetInterface::Dimensions{Layout::kClockX, Layout::kClockY, Layout::kClockW,
+                                        Layout::kClockH},
+            1000, TFT_LIGHTGREY, TFT_BLACK),
+        "clock");
 }

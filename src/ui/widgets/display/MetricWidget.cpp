@@ -16,10 +16,8 @@ MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t upd
       lowerThreshold_(std::min(config.lowerThreshold, config.upperThreshold)),
       upperThreshold_(std::max(config.lowerThreshold, config.upperThreshold)),
       reverseThresholds_(config.reverseThresholds),
-      useDimColors_(config.useDimColors),
       useSmallFont_(config.useSmallFont),
-      useGpuColors_(config.useGpuColors),
-      useRamColors_(config.useRamColors),
+      palette_(config.palette),
       labelColor_(config.labelColor),
       labelWidth_(config.labelWidth),
       textAlignment_(config.textAlignment),
@@ -105,10 +103,10 @@ void MetricWidget::onDraw(bool forceRedraw) {
         // for gradientBackground_ tiles — a per-glyph opaque bg fill would
         // flatten the gradient into a solid block behind the new digits, so
         // those always retake the full background+text path below.
-        renderValueTextOnly();
+        renderValue(/*fontsLoadedByCaller=*/false, /*clearWholeArea=*/false);
     } else {
         // Full value area redraw (background + text)
-        renderValueArea();
+        renderValue(/*fontsLoadedByCaller=*/false, /*clearWholeArea=*/true);
     }
     lastDrawnValue_ = value_;
     hasDrawnOnce_ = true;
@@ -116,97 +114,79 @@ void MetricWidget::onDraw(bool forceRedraw) {
     valueAreaDirty_ = false;
 }
 
-void MetricWidget::renderValueArea() {
+void MetricWidget::renderValue(bool fontsLoadedByCaller, bool clearWholeArea) {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
 
-    lastBgColor_ = calculateBackgroundColor();
+    const uint16_t newBgColor = calculateBackgroundColor();
+    const bool bgChanged = newBgColor != lastBgColor_;
+
+    // The batch path (fontsLoadedByCaller) is invoked unconditionally once
+    // per tick by PcMetricsWidget/DiskBandWidget's draw pass, so it needs its
+    // own unchanged-value early-out; the onDraw() path already gated on
+    // value/dirty changes before choosing which flags to call in with.
+    if (fontsLoadedByCaller && hasDrawnOnce_ && value_ == lastDrawnValue_ && !bgChanged &&
+        !isDirty() && !valueAreaDirty_) {
+        unitNeedsRedraw_ = false;
+        return;
+    }
 
     int16_t areaX, areaY, areaWidth, areaHeight;
     getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
 
-    // Clear value area with background color
-    fillBackgroundArea(areaX, areaY, areaWidth, areaHeight, lastBgColor_);
-
-    // Get formatted value text
     const char* displayText = getFormattedValueText();
-
-    if (displayText == nullptr || strlen(displayText) == 0) {
-        // Serial.printf("WARNING: MetricWidget displayText is empty for value: %d\n", value_);
+    if (displayText == nullptr || displayText[0] == '\0') {
         displayText = "0";  // Fallback to show something
     }
-
-    loadValueFont();
-    const int16_t valW = static_cast<int16_t>(lcd->textWidth(displayText));
-    const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
-    const int16_t totalW = valW + unitW;
-
-    // Calculate the combined [value][unit] block position based on alignment
-    const int16_t startX = computeStartX(areaX, areaWidth, totalW);
-    const int16_t textY = dimensions_.y + dimensions_.height / 2;
-    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaHeight, lastBgColor_);
-
-    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_);
-    unloadValueFont();
-
-    if (unitW > 0) {
-        Fonts::loadLabel(lcd);
-        drawValueText(unit_, startX + valW, textY, textBgColor, gradientBackground_);
-        Fonts::unload(lcd);
-    }
-
-    lastTextWidth_ = valW;
-}
-
-void MetricWidget::renderValueTextOnly() {
-    LGFX* lcd = getLcd();
-    if (!lcd)
-        return;
-
-    uint16_t newBgColor = calculateBackgroundColor();
-
-    if (lastBgColor_ != newBgColor) {
-        lastBgColor_ = newBgColor;
-        renderValueArea();
-        return;
-    }
-
-    const char* displayText = getFormattedValueText();
     const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
 
-    int16_t areaX, areaY, areaWidth, areaHeight;
-    getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
-
-    const int16_t textY = dimensions_.y + dimensions_.height / 2;
-    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaHeight, newBgColor);
-
-    // Value font stays loaded across the measure, background clear, and draw
-    // below — fewer setFont() calls, even though FontRegistry preloads every
-    // font once at boot rather than streaming it from PROGMEM per call.
-    loadValueFont();
+    // Value font stays loaded across the measure and draw below — fewer
+    // setFont() calls. Skipped when the caller already loaded it for the
+    // whole tile batch.
+    if (!fontsLoadedByCaller)
+        loadValueFont();
     const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
 
     // When a unit is attached, its position depends on the value's width, so
-    // ANY width change (not just shrinking) must clear the area to avoid
-    // leaving stale unit pixels behind at the old position.
+    // ANY width change (not just shrinking) must clear the area — otherwise
+    // stale unit pixels are left behind at the old position.
     const bool shifted = layoutShifted(newTextW, unitW);
-    if (shifted) {
+    // A gradient background can't be preserved by a per-glyph opaque bg fill
+    // (that would flatten it into one solid colour behind the new digits),
+    // so it always retakes the full clear-then-redraw path.
+    const bool clearNow = clearWholeArea || bgChanged || shifted || gradientBackground_;
+    if (clearNow) {
         fillBackgroundArea(areaX, areaY, areaWidth, areaHeight, newBgColor);
     }
+    lastBgColor_ = newBgColor;
     lastTextWidth_ = newTextW;
 
+    const int16_t textY = dimensions_.y + dimensions_.height / 2;
+    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaHeight, newBgColor);
     const int16_t totalW = newTextW + unitW;
     const int16_t startX = computeStartX(areaX, areaWidth, totalW);
 
-    drawValueText(displayText, startX, textY, textBgColor);
-    unloadValueFont();
+    // Per-glyph bg fill (transparent=false) overwrites old digits in a single
+    // pass — no blank frame, no flash. Gradient tiles instead redraw the
+    // background above and draw transparently on top of it.
+    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_);
+    if (!fontsLoadedByCaller)
+        unloadValueFont();
 
-    // The unit only needs to be repainted when the layout actually shifted —
-    // otherwise the previously drawn glyphs are still valid on screen.
-    if (shifted && unitW > 0) {
+    if (fontsLoadedByCaller) {
+        // Unit suffix is drawn separately by the caller's own follow-up pass
+        // under the label font — see drawUnitWithLoadedFont(). Only flag it
+        // when the unit actually needs to move/recolour.
+        unitDrawX_ = startX + newTextW;
+        unitDrawY_ = textY;
+        unitBgColor_ = textBgColor;
+        unitNeedsRedraw_ = unitW > 0 && clearNow;
+    } else if (unitW > 0 && clearNow) {
+        // Only redrawn when the layout actually shifted (or this is a full
+        // redraw) — otherwise the previously drawn glyphs are still valid.
         Fonts::loadLabel(lcd);
-        drawValueText(unit_, startX + newTextW, textY, textBgColor);
+        drawValueText(unit_, startX + newTextW, textY, textBgColor, gradientBackground_);
         Fonts::unload(lcd);
     }
 }
@@ -218,65 +198,10 @@ void MetricWidget::drawValueWithLoadedFont() {
     // (loadValue) for its small-font tiles. Either way this never calls
     // loadFont/unloadFont itself. The unit suffix (if any) is drawn separately
     // by drawUnitWithLoadedFont() in a follow-up pass under the label font.
-    LGFX* lcd = getLcd();
-    if (!lcd || !isStaticDrawn_)
+    if (!getLcd() || !isStaticDrawn_)
         return;
 
-    const uint16_t newBgColor = calculateBackgroundColor();
-
-    // Unlike renderValueArea()/renderValueTextOnly() (reached via onDraw(),
-    // which already gates on value/dirty changes before calling either), this
-    // is called unconditionally once per tick by PcMetricsWidget's batch draw
-    // — so it needs its own unchanged-value early-out.
-    if (hasDrawnOnce_ && value_ == lastDrawnValue_ && newBgColor == lastBgColor_ && !isDirty() &&
-        !valueAreaDirty_) {
-        unitNeedsRedraw_ = false;
-        return;
-    }
-
-    const char* displayText = getFormattedValueText();
-    if (!displayText || displayText[0] == '\0')
-        displayText = "0";
-    const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
-
-    int16_t areaX, areaY, areaWidth, areaH;
-    getValueAreaBounds(areaX, areaY, areaWidth, areaH);
-
-    const int16_t textY = dimensions_.y + dimensions_.height / 2;
-    const uint16_t textBgColor = backgroundColorAtY(textY, areaY, areaH, newBgColor);
-
-    const int16_t newTextW = static_cast<int16_t>(lcd->textWidth(displayText));
-    const bool bgChanged = (newBgColor != lastBgColor_);
-    // When a unit is attached, its position depends on the value's width, so
-    // ANY width change (not just shrinking) must clear the area — otherwise
-    // stale unit pixels are left behind at the old position.
-    const bool shifted = layoutShifted(newTextW, unitW);
-
-    // A gradient background can't be preserved by a per-glyph opaque bg
-    // fill (that would flatten the glyph's rows to one solid color instead
-    // of the gradient sweeping behind it), so every redraw repaints the
-    // whole gradient first and then draws the glyphs transparently on top.
-    if (bgChanged || shifted || gradientBackground_) {
-        fillBackgroundArea(areaX, areaY, areaWidth, areaH, newBgColor);
-    }
-    lastBgColor_ = newBgColor;
-    lastTextWidth_ = newTextW;
-
-    const int16_t totalW = newTextW + unitW;
-    const int16_t startX = computeStartX(areaX, areaWidth, totalW);
-
-    // Per-glyph bg fill: setTextColor with bg param overwrites old digits in a
-    // single pass — no blank frame, no flash, even after a background change.
-    // Gradient tiles instead redraw the background above and then draw text
-    // transparently, since the background was just freshly painted.
-    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_);
-
-    // Stash the position for the paired drawUnitWithLoadedFont() call; only
-    // flag it when the unit actually needs to move/recolour.
-    unitDrawX_ = startX + newTextW;
-    unitDrawY_ = textY;
-    unitBgColor_ = textBgColor;
-    unitNeedsRedraw_ = unitW > 0 && (bgChanged || shifted || gradientBackground_);
+    renderValue(/*fontsLoadedByCaller=*/true, /*clearWholeArea=*/false);
 
     lastDrawnValue_ = value_;
     hasDrawnOnce_ = true;
@@ -361,13 +286,17 @@ uint16_t MetricWidget::calculateBackgroundColor() const {
     const uint8_t normalizedValue = MetricColorPolicy::normalizedPercent(
         value_, lowerThreshold_, upperThreshold_, reverseThresholds_);
 
-    if (useGpuColors_) {
-        return getContext().getColors().getColorFromPercentGpu(normalizedValue);
+    switch (palette_) {
+        case Palette::Gpu:
+            return getContext().getColors().getColorFromPercentGpu(normalizedValue);
+        case Palette::Ram:
+            return getContext().getColors().getColorFromPercentRam(normalizedValue);
+        case Palette::Dim:
+            return getContext().getColors().getColorFromPercent(normalizedValue, /*dim=*/true);
+        case Palette::Default:
+        default:
+            return getContext().getColors().getColorFromPercent(normalizedValue, /*dim=*/false);
     }
-    if (useRamColors_) {
-        return getContext().getColors().getColorFromPercentRam(normalizedValue);
-    }
-    return getContext().getColors().getColorFromPercent(normalizedValue, useDimColors_);
 }
 
 void MetricWidget::fillBackgroundArea(int16_t x, int16_t y, int16_t w, int16_t h,
@@ -479,7 +408,7 @@ void MetricWidget::forceRefresh() {
     valueAreaDirty_ = true;    // Force area redraw
     markDirty();               // Mark widget as dirty
 
-    // DEBUG: Force immediate draw if initialized
+    // Force an immediate draw, outside WidgetManager's normal draw pass.
     if (isInitialized_ && getLcd()) {
         onDraw(true);
     }

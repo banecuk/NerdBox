@@ -1,25 +1,7 @@
 #include "WebServerService.h"
 
+#include "core/ScreenRegistry.h"
 #include "core/events/EventBus.h"
-
-namespace {
-struct ScreenRoute {
-    const char* path;
-    ScreenName screen;
-};
-
-// One entry per POST /screen/<name> route — see begin()'s registration loop.
-constexpr ScreenRoute kScreenRoutes[] = {
-    {"/screen/main",       ScreenName::MAIN     },
-    {"/screen/settings",   ScreenName::SETTINGS },
-    {"/screen/game",       ScreenName::GAME     },
-    {"/screen/weather",    ScreenName::WEATHER  },
-    {"/screen/calendar",   ScreenName::CALENDAR },
-    {"/screen/disks",      ScreenName::DISKS    },
-    {"/screen/cpu-clock",  ScreenName::CPU_CLOCK},
-    {"/screen/processes",  ScreenName::PROCESSES},
-};
-}  // namespace
 
 WebServerService::WebServerService(
     WebServer& server, IScreenNavigator& screenNavigator, ApplicationMetrics& systemMetrics,
@@ -56,9 +38,10 @@ void WebServerService::begin() {
     server_.on("/favicon.ico", [this]() { pageHandlers_.handleFavicon(); });
     // POST-only: these change device state, so a GET (e.g. a LAN prefetcher
     // or a link crawler) can no longer flip the screen as a side effect.
-    for (const auto& route : kScreenRoutes) {
-        const ScreenName screen = route.screen;
-        server_.on(route.path, HTTP_POST, [this, screen]() {
+    for (const auto& descriptor : kScreens) {
+        if (descriptor.route == nullptr) continue;
+        const ScreenName screen = descriptor.screen;
+        server_.on(descriptor.route, HTTP_POST, [this, screen]() {
             screenNavigator_.requestScreen(screen);
             server_.send(200, "text/plain", "OK");
         });

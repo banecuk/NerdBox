@@ -115,7 +115,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
         config.value = snapshot[i].freeSpacePercent;
         config.unit = "";
         config.reverseThresholds = true;
-        config.useDimColors = true;
+        config.palette = MetricWidget::Palette::Dim;
         config.useSmallFont = true;
         config.label = snapshot[i].name;
         config.labelWidth = kLabelWidth;  // narrow: the label is a single drive letter

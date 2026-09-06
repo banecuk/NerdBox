@@ -2,6 +2,9 @@
 
 #include <Arduino.h>
 
+#include <cstdio>
+#include <cstring>
+
 #include "ui/resources/FontRegistry.h"
 
 // Free-function draw helpers shared by a minority of widget subclasses
@@ -84,6 +87,88 @@ inline void drawValueWithUnit(LGFX* lcd, int16_t centerX, int16_t centerY, const
     lcd->setTextDatum(L_BASELINE);
     lcd->drawString(unit, startX + valueW, baselineY);
     Fonts::unload(lcd);
+}
+
+// Shared by NetworkTrafficWidget and DiskSummaryWidget's stacked-rate-row
+// layout (see docs-local/12-code-architecture.md, C2). Both split a rate
+// value into right-aligned-integer / left-aligned-decimal fields on a fixed
+// column so the decimal point doesn't drift as the digit count changes, then
+// draw a direction indicator (arrow / letter) after it — but that indicator
+// differs enough between the two widgets (a fillTriangle vs. a coloured
+// letter) that it stays the caller's job.
+struct RateRow {
+    int16_t x, y, w, h;
+    float value;      // already in display units (MB/s, Mbps, ...)
+    bool hasData;     // false draws "--" instead of a formatted value
+    uint8_t intDigits;  // 3 ("999") or 4 ("9999") — sizes the fixed integer column
+    uint16_t valueColor;
+    // Cache of the last *rendered* text + colour, in/out: a value that rounds
+    // to the same displayed text doesn't force a redraw. Empty lastText
+    // forces the first draw.
+    char* lastText;
+    size_t lastTextSize;
+    uint16_t* lastColor;
+    bool forceRedraw;
+};
+
+// Draws one rate row: fillRect the row black, then the formatted value in
+// row.valueColor, skipping the redraw entirely when the rendered text+colour
+// match the cache (unless forceRedraw). Returns the x column just past the
+// value field, so the caller draws its own suffix (arrow / letter) at a
+// position that never depends on the value string's measured width — or -1
+// if the row was skipped, meaning the caller must not touch the suffix
+// either (it's already showing the unchanged value from last time).
+inline int16_t drawRateRow(LGFX* lcd, const RateRow& row) {
+    char intBuf[16];
+    char decBuf[4];
+    if (!row.hasData) {
+        snprintf(intBuf, sizeof(intBuf), "--");
+        decBuf[0] = '\0';
+    } else {
+        char full[16];
+        snprintf(full, sizeof(full), "%.1f", static_cast<double>(row.value));
+        char* dot = strchr(full, '.');
+        if (dot) {
+            *dot = '\0';
+            snprintf(intBuf, sizeof(intBuf), "%s", full);
+            snprintf(decBuf, sizeof(decBuf), ".%s", dot + 1);
+        } else {
+            snprintf(intBuf, sizeof(intBuf), "%s", full);
+            decBuf[0] = '\0';
+        }
+    }
+
+    char buf[20];
+    snprintf(buf, sizeof(buf), "%s%s", intBuf, decBuf);
+
+    if (!row.forceRedraw && row.valueColor == *row.lastColor &&
+        strncmp(buf, row.lastText, row.lastTextSize) == 0) {
+        return -1;
+    }
+
+    lcd->fillRect(row.x, row.y, row.w, row.h, TFT_BLACK);
+
+    const int16_t textY = row.y + row.h / 2;
+    const int16_t textX = row.x + 2;
+
+    Fonts::loadValue(lcd);
+    lcd->setTextColor(row.valueColor, TFT_BLACK);
+
+    const int16_t intFieldWidth = lcd->textWidth(row.intDigits >= 4 ? "9999" : "999");
+    const int16_t decFieldWidth = lcd->textWidth(".9");
+    const int16_t intColX = textX + intFieldWidth;
+
+    lcd->setTextDatum(MR_DATUM);
+    lcd->drawString(intBuf, intColX, textY);
+    lcd->setTextDatum(ML_DATUM);
+    lcd->drawString(decBuf, intColX, textY);
+    Fonts::unload(lcd);
+
+    strncpy(row.lastText, buf, row.lastTextSize - 1);
+    row.lastText[row.lastTextSize - 1] = '\0';
+    *row.lastColor = row.valueColor;
+
+    return intColX + decFieldWidth;
 }
 
 }  // namespace WidgetPainter

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+#include <cstddef>
 #include <cstdint>
 
 // static const byte COLOR_LEVELS_COUNT = 17;
@@ -10,6 +11,15 @@
 // 0xd280, 0xe180, 0xF800 };
 
 class Colors {
+ public:
+    // One {breakpoint, color} pair in a ramp sampled by sampleRamp(). Stops
+    // must be sorted ascending by `at`; sampleRamp() linearly interpolates
+    // between consecutive stops and clamps outside the first/last.
+    struct GradientStop {
+        uint8_t at;
+        uint16_t color;
+    };
+
  private:
     // Static, not per-instance: Colors is only ever constructed once (as a
     // member of ApplicationComponents), so there's no reason for these 800
@@ -26,11 +36,7 @@ class Colors {
     // moderate utilisation color) — named for the ramp's colors, not either
     // caller's metric, since it isn't specific to either one.
     static uint16_t COLOR_GRADIENT_GRAY_GREEN[100];
-    uint16_t generateColorFromPercent(byte value);
-    uint16_t generateColorFromPercentGpu(byte value);
-    uint16_t generateColorFromPercentRam(byte value);
-    uint16_t generateColorFromPercentGrayGreen(byte value);
-    void generateGradient();
+    static void generateGradient();
     static uint16_t diskActivityColorScale(float kbPerSec, uint16_t darkColor,
                                             uint16_t brightColor);
 
@@ -41,11 +47,26 @@ class Colors {
     static constexpr uint16_t kHairline = 0x2104;      // dark grey
     static constexpr uint16_t kInactiveText = 0x6B4D;  // mid-grey
 
+    // Shared accent/chrome tokens previously duplicated as raw RGB565
+    // literals (with "same shade as X" comments) across several widgets —
+    // see docs-local/12-code-architecture.md, C9.
+    static constexpr uint16_t kCpuAccent = 0xC618;     // near-white CPU accent
+    static constexpr uint16_t kGpuAccent = 0xB471;     // muted desaturated-red GPU accent
+    static constexpr uint16_t kBorderGrey = 0x2965;    // very dark grey border/track/separator
+    static constexpr uint16_t kDimLabelGrey = 0x8410;  // dim grey unit/label text
+    static constexpr uint16_t kAmberAccent = 0xFD20;   // amber warning/moderate accent
+    static constexpr uint16_t kMutedBlueGrey = 0x4208;  // dim blue-grey, subordinate chrome
+
     Colors();
     ~Colors();
 
     // Alpha-weighted blend between two RGB565 colors (alpha=0 -> a, alpha=255 -> b).
     static uint16_t blendRgb565(uint16_t a, uint16_t b, uint8_t alpha);
+
+    // Samples a piecewise-linear ramp defined by `stops` (ascending `at`,
+    // n >= 2) at `value`, blending between the two bracketing stops.
+    // Host-testable — no LGFX/Colors-instance dependency.
+    static uint16_t sampleRamp(const GradientStop* stops, size_t n, uint8_t value);
 
     // Disk activity color scales, in KB/s: <1 MB/s dark gray (idle), then a
     // continuous blend from a dark to a bright shade of the scale's hue as
@@ -55,15 +76,26 @@ class Colors {
     static uint16_t diskReadActivityColor(float kbPerSec);
     static uint16_t diskWriteActivityColor(float kbPerSec);
 
-    uint16_t getColorFromPercent(uint8_t value, bool dim = false);
-    uint16_t getColorFromPercentGpu(uint8_t value);
-    uint16_t getColorFromPercentRam(uint8_t value);
+    // Reached through an instance (colors_.getColorFromPercent(...)) even
+    // though they're static — the lookup tables they index are static too
+    // (see the comment above), so there's no per-instance state to dispatch
+    // on. Kept callable via an instance rather than renaming every call site.
+    static uint16_t getColorFromPercent(uint8_t value, bool dim = false);
+    static uint16_t getColorFromPercentGpu(uint8_t value);
+    static uint16_t getColorFromPercentRam(uint8_t value);
     // value is 0-99, mapping linearly onto whatever range the caller scaled
     // its raw metric into (see CpuClockWidget::clockPercent,
     // NetworkTrafficWidget::trafficColor) — the gradient itself doesn't know
     // what metric it's for, same as the other getColorFromPercent*
     // accessors; it just indexes a precomputed table instead of blending two
     // RGB565 colors on every draw.
-    uint16_t getColorFromPercentGrayGreen(uint8_t value);
-    uint16_t darken(uint16_t color, uint8_t alpha);
+    static uint16_t getColorFromPercentGrayGreen(uint8_t value);
+    // Four-step utilisation ladder shared by any widget colouring a rate
+    // against a configured cap (percent of that cap): a light-grey-to-
+    // light-green ramp for 0-60%, yellow for 60-85%, orange for 85-100%, a
+    // lightened red at/over 100%. Extracted so NetworkTrafficWidget's
+    // per-direction colour and DiskSummaryWidget's write colour can't drift
+    // apart on the thresholds (see docs-local/12-code-architecture.md, C2).
+    static uint16_t utilizationColor(float percent);
+    static uint16_t darken(uint16_t color, uint8_t alpha);
 };

@@ -99,7 +99,7 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
         drawValueWithUnit(2, true, bufWind, " m/s", TFT_LIGHTGREY);
 
     if (forceRedraw || becomingAvailable)
-        drawCellText(3, false, "AQI", 0x8410, true);
+        drawCellText(3, false, "AQI", kUnitColor, true);
     if (aqiChanged)
         drawValueWithUnit(3, true, bufAqi, "", aqiColor(airData_.aqi_us));
 
@@ -265,7 +265,7 @@ uint16_t AirQualityWidget::aqiColor(uint16_t aqi) const {
     if (aqi <= 100)
         return 0xFFE0;
     if (aqi <= 150)
-        return 0xFD20;
+        return Colors::kAmberAccent;
     if (aqi <= 200)
         return 0xF800;
     return 0xF81F;

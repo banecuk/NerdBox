@@ -3,7 +3,6 @@
 #include "config/AppSettings.h"
 #include "services/cpuClock/CpuClockData.h"
 #include "ui/screens/base/BaseWidgetScreen.h"
-#include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/display/CpuClockWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 

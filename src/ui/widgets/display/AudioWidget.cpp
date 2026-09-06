@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
 
@@ -25,7 +26,7 @@ constexpr uint16_t kBottomPadding = 6;
 // off the right edge only.
 constexpr uint16_t kRightPadding = 8;
 
-constexpr uint16_t kBarBgColor = 0x2965;      // dark grey-blue track
+constexpr uint16_t kBarBgColor = Colors::kBorderGrey;  // dark grey-blue track
 constexpr uint16_t kBarColorPlaying = 0x4FFF;  // bright cyan fill
 constexpr uint16_t kBarColorPaused = 0x2D5B;   // dimmed version of the above
 }  // namespace

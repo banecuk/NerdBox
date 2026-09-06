@@ -1,10 +1,8 @@
 #include "DiskSummaryWidget.h"
 
-#include <cstdio>
-#include <cstring>
-
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
+#include "ui/widgets/base/WidgetPainter.h"
 #include "utils/ScopedLock.h"
 
 DiskSummaryWidget::DiskSummaryWidget(const WidgetInterface::Dimensions& dims,
@@ -71,59 +69,14 @@ void DiskSummaryWidget::drawRow(int16_t rowY, bool isRead, float mbps, bool hasD
                     : (isRead ? Colors::diskReadActivityColor(mbps * 1024.0f) : writeColor(mbps));
     }
 
-    // Split into integer and decimal parts, same rationale as
-    // NetworkTrafficWidget::drawRow: the letter suffix's x position must not
-    // depend on the value string's measured width, which right-justified
-    // space-padding can't guarantee across fonts.
-    char intBuf[16];
-    char decBuf[4];
-    if (!hasData) {
-        snprintf(intBuf, sizeof(intBuf), "--");
-        decBuf[0] = '\0';
-    } else {
-        char full[16];
-        snprintf(full, sizeof(full), "%.1f", static_cast<double>(mbps));
-        char* dot = strchr(full, '.');
-        if (dot) {
-            *dot = '\0';
-            snprintf(intBuf, sizeof(intBuf), "%s", full);
-            snprintf(decBuf, sizeof(decBuf), ".%s", dot + 1);
-        } else {
-            snprintf(intBuf, sizeof(intBuf), "%s", full);
-            decBuf[0] = '\0';
-        }
-    }
-
-    char buf[20];
-    snprintf(buf, sizeof(buf), "%s%s", intBuf, decBuf);
-
-    if (!forceRedraw && color == lastColor && strncmp(buf, lastText, lastTextSize) == 0)
-        return;
-
-    LGFX* lcd = getLcd();
     const int16_t rowH = dimensions_.height / 2;
-
-    lcd->fillRect(dimensions_.x, rowY, dimensions_.width, rowH, TFT_BLACK);
-
-    const int16_t textY = rowY + rowH / 2;
-    const int16_t textX = dimensions_.x + 2;
-
-    Fonts::loadValue(lcd);
-    lcd->setTextColor(color, TFT_BLACK);
-
-    // Right-align the integer part to a fixed column (up to 4 digits, e.g.
-    // "9999" — the summed rate across drives can comfortably exceed a single
-    // NVMe drive's rate) so it lands in the same place regardless of digit
-    // count, then draw the decimal suffix left-aligned from that same
-    // column, same as NetworkTrafficWidget.
-    const int16_t intFieldWidth = lcd->textWidth("9999");
-    const int16_t decFieldWidth = lcd->textWidth(".9");
-    const int16_t intColX = textX + intFieldWidth;
-
-    lcd->setTextDatum(MR_DATUM);
-    lcd->drawString(intBuf, intColX, textY);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(decBuf, intColX, textY);
+    const WidgetPainter::RateRow row{static_cast<int16_t>(dimensions_.x), rowY,
+                                     static_cast<int16_t>(dimensions_.width), rowH,
+                                     mbps, hasData, /*intDigits=*/4, color,
+                                     lastText, lastTextSize, &lastColor, forceRedraw};
+    const int16_t suffixX = WidgetPainter::drawRateRow(getLcd(), row);
+    if (suffixX < 0)
+        return;  // rendered text+colour unchanged — letter stays as-is too
 
     // Letter suffix sits right after the (fixed-width) value field, at a
     // position that never depends on the value string's measured width.
@@ -141,27 +94,17 @@ void DiskSummaryWidget::drawRow(int16_t rowY, bool isRead, float mbps, bool hasD
         const bool dim = mbps < kFullBrightnessMBps;
         letterColor = isRead ? (dim ? TFT_DARKGREEN : TFT_GREEN) : (dim ? TFT_MAROON : TFT_RED);
     }
-    const int16_t letterX = intColX + decFieldWidth + 6;
+    LGFX* lcd = getLcd();
+    const int16_t textY = rowY + rowH / 2;
+    Fonts::loadValue(lcd);
     lcd->setTextColor(letterColor, TFT_BLACK);
-    lcd->drawString(isRead ? "R" : "W", letterX, textY);
+    lcd->drawString(isRead ? "R" : "W", suffixX + 6, textY);
     Fonts::unload(lcd);
-
-    strncpy(lastText, buf, lastTextSize - 1);
-    lastText[lastTextSize - 1] = '\0';
-    lastColor = color;
 }
 
 uint16_t DiskSummaryWidget::writeColor(float mbps) {
     const float percent = (mbps / kWriteCapMBps) * 100.0f;
-    if (percent < 60.0f) {
-        const uint8_t idx = static_cast<uint8_t>(percent / 60.0f * 99.0f + 0.5f);
-        return getContext().getColors().getColorFromPercentGrayGreen(idx);
-    }
-    if (percent < 85.0f)
-        return TFT_YELLOW;
-    if (percent < 100.0f)
-        return TFT_ORANGE;
-    return Colors::blendRgb565(TFT_RED, TFT_WHITE, 90);  // at/over the cap
+    return getContext().getColors().utilizationColor(percent);
 }
 
 bool DiskSummaryWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {

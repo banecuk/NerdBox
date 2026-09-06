@@ -22,12 +22,12 @@ void BrightnessWidget::buildSegments() {
     // orange → warm yellow → white. RGB565 values chosen so text (black) is
     // readable on each.
     static constexpr uint16_t kColors[kSegmentCount] = {
-        0x4208,    // 1 — dim blue-grey  (~#404040)
-        0x7BCF,    // 2 — steel blue     (~#7090C8)
-        0xFD20,    // 3 — amber          (~#FF6800)
-        0xFD00,    // 4 — orange         (~#FFA000)
-        0xFF80,    // 5 — warm yellow    (~#FFB000)
-        TFT_WHITE  // 6 — full white
+        Colors::kMutedBlueGrey,  // 1 — dim blue-grey  (~#404040)
+        0x7BCF,                  // 2 — steel blue     (~#7090C8)
+        Colors::kAmberAccent,    // 3 — amber          (~#FF6800)
+        0xFD00,                  // 4 — orange         (~#FFA000)
+        0xFF80,                  // 5 — warm yellow    (~#FFB000)
+        TFT_WHITE                // 6 — full white
     };
 
     for (uint8_t i = 0; i < kSegmentCount; ++i) {

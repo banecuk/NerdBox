@@ -3,7 +3,6 @@
 #include "config/AppSettings.h"
 #include "ui/screens/base/BaseWidgetScreen.h"
 #include "ui/widgets/display/CalendarWidget.h"
-#include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 
 // Month-grid calendar screen. Entered by tapping the clock on the main

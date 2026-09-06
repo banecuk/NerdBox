@@ -1,5 +1,6 @@
 #include "CalendarScreen.h"
 
+#include "ui/core/Colors.h"
 #include "ui/core/Layout.h"
 
 namespace {
@@ -12,7 +13,7 @@ constexpr uint16_t kArrowH = 34;
 // Darker than ButtonWidget's default TFT_DARKGRAY background, so the
 // month-navigation arrows read as subordinate to the back/settings buttons
 // elsewhere, which keep the default shade.
-constexpr uint16_t kArrowBg = 0x4208;
+constexpr uint16_t kArrowBg = Colors::kMutedBlueGrey;
 }  // namespace
 
 CalendarScreen::CalendarScreen(LoggerInterface& logger, UiController* uiController,
@@ -21,8 +22,8 @@ CalendarScreen::CalendarScreen(LoggerInterface& logger, UiController* uiControll
 
 void CalendarScreen::createWidgets() {
     // Calendar grid — covers everything above the bottom back-button band.
-    auto calendarWidget = std::unique_ptr<CalendarWidget>(
-        new CalendarWidget(WidgetInterface::Dimensions{0, 0, Layout::kScreenW, 272}, 1000));
+    auto calendarWidget = std::make_unique<CalendarWidget>(
+        WidgetInterface::Dimensions{0, 0, Layout::kScreenW, Layout::kContentH}, 1000);
     CalendarWidget* calendar = calendarWidget.get();
     widgetManager_.addWidget(std::move(calendarWidget), "calendar");
 
@@ -31,34 +32,20 @@ void CalendarScreen::createWidgets() {
     // title repaint to the inset between them). `calendar` outlives these
     // buttons: both are owned by the same widgetManager_.
     widgetManager_.addWidget(
-        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+        std::make_unique<ButtonWidget>(
             uiController_->getDisplayContext(), "<",
             WidgetInterface::Dimensions{0, 0, kArrowW, kArrowH}, 0, EventType::NONE,
-            [calendar](EventType) { calendar->stepMonth(-1); }, kArrowBg, TFT_WHITE)),
+            [calendar](EventType) { calendar->stepMonth(-1); }, kArrowBg, TFT_WHITE),
         "prev_month_button");
 
     widgetManager_.addWidget(
-        std::unique_ptr<ButtonWidget>(new ButtonWidget(
+        std::make_unique<ButtonWidget>(
             uiController_->getDisplayContext(), ">",
             WidgetInterface::Dimensions{Layout::kScreenW - kArrowW, 0, kArrowW, kArrowH}, 0,
             EventType::NONE, [calendar](EventType) { calendar->stepMonth(1); }, kArrowBg,
-            TFT_WHITE)),
+            TFT_WHITE),
         "next_month_button");
 
-    // Back button — same position/style as GameScreen/DiskScreen/WeatherScreen.
-    widgetManager_.addWidget(
-        std::unique_ptr<ButtonWidget>(new ButtonWidget(
-            uiController_->getDisplayContext(), "<",
-            WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
-                                        Layout::kButtonSize},
-            0, EventType::SHOW_MAIN, [this](EventType action) { this->handleAction(action); },
-            TFT_BLACK, TFT_WHITE)),
-        "back_button");
-
-    // Clock — same position/colors as DiskScreen/WeatherScreen's.
-    widgetManager_.addWidget(std::unique_ptr<ClockWidget>(
-                                  new ClockWidget(WidgetInterface::Dimensions{328, 276,
-                                                                               Layout::kClockW, 40},
-                                                  1000, TFT_LIGHTGREY, TFT_BLACK)),
-                              "clock");
+    addBackButton();
+    addBottomClock();
 }
