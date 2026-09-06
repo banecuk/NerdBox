@@ -27,6 +27,11 @@ class ProcessListWidget : public Widget {
 
     enum Column : uint8_t { kCpu = 0, kRam = 1, kDisk = 2 };
 
+    struct RowText {
+        char name[20] = "";
+        char value[16] = "";
+    };
+
     const ProcessData& data_;
     DataFreshnessGuard freshnessGuard_;
 
@@ -36,12 +41,12 @@ class ProcessListWidget : public Widget {
 
     // Cached last-rendered text per cell, so onDraw only repaints rows whose
     // text actually changed — same lesson as AudioWidget's progress bar.
-    char lastRow_[kColumns][kRows][32] = {};
+    RowText lastRow_[kColumns][kRows];
 
     void drawHeaders();
     void drawColumn(Column column, const ProcessEntry* entries, uint8_t count, bool forceRedraw);
-    void drawRow(Column column, uint8_t row, const char* text, uint8_t percentColor,
+    void drawRow(Column column, uint8_t row, const RowText& text, uint8_t percentColor,
                 bool hasColor);
-    void formatEntry(Column column, const ProcessEntry& entry, char* out, size_t outLen);
+    void formatEntry(Column column, const ProcessEntry& entry, RowText& out);
     void drawNoDataMessage();
 };

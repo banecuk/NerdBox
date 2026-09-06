@@ -69,7 +69,7 @@ void ClockWidget::onDraw(bool forceRedraw) {
         return;
 
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5))
+    if (!getLocalTime(&timeinfo, 0))
         return;
 
     updateIfNeeded(timeinfo, forceRedraw);

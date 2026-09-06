@@ -1,5 +1,6 @@
 #include "DiskBandWidget.h"
 
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 
@@ -195,7 +196,13 @@ void DiskBandWidget::drawDynamicData() {
         const float raw = freeSpaceRawSnapshot[i];
         const float previous =
             (i < diskFreeSpaceSmoothed_.size()) ? diskFreeSpaceSmoothed_[i] : -1.0f;
-        const float smoothed = (previous >= 0.0f && raw < previous) ? (previous + raw) / 2.0f : raw;
+        float smoothed = (previous >= 0.0f && raw < previous) ? (previous + raw) / 2.0f : raw;
+        // Once the remaining gap is under 2, another halving would still land
+        // on a different displayed integer without visibly changing the
+        // slope — snap to the raw value so the tail doesn't tick for several
+        // more samples after it's already converged to the eye.
+        if (previous >= 0.0f && std::fabs(smoothed - raw) < 1.0f)
+            smoothed = raw;
         if (i < diskFreeSpaceSmoothed_.size())
             diskFreeSpaceSmoothed_[i] = smoothed;
         const int freeSpaceValue = static_cast<int>(smoothed + 0.5f);

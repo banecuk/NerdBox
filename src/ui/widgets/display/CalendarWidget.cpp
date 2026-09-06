@@ -36,7 +36,7 @@ void CalendarWidget::stepMonth(int8_t delta) {
 
 void CalendarWidget::resetToToday() {
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5))
+    if (!getLocalTime(&timeinfo, 0))
         return;
     year_ = timeinfo.tm_year + 1900;
     month_ = static_cast<uint8_t>(timeinfo.tm_mon + 1);
@@ -68,7 +68,7 @@ void CalendarWidget::onDraw(bool forceRedraw) {
         return;
 
     struct tm timeinfo;
-    const bool timeOk = getLocalTime(&timeinfo, 5);
+    const bool timeOk = getLocalTime(&timeinfo, 0);
 
     if (!timeOk) {
         if (forceRedraw || everDrawn_) {

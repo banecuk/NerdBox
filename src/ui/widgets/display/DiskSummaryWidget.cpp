@@ -127,7 +127,22 @@ void DiskSummaryWidget::drawRow(int16_t rowY, bool isRead, float mbps, bool hasD
 
     // Letter suffix sits right after the (fixed-width) value field, at a
     // position that never depends on the value string's measured width.
+    // Colored independently of the value digits above: any nonzero rate
+    // lights it up green (read) or red (write) — dim (dark green/TFT_MAROON,
+    // the correct dark-red anchor per Colors::diskWriteActivityColor's own
+    // comment) below 1 MB/s, full brightness at/above it — matching
+    // DiskBandWidget's activity-line colours. Unlike
+    // Colors::diskReadActivityColor()/diskWriteActivityColor(), which treat
+    // anything under 1 MB/s as fully idle, this must react to the smallest
+    // detectable activity rather than only lighting up at 1 MB/s.
+    constexpr float kFullBrightnessMBps = 1.0f;
+    uint16_t letterColor = Colors::kHairline;
+    if (hasData && mbps > 0.0f) {
+        const bool dim = mbps < kFullBrightnessMBps;
+        letterColor = isRead ? (dim ? TFT_DARKGREEN : TFT_GREEN) : (dim ? TFT_MAROON : TFT_RED);
+    }
     const int16_t letterX = intColX + decFieldWidth + 6;
+    lcd->setTextColor(letterColor, TFT_BLACK);
     lcd->drawString(isRead ? "R" : "W", letterX, textY);
     Fonts::unload(lcd);
 

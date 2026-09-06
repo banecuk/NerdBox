@@ -167,7 +167,7 @@ void WeatherWidget::checkMidnightRollover() {
     lastTimeCheckMs_ = now;
 
     struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5)) {
+    if (!getLocalTime(&timeinfo, 0)) {
         return;
     }
     timeinfo.tm_hour = 0;

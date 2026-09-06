@@ -27,7 +27,7 @@ void ProcessListWidget::onDrawStatic() {
                        kBgColor);
     for (auto& column : lastRow_) {
         for (auto& row : column) {
-            row[0] = '\0';
+            row = RowText{};
         }
     }
     drawHeaders();
@@ -73,94 +73,82 @@ void ProcessListWidget::onDraw(bool forceRedraw) {
     clearDirty();
 }
 
-void ProcessListWidget::formatEntry(Column column, const ProcessEntry& entry, char* out,
-                                    size_t outLen) {
-    char valueBuf[16];
+void ProcessListWidget::formatEntry(Column column, const ProcessEntry& entry, RowText& out) {
+    snprintf(out.name, sizeof(out.name), "%s", entry.name);
     switch (column) {
         case kCpu:
             if (entry.cpuPercent < 0.0f) {
-                snprintf(valueBuf, sizeof(valueBuf), "-");
+                snprintf(out.value, sizeof(out.value), "-");
             } else {
-                snprintf(valueBuf, sizeof(valueBuf), "%.0f%%", entry.cpuPercent);
+                snprintf(out.value, sizeof(out.value), "%.0f%%", entry.cpuPercent);
             }
             break;
         case kRam:
             if (entry.ramMB > 1024.0f) {
-                snprintf(valueBuf, sizeof(valueBuf), "%.1fG", entry.ramMB / 1024.0f);
+                snprintf(out.value, sizeof(out.value), "%.1fG", entry.ramMB / 1024.0f);
             } else {
-                snprintf(valueBuf, sizeof(valueBuf), "%.0f", entry.ramMB);
+                snprintf(out.value, sizeof(out.value), "%.0f", entry.ramMB);
             }
             break;
         case kDisk:
             if (entry.diskKBPerSec > 1024.0f) {
-                snprintf(valueBuf, sizeof(valueBuf), "%.1fM", entry.diskKBPerSec / 1024.0f);
+                snprintf(out.value, sizeof(out.value), "%.1fM", entry.diskKBPerSec / 1024.0f);
             } else {
-                snprintf(valueBuf, sizeof(valueBuf), "%.0f", entry.diskKBPerSec);
+                snprintf(out.value, sizeof(out.value), "%.0f", entry.diskKBPerSec);
             }
             break;
     }
-    snprintf(out, outLen, "%s|%s", entry.name, valueBuf);
 }
 
 void ProcessListWidget::drawColumn(Column column, const ProcessEntry* entries, uint8_t count,
                                    bool forceRedraw) {
     for (uint8_t r = 0; r < kRows; ++r) {
-        char text[32];
+        RowText text;
         uint8_t percentColor = 0;
         bool hasColor = false;
 
         if (r < count) {
-            formatEntry(column, entries[r], text, sizeof(text));
+            formatEntry(column, entries[r], text);
             if (column == kCpu && entries[r].cpuPercent >= 0.0f) {
                 const float clamped =
                     entries[r].cpuPercent > 100.0f ? 100.0f : entries[r].cpuPercent;
                 percentColor = static_cast<uint8_t>(clamped * 0.99f);
                 hasColor = true;
             }
-        } else {
-            text[0] = '\0';
         }
 
-        if (!forceRedraw && strcmp(text, lastRow_[column][r]) == 0) {
+        RowText& last = lastRow_[column][r];
+        if (!forceRedraw && strcmp(text.name, last.name) == 0 &&
+            strcmp(text.value, last.value) == 0) {
             continue;
         }
-        snprintf(lastRow_[column][r], sizeof(lastRow_[column][r]), "%s", text);
+        last = text;
         drawRow(column, r, text, percentColor, hasColor);
     }
 }
 
-void ProcessListWidget::drawRow(Column column, uint8_t row, const char* text, uint8_t percentColor,
-                                bool hasColor) {
+void ProcessListWidget::drawRow(Column column, uint8_t row, const RowText& text,
+                                uint8_t percentColor, bool hasColor) {
     LGFX* lcd = getLcd();
     const uint16_t x = dimensions_.x + column * columnWidth_;
     const uint16_t y = dimensions_.y + kHeaderHeight + row * rowHeight_;
     lcd->fillRect(x, y, columnWidth_, rowHeight_, kBgColor);
 
-    if (text[0] == '\0') {
+    if (text.name[0] == '\0') {
         return;
-    }
-
-    // Split "name|value" back apart for separate alignment.
-    char name[20] = "";
-    char value[16] = "";
-    const char* bar = strchr(text, '|');
-    if (bar) {
-        const size_t nameLen = static_cast<size_t>(bar - text);
-        snprintf(name, sizeof(name), "%.*s", static_cast<int>(nameLen), text);
-        snprintf(value, sizeof(value), "%s", bar + 1);
     }
 
     Fonts::loadLabel(lcd);
     lcd->setTextColor(kValueColor, kBgColor);
     lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(name, x + 4, y + rowHeight_ / 2);
+    lcd->drawString(text.name, x + 4, y + rowHeight_ / 2);
 
     lcd->setTextColor(
         hasColor ? getContext().getColors().getColorFromPercentGrayGreen(percentColor)
                 : kValueColor,
         kBgColor);
     lcd->setTextDatum(MR_DATUM);
-    lcd->drawString(value, x + columnWidth_ - 4, y + rowHeight_ / 2);
+    lcd->drawString(text.value, x + columnWidth_ - 4, y + rowHeight_ / 2);
     Fonts::unload(lcd);
 }
 
