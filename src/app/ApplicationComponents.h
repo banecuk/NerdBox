@@ -12,6 +12,7 @@
 #include "core/IInitializationTarget.h"
 #include "services/web/WebServerService.h"
 #include "ui/core/UiController.h"
+#include "ui/screens/ScreenFactory.h"
 
 // *** SIZE-SENSITIVE ON REAL HARDWARE — READ BEFORE ADDING/GROWING A MEMBER ***
 //
@@ -113,10 +114,19 @@ class ApplicationComponents : public IInitializationTarget {
     ServiceBundle services;
     JobBundle jobs;
 
-    // UI controller — depends on platform (displayContext/displayManager/
-    // networkManager), services (systemMetrics), data (pcMetrics,
-    // systemState, airQualityData, netStatus, weatherData), and config.
+    // UI controller — depends on platform (displayContext/displayManager),
+    // services (systemMetrics), data (systemState, weatherData), and config.
     UiController uiController;
+
+    // Every dependency a screen might need, built once here (where all of it
+    // already lives) rather than re-gathered by UiController on every screen
+    // transition — see docs-local/12-code-architecture.md, C4. Declared
+    // after uiController (construction order = declaration order) so
+    // `controller` below can reference the already-constructed uiController;
+    // bound onto uiController itself in the constructor body, since
+    // uiController must exist before screenCtx does, and screenCtx must
+    // exist before uiController can hold a pointer to it.
+    ScreenCreationContext screenCtx;
 
     // Managers — depend on everything above.
     TaskManager taskManager;

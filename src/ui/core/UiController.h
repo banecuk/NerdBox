@@ -8,14 +8,6 @@
 #include "core/IScreenUpdater.h"
 #include "core/ScreenTypes.h"
 #include "core/state/SystemState.h"
-#include "network/NetworkManager.h"
-#include "services/airQuality/AirQualityData.h"
-#include "services/audio/AudioData.h"
-#include "services/cpuClock/CpuClockData.h"
-#include "services/network/NetworkStatus.h"
-#include "services/pcMetrics/PcMetrics.h"
-#include "services/processes/ProcessData.h"
-#include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/core/DisplayManager.h"
@@ -30,17 +22,24 @@ class BootScreen;
 class MainScreen;
 class SettingsScreen;
 class UiEventHandler;
+struct ScreenCreationContext;
 
 class UiController : public IScreenUpdater, public IScreenNavigator {
  public:
     explicit UiController(DisplayContext& context, DisplayManager& displayManager,
-                          ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
+                          ApplicationMetrics& systemMetrics,
                           SystemState::ScreenState& screenState, const AppSettings& config,
-                          NetworkManager& networkManager, const AirQualityData& airQualityData,
-                          const NetworkStatus& netStatus, WeatherData& weatherData,
-                          const AudioData& audioData, CpuClockData& cpuClockData,
-                          ProcessData& processData, const RoomClimateData& roomClimateData);
+                          WeatherData& weatherData);
     ~UiController();
+
+    // Bound once, after ApplicationComponents has constructed both this
+    // controller and the shared ScreenCreationContext (which itself holds a
+    // reference back to this controller — hence the two-step construction
+    // instead of a constructor parameter). Every screen transition reads
+    // through this one pointer rather than UiController carrying its own
+    // copy of each data feed just to pass it along — see
+    // docs-local/12-code-architecture.md, C4.
+    void bindScreenContext(const ScreenCreationContext& ctx) { ctx_ = &ctx; }
 
     // Lifecycle methods. Returns false if the display mutex failed to
     // allocate — a boot-fatal condition the caller (InitializationStateMachine)
@@ -96,17 +95,14 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
     DisplayManager& displayManager_;
     DisplayContext& context_;
     ApplicationMetrics& systemMetrics_;
-    PcMetrics& pcMetrics_;
     SystemState::ScreenState& screenState_;
     const AppSettings& config_;
-    NetworkManager& networkManager_;
-    const AirQualityData& airQualityData_;
-    const NetworkStatus& netStatus_;
     WeatherData& weatherData_;
-    const AudioData& audioData_;
-    CpuClockData& cpuClockData_;
-    ProcessData& processData_;
-    const RoomClimateData& roomClimateData_;
+
+    // Set once via bindScreenContext(), after construction — see its comment
+    // above. Never null once the app is running; loadAndActivateScreen()
+    // is only ever called after ApplicationComponents' constructor body runs.
+    const ScreenCreationContext* ctx_ = nullptr;
 
     std::unique_ptr<ScreenInterface> currentScreen_;
     std::unique_ptr<UiEventHandler> actionHandler_;

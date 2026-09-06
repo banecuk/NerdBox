@@ -8,27 +8,16 @@
 #include "utils/logging/LogMacros.h"
 
 UiController::UiController(DisplayContext& context, DisplayManager& displayManager,
-                           ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
+                           ApplicationMetrics& systemMetrics,
                            SystemState::ScreenState& screenState, const AppSettings& config,
-                           NetworkManager& networkManager, const AirQualityData& airQualityData,
-                           const NetworkStatus& netStatus, WeatherData& weatherData,
-                           const AudioData& audioData, CpuClockData& cpuClockData,
-                           ProcessData& processData, const RoomClimateData& roomClimateData)
+                           WeatherData& weatherData)
     : logger_(context.getLogger()),
       displayManager_(displayManager),
       context_(context),
       systemMetrics_(systemMetrics),
-      pcMetrics_(pcMetrics),
       screenState_(screenState),
       config_(config),
-      networkManager_(networkManager),
-      airQualityData_(airQualityData),
-      netStatus_(netStatus),
       weatherData_(weatherData),
-      audioData_(audioData),
-      cpuClockData_(cpuClockData),
-      processData_(processData),
-      roomClimateData_(roomClimateData),
       actionHandler_(std::make_unique<UiEventHandler>(this, context.getLogger())),
       touchManager_(
           std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)),
@@ -186,23 +175,14 @@ void UiController::loadAndActivateScreen() {
         return;
     }
 
-    std::unique_ptr<ScreenInterface> newScreen;
-    ScreenCreationContext ctx{logger_,
-                              context_.getScreenLogQueue(),
-                              &displayManager_,
-                              pcMetrics_,
-                              this,
-                              config_,
-                              systemMetrics_,
-                              networkManager_,
-                              airQualityData_,
-                              netStatus_,
-                              weatherData_,
-                              audioData_,
-                              cpuClockData_,
-                              processData_,
-                              roomClimateData_};
-    newScreen = ScreenFactory::createScreen(activeTransition_.nextScreen, ctx);
+    if (!ctx_) {
+        logger_.error("[UiController] No screen context bound");
+        completeTransition();
+        return;
+    }
+
+    std::unique_ptr<ScreenInterface> newScreen =
+        ScreenFactory::createScreen(activeTransition_.nextScreen, *ctx_);
 
     if (newScreen) {
         currentScreen_ = std::move(newScreen);

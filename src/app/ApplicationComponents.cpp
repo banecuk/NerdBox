@@ -10,9 +10,22 @@ ApplicationComponents::ApplicationComponents()
       services(platform.networkManager, platform.logger_, config, data.audioData),
       jobs(platform, data, services, config),
       uiController(platform.displayContext, platform.displayManager, services.systemMetrics,
-                   data.pcMetrics, data.systemState.screen, config, platform.networkManager,
-                   data.airQualityData, data.netStatus, data.weatherData, data.audioData,
-                   *data.cpuClockData, *data.processData, data.roomClimateData),
+                   data.systemState.screen, config, data.weatherData),
+      screenCtx{platform.logger_,
+                platform.displayContext.getScreenLogQueue(),
+                &platform.displayManager,
+                data.pcMetrics,
+                &uiController,
+                config,
+                services.systemMetrics,
+                platform.networkManager,
+                data.airQualityData,
+                data.netStatus,
+                data.weatherData,
+                data.audioData,
+                *data.cpuClockData,
+                *data.processData,
+                data.roomClimateData},
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
       webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
@@ -20,7 +33,14 @@ ApplicationComponents::ApplicationComponents()
                        *jobs.processStreamJob, data.netStatus, data.systemState, data.weatherData,
                        config, taskManager, platform.logger_, platform.logger_, data.audioData,
                        services.audioService, data.roomClimateData),
-      initStateMachine(*this) {}
+      initStateMachine(*this) {
+    // uiController is constructed before screenCtx (declaration order) and
+    // screenCtx holds a pointer back to it, so the reverse link — giving
+    // uiController the address of screenCtx — can only happen here, once
+    // both members exist. See the comment on ScreenCreationContext screenCtx
+    // in ApplicationComponents.h.
+    uiController.bindScreenContext(screenCtx);
+}
 
 // -----------------------------------------------------------------------
 // IInitializationTarget implementation
