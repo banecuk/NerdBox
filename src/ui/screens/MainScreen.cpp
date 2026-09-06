@@ -89,8 +89,19 @@ void MainScreen::createWidgets() {
     static constexpr uint16_t kBandY = 269;
     static constexpr uint16_t kBandH = Layout::kButtonSize;
     static constexpr uint16_t kNetTrafficX = Layout::kButtonSize;
-    static constexpr uint16_t kNetTrafficW = 132;
-    static constexpr uint16_t kClockX = Layout::kScreenW - Layout::kClockW - 2;
+    // Narrower than the band's old undivided 132px — NetworkTrafficWidget's
+    // content (two 3-digit-plus-decimal rows and a small arrow) only needs
+    // ~65px; the freed space goes to DiskSummaryWidget below.
+    static constexpr uint16_t kNetTrafficW = 70;
+    static constexpr uint16_t kDiskSumX = kNetTrafficX + kNetTrafficW;
+    static constexpr uint16_t kDiskSumW = 88;
+    // Narrower than the shared Layout::kClockW (150px, used by every other
+    // screen's bottom band) — ClockWidget right-anchors its digits within its
+    // own box (see ClockWidget::computeLayout), so shrinking the box only
+    // trims the unused space to their left; the digits themselves don't move.
+    // The remaining slack, plus what's freed above, covers DiskSumWidget.
+    static constexpr uint16_t kClockW = 124;
+    static constexpr uint16_t kClockX = Layout::kScreenW - kClockW - 2;
     static constexpr uint16_t kClockH = 40;
     static constexpr uint16_t kClockY = kBandY + kBandH / 2 - kClockH / 2;
     static constexpr uint16_t kNetWidgetH = 24;
@@ -116,6 +127,16 @@ void MainScreen::createWidgets() {
                                   1000, pcMetrics_)),
                               "network_traffic");
 
+    // Disk summary widget — sum of read/write rates across all drives, right
+    // of the network traffic widget. Same layout/font pattern as
+    // NetworkTrafficWidget (two stacked rows), but with "R"/"W" letters
+    // instead of direction arrows. Tappable to the disk info screen.
+    widgetManager_.addWidget(std::unique_ptr<DiskSummaryWidget>(new DiskSummaryWidget(
+                                  WidgetInterface::Dimensions{kDiskSumX, kBandY, kDiskSumW, kBandH},
+                                  100, pcMetrics_, EventType::SHOW_DISKS,
+                                  [this](EventType action) { this->handleAction(action); })),
+                              "disk_summary");
+
     // Network widget — compact, right-aligned next to the clock, vertically
     // centered in the band.
     widgetManager_.addWidget(std::unique_ptr<NetworkWidget>(new NetworkWidget(
@@ -129,7 +150,7 @@ void MainScreen::createWidgets() {
     // to the calendar screen.
     widgetManager_.addWidget(
         std::unique_ptr<ClockWidget>(new ClockWidget(
-            WidgetInterface::Dimensions{kClockX, kClockY, Layout::kClockW, kClockH}, 1000,
+            WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH}, 1000,
             TFT_LIGHTGREY, TFT_BLACK, "%H:%M:%S", EventType::SHOW_CALENDAR,
             [this](EventType action) { this->handleAction(action); })),
         "clock");
