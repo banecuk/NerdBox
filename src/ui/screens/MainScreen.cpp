@@ -85,10 +85,13 @@ void MainScreen::createWidgets() {
         "disk_band");
 
     // ── Bottom band is unchanged below this point ──────────────────────────────
-    // 3px higher than Layout::kBottomBarY so NetworkWidget/NetworkTrafficWidget
-    // share the row with the settings button and clock.
-    static constexpr uint16_t kBandY = 269;
-    static constexpr uint16_t kBandH = Layout::kButtonSize;
+    // Same shared band every other screen uses (Layout::kBottomBarY/H) — this
+    // used to be a local duplicate 3px higher than the old Layout::kBottomBarY
+    // (see N1); now that the shared constant matches this screen's band
+    // exactly, there's one source of truth instead of two numbers that had to
+    // be kept in sync by hand.
+    static constexpr uint16_t kBandY = Layout::kBottomBarY;
+    static constexpr uint16_t kBandH = Layout::kBottomBarH;
     static constexpr uint16_t kNetTrafficX = Layout::kButtonSize;
     // Narrower than the band's old undivided 132px — NetworkTrafficWidget's
     // content (two 3-digit-plus-decimal rows and a small arrow) only needs

@@ -188,8 +188,15 @@ class MetricWidget : public Widget {
     // tiles, where the gradient itself must already be freshly painted
     // underneath (a flat bgColor would flatten the gradient into a solid
     // block behind the glyphs).
+    //
+    // bold requests a faux-bold second pass (see .cpp) — only the primary
+    // value's own call site sets it; the unit suffix never does. A real bold
+    // face (LovyanGFX's bundled FreeSansBold*) was tried first for this and
+    // either overflowed the tile (18pt) or still read as too heavy/large at
+    // a fitting size (12pt) — see docs-local/03-visual-ux.md V4. This keeps
+    // NotoSans18 (already sized to fit) and just thickens its strokes.
     void drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor,
-                       bool transparent = false);
+                       bool transparent = false, bool bold = false);
 
     // Start X of the [value][unit] block for the current textAlignment_,
     // given the value area bounds and the combined value+unit width.

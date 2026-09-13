@@ -4,11 +4,11 @@
 #include "ui/resources/FontRegistry.h"
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
-static constexpr uint16_t kValueColor = TFT_GREEN;
+static constexpr uint16_t kValueColor = Colors::kOk;
 static constexpr uint16_t kPlaceholderColor = Colors::kHairline;
 static constexpr uint16_t kScaleLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kBarColor = TFT_DARKGREEN;
-static constexpr uint16_t kNewestBarColor = TFT_GREEN;
+static constexpr uint16_t kNewestBarColor = Colors::kOk;
 
 GameFpsWidget::GameFpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                              uint32_t updateIntervalMs, PcMetrics& pcMetrics)

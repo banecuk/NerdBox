@@ -2,6 +2,7 @@
 
 #include <cstdio>
 
+#include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
 
@@ -19,7 +20,7 @@ bool isWeekendCol(uint8_t col) {
 
 // Same light-red tint WeatherWidget uses for SAT/SUN day names, so the two
 // screens agree on how weekends are called out.
-constexpr uint16_t kWeekendColor = 0xFBCF;
+constexpr uint16_t kWeekendColor = Colors::kWeekendRed;
 }  // namespace
 
 CalendarWidget::CalendarWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs)

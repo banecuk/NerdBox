@@ -1,5 +1,6 @@
 #include "SettingsScreen.h"
 
+#include "ui/core/Colors.h"
 #include "ui/core/Layout.h"
 #include "ui/widgets/display/IpAddressWidget.h"
 
@@ -58,7 +59,7 @@ void SettingsScreen::createWidgets() {
             uiController_->getDisplayContext(), "Reset",
             WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
             EventType::RESET_DEVICE, [this](EventType action) { this->handleAction(action); },
-            TFT_RED, TFT_WHITE),
+            Colors::kDanger, TFT_WHITE),
         "reset_button");
 
     // ── Info widgets ────────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(
         std::make_unique<ClockWidget>(
             WidgetInterface::Dimensions{kClockX, kClockY, Layout::kClockW, kClockH}, 1000,
-            TFT_YELLOW, TFT_BLACK),
+            Colors::kWarn, TFT_BLACK),
         "clock");
 
     // Back button — flush with the left screen edge (x=0), same shared

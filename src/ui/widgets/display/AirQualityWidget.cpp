@@ -265,14 +265,14 @@ const uint16_t* AirQualityWidget::iconForCode(const char* code) const {
 
 uint16_t AirQualityWidget::aqiColor(uint16_t aqi) const {
     if (aqi <= 50)
-        return 0x07E0;
+        return Colors::kOk;
     if (aqi <= 100)
-        return 0xFFE0;
+        return Colors::kWarn;
     if (aqi <= 150)
         return Colors::kAmberAccent;
     if (aqi <= 200)
-        return 0xF800;
-    return 0xF81F;
+        return Colors::kDanger;
+    return 0xF81F;  // hazardous — distinct magenta, no ramp token for "beyond danger"
 }
 
 bool AirQualityWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {

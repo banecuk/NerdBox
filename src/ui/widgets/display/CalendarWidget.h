@@ -9,13 +9,13 @@
 // (year_/month_), defaulting to today's date, and repaints only when the
 // cursor month changes, today's day-of-month rolls over, or on forceRedraw.
 //
-// Layout (full 480×272 content area above the bottom band):
+// Layout (full 480×Layout::kContentH content area above the bottom band):
 //
 //   y=0..34    month title, e.g. "AUGUST 2026" — confined to x=[44,436) so
 //              the screen's prev/next-month arrow buttons (44px each side,
 //              drawn on top by CalendarScreen) never get overpainted.
 //   y=34..58   weekday header row, "MON TUE WED THU FRI SAT SUN", full width
-//   y=58..272  6 rows × 7 columns of day numbers, full width
+//   y=58..kContentH  6 rows × 7 columns of day numbers, full width
 //
 // Today's cell gets a filled accent circle behind the number. Leading/
 // trailing padding days (outside the displayed month) are left blank.

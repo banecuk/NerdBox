@@ -208,6 +208,13 @@ void PcMetricsWidget::drawDynamicData() {
 
     LGFX* lcd = getLcd();
 
+    // Must match MetricWidget::loadValueFont()'s own choice for the same
+    // tiles' non-batched path — both this batch pass and that path draw the
+    // same underlying MetricWidget glyphs. The weight contrast these tiles'
+    // values get over their labels (see docs-local/03-visual-ux.md V4) is a
+    // faux-bold second draw pass inside MetricWidget::drawValueText(), not a
+    // font swap — a real bold face's glyph metrics didn't fit/read well at
+    // this tile size.
     Fonts::loadMetric(lcd);
     const auto& descriptors = fixedTileDescriptors();
     for (uint8_t i = 0; i < kFixedTileCount; ++i) {

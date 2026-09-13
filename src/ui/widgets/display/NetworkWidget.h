@@ -22,12 +22,13 @@
 // A single failing endpoint does not colour the globe — see
 // NetworkStatusService::recordResult(). Its dot still shows red.
 //
-// Internet state colours (globe):
-//   OK       — white  (0xFFFF)
-//   WARNING  — yellow (0xFFE0)
-//   DEGRADED — orange (0xFC60)
-//   DOWN     — red    (0xF800)
-//   UNKNOWN  — dark grey (0x2104)
+// Internet state colours (globe), routed through Colors' semantic ramp
+// instead of raw VGA-primitive hex (see docs-local/03-visual-ux.md V2):
+//   OK       — light grey    (TFT_LIGHTGRAY)
+//   WARNING  — muted gold    (Colors::kWarn)
+//   DEGRADED — muted orange, the midpoint between kWarn and kDanger
+//   DOWN     — muted red     (Colors::kDanger)
+//   UNKNOWN  — dark grey     (Colors::kHairline)
 //
 // Redraws only when RSSI bracket, wifi_connected, internet state, or any
 // endpoint_ok flag changes.
@@ -81,12 +82,12 @@ class NetworkWidget : public Widget {
 
     // Colours
     static constexpr uint16_t kColorOk = TFT_LIGHTGRAY;
-    static constexpr uint16_t kColorWarning = 0xFFE0;   // yellow
-    static constexpr uint16_t kColorDegraded = 0xFC60;  // orange
-    static constexpr uint16_t kColorDown = 0xF800;      // red
+    static constexpr uint16_t kColorWarning = Colors::kWarn;
+    static constexpr uint16_t kColorDegraded = 0xE3E8;  // muted orange, midpoint of kWarn/kDanger
+    static constexpr uint16_t kColorDown = Colors::kDanger;
     static constexpr uint16_t kColorUnknown = Colors::kHairline;
-    static constexpr uint16_t kColorDotFail = 0xF800;       // red dot
-    static constexpr uint16_t kColorDotOk = TFT_LIGHTGRAY;  // ok dot
+    static constexpr uint16_t kColorDotFail = Colors::kDanger;  // failed-endpoint dot
+    static constexpr uint16_t kColorDotOk = TFT_LIGHTGRAY;      // ok dot
 
     // -----------------------------------------------------------------------
     const NetworkStatus& status_;

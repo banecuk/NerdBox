@@ -3,13 +3,14 @@
 #include <string>
 
 #include "network/NetworkManager.h"
+#include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/Widget.h"
 
 class IpAddressWidget : public Widget {
  public:
     IpAddressWidget(const WidgetInterface::Dimensions& dims, NetworkManager& networkManager,
-                    uint16_t textColor = TFT_CYAN, uint16_t bgColor = TFT_BLACK);
+                    uint16_t textColor = Colors::kInfo, uint16_t bgColor = TFT_BLACK);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 

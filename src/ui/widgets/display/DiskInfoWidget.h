@@ -38,7 +38,7 @@ class DiskInfoWidget : public Widget {
     // -----------------------------------------------------------------------
     static constexpr uint16_t kScreenWidth = Layout::kScreenW;
 
-    // Maximum number of drives that fit in the 272 px content area.
+    // Maximum number of drives that fit in the Layout::kContentH content area.
     static constexpr uint16_t kMaxDisks = 10;
     static constexpr uint16_t kRowH = 27;
 

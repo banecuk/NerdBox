@@ -22,13 +22,17 @@ void GameScreen::createWidgets() {
     metricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(metricsWidget), "pc_metrics");
 
-    // CPU + GPU load history strip — grown from 46 to 52px to absorb the 6px
-    // freed by the tile grid's height cut above; keeps the same 2px gap above
-    // it and the same bottom edge (268).
+    // CPU + GPU load history strip — starts flush against PcMetricsWidget's
+    // bottom edge (214) and ends flush against the bottom band (previously a
+    // 2px gap above and a 4px gap below — accidental seams, see N2) so the
+    // three widgets tile the screen with zero seams between them.
+    static constexpr uint16_t kLoadHistoryY = 214;
+    static constexpr uint16_t kLoadHistoryH = Layout::kBottomBarY - kLoadHistoryY;
     widgetManager_.addWidget(
         std::make_unique<LoadHistoryWidget>(
             uiController_->getDisplayContext(),
-            WidgetInterface::Dimensions{0, 216, Layout::kScreenW, 52}, 250, pcMetrics_),
+            WidgetInterface::Dimensions{0, kLoadHistoryY, Layout::kScreenW, kLoadHistoryH}, 250,
+            pcMetrics_),
         "load_history");
 
     addBackButton();

@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "ui/core/Colors.h"
+
 // Formatting/styling shared between WeatherWidget (full weather screen) and
 // ForecastStripWidget (MultiWidget's compact candidate) — both render the
 // same WeatherData, and this keeps their day names, rounding, and rain
@@ -11,7 +13,7 @@
 // Abbreviated day names indexed by tm_wday (0 = Sunday).
 static const char* const kDayNames[7] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 
-static constexpr uint16_t kWeatherWeekendColor = 0xFBCF;  // light red for SAT/SUN day names
+static constexpr uint16_t kWeatherWeekendColor = Colors::kWeekendRed;  // SAT/SUN day names
 static constexpr uint16_t kWeatherRainColor = 0x867F;     // light blue, matches AirQuality humidity
 
 // Converts a *10-scaled temperature to whole degrees, rounding to the nearest

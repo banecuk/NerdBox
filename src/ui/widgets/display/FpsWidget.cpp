@@ -5,7 +5,7 @@
 
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kLabelColor = TFT_DARKGREY;
-static constexpr uint16_t kValueColor = TFT_GREEN;
+static constexpr uint16_t kValueColor = Colors::kOk;
 static constexpr uint16_t kPlaceholderColor = Colors::kHairline;
 
 FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,

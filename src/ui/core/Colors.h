@@ -56,6 +56,18 @@ class Colors {
     static constexpr uint16_t kDimLabelGrey = 0x8410;  // dim grey unit/label text
     static constexpr uint16_t kAmberAccent = 0xFD20;   // amber warning/moderate accent
     static constexpr uint16_t kMutedBlueGrey = 0x4208;  // dim blue-grey, subordinate chrome
+    static constexpr uint16_t kRamAccent = 0xADFB;      // RAM tile/sparkline accent (was N12 dup)
+    static constexpr uint16_t kWeekendRed = 0xFBCF;     // SAT/SUN light-red tint (was N12 dup)
+
+    // Semantic ramp, ~80% saturation — replaces the saturated 1990s-VGA
+    // TFT_RED/TFT_GREEN/TFT_YELLOW/TFT_CYAN primaries that were scattered
+    // across widgets as ad hoc "success/warning/danger/info" colours (see
+    // docs-local/03-visual-ux.md V2). Distinct from kAmberAccent, which stays
+    // as its own tuned amber for the specific spots that already used it.
+    static constexpr uint16_t kOk = 0x4E2D;      // muted green   (~76,196,104)
+    static constexpr uint16_t kWarn = 0xEE27;    // muted gold    (~235,199,56)
+    static constexpr uint16_t kDanger = 0xD9A8;  // muted red     (~220,52,64)
+    static constexpr uint16_t kInfo = 0x4D5E;    // muted sky blue(~76,168,248)
 
     Colors();
     ~Colors();

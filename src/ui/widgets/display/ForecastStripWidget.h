@@ -13,7 +13,7 @@
 
 // Compact daily-forecast strip — MultiWidget's default (resting-state)
 // candidate. Not a squeeze of WeatherWidget: that one is a full-screen
-// 480x272 widget with 44px icons and a 9-row layout; nothing about it
+// 480xLayout::kContentH widget with 44px icons and a 9-row layout; nothing about it
 // survives 82px, so this is its own layout sharing only WeatherFormat.h with
 // it. Shows day name / max temp / min temp / rain per column, no icon —
 // weather severity is conveyed by the rain value's colour instead.

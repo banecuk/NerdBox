@@ -13,16 +13,20 @@ namespace Layout {
 constexpr uint16_t kScreenW = TFT_HEIGHT;
 constexpr uint16_t kScreenH = TFT_WIDTH;
 
-// Bottom band shared by GameScreen/DiskScreen/WeatherScreen/SettingsScreen:
-// the back/settings button and the clock beside it. MainScreen's equivalent
-// band sits 3px higher (y=269) to make room for NetworkWidget/
-// NetworkTrafficWidget sharing the row — that offset stays local to
-// MainScreen rather than being folded in here.
-constexpr uint16_t kBottomBarY = 272;
-constexpr uint16_t kBottomBarH = 48;
+// Bottom band shared by every screen: the back/settings button and the clock
+// beside it. Previously 272/48 with MainScreen's equivalent band hardcoded
+// 3px higher (269) to make room for NetworkWidget/NetworkTrafficWidget
+// sharing the row — that left a 3px dead strip at the very bottom of the
+// screen (317..320) and put MainScreen's band 3px out of line with every
+// other screen's (N1). Moved to 269/51 so one band position/height serves
+// every screen: MainScreen's band already sat at 269, so this folds its
+// local duplicate into the shared constant instead of the other way round —
+// see docs-local/03-visual-ux.md V3.
+constexpr uint16_t kBottomBarY = 269;
+constexpr uint16_t kBottomBarH = 51;
 
 // Bottom-left back/settings button — square, same size on every screen.
-constexpr uint16_t kButtonSize = 48;
+constexpr uint16_t kButtonSize = 51;
 
 // Clock widget width — shared everywhere it appears; height and position
 // vary slightly per screen (row height, gutters) and stay local to each.

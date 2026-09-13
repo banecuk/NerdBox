@@ -117,10 +117,10 @@ uint16_t Colors::utilizationColor(float percent) {
         return getColorFromPercentGrayGreen(idx);
     }
     if (percent < 85.0f)
-        return TFT_YELLOW;  // heavy
+        return kWarn;  // heavy
     if (percent < 100.0f)
-        return TFT_ORANGE;                    // near saturation
-    return blendRgb565(TFT_RED, TFT_WHITE, 90);  // at/over the configured cap
+        return kDanger;                    // near saturation
+    return blendRgb565(kDanger, TFT_WHITE, 90);  // at/over the configured cap
 }
 
 // Disk activity color scale, in KB/s: <1 MB/s dark gray (idle), then a

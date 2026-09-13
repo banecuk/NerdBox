@@ -6,7 +6,7 @@
 static constexpr uint16_t kBgColor = TFT_BLACK;
 static constexpr uint16_t kCpuColor = Colors::kCpuAccent;
 static constexpr uint16_t kGpuColor = Colors::kGpuAccent;
-static constexpr uint16_t kRamColor = 0xADFB;
+static constexpr uint16_t kRamColor = Colors::kRamAccent;
 static constexpr uint16_t kVramColor = kGpuColor;  // same GPU accent used in PcMetricsTilesConfig
 static constexpr uint16_t kHighUsageColor = TFT_RED;  // shared alert color, any metric >= 90%
 // Very dark gray divider drawn above/below each of the 4 sparkline rows.

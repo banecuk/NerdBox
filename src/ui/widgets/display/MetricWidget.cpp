@@ -169,8 +169,10 @@ void MetricWidget::renderValue(bool fontsLoadedByCaller, bool clearWholeArea) {
 
     // Per-glyph bg fill (transparent=false) overwrites old digits in a single
     // pass — no blank frame, no flash. Gradient tiles instead redraw the
-    // background above and draw transparently on top of it.
-    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_);
+    // background above and draw transparently on top of it. bold=!useSmallFont_
+    // gives the primary tile grid's values a bit more visual weight than
+    // their labels/units without changing size (see MetricWidget.h).
+    drawValueText(displayText, startX, textY, textBgColor, gradientBackground_, !useSmallFont_);
     if (!fontsLoadedByCaller)
         unloadValueFont();
 
@@ -356,7 +358,7 @@ void MetricWidget::getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& a
 }
 
 void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor,
-                                 bool transparent) {
+                                 bool transparent, bool bold) {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
@@ -367,6 +369,12 @@ void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_
     }
     lcd->setTextDatum(ML_DATUM);
     lcd->drawString(text, x, y);
+    if (bold) {
+        // Faux-bold: a second pass 1px right thickens NotoSans18's regular
+        // strokes just enough to read as heavier, without swapping in a true
+        // bold face's different (and here, too-large) glyph metrics.
+        lcd->drawString(text, x + 1, y);
+    }
 }
 
 bool MetricWidget::handleTouch(uint16_t x, uint16_t y) {
