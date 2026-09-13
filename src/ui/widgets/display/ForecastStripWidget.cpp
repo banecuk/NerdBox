@@ -215,8 +215,8 @@ void ForecastStripWidget::drawColumn(uint8_t col, bool dayChanged, bool maxChang
     }
 
     if (rainChanged) {
-        lcd->fillRect(colX + 1, dimensions_.y + kRainY - 9, colWidth_ - 2, 18, TFT_BLACK);
-        Fonts::loadLabel(lcd);
+        lcd->fillRect(colX + 1, dimensions_.y + kRainY - 10, colWidth_ - 2, 20, TFT_BLACK);
+        Fonts::loadValue(lcd);
         lcd->setTextColor(rainColor, TFT_BLACK);
         lcd->setTextDatum(MC_DATUM);
         lcd->drawString(rain, cx, dimensions_.y + kRainY);

@@ -24,7 +24,8 @@
 //   MON   TUE   WED   THU   FRI     <- day name (weekend in red), today underlined
 //   24°   26°   22°   19°   21°     <- max temp, white
 //   14°   15°   13°   11°   12°     <- min temp, light grey
-//   0.4    -    2.1   8.6    -      <- rain mm, blue if > 0 else a dash
+//   0.4    -    2.1   8.6    -      <- rain mm, 15pt (same size as min temp),
+//                                      blue if > 0 else a dash
 //
 // See docs-local/09-multiwidget-rotation-and-forecast-strip.md.
 class ForecastStripWidget : public Widget {
@@ -48,9 +49,13 @@ class ForecastStripWidget : public Widget {
     // day name and the max-temp row below it; flow re-centered in
     // MultiWidget's current 103px height.
     static constexpr int16_t kDayY = 18;   // MC_DATUM centre for the 12pt day name
-    static constexpr int16_t kMaxY = 43;  // 18pt max temp
-    static constexpr int16_t kMinY = 64;  // 15pt min temp
-    static constexpr int16_t kRainY = 85;  // 12pt rain
+    static constexpr int16_t kMaxY = 49;  // 18pt max temp — pushed down from 43 to widen the
+                                           // gap under the day name, using up the trailing
+                                           // slack below the rain row
+    static constexpr int16_t kMinY = 70;  // 15pt min temp
+    static constexpr int16_t kRainY = 91;  // 15pt rain — there's headroom below it in the
+                                            // widget's 103px height, so it's sized like the
+                                            // min-temp row rather than the 12pt day/label font
 
     static constexpr uint16_t kDividerColor = 0x18C3;   // same very-dark-grey row-border color
     static constexpr uint16_t kTodayUnderlineColor = Colors::kBorderGrey;

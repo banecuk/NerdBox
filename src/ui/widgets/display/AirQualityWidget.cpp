@@ -152,9 +152,13 @@ void AirQualityWidget::drawCellText(uint8_t col, bool bottomRow, const char* tex
     }
 
     const int16_t cx = dimensions_.x + kColCenter[col];
+    const int16_t textH = static_cast<int16_t>(lcd->fontHeight());
     lcd->setTextColor(color, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(text, cx, rowCenterY(bottomRow));
+    // Baseline-anchored (matches WidgetPainter::drawValueWithUnit) rather
+    // than MC_DATUM, so the "AQI" label lines up with the other columns'
+    // rows instead of sitting higher due to the label font's metrics.
+    lcd->setTextDatum(C_BASELINE);
+    lcd->drawString(text, cx, rowCenterY(bottomRow) + textH / 2);
 
     Fonts::unload(lcd);
 }

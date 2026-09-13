@@ -53,10 +53,17 @@ inline void drawPillToggle(LGFX* lcd, uint16_t x, uint16_t y, uint16_t w, uint16
 inline void drawValueWithUnit(LGFX* lcd, int16_t centerX, int16_t centerY, const char* value,
                               const char* unit, uint16_t valueColor, uint16_t unitColor) {
     if (!unit || unit[0] == '\0') {
+        // Baseline-anchored, not MC_DATUM: MC_DATUM's vertical centring is
+        // font-metric-dependent and doesn't line up with the paired
+        // value+unit path below, which always centres via this same
+        // fontHeight/2 baseline offset. Using MC_DATUM here made
+        // unit-less cells (e.g. the AQI value) sit visibly higher than
+        // cells with a unit.
         Fonts::loadMetric(lcd);
+        const int16_t valueH = static_cast<int16_t>(lcd->fontHeight());
         lcd->setTextColor(valueColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(value, centerX, centerY);
+        lcd->setTextDatum(C_BASELINE);
+        lcd->drawString(value, centerX, centerY + valueH / 2);
         Fonts::unload(lcd);
         return;
     }
