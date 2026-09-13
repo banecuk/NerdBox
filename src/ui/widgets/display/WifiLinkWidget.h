@@ -61,6 +61,7 @@ class WifiLinkWidget : public Widget {
     uint8_t lastAuth_ = 0xFF;
     uint8_t lastChannel_ = 0xFF;
     uint8_t lastNeighbourCount_ = 0xFF;
+    bool lastNeighbourAvailable_ = false;  // has a scan ever completed?
     int8_t lastRssi_ = 127;  // outside the valid dBm range — forces first draw
 
     void drawDisconnected();

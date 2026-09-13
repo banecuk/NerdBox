@@ -40,6 +40,7 @@ class WifiScanListWidget : public Widget {
     WifiScanData::State lastState_ = WifiScanData::State::IDLE;
     uint8_t lastCount_ = 0;
     unsigned long lastFreshnessMs_ = 0;
+    unsigned long lastDrawnAgeS_ = 0;  // last "scanned Ns ago" value painted in the header
     RowCache lastRows_[kRows];
 
     void drawHeader();

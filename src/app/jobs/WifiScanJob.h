@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/ScreenTypes.h"
@@ -45,7 +47,12 @@ class WifiScanJob : public BackgroundJob {
         if (data_.rescanRequested.load()) {
             return JobDue::at(nextAttemptMs_);  // honours an active failure backoff
         }
-        return JobDue::at(lastScanCompletedMs_ + config_.wifiScanRescanIntervalMs);
+        // max(...) so a failure's backoff deadline (nextAttemptMs_) still
+        // applies on the automatic path too — otherwise lastScanCompletedMs_
+        // (unchanged by a failed scan) puts the interval-based deadline in
+        // the past and the job retries immediately with no backoff at all.
+        return JobDue::at(std::max(lastScanCompletedMs_ + config_.wifiScanRescanIntervalMs,
+                                   nextAttemptMs_));
     }
 
     void run() override {

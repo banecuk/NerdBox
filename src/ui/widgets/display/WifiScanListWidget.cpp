@@ -40,6 +40,7 @@ void WifiScanListWidget::onDrawStatic() {
     lastState_ = WifiScanData::State::IDLE;
     lastCount_ = 0;
     lastFreshnessMs_ = 0;
+    lastDrawnAgeS_ = 0;
     drawHeader();
 }
 
@@ -48,18 +49,33 @@ void WifiScanListWidget::onDraw(bool forceRedraw) {
         return;
 
     const bool structuralChange = forceRedraw || data_.state != lastState_;
+    const bool freshnessChanged = data_.freshness.lastUpdateMs() != lastFreshnessMs_;
 
-    if (structuralChange || data_.freshness.lastUpdateMs() != lastFreshnessMs_) {
+    // "scanned Ns ago" ticks up every second even though nothing else about
+    // the scan changed — redraw the header whenever that display value would
+    // differ, not just on a structural/freshness change, or it goes stale on
+    // screen (e.g. stuck showing "0s ago").
+    const unsigned long ageS =
+        data_.freshness.available() ? (millis() - data_.freshness.lastUpdateMs()) / 1000 : 0;
+    if (structuralChange || freshnessChanged || ageS != lastDrawnAgeS_) {
         drawHeader();
+        lastDrawnAgeS_ = ageS;
     }
 
+    // The empty-state body doesn't change unless the state/freshness does —
+    // redrawing it every tick just repaints identical pixels.
+    const bool bodyChange = structuralChange || freshnessChanged;
+
     if (data_.state == WifiScanData::State::FAILED) {
-        drawEmptyState("SCAN FAILED", Colors::kDanger);
+        if (bodyChange)
+            drawEmptyState("SCAN FAILED", Colors::kDanger);
     } else if (!data_.freshness.available()) {
         // Nothing has ever completed yet, whatever the current state is.
-        drawEmptyState("SCANNING...", TFT_DARKGREY);
+        if (bodyChange)
+            drawEmptyState("SCANNING...", TFT_DARKGREY);
     } else if (data_.count == 0) {
-        drawEmptyState("NO NETWORKS FOUND", TFT_DARKGREY);
+        if (bodyChange)
+            drawEmptyState("NO NETWORKS FOUND", TFT_DARKGREY);
     } else {
         uint8_t ourChannel = 0;
         for (uint8_t i = 0; i < data_.count; ++i) {

@@ -43,6 +43,7 @@ void WifiLinkWidget::onDrawStatic() {
     lastIp_[0] = lastGateway_[0] = lastMask_[0] = lastDns_[0] = lastMac_[0] = lastHostname_[0] =
         lastSsid_[0] = '\0';
     lastAuth_ = lastChannel_ = lastNeighbourCount_ = 0xFF;
+    lastNeighbourAvailable_ = false;
     lastRssi_ = 127;
     rssiTrace_.clear();
 }
@@ -72,6 +73,7 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
         lastIp_[0] = lastGateway_[0] = lastMask_[0] = lastDns_[0] = lastMac_[0] =
             lastHostname_[0] = lastSsid_[0] = '\0';
         lastAuth_ = lastChannel_ = lastNeighbourCount_ = 0xFF;
+        lastNeighbourAvailable_ = false;
         lastRssi_ = 127;
         rssiTrace_.clear();
     }
@@ -140,24 +142,36 @@ void WifiLinkWidget::drawTopRow(const NetworkManager::LinkInfo& link, bool force
     // neighbour count moves at most once per rescan). Without this gate the
     // black-clear-then-redraw happened every tick regardless, which visibly
     // flashed on real hardware even though the text was identical.
+    //
+    // wifiScan_.sameChannelCount is only meaningful once a scan has actually
+    // completed (freshness.available()) — it defaults to 0, so showing
+    // "0 neighbours here" before that would misreport "confirmed no
+    // neighbours" as a scan result that hasn't happened yet.
+    const bool neighbourAvailable = wifiScan_.freshness.available();
     const bool subtitleChanged = forceRedraw || link.auth != lastAuth_ ||
                                  link.channel != lastChannel_ ||
-                                 wifiScan_.sameChannelCount != lastNeighbourCount_;
+                                 wifiScan_.sameChannelCount != lastNeighbourCount_ ||
+                                 neighbourAvailable != lastNeighbourAvailable_;
     if (subtitleChanged) {
         lcd->fillRect(dimensions_.x, row2Y, rightColX - dimensions_.x, 26, kBgColor);
         char prefix[24];
         snprintf(prefix, sizeof(prefix), "%s \xc2\xb7 ch %u \xc2\xb7 ",
                  WifiScanMath::authName(link.auth), link.channel);
         char suffix[24];
-        snprintf(suffix, sizeof(suffix), "%u neighbour%s here", wifiScan_.sameChannelCount,
-                 wifiScan_.sameChannelCount == 1 ? "" : "s");
+        if (neighbourAvailable) {
+            snprintf(suffix, sizeof(suffix), "%u neighbour%s here", wifiScan_.sameChannelCount,
+                     wifiScan_.sameChannelCount == 1 ? "" : "s");
+        } else {
+            snprintf(suffix, sizeof(suffix), "scanning...");
+        }
 
         Fonts::loadLabel(lcd);
         lcd->setTextDatum(TL_DATUM);
         lcd->setTextColor(kLabelColor, kBgColor);
         lcd->drawString(prefix, dimensions_.x + 10, row2Y + 6);
         const uint16_t prefixW = static_cast<uint16_t>(lcd->textWidth(prefix));
-        const uint16_t suffixColor = wifiScan_.sameChannelCount >= 6   ? Colors::kDanger
+        const uint16_t suffixColor = !neighbourAvailable                     ? kLabelColor
+                                     : wifiScan_.sameChannelCount >= 6   ? Colors::kDanger
                                      : wifiScan_.sameChannelCount >= 3 ? Colors::kWarn
                                                                         : kLabelColor;
         lcd->setTextColor(suffixColor, kBgColor);
@@ -167,6 +181,7 @@ void WifiLinkWidget::drawTopRow(const NetworkManager::LinkInfo& link, bool force
         lastAuth_ = link.auth;
         lastChannel_ = link.channel;
         lastNeighbourCount_ = wifiScan_.sameChannelCount;
+        lastNeighbourAvailable_ = neighbourAvailable;
     }
 
     // Bars + dBm — right column, row 1. Same flash: only redraw when the

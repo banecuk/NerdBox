@@ -231,11 +231,23 @@ struct WifiScanImpl {
     // Auto-rescan cadence while the WIFI screen is open.
     static constexpr uint32_t kRescanIntervalMs = 15000;
     static constexpr uint32_t kFailureBackoffMs = 5000;
-    // Arduino's WiFi.scanNetworks() default is 300 ms/channel * 13 channels
-    // ~= 3.9 s of radio time off our home channel — uncomfortably close to
-    // PcMetricsStreamImpl::kStaleTimeoutMs (5000 ms). 120 ms/channel keeps a
-    // full sweep to ~1.6 s.
-    static constexpr uint16_t kMaxMsPerChannel = 120;
+    // WiFiScanClass (esp32 Arduino core) derives its OWN internal watchdog
+    // from this value — WiFiScan.cpp: `_scanTimeout = max_ms_per_chan * 20` —
+    // and scanComplete() reports WIFI_SCAN_FAILED once that elapses, whether
+    // or not the underlying esp_wifi scan is still genuinely in progress. A
+    // scan while associated (not disconnected) has to keep hopping back to
+    // the home channel to service the AP, so it runs measurably longer than
+    // the naive channels*kMaxMsPerChannel estimate — confirmed on real
+    // hardware: at 120 ms/channel (giving a 2400 ms internal timeout) every
+    // single scan hit that timeout and reported FAILED before completing.
+    // 300 ms/channel (giving a 6000 ms internal timeout — also Arduino's own
+    // scanNetworks() default) leaves enough headroom for that connected-mode
+    // overhead. The ~3.9 s full sweep this implies no longer trades off
+    // against PcMetricsStreamImpl::kStaleTimeoutMs — none of the three SSE
+    // stream jobs gate open on the WIFI screen (PcMetricsStreamJob's
+    // screenGateOpen() is MAIN/GAME/DISKS only), so there's no live stream
+    // for a long scan to starve.
+    static constexpr uint16_t kMaxMsPerChannel = 300;
     static constexpr bool kShowHidden = true;
     // WifiLinkWidget's RSSI sparkline sample cadence.
     static constexpr uint32_t kRssiTraceIntervalMs = 1000;
