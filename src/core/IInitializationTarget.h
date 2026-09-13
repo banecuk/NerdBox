@@ -53,6 +53,11 @@ class IInitializationTarget {
     virtual void setTimeSynced() = 0;
     virtual void setSystemInitialized() = 0;
 
+    // Boot progress, 0-100 — called on every InitializationStateMachine state
+    // transition so BootScreen's progress bar can track it (see
+    // docs-local/03-visual-ux.md V10).
+    virtual void setBootProgressPercent(uint8_t percent) = 0;
+
     // --- Initialisation config ----------------------------------------------
     virtual uint8_t initTimeSyncRetries() const = 0;
     virtual uint32_t initTimeSyncBaseDelayMs() const = 0;

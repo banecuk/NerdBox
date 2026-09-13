@@ -25,6 +25,7 @@ inline constexpr ScreenDescriptor kScreens[] = {
     {ScreenName::PROCESSES, EventType::SHOW_PROCESSES, "/screen/processes", "PROCESSES"},
     {ScreenName::WEATHER,   EventType::SHOW_WEATHER,   "/screen/weather",   "WEATHER"  },
     {ScreenName::CALENDAR,  EventType::SHOW_CALENDAR,  "/screen/calendar",  "CALENDAR" },
+    {ScreenName::WIFI,      EventType::SHOW_WIFI,      "/screen/wifi",      "WIFI"     },
     {ScreenName::BOOT,      EventType::NONE,           nullptr,             "BOOT"     },
 };
 inline constexpr size_t kScreenCount = sizeof(kScreens) / sizeof(kScreens[0]);

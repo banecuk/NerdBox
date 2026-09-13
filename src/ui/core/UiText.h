@@ -9,4 +9,8 @@ namespace UiText {
 // same DataFreshnessGuard-driven notion of "fresh").
 constexpr const char* kNoData = "No Data";
 
+// WifiLinkWidget's disconnected state — distinct from kNoData since "no
+// data" (never fetched yet) and "no link" (radio is down) read differently.
+constexpr const char* kNoLink = "NO LINK";
+
 }  // namespace UiText

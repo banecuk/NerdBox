@@ -11,12 +11,14 @@
 #include "ui/screens/ProcessesScreen.h"
 #include "ui/screens/SettingsScreen.h"
 #include "ui/screens/WeatherScreen.h"
+#include "ui/screens/WifiScreen.h"
 
 std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                                                              const ScreenCreationContext& ctx) {
     switch (name) {
         case ScreenName::BOOT:
-            return std::make_unique<BootScreen>(ctx.screenLogQueue, ctx.display->getDisplay());
+            return std::make_unique<BootScreen>(ctx.screenLogQueue, ctx.coreState,
+                                                ctx.display->getDisplay());
         case ScreenName::MAIN:
             return std::make_unique<MainScreen>(
                 ctx.logger, ctx.metrics, ctx.controller, ctx.config, ctx.systemMetrics,
@@ -41,6 +43,9 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                                                    ctx.weatherData);
         case ScreenName::CALENDAR:
             return std::make_unique<CalendarScreen>(ctx.logger, ctx.controller, ctx.config);
+        case ScreenName::WIFI:
+            return std::make_unique<WifiScreen>(ctx.logger, ctx.networkManager, ctx.wifiScan,
+                                                ctx.netStatus, ctx.controller, ctx.config);
         case ScreenName::NONE:
             return nullptr;
     }

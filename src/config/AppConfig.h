@@ -215,9 +215,32 @@ struct NetworkImpl {
     static constexpr const char* kMdnsHostname = "nerdbox";
 };
 
+// WiFi scan (WIFI screen's "nearby networks" list) configuration — see
+// docs-local/13-wifi-screen-plan.md.
+struct WifiScanImpl {
+    // Auto-rescan cadence while the WIFI screen is open.
+    static constexpr uint32_t kRescanIntervalMs = 15000;
+    static constexpr uint32_t kFailureBackoffMs = 5000;
+    // Arduino's WiFi.scanNetworks() default is 300 ms/channel * 13 channels
+    // ~= 3.9 s of radio time off our home channel — uncomfortably close to
+    // PcMetricsStreamImpl::kStaleTimeoutMs (5000 ms). 120 ms/channel keeps a
+    // full sweep to ~1.6 s.
+    static constexpr uint16_t kMaxMsPerChannel = 120;
+    static constexpr bool kShowHidden = true;
+    // WifiLinkWidget's RSSI sparkline sample cadence.
+    static constexpr uint32_t kRssiTraceIntervalMs = 1000;
+};
+
 // UI configuration
 struct UiImpl {
     static constexpr uint32_t kTransitionTimeoutMs = 1000;
+    // Backlight-ramp screen transition (see docs-local/03-visual-ux.md V7(a)):
+    // ramp the backlight down before the outgoing screen is torn down, and
+    // back up after the incoming one is built, instead of a bare
+    // fillScreen(BLACK) flash. Both durations are well inside
+    // kTransitionTimeoutMs above.
+    static constexpr uint32_t kTransitionFadeOutMs = 80;
+    static constexpr uint32_t kTransitionFadeInMs = 120;
     static constexpr uint32_t kTouchDebounceIntervalMs = 200;
     static constexpr uint32_t kScreenTransitionCooldownMs = 300;
     static constexpr uint32_t kDisplayLockTimeoutMs = 200;

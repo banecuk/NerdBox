@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "core/ScreenTypes.h"
+#include "core/state/SystemState.h"
 #include "ui/screens/base/ScreenInterface.h"
 
 // Forward declarations — avoids pulling every dependency into every TU that
@@ -22,6 +23,7 @@ struct AudioData;
 struct CpuClockData;
 struct ProcessData;
 struct RoomClimateData;
+struct WifiScanData;
 
 // Aggregates all dependencies that any screen might need.
 // Pass this struct to createScreen instead of a growing parameter list;
@@ -29,6 +31,7 @@ struct RoomClimateData;
 struct ScreenCreationContext {
     LoggerInterface& logger;
     ScreenLogQueue& screenLogQueue;
+    const SystemState::CoreState& coreState;
     DisplayManager* display;
     PcMetrics& metrics;
     UiController* controller;
@@ -42,6 +45,7 @@ struct ScreenCreationContext {
     CpuClockData& cpuClockData;
     ProcessData& processData;
     const RoomClimateData& roomClimate;
+    WifiScanData& wifiScan;
 };
 
 class ScreenFactory {

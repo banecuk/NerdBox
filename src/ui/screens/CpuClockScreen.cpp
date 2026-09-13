@@ -22,7 +22,7 @@ void CpuClockScreen::createWidgets() {
     // here (not MAIN).
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), "Processes",
+            uiController_->getDisplayContext(), ButtonIcon::PROCESSES, "Processes",
             WidgetInterface::Dimensions{56, Layout::kBottomBarY, 120, Layout::kButtonSize}, 0,
             EventType::SHOW_PROCESSES, [this](EventType a) { this->handleAction(a); },
             Theme::kSurface, TFT_WHITE),

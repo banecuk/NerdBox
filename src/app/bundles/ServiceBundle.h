@@ -10,6 +10,7 @@
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/roomClimate/RoomClimateService.h"
 #include "services/weather/WeatherService.h"
+#include "services/wifiScan/WifiScanService.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/logging/LoggerInterface.h"
 
@@ -40,6 +41,9 @@ struct ServiceBundle {
     // Push-driven (not fetch-driven, unlike its siblings above), so it only
     // needs the AudioData it writes into plus a logger — no NetworkManager.
     AudioService audioService;
+    // Talks to the radio directly (WiFi.scanNetworks()), not to HTTP — no
+    // NetworkManager either.
+    WifiScanService wifiScanService;
 
     ServiceBundle(NetworkManager& networkManager, LoggerInterface& logger,
                   const AppSettings& config, AudioData& audioData)
@@ -48,5 +52,6 @@ struct ServiceBundle {
           roomClimateService(networkManager, logger),
           weatherService(networkManager, logger),
           networkStatusService(logger),
-          audioService(audioData, logger) {}
+          audioService(audioData, logger),
+          wifiScanService(logger, config) {}
 };

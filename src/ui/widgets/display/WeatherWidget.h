@@ -98,6 +98,9 @@ class WeatherWidget : public Widget {
 
     void recomputeLayout(uint8_t count);
     int16_t columnCenter(uint8_t col) const;
+    // Soft vertical dividers between columns — drawn once per structural
+    // layout change (see docs-local/03-visual-ux.md V13), not per tick.
+    void drawColumnDividers() const;
 
     void checkMidnightRollover();
 

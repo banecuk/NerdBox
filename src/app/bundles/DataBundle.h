@@ -11,6 +11,7 @@
 #include "services/processes/ProcessData.h"
 #include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
+#include "services/wifiScan/WifiScanData.h"
 
 // The shared data structs written by background services/jobs and read by
 // UI widgets. Grouped here only because they have no construction-order
@@ -72,4 +73,10 @@ struct DataBundle {
     // needed, same convention as CpuClockData above. Heap-allocated for the
     // same size-sensitivity reason as cpuClockData.
     std::unique_ptr<ProcessData> processData = std::make_unique<ProcessData>();
+
+    // Written by WifiScanJob only while the WIFI screen is active, read by
+    // WifiLinkWidget/WifiScanListWidget (screen task). Fixed arrays only — no
+    // mutex needed, same convention as ProcessData above. Heap-allocated for
+    // the same size-sensitivity reason (~600 B: 12 entries * ~48 B each).
+    std::unique_ptr<WifiScanData> wifiScanData = std::make_unique<WifiScanData>();
 };

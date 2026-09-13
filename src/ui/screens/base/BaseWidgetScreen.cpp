@@ -63,7 +63,7 @@ void BaseWidgetScreen::handleAction(EventType action) {
 void BaseWidgetScreen::addBackButton(EventType target) {
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), "<",
+            uiController_->getDisplayContext(), ButtonIcon::BACK, "",
             WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
                                         Layout::kButtonSize},
             0, target, [this](EventType action) { this->handleAction(action); }, Theme::kSurface,

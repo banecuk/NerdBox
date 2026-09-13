@@ -73,6 +73,7 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         lastHasData_ = true;
         columns_ = count;
         recomputeLayout(count);
+        drawColumnDividers();
     }
 
     for (uint8_t i = 0; i < count; ++i) {
@@ -153,6 +154,26 @@ void WeatherWidget::recomputeLayout(uint8_t count) {
 
 int16_t WeatherWidget::columnCenter(uint8_t col) const {
     return dimensions_.x + leftPad_ + static_cast<int16_t>(colWidth_) * col + colWidth_ / 2;
+}
+
+// Gives the 7-column strip some structure for near-zero cost (see
+// docs-local/03-visual-ux.md V13) — a hairline that fades in from black at
+// the top and back out to black at the bottom, rather than a hard line
+// spanning the full height.
+void WeatherWidget::drawColumnDividers() const {
+    if (columns_ < 2)
+        return;
+
+    LGFX* lcd = getLcd();
+    const int16_t topHalf = dimensions_.height / 2;
+    const int16_t midY = dimensions_.y + topHalf;
+
+    constexpr uint16_t kBlack = TFT_BLACK;
+    for (uint8_t col = 1; col < columns_; ++col) {
+        const int16_t x = dimensions_.x + leftPad_ + static_cast<int16_t>(colWidth_) * col;
+        lcd->drawGradientVLine(x, dimensions_.y, topHalf, kBlack, Colors::kHairline);
+        lcd->drawGradientVLine(x, midY, dimensions_.height - topHalf, Colors::kHairline, kBlack);
+    }
 }
 
 // ---------------------------------------------------------------------------

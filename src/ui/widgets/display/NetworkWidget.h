@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+
+#include "core/events/EventTypes.h"
 #include "services/network/NetworkStatus.h"
 #include "services/network/NetworkStatusService.h"
 #include "ui/core/Colors.h"
@@ -34,8 +37,19 @@
 // endpoint_ok flag changes.
 class NetworkWidget : public Widget {
  public:
+    using ActionCallback = std::function<void(EventType)>;
+
+    // Optional tap action (mirrors ClockWidget/AirQualityWidget): when a
+    // callback is set, a tap publishes `action`, e.g. to open the WIFI
+    // screen. Defaults keep every other NetworkWidget instance (this
+    // screen's own untappable copy on WifiScreen) non-tappable. `dims` may be
+    // taller than the widget's actual drawn content (kContentH) — see
+    // contentTop()'s comment — so MainScreen can hand this a full band-height
+    // tap target without changing what's painted (docs-local/
+    // 13-wifi-screen-plan.md §4.5).
     NetworkWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                  const NetworkStatus& status);
+                  const NetworkStatus& status, EventType action = EventType::NONE,
+                  ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -47,6 +61,13 @@ class NetworkWidget : public Widget {
     // -----------------------------------------------------------------------
     // Layout
     // -----------------------------------------------------------------------
+    // Fixed drawn-content height — every drawing routine below sizes/
+    // positions itself against this and contentTop(), not dimensions_.height/
+    // dimensions_.y, so a taller dimensions_ (a bigger tap target) grows only
+    // the hit box: the content stays vertically centred at the same absolute
+    // position it always was (see the constructor comment above).
+    static constexpr uint16_t kContentH = 24;
+
     static constexpr uint16_t kWifiSectionW = 68;  // left — signal bars
     static constexpr uint16_t kSepW = 1;
     static constexpr uint16_t kGlobeSectionW = 36;  // globe icon
@@ -83,7 +104,7 @@ class NetworkWidget : public Widget {
     // Colours
     static constexpr uint16_t kColorOk = TFT_LIGHTGRAY;
     static constexpr uint16_t kColorWarning = Colors::kWarn;
-    static constexpr uint16_t kColorDegraded = 0xE3E8;  // muted orange, midpoint of kWarn/kDanger
+    static constexpr uint16_t kColorDegraded = Colors::kDegraded;
     static constexpr uint16_t kColorDown = Colors::kDanger;
     static constexpr uint16_t kColorUnknown = Colors::kHairline;
     static constexpr uint16_t kColorDotFail = Colors::kDanger;  // failed-endpoint dot
@@ -91,6 +112,15 @@ class NetworkWidget : public Widget {
 
     // -----------------------------------------------------------------------
     const NetworkStatus& status_;
+
+    EventType action_;
+    ActionCallback callback_;
+
+    // Top of the (fixed-height) drawn content, vertically centred within
+    // dimensions_ — see kContentH's comment.
+    int16_t contentTop() const {
+        return dimensions_.y + (static_cast<int16_t>(dimensions_.height) - kContentH) / 2;
+    }
 
     // Cached state for dirty detection
     bool lastConnected_ = false;

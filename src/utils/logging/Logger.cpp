@@ -210,8 +210,8 @@ void Logger::criticalf(const char* format, ...) {
     emit(LogLevel::CRITICAL, messageBuffer, false);
 }
 
-bool Logger::popScreenMessage(char* buffer, size_t bufferSize) {
-    return screenQueue_.pop(buffer, bufferSize);
+bool Logger::popScreenMessage(char* buffer, size_t bufferSize, LogLevel* outLevel) {
+    return screenQueue_.pop(buffer, bufferSize, outLevel);
 }
 
 void Logger::clearScreenMessages() {

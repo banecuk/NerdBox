@@ -10,6 +10,7 @@
 #include "core/ScreenRegistry.h"
 #include "services/network/NetworkStatusService.h"
 #include "services/web/ChunkedPrint.h"
+#include "services/wifiScan/WifiScanMath.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/ScopedLock.h"
 
@@ -31,7 +32,9 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
                                const SystemState& systemState, const WeatherData& weatherData,
                                const AppSettings& config,
                                const ITaskStackReporter& taskStackReporter,
-                               const AudioData& audioData, const RoomClimateData& roomClimateData)
+                               const AudioData& audioData, const RoomClimateData& roomClimateData,
+                               const NetworkManager& networkManager,
+                               const WifiScanData& wifiScanData)
     : server_(server),
       systemMetrics_(systemMetrics),
       pcMetrics_(pcMetrics),
@@ -45,7 +48,9 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
       config_(config),
       taskStackReporter_(taskStackReporter),
       audioData_(audioData),
-      roomClimateData_(roomClimateData) {}
+      roomClimateData_(roomClimateData),
+      networkManager_(networkManager),
+      wifiScanData_(wifiScanData) {}
 
 const char* WebApiHandlers::internetStatusToString(NetworkStatus::Internet status) {
     switch (status) {
@@ -232,6 +237,35 @@ void WebApiHandlers::handleApiStatus() {
     room["temperature_x10"] = roomClimateData_.temperature_x10;
     room["humidity"] = roomClimateData_.humidity;
     room["last_event_age_ms"] = roomAgeMs;
+
+    // wifi — this device's own link plus the nearby-SSID scan feed, so the
+    // WIFI screen's data path can be observed without a serial monitor or a
+    // visible screen. Scan fields only advance while the WIFI screen is
+    // open (see docs-local/13-wifi-screen-plan.md — the job is screen-gated).
+    NetworkManager::LinkInfo link{};
+    networkManager_.fillLinkInfo(link);
+    const unsigned long wifiScanAgeMs = wifiScanData_.freshness.available()
+                                            ? millis() - wifiScanData_.freshness.lastUpdateMs()
+                                            : 0;
+    JsonObject wifi = doc["wifi"].to<JsonObject>();
+    wifi["connected"] = link.connected;
+    wifi["ssid"] = link.ssid;
+    wifi["rssi"] = link.rssi;
+    wifi["quality"] = WifiScanMath::rssiToQuality(link.rssi);
+    wifi["channel"] = link.channel;
+    char bssidStr[18] = "";
+    snprintf(bssidStr, sizeof(bssidStr), "%02X:%02X:%02X:%02X:%02X:%02X", link.bssid[0],
+             link.bssid[1], link.bssid[2], link.bssid[3], link.bssid[4], link.bssid[5]);
+    wifi["bssid"] = bssidStr;
+    wifi["auth"] = WifiScanMath::authName(link.auth);
+    wifi["ip"] = link.ip;
+    wifi["gateway"] = link.gateway;
+    wifi["mac"] = link.mac;
+    wifi["hostname"] = link.hostname;
+    wifi["scan_state"] = static_cast<int>(wifiScanData_.state);
+    wifi["scan_ap_count"] = wifiScanData_.count;
+    wifi["scan_same_channel"] = wifiScanData_.sameChannelCount;
+    wifi["scan_age_ms"] = wifiScanAgeMs;
 
     // audio — mb_NerdBox MusicBee plugin push feed state, so the push path
     // (POST /audio) can be observed without a serial monitor or a visible
@@ -509,6 +543,24 @@ void WebApiHandlers::handleMetrics() {
 
     writeHeader(out, "nerdbox_room_humidity_percent", "Local room relative humidity.", "gauge");
     out.printf("nerdbox_room_humidity_percent %u\n", roomClimateData_.humidity);
+
+    // ---- this device's own WiFi link ----
+    NetworkManager::LinkInfo link{};
+    networkManager_.fillLinkInfo(link);
+
+    writeHeader(out, "nerdbox_wifi_rssi_dbm", "This device's own WiFi signal strength.", "gauge");
+    out.printf("nerdbox_wifi_rssi_dbm %d\n", link.rssi);
+
+    writeHeader(out, "nerdbox_wifi_quality_percent", "This device's own WiFi signal quality.",
+               "gauge");
+    out.printf("nerdbox_wifi_quality_percent %u\n", WifiScanMath::rssiToQuality(link.rssi));
+
+    writeHeader(out, "nerdbox_wifi_channel", "This device's own WiFi channel.", "gauge");
+    out.printf("nerdbox_wifi_channel %u\n", link.channel);
+
+    writeHeader(out, "nerdbox_wifi_neighbours_same_channel",
+               "Nearby APs sharing this device's WiFi channel (last scan).", "gauge");
+    out.printf("nerdbox_wifi_neighbours_same_channel %u\n", wifiScanData_.sameChannelCount);
 
     out.flush();
     server_.sendContent("");  // flush / end chunked transfer

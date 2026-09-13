@@ -45,14 +45,17 @@ class LogRing {
         xSemaphoreGive(mutex_);
     }
 
-    // Destructively pops the oldest entry's message into buffer. Returns
-    // false if the ring is empty.
-    bool pop(char* buffer, size_t bufferSize) {
+    // Destructively pops the oldest entry's message (and, if requested, its
+    // level) into buffer. Returns false if the ring is empty.
+    bool pop(char* buffer, size_t bufferSize, LogLevel* outLevel = nullptr) {
         bool hasMessage = false;
         xSemaphoreTake(mutex_, portMAX_DELAY);
         if (count_ > 0) {
             strncpy(buffer, entries_[head_].message, bufferSize - 1);
             buffer[bufferSize - 1] = '\0';
+            if (outLevel) {
+                *outLevel = entries_[head_].level;
+            }
             head_ = (head_ + 1) % N;
             --count_;
             hasMessage = true;

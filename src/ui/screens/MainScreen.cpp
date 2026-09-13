@@ -109,8 +109,6 @@ void MainScreen::createWidgets() {
     static constexpr uint16_t kClockX = Layout::kScreenW - kClockW - 2;
     static constexpr uint16_t kClockH = 40;
     static constexpr uint16_t kClockY = kBandY + kBandH / 2 - kClockH / 2;
-    static constexpr uint16_t kNetWidgetH = 24;
-    static constexpr uint16_t kNetWidgetY = kBandY + (kBandH - kNetWidgetH) / 2;
     static constexpr uint16_t kNetWidgetW = 148;
     static constexpr uint16_t kNetWidgetX = kClockX - kNetWidgetW;
 
@@ -142,12 +140,16 @@ void MainScreen::createWidgets() {
             EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); }),
         "disk_summary");
 
-    // Network widget — compact, right-aligned next to the clock, vertically
-    // centered in the band.
+    // Network widget — compact, right-aligned next to the clock. Hit box
+    // spans the full band height (not just the 24px drawn content) so the
+    // tap target clears the comfortable-touch floor; NetworkWidget centres
+    // its actual drawing within whatever box it's given, so this is a purely
+    // additive fix (see docs-local/13-wifi-screen-plan.md §4.5). Tappable to
+    // the WIFI screen.
     widgetManager_.addWidget(
         std::make_unique<NetworkWidget>(
-            WidgetInterface::Dimensions{kNetWidgetX, kNetWidgetY, kNetWidgetW, kNetWidgetH}, 1000,
-            netStatus_),
+            WidgetInterface::Dimensions{kNetWidgetX, kBandY, kNetWidgetW, kBandH}, 1000, netStatus_,
+            EventType::SHOW_WIFI, [this](EventType action) { this->handleAction(action); }),
         "network_status");
 
     // Clock — taller row so Mono24 glyphs get vertical padding. Centered on

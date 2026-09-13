@@ -30,7 +30,7 @@ class Logger : public LoggerInterface, public ScreenLogQueue, public RecentLogVi
     void errorf(const char* format, ...) override;
     void criticalf(const char* format, ...) override;
 
-    bool popScreenMessage(char* buffer, size_t bufferSize) override;
+    bool popScreenMessage(char* buffer, size_t bufferSize, LogLevel* outLevel = nullptr) override;
     void clearScreenMessages() override;
 
     size_t copyRecentLogs(LogEntry* outEntries, size_t maxCount) override;

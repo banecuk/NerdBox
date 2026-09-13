@@ -1,6 +1,26 @@
 #include "ButtonWidget.h"
 
 #include "ui/resources/FontRegistry.h"
+#include "ui/resources/icons_24.h"
+
+namespace {
+// Maps the enum to its backing bitmap — nullptr for NONE/unrendered icons.
+const uint16_t* iconBitmap(ButtonIcon icon) {
+    switch (icon) {
+        case ButtonIcon::SETTINGS:
+            return icon_gear_24;
+        case ButtonIcon::BACK:
+            return icon_chevron_left_24;
+        case ButtonIcon::FORWARD:
+            return icon_chevron_right_24;
+        case ButtonIcon::PROCESSES:
+            return icon_processes_24;
+        case ButtonIcon::NONE:
+            return nullptr;
+    }
+    return nullptr;
+}
+}  // namespace
 
 // ---------------------------------------------------------------------------
 // Constructors
@@ -110,15 +130,14 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
 
     if (hasIcon && !hasLabel) {
         // Icon only — centred
-        if (icon_ == ButtonIcon::SETTINGS) {
-            const int16_t ix = cx - kGearBitmapSize / 2;
-            const int16_t iy = cy - kGearBitmapSize / 2;
-            // icon_gear was generated against a black canvas — key that exact
-            // black out as transparent so the button's own fill (no longer
-            // always TFT_BLACK, see Theme::kSurface) shows through instead of
-            // a solid black square around the glyph.
-            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear,
-                           static_cast<uint16_t>(0x0000));
+        if (const uint16_t* bitmap = iconBitmap(icon_)) {
+            const int16_t ix = cx - kIconSize / 2;
+            const int16_t iy = cy - kIconSize / 2;
+            // icons_24.h was generated against a black canvas — key that
+            // exact black out as transparent so the button's own fill (no
+            // longer always TFT_BLACK, see Theme::kSurface) shows through
+            // instead of a solid black square around the glyph.
+            lcd->pushImage(ix, iy, kIconSize, kIconSize, bitmap, static_cast<uint16_t>(0x0000));
         }
 
     } else if (!hasIcon && hasLabel) {
@@ -135,21 +154,20 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
         const int16_t labelW = static_cast<int16_t>(lcd->textWidth(label_.c_str()));
         Fonts::unload(lcd);
 
-        const uint8_t iconDiam = dimensions_.height - 12;  // diameter of icon bounding box
+        const uint8_t iconDiam = kIconSize;  // bitmap bounding box
         const int16_t totalW = iconDiam + kIconPad + labelW;
         const int16_t startX = cx - totalW / 2;
         const int16_t iconCx = startX + iconDiam / 2;
         const int16_t labelX = startX + iconDiam + kIconPad + labelW / 2;
 
-        if (icon_ == ButtonIcon::SETTINGS) {
-            const int16_t ix = iconCx - kGearBitmapSize / 2;
-            const int16_t iy = cy - kGearBitmapSize / 2;
-            // icon_gear was generated against a black canvas — key that exact
-            // black out as transparent so the button's own fill (no longer
-            // always TFT_BLACK, see Theme::kSurface) shows through instead of
-            // a solid black square around the glyph.
-            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear,
-                           static_cast<uint16_t>(0x0000));
+        if (const uint16_t* bitmap = iconBitmap(icon_)) {
+            const int16_t ix = iconCx - kIconSize / 2;
+            const int16_t iy = cy - kIconSize / 2;
+            // icons_24.h was generated against a black canvas — key that
+            // exact black out as transparent so the button's own fill (no
+            // longer always TFT_BLACK, see Theme::kSurface) shows through
+            // instead of a solid black square around the glyph.
+            lcd->pushImage(ix, iy, kIconSize, kIconSize, bitmap, static_cast<uint16_t>(0x0000));
         }
 
         lcd->setTextColor(fg, bg);

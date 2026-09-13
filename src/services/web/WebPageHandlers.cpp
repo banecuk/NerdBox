@@ -162,7 +162,9 @@ constexpr ApiEndpoint kApiEndpoints[] = {
      "app.threads_bar_draw_us is 0 on release builds by design (DEBUG_MODE-gated). "
      "app.widgets is the current screen's top widgets by cumulative draw time "
      "(resets on a screen change); app.noop_dirty_frames counts frames where a "
-     "widget was found dirty but nothing was actually drawn."                        },
+     "widget was found dirty but nothing was actually drawn. wifi.ssid/rssi/ip/etc. "
+     "are always live; wifi.scan_* (nearby-network scan results) only advance while "
+     "the WIFI screen is open — the scan job is screen-gated."                       },
     {"GET",  "/api/raw",
      "Last raw NerdWinSense payload, unfiltered — for debugging a field that reads "
      "0 or -1. Triggers a dedicated fetch; not the same connection as the regular "
@@ -182,6 +184,7 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"POST", "/screen/disks",    "Switches the display to the Disks screen."           },
     {"POST", "/screen/cpu-clock", "Switches the display to the CPU Clock screen."      },
     {"POST", "/screen/processes", "Switches the display to the Processes screen."      },
+    {"POST", "/screen/wifi",     "Switches the display to the WiFi screen."            },
 };
 }  // namespace
 

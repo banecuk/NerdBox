@@ -6,12 +6,14 @@
 #include "core/ITaskStackReporter.h"
 #include "core/IStreamHealth.h"
 #include "core/state/SystemState.h"
+#include "network/NetworkManager.h"
 #include "services/audio/AudioData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
+#include "services/wifiScan/WifiScanData.h"
 #include "utils/ApplicationMetrics.h"
 
 // The /api/* JSON handlers, split out of WebServerService so that class isn't
@@ -27,7 +29,8 @@ class WebApiHandlers {
                    const NetworkStatus& netStatus, const SystemState& systemState,
                    const WeatherData& weatherData, const AppSettings& config,
                    const ITaskStackReporter& taskStackReporter, const AudioData& audioData,
-                   const RoomClimateData& roomClimateData);
+                   const RoomClimateData& roomClimateData, const NetworkManager& networkManager,
+                   const WifiScanData& wifiScanData);
 
     void handleApiStatus();
     void handleApiRaw();
@@ -53,4 +56,6 @@ class WebApiHandlers {
     const ITaskStackReporter& taskStackReporter_;
     const AudioData& audioData_;
     const RoomClimateData& roomClimateData_;
+    const NetworkManager& networkManager_;
+    const WifiScanData& wifiScanData_;
 };

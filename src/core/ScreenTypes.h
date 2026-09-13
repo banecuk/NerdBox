@@ -12,5 +12,6 @@ enum class ScreenName : uint8_t {
     CPU_CLOCK,
     PROCESSES,
     WEATHER,
-    CALENDAR
+    CALENDAR,
+    WIFI
 };

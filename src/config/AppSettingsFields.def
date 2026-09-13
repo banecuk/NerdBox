@@ -143,7 +143,16 @@ AS_FIELD(U, uint8_t, multiWidgetForecastDays, AppConfig::internal::MultiWidgetIm
 
 AS_FIELD(S, const char*, networkMdnsHostname, AppConfig::internal::NetworkImpl::kMdnsHostname)
 
+AS_FIELD(U, uint32_t, wifiScanRescanIntervalMs, AppConfig::internal::WifiScanImpl::kRescanIntervalMs)
+AS_FIELD(U, uint32_t, wifiScanFailureBackoffMs, AppConfig::internal::WifiScanImpl::kFailureBackoffMs)
+AS_FIELD(U, uint16_t, wifiScanMaxMsPerChannel, AppConfig::internal::WifiScanImpl::kMaxMsPerChannel)
+AS_FIELD(B, bool, wifiScanShowHidden, AppConfig::internal::WifiScanImpl::kShowHidden)
+AS_FIELD(U, uint32_t, wifiScanRssiTraceIntervalMs,
+         AppConfig::internal::WifiScanImpl::kRssiTraceIntervalMs)
+
 AS_FIELD(U, uint32_t, uiTransitionTimeoutMs, AppConfig::internal::UiImpl::kTransitionTimeoutMs)
+AS_FIELD(U, uint32_t, uiTransitionFadeOutMs, AppConfig::internal::UiImpl::kTransitionFadeOutMs)
+AS_FIELD(U, uint32_t, uiTransitionFadeInMs, AppConfig::internal::UiImpl::kTransitionFadeInMs)
 AS_FIELD(U, uint32_t, uiTouchDebounceIntervalMs,
          AppConfig::internal::UiImpl::kTouchDebounceIntervalMs)
 AS_FIELD(U, uint32_t, uiScreenTransitionCooldownMs,

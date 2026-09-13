@@ -127,6 +127,12 @@ void UiController::processTransitionPhase() {
             LOG_DEBUG(logger_, "[UiController] Unloading current screen");
             LOG_DEBUGF(logger_, "[Heap] %d", ESP.getFreeHeap());
             LOG_DEBUGF(logger_, "[Stack] %u", uxTaskGetStackHighWaterMark(nullptr));
+            // Fade the backlight out before anything visible changes — hides
+            // the clear+rebuild behind black instead of flashing it (see
+            // docs-local/03-visual-ux.md V7(a)). Blocking is deliberate: this
+            // phase already holds the display lock for the duration of the
+            // teardown work below it.
+            displayManager_.rampDownForTransition(config_.uiTransitionFadeOutMs);
             unloadCurrentScreen();
             activeTransition_.phase = TransitionPhase::CLEARING;
             break;
@@ -140,6 +146,9 @@ void UiController::processTransitionPhase() {
         case TransitionPhase::ACTIVATING:
             LOG_DEBUG(logger_, "[UiController] Activating new screen");
             loadAndActivateScreen();
+            // New screen is fully drawn (still behind a dark backlight) —
+            // fade back in now rather than popping to full brightness.
+            displayManager_.rampUpForTransition(config_.uiTransitionFadeInMs);
             completeTransition();
             break;
 

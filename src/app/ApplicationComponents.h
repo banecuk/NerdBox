@@ -90,6 +90,7 @@ class ApplicationComponents : public IInitializationTarget {
     void setScreenInitialized() override;
     void setTimeSynced() override;
     void setSystemInitialized() override;
+    void setBootProgressPercent(uint8_t percent) override;
 
     uint8_t initTimeSyncRetries() const override;
     uint32_t initTimeSyncBaseDelayMs() const override;

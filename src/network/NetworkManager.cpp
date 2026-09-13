@@ -1,6 +1,9 @@
 #include "NetworkManager.h"
 
 #include <ESPmDNS.h>
+#include <esp_wifi.h>
+
+#include <cstring>
 
 NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
                                const AppSettings& config)
@@ -62,6 +65,54 @@ void NetworkManager::startMdns() {
     } else {
         logger_.error("mDNS responder failed to start");
     }
+}
+
+void NetworkManager::fillLinkInfo(LinkInfo& out) const {
+    out.ssid[0] = '\0';
+    out.ip[0] = '\0';
+    out.gateway[0] = '\0';
+    out.mask[0] = '\0';
+    out.dns[0] = '\0';
+    out.mac[0] = '\0';
+    out.hostname[0] = '\0';
+    memset(out.bssid, 0, sizeof(out.bssid));
+    out.rssi = 0;
+    out.channel = 0;
+    out.auth = 0;
+    out.connected = isConnected();
+
+    if (!out.connected) {
+        return;
+    }
+
+    // esp_wifi_sta_get_ap_info() gives channel/authmode/bssid in one call —
+    // the Arduino WiFiSTAClass surface has no equivalent for "the network
+    // we're currently on" (WiFi.encryptionType(i)/channel(i) are scan-result
+    // accessors, indexed by the last scanNetworks() call, not our own link).
+    wifi_ap_record_t apInfo{};
+    if (esp_wifi_sta_get_ap_info(&apInfo) == ESP_OK) {
+        snprintf(out.ssid, sizeof(out.ssid), "%s", reinterpret_cast<const char*>(apInfo.ssid));
+        memcpy(out.bssid, apInfo.bssid, sizeof(out.bssid));
+        out.rssi = static_cast<int8_t>(apInfo.rssi);
+        out.channel = apInfo.primary;
+        out.auth = static_cast<uint8_t>(apInfo.authmode);
+    }
+
+    IPAddress ip = WiFi.localIP();
+    snprintf(out.ip, sizeof(out.ip), "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    IPAddress gw = WiFi.gatewayIP();
+    snprintf(out.gateway, sizeof(out.gateway), "%u.%u.%u.%u", gw[0], gw[1], gw[2], gw[3]);
+    IPAddress mask = WiFi.subnetMask();
+    snprintf(out.mask, sizeof(out.mask), "%u.%u.%u.%u", mask[0], mask[1], mask[2], mask[3]);
+    IPAddress dns = WiFi.dnsIP();
+    snprintf(out.dns, sizeof(out.dns), "%u.%u.%u.%u", dns[0], dns[1], dns[2], dns[3]);
+
+    uint8_t macBuf[6] = {0};
+    WiFi.macAddress(macBuf);
+    snprintf(out.mac, sizeof(out.mac), "%02X:%02X:%02X:%02X:%02X:%02X", macBuf[0], macBuf[1],
+             macBuf[2], macBuf[3], macBuf[4], macBuf[5]);
+
+    snprintf(out.hostname, sizeof(out.hostname), "%s.local", config_.networkMdnsHostname);
 }
 
 /**

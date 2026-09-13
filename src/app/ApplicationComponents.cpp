@@ -13,6 +13,7 @@ ApplicationComponents::ApplicationComponents()
                    data.systemState.screen, config, data.weatherData),
       screenCtx{platform.logger_,
                 platform.displayContext.getScreenLogQueue(),
+                data.systemState.core,
                 &platform.displayManager,
                 data.pcMetrics,
                 &uiController,
@@ -25,14 +26,16 @@ ApplicationComponents::ApplicationComponents()
                 data.audioData,
                 *data.cpuClockData,
                 *data.processData,
-                data.roomClimateData},
+                data.roomClimateData,
+                *data.wifiScanData},
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
       webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
                        services.pcMetricsService, *jobs.pcMetricsStreamJob, *jobs.cpuClockStreamJob,
                        *jobs.processStreamJob, data.netStatus, data.systemState, data.weatherData,
                        config, taskManager, platform.logger_, platform.logger_, data.audioData,
-                       services.audioService, data.roomClimateData),
+                       services.audioService, data.roomClimateData, platform.networkManager,
+                       *data.wifiScanData),
       initStateMachine(*this) {
     // uiController is constructed before screenCtx (declaration order) and
     // screenCtx holds a pointer back to it, so the reverse link — giving
@@ -91,6 +94,9 @@ void ApplicationComponents::setTimeSynced() {
 }
 void ApplicationComponents::setSystemInitialized() {
     data.systemState.core.isInitialized = true;
+}
+void ApplicationComponents::setBootProgressPercent(uint8_t percent) {
+    data.systemState.core.bootProgressPercent = percent;
 }
 
 uint8_t ApplicationComponents::initTimeSyncRetries() const {

@@ -68,6 +68,10 @@ class Colors {
     static constexpr uint16_t kWarn = 0xEE27;    // muted gold    (~235,199,56)
     static constexpr uint16_t kDanger = 0xD9A8;  // muted red     (~220,52,64)
     static constexpr uint16_t kInfo = 0x4D5E;    // muted sky blue(~76,168,248)
+    // Muted orange, the midpoint between kWarn and kDanger — the WiFi/signal
+    // "degraded" tier shared by NetworkWidget/WifiLinkWidget/WifiScanListWidget
+    // (see WifiScanMath::SignalTier, docs-local/13-wifi-screen-plan.md §4.2).
+    static constexpr uint16_t kDegraded = 0xE3E8;
 
     Colors();
     ~Colors();

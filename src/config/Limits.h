@@ -42,5 +42,9 @@ static constexpr uint8_t kMaxThreads = 48;
 static_assert(kCores <= kMaxThreads,
               "kCores exceeds PcMetrics::cpu_thread_load capacity (kMaxThreads)");
 
+// WifiScanData::entries[] capacity — top-N strongest APs kept/displayed on
+// the WIFI screen (WifiScanListWidget), see docs-local/13-wifi-screen-plan.md.
+static constexpr uint8_t kWifiScanEntries = 12;
+
 }  // namespace Limits
 }  // namespace AppConfig

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/CalendarMath.h"
 
@@ -51,7 +52,9 @@ class CalendarWidget : public Widget {
     // title-only repaint never overpaints them.
     static constexpr uint16_t kTitleInset = 48;
 
-    static constexpr uint16_t kTodayAccent = 0x051D;  // dim blue accent
+    // Colors::kInfo, not a local literal — see docs-local/03-visual-ux.md V13:
+    // the old 0x051D dim-blue fill barely read as an accent at all.
+    static constexpr uint16_t kTodayAccent = Colors::kInfo;
 
     int year_ = 1970;
     uint8_t month_ = 1;

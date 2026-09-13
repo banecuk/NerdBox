@@ -17,6 +17,7 @@
 #include "app/jobs/RoomClimateJob.h"
 #include "app/jobs/WeatherJob.h"
 #include "app/jobs/WifiReconnectJob.h"
+#include "app/jobs/WifiScanJob.h"
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 
@@ -40,6 +41,9 @@ struct JobBundle {
     NetworkStatusJob networkStatusJob;
     DimAtNightJob dimAtNightJob;
     WeatherJob weatherJob;
+    // No SseConnection/JsonDocument — just a couple of state ints — so an
+    // inline member is fine, unlike the three SSE stream jobs below.
+    WifiScanJob wifiScanJob;
 
     // Heap-allocated rather than embedded inline: JobBundle is itself an
     // embedded member of ApplicationComponents, which is size-sensitive on
@@ -71,6 +75,8 @@ struct JobBundle {
           dimAtNightJob(platform.ntpService, platform.displayManager, config),
           weatherJob(services.weatherService, data.weatherData, data.systemState.core,
                      platform.networkManager, config, platform.logger_),
+          wifiScanJob(services.wifiScanService, *data.wifiScanData, data.systemState.core,
+                     data.systemState.screen, platform.networkManager, config, platform.logger_),
           pcMetricsStreamJob(std::make_unique<PcMetricsStreamJob>(
               data.pcMetrics, data.systemState.core, data.systemState.screen,
               platform.networkManager, config, platform.logger_, services.systemMetrics)),
@@ -86,7 +92,7 @@ struct JobBundle {
                 &pcMetricsJob,            pcMetricsStreamJob.get(),
                 &airQualityJob,           &roomClimateJob,
                 &networkStatusJob,        &dimAtNightJob,
-                &weatherJob,              cpuClockStreamJob.get(),
-                processStreamJob.get()};
+                &weatherJob,              &wifiScanJob,
+                cpuClockStreamJob.get(),  processStreamJob.get()};
     }
 };

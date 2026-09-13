@@ -206,9 +206,41 @@ bool InitializationStateMachine::handleFailed() {
 // Helpers
 // ---------------------------------------------------------------------------
 
+namespace {
+// Coarse "display -> WiFi -> NTP -> services -> UI" progress mapping for
+// BootScreen's progress bar (see docs-local/03-visual-ux.md V10). Values are
+// hand-picked waypoints, not a computed fraction — NETWORK_INIT/TIME_INIT can
+// each take seconds (WiFi connect, NTP retries) so they get more of the bar
+// than the near-instant states around them.
+uint8_t bootProgressPercentFor(InitializationStateMachine::State state) {
+    using State = InitializationStateMachine::State;
+    switch (state) {
+        case State::INITIAL:
+            return 0;
+        case State::DISPLAY_INIT:
+            return 10;
+        case State::WATCHDOG_INIT:
+            return 20;
+        case State::TASKS_INIT:
+            return 30;
+        case State::NETWORK_INIT:
+            return 45;  // WiFi
+        case State::TIME_INIT:
+            return 65;  // NTP
+        case State::FINAL_SETUP:
+            return 85;  // services (web server, etc.)
+        case State::COMPLETE:
+        case State::FAILED:
+            return 100;
+    }
+    return 0;
+}
+}  // namespace
+
 void InitializationStateMachine::transitionTo(State newState) {
     LOG_DEBUGF(target_.logger(), "%s -> %s", getStateName(currentState_), getStateName(newState));
     currentState_ = newState;
+    target_.setBootProgressPercent(bootProgressPercentFor(newState));
 }
 
 uint16_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,

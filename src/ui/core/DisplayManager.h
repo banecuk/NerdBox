@@ -38,6 +38,16 @@ class DisplayManager {
     // night/day state actually changes.
     void setNightWindowActive(bool isNight);
 
+    // Blocking backlight ramp used by UiController's screen-transition fade
+    // (see docs-local/03-visual-ux.md V7(a)) — steps the raw PWM level from
+    // wherever it currently sits down to 0 (rampDownForTransition) or back up
+    // to the persisted effective brightness (rampUpForTransition) over
+    // `durationMs`. Deliberately synchronous: the caller owns keeping this to
+    // a short, one-off transition effect rather than anything per-frame.
+    // Neither touches brightness_/NVS — only the raw hardware level.
+    void rampDownForTransition(uint32_t durationMs);
+    void rampUpForTransition(uint32_t durationMs);
+
  private:
     // Re-evaluates whether dimming should currently be applied and, if that
     // changed, pushes the new effective brightness to the display.
@@ -46,6 +56,13 @@ class DisplayManager {
     // Applies brightness_ (or brightness_ dimmed by kDimAtNightPercent, if
     // isCurrentlyDimmed_) to the physical display. Never persists.
     void applyEffectiveBrightness();
+
+    // What applyEffectiveBrightness() would currently set — the ramp's
+    // implicit start/end point.
+    uint8_t effectiveBrightness() const;
+
+    // Shared step loop for rampDownForTransition()/rampUpForTransition().
+    void rampRawBrightnessTo(uint8_t target, uint32_t durationMs);
 
     LGFX& display_;
     LoggerInterface& logger_;

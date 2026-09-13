@@ -10,14 +10,16 @@ WebServerService::WebServerService(
     const NetworkStatus& netStatus, const SystemState& systemState, const WeatherData& weatherData,
     const AppSettings& config, const ITaskStackReporter& taskStackReporter,
     LoggerInterface& logger, RecentLogView& recentLogView, const AudioData& audioData,
-    AudioService& audioService, const RoomClimateData& roomClimateData)
+    AudioService& audioService, const RoomClimateData& roomClimateData,
+    const NetworkManager& networkManager, const WifiScanData& wifiScanData)
     : server_(server),
       screenNavigator_(screenNavigator),
       logger_(logger),
       audioService_(audioService),
       apiHandlers_(server, systemMetrics, pcMetrics, pcMetricsService, pcMetricsStreamJob,
                    cpuClockStreamJob, processStreamJob, netStatus, systemState, weatherData,
-                   config, taskStackReporter, audioData, roomClimateData),
+                   config, taskStackReporter, audioData, roomClimateData, networkManager,
+                   wifiScanData),
       pageHandlers_(server, systemMetrics, config, recentLogView) {}
 
 void WebServerService::begin() {
