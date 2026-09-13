@@ -110,8 +110,13 @@ void NetworkWidget::drawGlobe() {
     const int16_t cx = secX + kGlobeSectionW / 2;
     const int16_t cy = dimensions_.y + dimensions_.height / 2;
 
-    // Outer circle
-    lcd->drawCircle(cx, cy, kGlobeR, c);
+    // Outer circle — anti-aliased ring (see docs-local/03-visual-ux.md V5):
+    // a filled AA disc, then a black AA disc one pixel smaller punched out of
+    // its centre. Safe on this write-only panel the same way ButtonWidget's
+    // fill is (both AA edges blend against readRect()'s hard-coded black
+    // stub, which matches this section's actual black background).
+    lcd->fillSmoothCircle(cx, cy, kGlobeR, c);
+    lcd->fillSmoothCircle(cx, cy, kGlobeR - 1, TFT_BLACK);
 
     // Three horizontal latitude lines at 40%, 0%, -40% of radius
     for (int8_t frac : {-4, 0, 4}) {
@@ -122,11 +127,11 @@ void NetworkWidget::drawGlobe() {
         if (dy2 >= r2)
             continue;
         const int16_t hw = static_cast<int16_t>(sqrtf(static_cast<float>(r2 - dy2)));
-        lcd->drawFastHLine(cx - hw + 1, ly, hw * 2 - 2, c);
+        lcd->drawWideLine(cx - hw + 1, ly, cx + hw - 2, ly, 0.6f, c);
     }
 
     // Vertical axis
-    lcd->drawFastVLine(cx, cy - kGlobeR + 1, kGlobeR * 2 - 2, c);
+    lcd->drawWideLine(cx, cy - kGlobeR + 1, cx, cy + kGlobeR - 2, 0.6f, c);
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +162,7 @@ void NetworkWidget::drawDotGrid() {
             const int16_t cx = originX + col * kDotSpacX;
             const int16_t cy = originY + row * kDotSpacY;
             const uint16_t c = status_.endpoint_ok[idx] ? kColorDotOk : kColorDotFail;
-            lcd->fillCircle(cx, cy, kDotR, c);
+            lcd->fillSmoothCircle(cx, cy, kDotR, c);
         }
     }
 }

@@ -49,6 +49,7 @@ bool ThreadsWidget::ensureLayoutInitialized() {
 
     coreCount_ = detected;
     barWidth_ = dimensions_.width / coreCount_;
+    remainder_ = dimensions_.width % coreCount_;
     previousBarHeights_.assign(coreCount_, 0);
     previousColors_.assign(coreCount_, 0);
     smoothedThreadLoads_.assign(coreCount_, 0);
@@ -172,8 +173,14 @@ void ThreadsWidget::drawBars() {
         const uint16_t oldHeight = previousBarHeights_[i];
         const uint16_t oldColor = previousColors_[i];
 
-        const uint16_t x = dimensions_.x + i * barWidth_;
-        const uint16_t w = barWidth_ - 1;
+        // The first remainder_ bars get one extra pixel of pitch so the row
+        // exactly fills dimensions_.width regardless of coreCount_ (see N3).
+        const uint16_t extraBefore =
+            (static_cast<uint16_t>(i) < remainder_) ? static_cast<uint16_t>(i) : remainder_;
+        const uint16_t pitch =
+            barWidth_ + ((static_cast<uint16_t>(i) < remainder_) ? uint16_t(1) : uint16_t(0));
+        const uint16_t x = dimensions_.x + i * barWidth_ + extraBefore;
+        const uint16_t w = pitch - 1;
 
         if (newHeight == oldHeight && newColor == oldColor) {
             continue;  // Bar unchanged — no pixel writes needed

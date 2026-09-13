@@ -191,7 +191,11 @@ void CalendarWidget::drawGrid(int8_t todayMday) {
         const bool isToday = (day == todayMday);
         if (isToday) {
             const uint8_t radius = static_cast<uint8_t>(min(colWidth_, rowHeight_) / 2 - 2);
-            lcd->fillCircle(cx, cy, radius, kTodayAccent);
+            // Anti-aliased fill (see docs-local/03-visual-ux.md V5) — safe on
+            // this write-only panel the same way ButtonWidget's fill is: the
+            // AA edge blends against readRect()'s hard-coded black stub,
+            // which matches the actual black grid background behind it.
+            lcd->fillSmoothCircle(cx, cy, radius, kTodayAccent);
         }
 
         char label[4];

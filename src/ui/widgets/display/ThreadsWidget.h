@@ -42,6 +42,11 @@ class ThreadsWidget : public Widget {
     DataFreshnessGuard freshnessGuard_;
 
     uint16_t barWidth_ = 0;
+    // dimensions_.width % coreCount_ — the first remainder_ bars get one
+    // extra pixel of pitch so the row exactly fills its box at any core
+    // count instead of only when width is an exact multiple (see
+    // docs-local/03-visual-ux.md N3/V20).
+    uint16_t remainder_ = 0;
     std::vector<uint16_t> previousBarHeights_;
     std::vector<uint16_t>
         previousColors_;  // tracks last drawn color per bar for threshold change detection

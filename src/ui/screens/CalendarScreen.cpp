@@ -4,11 +4,12 @@
 #include "ui/core/Layout.h"
 
 namespace {
-// Arrow buttons sit in the calendar's title row (0..34), flanking the month
+// Arrow buttons sit in the calendar's title row (0..48), flanking the month
 // title rather than spanning the full grid height — this frees the entire
-// screen width for the 7-column day grid underneath.
-constexpr uint16_t kArrowW = 44;
-constexpr uint16_t kArrowH = 34;
+// screen width for the 7-column day grid underneath. 48x48 meets the
+// minimum tap-target size (see docs-local/03-visual-ux.md N11/V13).
+constexpr uint16_t kArrowW = 48;
+constexpr uint16_t kArrowH = 48;
 
 // Darker than ButtonWidget's default TFT_DARKGRAY background, so the
 // month-navigation arrows read as subordinate to the back/settings buttons

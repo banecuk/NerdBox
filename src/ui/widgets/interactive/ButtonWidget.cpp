@@ -37,9 +37,14 @@ ButtonWidget::ButtonWidget(DisplayContext& context, ButtonIcon icon, const std::
 void ButtonWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
 
-    // Fill background
-    lcd->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                       kBorderRadius, bgColor_);
+    // Fill background — anti-aliased corners (see docs-local/03-visual-ux.md
+    // V5). Safe on this write-only panel: the AA corner blend is composited
+    // against whatever readRect() returns, which is a hard-coded 0 (black)
+    // when cfg.readable is false (Panel_LCD::readRect) — correct as long as
+    // the screen behind the button is actually black, true everywhere today
+    // (Theme::kGround == TFT_BLACK). Revisit once V6 lands non-black cards.
+    lcd->fillSmoothRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
+                             kBorderRadius, bgColor_);
 
     // 1 px border — barely visible
     lcd->drawRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
@@ -75,8 +80,8 @@ void ButtonWidget::onDraw(bool forceRedraw) {
     const uint16_t fg = isPressed_ ? TFT_BLACK : textColor_;
 
     // 1. Clear/Fill the button body background canvas
-    getLcd()->fillRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
-                            kBorderRadius, bg);
+    getLcd()->fillSmoothRoundRect(dimensions_.x, dimensions_.y, dimensions_.width,
+                                  dimensions_.height, kBorderRadius, bg);
 
     // 2. Render the inner content (Icon, Label, or both)
     drawContent(bg, fg);
@@ -108,7 +113,12 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
         if (icon_ == ButtonIcon::SETTINGS) {
             const int16_t ix = cx - kGearBitmapSize / 2;
             const int16_t iy = cy - kGearBitmapSize / 2;
-            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear);
+            // icon_gear was generated against a black canvas — key that exact
+            // black out as transparent so the button's own fill (no longer
+            // always TFT_BLACK, see Theme::kSurface) shows through instead of
+            // a solid black square around the glyph.
+            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear,
+                           static_cast<uint16_t>(0x0000));
         }
 
     } else if (!hasIcon && hasLabel) {
@@ -134,7 +144,12 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
         if (icon_ == ButtonIcon::SETTINGS) {
             const int16_t ix = iconCx - kGearBitmapSize / 2;
             const int16_t iy = cy - kGearBitmapSize / 2;
-            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear);
+            // icon_gear was generated against a black canvas — key that exact
+            // black out as transparent so the button's own fill (no longer
+            // always TFT_BLACK, see Theme::kSurface) shows through instead of
+            // a solid black square around the glyph.
+            lcd->pushImage(ix, iy, kGearBitmapSize, kGearBitmapSize, icon_gear,
+                           static_cast<uint16_t>(0x0000));
         }
 
         lcd->setTextColor(fg, bg);

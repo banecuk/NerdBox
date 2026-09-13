@@ -1,6 +1,7 @@
 #include "MainScreen.h"
 
 #include "ui/core/Layout.h"
+#include "ui/core/Theme.h"
 
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
@@ -119,7 +120,7 @@ void MainScreen::createWidgets() {
             uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",
             WidgetInterface::Dimensions{0, kBandY, Layout::kButtonSize, Layout::kButtonSize}, 0,
             EventType::SHOW_SETTINGS, [this](EventType action) { this->handleAction(action); },
-            TFT_BLACK, TFT_WHITE),
+            Theme::kSurface, TFT_WHITE),
         "settings_button");
 
     // Network traffic widget — Ethernet up/down rates, right of the settings

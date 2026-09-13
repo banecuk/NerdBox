@@ -1,6 +1,7 @@
 #include "CpuClockScreen.h"
 
 #include "ui/core/Layout.h"
+#include "ui/core/Theme.h"
 
 CpuClockScreen::CpuClockScreen(LoggerInterface& logger, CpuClockData& cpuClockData,
                                UiController* uiController, const AppSettings& config)
@@ -23,8 +24,8 @@ void CpuClockScreen::createWidgets() {
         std::make_unique<ButtonWidget>(
             uiController_->getDisplayContext(), "Processes",
             WidgetInterface::Dimensions{56, Layout::kBottomBarY, 120, Layout::kButtonSize}, 0,
-            EventType::SHOW_PROCESSES, [this](EventType a) { this->handleAction(a); }, TFT_BLACK,
-            TFT_WHITE),
+            EventType::SHOW_PROCESSES, [this](EventType a) { this->handleAction(a); },
+            Theme::kSurface, TFT_WHITE),
         "processes_button");
 
     addBottomClock();

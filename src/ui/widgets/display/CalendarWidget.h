@@ -40,13 +40,16 @@ class CalendarWidget : public Widget {
  private:
     static constexpr uint8_t kCols = 7;
     static constexpr uint8_t kRows = 6;
-    static constexpr uint16_t kTitleH = 34;
+    // 34 -> 48: borrows 14px from the title row so CalendarScreen's prev/
+    // next-month arrows can grow to a 48x48 tap target (see
+    // docs-local/03-visual-ux.md V13/N11).
+    static constexpr uint16_t kTitleH = 48;
     static constexpr uint16_t kWeekdayH = 24;
     static constexpr uint16_t kGridY = kTitleH + kWeekdayH;
 
     // Title text is confined between the screen's arrow buttons so a
     // title-only repaint never overpaints them.
-    static constexpr uint16_t kTitleInset = 44;
+    static constexpr uint16_t kTitleInset = 48;
 
     static constexpr uint16_t kTodayAccent = 0x051D;  // dim blue accent
 

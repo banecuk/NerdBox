@@ -17,4 +17,5 @@ void WeatherScreen::createWidgets() {
         "weather");
 
     addBackButton();
+    addBottomClock();
 }

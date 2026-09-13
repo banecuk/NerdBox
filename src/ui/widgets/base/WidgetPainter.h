@@ -31,7 +31,11 @@ inline void drawCaptionLabel(LGFX* lcd, int32_t x, int32_t y, const char* label,
 inline void drawPillToggle(LGFX* lcd, uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                            uint8_t radius, uint16_t bgColor, uint16_t textColor,
                            const char* label) {
-    lcd->fillRoundRect(x, y, w, h, radius, bgColor);
+    // Anti-aliased corners (see docs-local/03-visual-ux.md V5) — safe on this
+    // write-only panel the same way ButtonWidget's fill is: the AA corner
+    // blend composites against readRect()'s hard-coded black stub, which
+    // matches the real (black) screen background behind every pill today.
+    lcd->fillSmoothRoundRect(x, y, w, h, radius, bgColor);
 
     Fonts::loadLabel(lcd);
     lcd->setTextColor(textColor, bgColor);

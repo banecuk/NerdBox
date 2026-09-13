@@ -1,6 +1,7 @@
 #include "BaseWidgetScreen.h"
 
 #include "ui/core/Layout.h"
+#include "ui/core/Theme.h"
 #include "ui/widgets/display/ClockWidget.h"
 #include "ui/widgets/interactive/ButtonWidget.h"
 #include "utils/logging/LogMacros.h"
@@ -65,7 +66,7 @@ void BaseWidgetScreen::addBackButton(EventType target) {
             uiController_->getDisplayContext(), "<",
             WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
                                         Layout::kButtonSize},
-            0, target, [this](EventType action) { this->handleAction(action); }, TFT_BLACK,
+            0, target, [this](EventType action) { this->handleAction(action); }, Theme::kSurface,
             TFT_WHITE),
         "back_button");
 }
