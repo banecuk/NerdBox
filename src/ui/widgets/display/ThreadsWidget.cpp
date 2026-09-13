@@ -58,6 +58,18 @@ bool ThreadsWidget::ensureLayoutInitialized() {
         std::make_unique<ValueSmoother>(coreCount_, config_.hardwareMonitorThreadsUpwardSmoothing,
                                         config_.hardwareMonitorThreadsDownwardSmoothing);
 
+    // P/E-core colour split — coreCount_ is the *reported* thread count, so a
+    // PC reporting fewer threads than kThreadsPerformanceCount (different
+    // machine, HT off) falls back to today's uniform look automatically via
+    // CpuTopology::hasSplit().
+    const uint8_t perf = config_.hardwareMonitorThreadsCoreClassTint
+                              ? config_.hardwareMonitorThreadsPerformanceCount
+                              : uint8_t(0);
+    isEcore_.assign(coreCount_, 0);
+    for (uint8_t i = 0; i < coreCount_; ++i) {
+        isEcore_[i] = (CpuTopology::classOf(i, perf, coreCount_) == CpuTopology::CoreClass::Efficiency);
+    }
+
     stagger_.configure(coreCount_, config_.hardwareMonitorThreadsStaggerFraction,
                        config_.hardwareMonitorThreadsStaggerFallbackPeriodMs,
                        config_.hardwareMonitorThreadsStaggerMinPeriodMs,
@@ -158,6 +170,13 @@ void ThreadsWidget::drawNoDataMessage() {
     Fonts::unload(lcd);
 }
 
+uint16_t ThreadsWidget::barLeft(uint8_t i) const {
+    // The first remainder_ bars get one extra pixel of pitch so the row
+    // exactly fills dimensions_.width regardless of coreCount_ (see N3/V20).
+    const uint16_t extraBefore = (i < remainder_) ? i : remainder_;
+    return dimensions_.x + i * barWidth_ + extraBefore;
+}
+
 void ThreadsWidget::drawBars() {
     const uint16_t maxBarHeight = dimensions_.height - 1;
     LGFX* lcd = getLcd();
@@ -169,18 +188,14 @@ void ThreadsWidget::drawBars() {
         newHeight = min(newHeight, maxBarHeight);
         newHeight = newHeight + 1;  // Ensure minimum visible height
 
-        const uint16_t newColor = context_.getColors().getColorFromPercent(threadLoad, false);
+        const uint16_t newColor = isEcore_[i]
+                                       ? context_.getColors().getColorFromPercentEcore(threadLoad)
+                                       : context_.getColors().getColorFromPercent(threadLoad, false);
         const uint16_t oldHeight = previousBarHeights_[i];
         const uint16_t oldColor = previousColors_[i];
 
-        // The first remainder_ bars get one extra pixel of pitch so the row
-        // exactly fills dimensions_.width regardless of coreCount_ (see N3).
-        const uint16_t extraBefore =
-            (static_cast<uint16_t>(i) < remainder_) ? static_cast<uint16_t>(i) : remainder_;
-        const uint16_t pitch =
-            barWidth_ + ((static_cast<uint16_t>(i) < remainder_) ? uint16_t(1) : uint16_t(0));
-        const uint16_t x = dimensions_.x + i * barWidth_ + extraBefore;
-        const uint16_t w = pitch - 1;
+        const uint16_t x = barLeft(static_cast<uint8_t>(i));
+        const uint16_t w = barLeft(static_cast<uint8_t>(i + 1)) - x - 1;
 
         if (newHeight == oldHeight && newColor == oldColor) {
             continue;  // Bar unchanged — no pixel writes needed

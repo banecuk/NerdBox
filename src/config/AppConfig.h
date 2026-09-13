@@ -72,6 +72,16 @@ struct HardwareMonitorImpl {
     static constexpr uint32_t kThreadsStaggerFallbackPeriodMs = 600;
     static constexpr uint32_t kThreadsStaggerMinPeriodMs = 100;
     static constexpr uint32_t kThreadsStaggerMaxPeriodMs = 3000;
+
+    // Hybrid-CPU core classes. The first kThreadsPerformanceCount entries of
+    // Cpu.CoreLoads are P-core threads, the rest are E-cores — NerdWinSense
+    // reports them blocked P-first (confirmed on a 14700K; see
+    // docs-local/13-threads-ecore-distinction.md).
+    // 14700K: 8 P-cores x 2 SMT threads = 16, then 12 E-cores.
+    // 0 (or >= the reported thread count) disables the distinction entirely
+    // and every bar renders exactly as it does today.
+    static constexpr uint8_t kThreadsPerformanceCount = 16;
+    static constexpr bool kThreadsCoreClassTint = true;
 };
 
 // AirQuality configuration

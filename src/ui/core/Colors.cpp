@@ -7,6 +7,7 @@ uint16_t Colors::COLOR_GRADIENT_DIM[100] = {};
 uint16_t Colors::COLOR_GRADIENT_GPU[100] = {};
 uint16_t Colors::COLOR_GRADIENT_RAM[100] = {};
 uint16_t Colors::COLOR_GRADIENT_GRAY_GREEN[100] = {};
+uint16_t Colors::COLOR_GRADIENT_ECORE[100] = {};
 
 Colors::Colors() {
     generateGradient();
@@ -76,6 +77,19 @@ void Colors::generateGradient() {
         {99, 0x9772},
     };
 
+    // E-core gradient: dark blue (idle) -> vivid blue -> indigo/blue-violet ->
+    // bright purple (alert). Same breakpoints as kDefaultStops. Blue is kept
+    // dominant (R, G both well below B) through the 25% and 60% stops on
+    // purpose, so most of the load range still reads as unmistakably blue —
+    // purple only takes over right at the 99% alert stop. See
+    // docs-local/13-threads-ecore-distinction.md.
+    static constexpr GradientStop kEcoreStops[] = {
+        {0, 0x08B2},   // dark blue — idle
+        {25, 0x11FC},  // vivid blue
+        {60, 0x58FD},  // indigo / blue-violet — still blue-dominant
+        {99, 0xC0BB},  // bright purple — alert
+    };
+
     for (int i = 0; i < 100; i++) {
         const uint8_t v = static_cast<uint8_t>(i);
         COLOR_GRADIENT[i] = sampleRamp(kDefaultStops, sizeof(kDefaultStops) / sizeof(GradientStop), v);
@@ -84,7 +98,16 @@ void Colors::generateGradient() {
         COLOR_GRADIENT_RAM[i] = sampleRamp(kRamStops, sizeof(kRamStops) / sizeof(GradientStop), v);
         COLOR_GRADIENT_GRAY_GREEN[i] =
             sampleRamp(kGrayGreenStops, sizeof(kGrayGreenStops) / sizeof(GradientStop), v);
+        COLOR_GRADIENT_ECORE[i] =
+            sampleRamp(kEcoreStops, sizeof(kEcoreStops) / sizeof(GradientStop), v);
     }
+}
+
+uint16_t Colors::getColorFromPercentEcore(uint8_t value) {
+    if (value > 99) {
+        value = 99;
+    }
+    return COLOR_GRADIENT_ECORE[value];
 }
 
 uint16_t Colors::getColorFromPercentGpu(uint8_t value) {

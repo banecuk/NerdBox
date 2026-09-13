@@ -12,6 +12,7 @@
 #include "ui/widgets/base/ThreadStaggerScheduler.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
+#include "utils/CpuTopology.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/ValueSmoother.h"
 
@@ -66,6 +67,13 @@ class ThreadsWidget : public Widget {
     // ensureLayoutInitialized().
     uint8_t coreCount_ = 0;
 
+    // P/E-core colour split (see docs-local/13-threads-ecore-distinction.md).
+    // isEcore_[i] is latched alongside the other per-bar vectors in
+    // ensureLayoutInitialized(); stays all-zero when the config disables the
+    // split or the reported thread count doesn't support it
+    // (CpuTopology::hasSplit()).
+    std::vector<uint8_t> isEcore_;
+
     // Tracks the freshness state as of the last draw, so needsUpdate() can
     // (a) force one redraw on a fresh<->stale transition and (b) otherwise
     // stop ticking every kThreadsRefreshMs while stale — there's nothing new
@@ -78,6 +86,10 @@ class ThreadsWidget : public Widget {
     // Returns true once layout is known (whether just-initialized or already
     // latched from an earlier call).
     bool ensureLayoutInitialized();
+    // Left edge of bar i (barLeft(coreCount_) is well-defined: dimensions_.x +
+    // dimensions_.width). Extracted out of drawBars()'s per-bar pitch math for
+    // readability.
+    uint16_t barLeft(uint8_t i) const;
     void drawBars();
     void drawNoDataMessage();
     void updateSmoothedValues();

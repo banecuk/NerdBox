@@ -36,6 +36,12 @@ class Colors {
     // moderate utilisation color) — named for the ramp's colors, not either
     // caller's metric, since it isn't specific to either one.
     static uint16_t COLOR_GRADIENT_GRAY_GREEN[100];
+    // Blue-to-purple counterpart to COLOR_GRADIENT, used to tint hybrid-CPU
+    // E-core bars in ThreadsWidget so they're distinguishable at a glance from
+    // P-core bars at the same load — same breakpoints. Stays clearly blue
+    // through the low/mid stops; only the top (99%) stop turns purple. See
+    // docs-local/13-threads-ecore-distinction.md.
+    static uint16_t COLOR_GRADIENT_ECORE[100];
     static void generateGradient();
     static uint16_t diskActivityColorScale(float kbPerSec, uint16_t darkColor,
                                             uint16_t brightColor);
@@ -97,6 +103,12 @@ class Colors {
     // (see the comment above), so there's no per-instance state to dispatch
     // on. Kept callable via an instance rather than renaming every call site.
     static uint16_t getColorFromPercent(uint8_t value, bool dim = false);
+    // E-core counterpart to getColorFromPercent(): same 0/25/60/99
+    // breakpoints, but a blue-to-purple hue (blue through the low/mid range,
+    // purple only at 99%) instead of blue-to-red, so a hybrid CPU's two core
+    // classes are distinguishable at a glance in ThreadsWidget. See
+    // docs-local/13-threads-ecore-distinction.md.
+    static uint16_t getColorFromPercentEcore(uint8_t value);
     static uint16_t getColorFromPercentGpu(uint8_t value);
     static uint16_t getColorFromPercentRam(uint8_t value);
     // value is 0-99, mapping linearly onto whatever range the caller scaled

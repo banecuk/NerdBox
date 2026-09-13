@@ -61,6 +61,10 @@ AS_FIELD(U, uint32_t, hardwareMonitorThreadsStaggerMinPeriodMs,
          AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerMinPeriodMs)
 AS_FIELD(U, uint32_t, hardwareMonitorThreadsStaggerMaxPeriodMs,
          AppConfig::internal::HardwareMonitorImpl::kThreadsStaggerMaxPeriodMs)
+AS_FIELD(U, uint8_t, hardwareMonitorThreadsPerformanceCount,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsPerformanceCount)
+AS_FIELD(B, bool, hardwareMonitorThreadsCoreClassTint,
+         AppConfig::internal::HardwareMonitorImpl::kThreadsCoreClassTint)
 
 AS_FIELD(U, uint32_t, airQualityFailureBackoffMs,
          AppConfig::internal::AirQualityImpl::kFailureBackoffMs)
