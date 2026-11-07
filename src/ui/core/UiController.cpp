@@ -84,6 +84,13 @@ void UiController::updateDisplay() {
         activeTransition_.startTime = startTime;
     }
 
+    // Night-dim changes are applied here, on the screen task and only between
+    // transitions, so they can't relight a half-cleared screen or fight a
+    // fade ramp (B49).
+    if (!activeTransition_.isActive) {
+        displayManager_.applyPendingNightWindow();
+    }
+
     if (activeTransition_.isActive) {
         processTransitionPhase();
 

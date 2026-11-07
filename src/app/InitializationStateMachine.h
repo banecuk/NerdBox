@@ -46,7 +46,7 @@ class InitializationStateMachine {
 
     // Helper methods
     void transitionTo(State newState);
-    uint16_t calculateBackoffDelay(uint8_t attempt, uint16_t baseDelay) const;
+    uint32_t calculateBackoffDelay(uint8_t attempt, uint32_t baseDelay) const;
 
     // Adds the calling (main/setup) task to the watchdog. Deliberately called
     // only after NETWORK_INIT/TIME_INIT finish their blocking work (WiFi

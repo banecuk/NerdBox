@@ -35,7 +35,10 @@ struct WifiScanData {
 
     State state = State::IDLE;
     uint16_t lastScanDurationMs = 0;
-    std::atomic<bool> rescanRequested{false};  // set on screen entry / Rescan button
+    // Set only by WifiScreen's Rescan button. Screen entry doesn't need it:
+    // WifiScanJob's automatic path is due as soon as its rescan-interval
+    // cooldown isn't running (always, before the first scan).
+    std::atomic<bool> rescanRequested{false};
 
     PublishedFlag freshness;  // publish() on every completed scan
 };

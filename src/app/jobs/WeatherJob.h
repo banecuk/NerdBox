@@ -44,9 +44,17 @@ class WeatherJob : public BackgroundJob {
 
     void run() override {
         backoff_.clear();
+        // Consume the request as the fetch starts, so a new one raised while
+        // this fetch is in flight survives for the next run (B60).
+        const bool wasRequested = data_.refreshRequested.exchange(false);
         if (service_.fetchData(data_)) {
             LOG_DEBUG(logger_, "Weather data updated");
         } else {
+            // Keep a consumed request pending so it retries after the backoff
+            // instead of waiting for the 2 h staleness refresh.
+            if (wasRequested) {
+                data_.refreshRequested.store(true);
+            }
             backoff_.start(millis(), config_.weatherFailureBackoffMs);
             logger_.warning("Weather fetch failed");
         }

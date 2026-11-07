@@ -1,6 +1,7 @@
 #pragma once
 
 #include <LovyanGFX.hpp>
+#include <atomic>
 
 #include "config/AppSettings.h"
 #include "config/LgfxConfig.h"
@@ -33,10 +34,16 @@ class DisplayManager {
     void setDimAtNightEnabled(bool enabled);
     bool isDimAtNightEnabled() const;
 
-    // Called by DimAtNightJob every background tick with whether the current
-    // local time falls inside the night window. Cheap no-op unless the
-    // night/day state actually changes.
+    // Called by DimAtNightJob (background task) with whether the current
+    // local time falls inside the night window. Only records the request —
+    // it never touches the backlight itself, so it can't race the screen
+    // task's transition ramps (B49).
     void setNightWindowActive(bool isNight);
+
+    // Screen task only, and only while no screen transition is running:
+    // applies the latest setNightWindowActive() request. Cheap no-op unless
+    // the night/day state actually changed.
+    void applyPendingNightWindow();
 
     // Blocking backlight ramp used by UiController's screen-transition fade
     // (see docs-local/03-visual-ux.md V7(a)) — steps the raw PWM level from
@@ -72,6 +79,7 @@ class DisplayManager {
     uint8_t brightness_;
 
     bool dimAtNightEnabled_;
-    bool isNightWindowActive_ = false;
+    std::atomic<bool> requestedNightWindow_{false};  // written by background task
+    bool isNightWindowActive_ = false;               // screen task only
     bool isCurrentlyDimmed_ = false;
 };

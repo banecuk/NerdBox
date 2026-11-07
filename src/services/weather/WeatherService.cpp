@@ -67,7 +67,9 @@ bool WeatherService::parseData(WeatherData& outData) {
 
     outData.dayCount = count;
     outData.freshness.publish(millis());
-    outData.refreshRequested.store(false);
+    // refreshRequested is consumed by WeatherJob when the fetch starts, not
+    // here — clearing it after parsing wiped any request raised while this
+    // fetch was in flight (e.g. a midnight rollover, B60).
 
     LOG_DEBUGF(logger_,
                "Weather: %u days, day0 code=%d max=%d.%d°C min=%d.%d°C rain=%d.%dmm wind=%d.%dm/s",

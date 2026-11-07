@@ -80,6 +80,15 @@ bool DisplayManager::isDimAtNightEnabled() const {
 }
 
 void DisplayManager::setNightWindowActive(bool isNight) {
+    // Background task (core 0): only record the request. Applying it here
+    // could light the backlight between a transition's fade-out and its
+    // fade-in, or overwrite a ramp mid-step (B49) — the screen task picks it
+    // up in applyPendingNightWindow() once no transition is running.
+    requestedNightWindow_.store(isNight, std::memory_order_release);
+}
+
+void DisplayManager::applyPendingNightWindow() {
+    const bool isNight = requestedNightWindow_.load(std::memory_order_acquire);
     if (isNight == isNightWindowActive_)
         return;
     isNightWindowActive_ = isNight;

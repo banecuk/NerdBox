@@ -216,18 +216,19 @@ void InitializationStateMachine::transitionTo(State newState) {
     currentState_ = newState;
 }
 
-uint16_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,
-                                                           uint16_t baseDelay) const {
-    // Computed in uint32_t and clamped before narrowing to uint16_t — with
-    // today's constants (kTimeSyncRetryDelayBaseMs=100, kDefaultTimeSyncRetries=3)
-    // the max is 450ms, but raising either would otherwise silently wrap the
-    // backoff to a *shorter* delay than the previous attempt (see B16).
-    static constexpr uint32_t kMaxBackoffDelayMs = 30000;
+uint32_t InitializationStateMachine::calculateBackoffDelay(uint8_t attempt,
+                                                           uint32_t baseDelay) const {
+    // Base delay, result and the intermediate math are all 32/64-bit and the
+    // clamp happens last, so raising kTimeSyncRetryDelayBaseMs or the retry
+    // count can never wrap the backoff to a *shorter* delay than the previous
+    // attempt (B16, B62 — the parameter used to be uint16_t, narrowing the
+    // base delay before any clamp ran). Today's max is 450ms.
+    static constexpr uint64_t kMaxBackoffDelayMs = 30000;
 
-    const uint32_t exponential =
-        static_cast<uint32_t>(baseDelay) * (1UL << (attempt - 1));
-    const uint32_t jitter = static_cast<uint32_t>(random(0, target_.initBackoffJitterMs()));
-    const uint32_t delay = exponential + jitter;
+    const uint8_t shift = (attempt == 0) ? 0 : (attempt - 1 > 31 ? 31 : attempt - 1);
+    const uint64_t exponential = static_cast<uint64_t>(baseDelay) << shift;
+    const uint64_t jitter = static_cast<uint64_t>(random(0, target_.initBackoffJitterMs()));
+    const uint64_t delay = exponential + jitter;
 
-    return static_cast<uint16_t>(std::min(delay, kMaxBackoffDelayMs));
+    return static_cast<uint32_t>(std::min(delay, kMaxBackoffDelayMs));
 }
