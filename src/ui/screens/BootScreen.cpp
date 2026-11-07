@@ -4,7 +4,6 @@
 #include <cstring>
 
 #include "ui/core/Colors.h"
-#include "ui/core/Theme.h"
 #include "ui/resources/FontRegistry.h"
 
 namespace {
@@ -23,9 +22,8 @@ uint16_t colorForLevel(LogLevel level) {
 }
 }  // namespace
 
-BootScreen::BootScreen(ScreenLogQueue& screenLogQueue, const SystemState::CoreState& coreState,
-                       LGFX* lcd)
-    : screenLogQueue_(screenLogQueue), coreState_(coreState), lcd_(lcd) {}
+BootScreen::BootScreen(ScreenLogQueue& screenLogQueue, LGFX* lcd)
+    : screenLogQueue_(screenLogQueue), lcd_(lcd) {}
 
 void BootScreen::onEnter() {
     if (!lcd_)
@@ -44,29 +42,13 @@ void BootScreen::onEnter() {
 
     hasStatusMessage_ = false;
     hasPinnedMessage_ = false;
-    lastDrawnPercent_ = 0xFF;
-    drawProgressBar();
-
-    // Confine scroll() (called from draw() once the log area fills up) to
-    // the log area only, so it never disturbs the header above it.
-    lcd_->setClipRect(0, kLogAreaY, lcd_->width(), lcd_->height() - kLogAreaY);
 }
 
-void BootScreen::onExit() {
-    if (lcd_)
-        lcd_->clearClipRect();
-}
+void BootScreen::onExit() {}
 
 void BootScreen::draw() {
     if (!lcd_)
         return;
-
-    // Progress bar is driven by shared state, not the log queue — a phase
-    // transition doesn't always coincide with a forScreen log message, so
-    // this is checked every tick rather than only when one pops below.
-    if (coreState_.bootProgressPercent != lastDrawnPercent_) {
-        drawProgressBar();
-    }
 
     char message[200];
     LogLevel level;
@@ -87,12 +69,13 @@ void BootScreen::draw() {
             hasPinnedMessage_ = true;
         }
 
-        // Once the log area is full, scroll its contents up by one line
-        // instead of drawing past the bottom of the screen — otherwise later
-        // boot messages land off-screen and are simply never seen.
+        // Once the log area is full, wipe it and start again from the top
+        // instead of drawing past the bottom of the screen. (scroll() can't
+        // be used: the panel is configured non-readable, so pixels can't be
+        // copied back, and it would move the header too.)
         if (lineY_ + lineHeight_ > lcd_->height()) {
-            lcd_->scroll(0, -static_cast<int_fast16_t>(lineHeight_));
-            lineY_ -= lineHeight_;
+            lcd_->fillRect(0, kLogAreaY, lcd_->width(), lcd_->height() - kLogAreaY, TFT_BLACK);
+            lineY_ = kLogAreaY;
         }
 
         // Demoted: small, dim — the important bit now lives in the status/
@@ -144,21 +127,6 @@ void BootScreen::drawWordmark() {
     lcd_->setTextColor(Colors::kDimLabelGrey, TFT_BLACK);
     lcd_->drawString(buildLine, cx, kBuildLineY);
     Fonts::unload(lcd_);
-}
-
-void BootScreen::drawProgressBar() {
-    const uint8_t percent = coreState_.bootProgressPercent > 100 ? 100 : coreState_.bootProgressPercent;
-    const int16_t barX = kBarMarginX;
-    const int16_t barW = lcd_->width() - 2 * kBarMarginX;
-
-    lcd_->fillSmoothRoundRect(barX, kBarY, barW, kBarH, Theme::kRadiusSm, Theme::kSurface2);
-
-    const int16_t fillW = static_cast<int16_t>((static_cast<int32_t>(barW) * percent) / 100);
-    if (fillW > 0) {
-        lcd_->fillSmoothRoundRect(barX, kBarY, fillW, kBarH, Theme::kRadiusSm, Colors::kInfo);
-    }
-
-    lastDrawnPercent_ = percent;
 }
 
 void BootScreen::drawStatusLine() {

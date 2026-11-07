@@ -43,6 +43,7 @@ class LoadHistoryWidget : public Widget {
     RingHistory<uint8_t, kHistorySize> cpuHistory_;
     RingHistory<uint8_t, kHistorySize> gpuHistory_;
     unsigned long lastSampledTimestamp_ = 0;
+    bool lastHasData_ = false;
 
     uint8_t lastCpuHeight_[kHistorySize] = {0};
     uint8_t lastGpuHeight_[kHistorySize] = {0};

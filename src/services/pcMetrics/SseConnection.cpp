@@ -42,8 +42,12 @@ bool SseConnection::connect(const char* host, uint16_t port, const char* path,
                             uint16_t connectTimeoutMs, uint16_t headerTimeoutMs) {
     disconnect();
 
-    client_.setTimeout(connectTimeoutMs);
-    if (!client_.connect(host, port)) {
+    // The 3-arg connect() takes milliseconds. WiFiClient::setTimeout() takes
+    // *seconds* on this core (Arduino-ESP32 2.0.x), so the previous
+    // setTimeout(connectTimeoutMs) + connect(host, port) waited up to 1000 s
+    // on an unanswered SYN (PC asleep/off) — far past the task watchdog (B34).
+    // The same value also becomes the socket's SO_SNDTIMEO/SO_RCVTIMEO.
+    if (!client_.connect(host, port, static_cast<int32_t>(connectTimeoutMs))) {
         LOG_DEBUGF(logger_, "SSE connect() failed: %s:%u", host, port);
         state_ = State::Error;
         return false;
@@ -74,9 +78,11 @@ bool SseConnection::connect(const char* host, uint16_t port, const char* path,
 bool SseConnection::readHeaders(uint16_t headerTimeoutMs) {
     char headerBuf[kHeaderBufferBytes];
     size_t headerLen = 0;
-    const unsigned long deadline = millis() + headerTimeoutMs;
+    const unsigned long startMs = millis();
 
-    while (millis() < deadline) {
+    // Elapsed-time form so the loop stays correct across the 49.7-day
+    // millis() rollover (an absolute `millis() < deadline` doesn't — B7).
+    while (millis() - startMs < headerTimeoutMs) {
         const int c = client_.read();
         if (c < 0) {
             if (!client_.connected() && client_.available() == 0) {

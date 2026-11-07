@@ -123,9 +123,11 @@ void WeatherWidget::onDraw(bool forceRedraw) {
         if (tempChanged)
             drawTempBlock(tempMax, tempMin, i);
         if (rainChanged)
-            drawLabeledValue(kRainLabelY, kRainValueY, "mm", rain, rainColor, i);
+            drawLabeledValue(kRainBandY, kWindBandY, kRainLabelY, kRainValueY, "mm", rain,
+                             rainColor, i);
         if (windChanged)
-            drawLabeledValue(kWindLabelY, kWindValueY, "m/s", wind, kValueColor, i);
+            drawLabeledValue(kWindBandY, static_cast<int16_t>(dimensions_.height), kWindLabelY,
+                             kWindValueY, "m/s", wind, kValueColor, i);
 
         cache.iconWmo = day.weatherCode;
         strncpy(cache.dayName, dayName, sizeof(cache.dayName) - 1);
@@ -245,10 +247,20 @@ const uint16_t* WeatherWidget::iconForWeatherCode(int16_t wmo) const {
 // Cell renderers
 // ---------------------------------------------------------------------------
 
+// Clears one column's [bandTop, bandBottom) slice (widget-relative y). Starts
+// 1 px right of the column's left edge, where drawColumnDividers() draws, so
+// the divider survives.
+void WeatherWidget::clearCellBand(uint8_t col, int16_t bandTop, int16_t bandBottom) {
+    const int16_t colLeft = dimensions_.x + leftPad_ + static_cast<int16_t>(colWidth_) * col;
+    getLcd()->fillRect(colLeft + 1, dimensions_.y + bandTop, colWidth_ - 1, bandBottom - bandTop,
+                       TFT_BLACK);
+}
+
 void WeatherWidget::drawDayHeader(const char* dayName, const char* date, uint16_t dayColor,
                                   uint8_t col) {
     LGFX* lcd = getLcd();
     const int16_t cx = columnCenter(col);
+    clearCellBand(col, kHeaderBandY, kTempBandY);
 
     // Day name is larger than the date beneath it, so draw each on its own font.
     Fonts::loadValue(lcd);
@@ -280,6 +292,7 @@ void WeatherWidget::drawIcon(int16_t wmo, uint8_t col) {
 void WeatherWidget::drawTempBlock(const char* tempMax, const char* tempMin, uint8_t col) {
     LGFX* lcd = getLcd();
     const int16_t cx = columnCenter(col);
+    clearCellBand(col, kTempBandY, kRainBandY);
 
     // Bright max value.
     Fonts::loadMetric(lcd);
@@ -296,10 +309,12 @@ void WeatherWidget::drawTempBlock(const char* tempMax, const char* tempMin, uint
     Fonts::unload(lcd);
 }
 
-void WeatherWidget::drawLabeledValue(int16_t labelY, int16_t valueY, const char* label,
-                                     const char* value, uint16_t valueColor, uint8_t col) {
+void WeatherWidget::drawLabeledValue(int16_t bandTop, int16_t bandBottom, int16_t labelY,
+                                     int16_t valueY, const char* label, const char* value,
+                                     uint16_t valueColor, uint8_t col) {
     LGFX* lcd = getLcd();
     const int16_t cx = columnCenter(col);
+    clearCellBand(col, bandTop, bandBottom);
 
     // Label above the value.
     Fonts::loadLabel(lcd);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/Cooldown.h"
+
 // Explicit result of BackgroundJob::nextDue() — replaces the old single
 // unsigned long return that conflated "run now" (0), "never / precondition
 // unmet" (ULONG_MAX), and "absolute deadline" in one integer. That encoding
@@ -20,6 +22,16 @@ struct JobDue {
     static JobDue never() { return {Kind::Never}; }
     static JobDue now() { return {Kind::Now}; }
     static JobDue at(unsigned long deadlineMs) { return {Kind::At, deadlineMs}; }
+
+    // "Now, unless a failure backoff is still running." Prefer this over
+    // storing an absolute `millis() + backoff` deadline and returning
+    // at(deadline) unconditionally: a deadline that's never refreshed goes
+    // stale after ~24.8 days and isDue()'s signed compare then reads it as
+    // being in the future (B35). While the cooldown is active its deadline is
+    // always within the backoff duration of now, so at() is safe there.
+    static JobDue afterCooldown(const Cooldown& cooldown, unsigned long nowMs) {
+        return cooldown.active(nowMs) ? at(cooldown.deadlineMs()) : JobDue::now();
+    }
 };
 
 // Implemented by anything that needs periodic execution on TaskManager's

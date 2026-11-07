@@ -11,6 +11,7 @@
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/SseConnection.h"
 #include "services/pcMetrics/SseEventParser.h"
+#include "utils/Cooldown.h"
 #include "utils/logging/LoggerInterface.h"
 
 // Shared connect/reconnect-backoff/staleness-watchdog machinery for a
@@ -84,7 +85,7 @@ class SseStreamJob : public BackgroundJob, public IStreamHealth {
     uint16_t port_ = 80;
     char path_[96] = "";
 
-    unsigned long nextReconnectAttemptMs_ = 0;
+    Cooldown reconnectBackoff_;  // wrap-safe, see B35
     unsigned long lastEventMs_ = 0;
     uint32_t reconnectCount_ = 0;
 };

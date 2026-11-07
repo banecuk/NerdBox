@@ -74,7 +74,7 @@ class ForecastStripWidget : public Widget {
 
     // WeatherData is sticky-available — freshness must be checked by age too,
     // or a stale outage-era forecast displays forever with no indication.
-    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherRefreshIntervalMs};
+    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
 
     EventType action_;
     ActionCallback callback_;

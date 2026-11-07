@@ -14,48 +14,47 @@
 #include "ui/core/UiController.h"
 #include "ui/screens/ScreenFactory.h"
 
-// *** SIZE-SENSITIVE ON REAL HARDWARE — READ BEFORE ADDING/GROWING A MEMBER ***
+// *** LCD CORRUPTION FROM MEMORY LAYOUT — ROOT CAUSE FOUND AND FIXED 2026-11-07 ***
 //
-// ApplicationComponents (heap-allocated as one block via
-// std::make_unique<ApplicationComponents>() in main.cpp, alongside the LGFX
-// display) has, three separate times, corrupted the whole LCD on real
-// hardware (scattered pixels, no clear on screen transitions) after a change
-// that grew the size of something embedded *inline* inside it or one of its
-// bundles (DataBundle/PlatformBundle/ServiceBundle/JobBundle) — even though
-// the change built cleanly and every `[env:native]` host test passed. Root
-// cause isn't fully pinned down (plausibly a tight internal-RAM margin
-// against the display driver's own DMA-capable allocations), but the size
-// correlation has been confirmed by hardware bisection every time: adding a
-// couple hundred bytes of new per-instance state reproduces it, and moving
-// that same state behind a heap pointer fixes it.
+// Symptom (seen four times): after a change that only grew the size of
+// ApplicationComponents or something embedded in it, the LCD showed wrong
+// colours, the previous screen's image under the new one, and scattered
+// artifacts. Clean debug/release builds and passing `pio test -e native`
+// never caught it.
 //
-// So: a new field on any struct embedded here, a bigger fixed array, an
-// added scratch buffer (SseConnection, JsonDocument, etc.) — anything that
-// grows `sizeof()` of a member of ApplicationComponents or one of its
-// bundles — needs either:
-//   1. std::unique_ptr<T> (heap-allocated, e.g. via std::make_unique) instead
-//      of an inline T member, or
-//   2. a `static` member instead of per-instance state, if the type is only
-//      ever constructed once (no state actually needs to live per-instance).
-// A clean debug/release build and passing `pio test -e native` are NOT
-// sufficient evidence the change is safe — they were passing all three times
-// this broke. Flash the device and visually check the display before
-// reporting such a change as complete; if hardware isn't available, say the
-// change is unverified rather than "done".
+// Cause: LovyanGFX's ESP32-S3 parallel bus driver (Bus_Parallel8) DMAs
+// pixel/command data out of a buffer embedded *inside* the LGFX object
+// (`uint32_t _cache[2][64]`, see .pio/libdeps/.../esp32s3/Bus_Parallel8.hpp).
+// LGFX used to be an inline member of PlatformBundle, which is inline in
+// this class, which main.cpp heap-allocates as one large block. So the DMA
+// buffer's memory region and alignment depended on sizeof(ApplicationComponents):
+// adding a few bytes anywhere in here (even to an unrelated service) moved it,
+// and the panel received garbage. The 2026-11-07 trigger was three
+// JsonHttpService subclasses each gaining a 64-byte `host_` buffer.
 //
-// When a feature adds new members across *multiple* bundles, convert every
-// new embedded member to a heap pointer up front — fixing just one and
-// reflashing to check is not a valid way to bisect which one mattered (see
-// the CPU-clock-screen incident: CpuClockData alone wasn't enough; the
-// paired CpuClockStreamJob also had to move to the heap).
+// Fix: PlatformBundle now allocates the LGFX object on its own, in internal
+// DMA-capable RAM (`heap_caps_malloc(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)`,
+// see PlatformBundle::makeDisplay()). Confirmed on hardware: the same change
+// set that corrupted the LCD renders cleanly once LGFX moved out.
 //
-// History: Colors' two lookup tables (2026-08-15, docs-local/07-performance
-// P1-6); DataBundle::cpuClockData + JobBundle::cpuClockStreamJob
-// (2026-08-21, CPU-clock screen); JobBundle::pcMetricsStreamJob growing a
-// path_[96] member when it moved onto the shared SseStreamJob base
-// (2026-08-30, docs-local/11-code-quality.md Q1) — see
-// [[applicationcomponents-size-sensitive]] in memory for the full incident
-// log.
+// Rules that keep it fixed:
+//   1. Never embed LGFX (or any other object with DMA buffers inside it —
+//      LovyanGFX buses/panels, an LGFX_Sprite's backing store, an esp_lcd
+//      handle with inline buffers) inline in ApplicationComponents, a bundle,
+//      or anything else that's heap-allocated without MALLOC_CAP_DMA. Give it
+//      its own heap_caps_malloc(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
+//      allocation like PlatformBundle::display.
+//   2. Don't "fix" a recurrence by moving whichever member last grew behind a
+//      unique_ptr. That's what the three earlier incidents did; it only
+//      shifted the layout back to a lucky spot. If the symptom comes back,
+//      look for a DMA buffer that's living inside a size-dependent allocation.
+//   3. Changes touching memory layout still need a look at the real display
+//      before being called done — a clean build doesn't prove it.
+//
+// Earlier incidents, all from this cause and all "fixed" by moving members
+// to the heap: Colors' lookup tables (2026-08-15); DataBundle::cpuClockData +
+// JobBundle::cpuClockStreamJob (2026-08-21); JobBundle::pcMetricsStreamJob's
+// path_[96] (2026-08-30). Those moves are harmless and can stay.
 class ApplicationComponents : public IInitializationTarget {
  public:
     ApplicationComponents();
@@ -90,7 +89,6 @@ class ApplicationComponents : public IInitializationTarget {
     void setScreenInitialized() override;
     void setTimeSynced() override;
     void setSystemInitialized() override;
-    void setBootProgressPercent(uint8_t percent) override;
 
     uint8_t initTimeSyncRetries() const override;
     uint32_t initTimeSyncBaseDelayMs() const override;

@@ -49,7 +49,7 @@ JobDue SseStreamJob::nextDue() const {
     if (connection_.state() == SseConnection::State::Connected) {
         return JobDue::now();  // steady state: poll() every tick, never idle while connected
     }
-    return JobDue::at(nextReconnectAttemptMs_);
+    return JobDue::afterCooldown(reconnectBackoff_, millis());
 }
 
 void SseStreamJob::run() {
@@ -99,6 +99,7 @@ void SseStreamJob::run() {
 }
 
 void SseStreamJob::attemptConnect() {
+    reconnectBackoff_.clear();
     if (connection_.connect(host_, port_, path_, tuning_.connectTimeoutMs,
                             tuning_.headerTimeoutMs)) {
         char msg[64];
@@ -116,5 +117,5 @@ void SseStreamJob::attemptConnect() {
 
 void SseStreamJob::scheduleReconnect() {
     reconnectCount_++;
-    nextReconnectAttemptMs_ = millis() + tuning_.reconnectBackoffMs;
+    reconnectBackoff_.start(millis(), tuning_.reconnectBackoffMs);
 }

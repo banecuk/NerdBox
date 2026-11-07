@@ -31,7 +31,6 @@ struct WifiScanData;
 struct ScreenCreationContext {
     LoggerInterface& logger;
     ScreenLogQueue& screenLogQueue;
-    const SystemState::CoreState& coreState;
     DisplayManager& display;
     PcMetrics& metrics;
     UiController& controller;

@@ -76,6 +76,7 @@ AS_FIELD(U, uint32_t, roomClimateFailureBackoffMs,
 
 AS_FIELD(U, uint32_t, weatherRefreshIntervalMs,
          AppConfig::internal::WeatherImpl::kRefreshIntervalMs)
+AS_FIELD(U, uint32_t, weatherStaleTimeoutMs, AppConfig::internal::WeatherImpl::kStaleTimeoutMs)
 AS_FIELD(U, uint32_t, weatherTimeCheckIntervalMs,
          AppConfig::internal::WeatherImpl::kTimeCheckIntervalMs)
 AS_FIELD(U, uint32_t, weatherFailureBackoffMs, AppConfig::internal::WeatherImpl::kFailureBackoffMs)

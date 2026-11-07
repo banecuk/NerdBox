@@ -87,7 +87,12 @@ void UiController::updateDisplay() {
     if (activeTransition_.isActive) {
         processTransitionPhase();
 
-        if (millis() - activeTransition_.startTime > config_.uiTransitionTimeoutMs) {
+        // Re-check isActive: processTransitionPhase() may have just completed
+        // the transition, which zeroes startTime — testing the timeout
+        // anyway read as `millis() - 0 > timeout` and logged a false
+        // "Transition timeout" error on every screen change (B46).
+        if (activeTransition_.isActive &&
+            millis() - activeTransition_.startTime > config_.uiTransitionTimeoutMs) {
             logger_.error("[UiController] Transition timeout, resetting");
             completeTransition();
         }

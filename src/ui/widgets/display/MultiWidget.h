@@ -74,7 +74,7 @@ class MultiWidget : public Widget {
 
     // Own freshness guard over WeatherData rather than reaching into
     // ForecastStripWidget to ask it — keeps the priority decision here.
-    DataFreshnessGuard weatherFreshness_{weatherData_.freshness, config_.weatherRefreshIntervalMs};
+    DataFreshnessGuard weatherFreshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
     // Default timeout — same contract HistorySparklineWidget itself uses to
     // decide when PcMetrics is too stale to plot.
     DataFreshnessGuard pcMetricsFreshness_{pcMetrics_.freshness};

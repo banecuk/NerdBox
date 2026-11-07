@@ -38,21 +38,29 @@ bool AudioService::handlePush(const String& body) {
     const uint32_t session = (*doc_)["session"] | 0;
 
     bool needsResync = false;
-    if (seenAnyEvent_ && data_.session == session) {
-        if (seq != data_.seq + 1) {
-            LOG_DEBUGF(logger_, "[Audio] seq gap: expected %lu, got %lu",
-                      static_cast<unsigned long>(data_.seq + 1), static_cast<unsigned long>(seq));
-            needsResync = true;
-        }
-        const bool isHeartbeat = strcmp(event, "ping") == 0 || strcmp(event, "paused") == 0;
-        if (isHeartbeat && data_.hasTrack && trackId != data_.trackId) {
-            LOG_DEBUG(logger_, "[Audio] trackId mismatch on heartbeat - missed a track event");
-            needsResync = true;
-        }
+    if (seenAnyEvent_ && data_.session == session && seq != data_.seq + 1) {
+        LOG_DEBUGF(logger_, "[Audio] seq gap: expected %lu, got %lu",
+                   static_cast<unsigned long>(data_.seq + 1), static_cast<unsigned long>(seq));
+        needsResync = true;
     }
     // A session change (including the very first event ever received) is a
-    // fresh plugin run, not a miss — don't flag it, per
+    // fresh plugin run, not a seq gap — don't flag it, per
     // docs-local/NERDBOX_INTEGRATION.md's "Detecting missed events".
+
+    // Heartbeats carry no metadata, so one we can't match to a cached `track`
+    // event always needs a resync — whatever the session/seq bookkeeping says:
+    //  - no track cached at all: e.g. the device rebooted mid-playback; the
+    //    first event it sees is a ping with contiguous seq after that, so
+    //    without this the paused/playing track would never be shown (B44);
+    //  - trackId differs from the last *track* event's: a missed track
+    //    change. Compared against trackEventTrackId_, not data_.trackId,
+    //    which every event overwrites — otherwise one lost 409 meant the next
+    //    ping matched and stale metadata stuck for the whole track.
+    const bool isHeartbeat = strcmp(event, "ping") == 0 || strcmp(event, "paused") == 0;
+    if (isHeartbeat && (!data_.hasTrack || trackId != trackEventTrackId_)) {
+        LOG_DEBUG(logger_, "[Audio] heartbeat without matching track event - requesting resync");
+        needsResync = true;
+    }
 
     data_.seq = seq;
     data_.trackId = trackId;
@@ -62,6 +70,7 @@ bool AudioService::handlePush(const String& body) {
     const uint32_t now = millis();
 
     if (strcmp(event, "track") == 0) {
+        trackEventTrackId_ = trackId;
         const char* title = (*doc_)["title"] | "";
         const char* artist = (*doc_)["artist"] | "";
         const char* album = (*doc_)["album"] | "";

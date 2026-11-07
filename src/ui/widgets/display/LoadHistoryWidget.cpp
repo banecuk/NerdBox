@@ -108,8 +108,29 @@ void LoadHistoryWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
+    // Blank the plot the moment data goes stale instead of leaving a frozen
+    // last-known trace on screen (an unmoving plot reads as live data) —
+    // same rule as HistorySparklineWidget/GameFpsWidget on this screen (B50).
+    // The caption and frame stay, so the widget's slot is still recognisable.
+    if (!freshnessGuard_.isFresh()) {
+        if (forceRedraw || lastHasData_) {
+            getLcd()->fillRect(plotX_, plotY_, plotWidth_, plotHeight_, kBgColor);
+            for (auto& h : lastCpuHeight_)
+                h = 0;
+            for (auto& h : lastGpuHeight_)
+                h = 0;
+        }
+        lastHasData_ = false;
+        clearDirty();
+        return;
+    }
+
+    // Coming back from stale: the plot was blanked, so repaint every column.
+    const bool repaintAll = forceRedraw || !lastHasData_;
+    lastHasData_ = true;
+
     sampleIfNeeded();
-    drawPlot(forceRedraw);
+    drawPlot(repaintAll);
 
     clearDirty();
 }

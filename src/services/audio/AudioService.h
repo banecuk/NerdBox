@@ -37,4 +37,8 @@ class AudioService {
     // and correct even in the practically-impossible case of seq wrapping
     // back to exactly 0.
     bool seenAnyEvent_ = false;
+
+    // trackId of the last `track` event (the only event carrying metadata).
+    // Heartbeats are checked against this — see handlePush().
+    uint32_t trackEventTrackId_ = 0;
 };

@@ -23,9 +23,8 @@
 // WeatherJob is close to this shape but has its own refreshRequested fast
 // path and screen gating, so it stays separate.
 //
-// nextAttemptMs_ is handed to JobScheduler as a JobDue::at() deadline, and
-// JobScheduler::isDue() does the wrap-safe comparison — so the plain
-// `millis() + backoff` below is rollover-safe.
+// The failure backoff is a Cooldown (elapsed-time, wrap-safe) rather than an
+// absolute deadline that only failures refresh — see B35.
 template <typename TService, typename TData>
 class PeriodicFetchJob : public BackgroundJob {
  public:
@@ -45,14 +44,15 @@ class PeriodicFetchJob : public BackgroundJob {
         if (!coreState_.isInitialized || !networkManager_.isConnected() || freshness_.isFresh()) {
             return JobDue::never();
         }
-        return JobDue::at(nextAttemptMs_);
+        return JobDue::afterCooldown(backoff_, millis());
     }
 
     void run() override {
+        backoff_.clear();
         if (service_.fetchData(data_)) {
             LOG_DEBUGF(logger_, "%s data updated", name_);
         } else {
-            nextAttemptMs_ = millis() + failureBackoffMs_;
+            backoff_.start(millis(), failureBackoffMs_);
             logger_.warningf("%s fetch failed", name_);
         }
     }
@@ -66,5 +66,5 @@ class PeriodicFetchJob : public BackgroundJob {
     const char* name_;
     uint32_t failureBackoffMs_;
     DataFreshnessGuard freshness_;
-    unsigned long nextAttemptMs_ = 0;
+    Cooldown backoff_;
 };

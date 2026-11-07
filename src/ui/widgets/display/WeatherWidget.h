@@ -64,6 +64,17 @@ class WeatherWidget : public Widget {
     static constexpr int16_t kWindLabelY = 224;
     static constexpr int16_t kWindValueY = 244;
 
+    // Per-column clear bands (top edges; each band runs to the next one's
+    // top, the last to the widget's bottom). Each cell group is cleared
+    // across its whole band before redrawing — LovyanGFX's smooth-font
+    // drawString only paints the new string's glyph boxes, so a shorter
+    // value ("10°"→"9°") otherwise leaves the old one's edges behind (B43).
+    // Boundaries sit midway between neighbouring text rows.
+    static constexpr int16_t kHeaderBandY = kIconY + kIconSize;             // 50
+    static constexpr int16_t kTempBandY = (kDateY + kTempMaxY) / 2;          // 103
+    static constexpr int16_t kRainBandY = (kTempMinY + kRainLabelY) / 2;     // 171
+    static constexpr int16_t kWindBandY = (kRainValueY + kWindLabelY) / 2;   // 214
+
     // Per-column cached snapshot for dirty detection. Equal-length arrays, one
     // element per possible column; only the first `columns_` are live.
     struct ColumnCache {
@@ -84,7 +95,7 @@ class WeatherWidget : public Widget {
     // or a stale outage-era forecast displays forever with no indication.
     // Timeout mirrors WeatherJob's own refetch threshold: once a refetch was
     // already due but hasn't landed, the display should say so.
-    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherRefreshIntervalMs};
+    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
 
     ColumnCache lastColumns_[kMaxColumns];
     uint8_t columns_ = 0;
@@ -109,7 +120,9 @@ class WeatherWidget : public Widget {
     void drawIcon(int16_t wmo, uint8_t col);
     void drawDayHeader(const char* dayName, const char* date, uint16_t dayColor, uint8_t col);
     void drawTempBlock(const char* tempMax, const char* tempMin, uint8_t col);
-    void drawLabeledValue(int16_t labelY, int16_t valueY, const char* label, const char* value,
+    void clearCellBand(uint8_t col, int16_t bandTop, int16_t bandBottom);
+    void drawLabeledValue(int16_t bandTop, int16_t bandBottom, int16_t labelY, int16_t valueY,
+                          const char* label, const char* value,
                           uint16_t valueColor, uint8_t col);
     void drawNoData();
 };

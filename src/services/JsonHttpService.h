@@ -4,7 +4,9 @@
 
 #include <memory>
 
+#include "network/BoundedDns.h"
 #include "network/NetworkManager.h"
+#include "network/UrlUtils.h"
 #include "utils/logging/LoggerInterface.h"
 
 // Shared skeleton for "GET one internet-facing JSON endpoint, filter it, parse
@@ -39,6 +41,15 @@ class JsonHttpService {
             return false;
         }
 
+        // Bounded DNS pre-check: HTTPClient's own lookup can block ~30 s when
+        // the router's DNS forwarder stops answering, past the 20 s task
+        // watchdog (B38). A success leaves the answer in lwIP's cache, so the
+        // GET below resolves instantly. LAN IP literals skip this.
+        if (!BoundedDns::resolve(host_, kDnsTimeoutMs)) {
+            logger_.warningf("%s: DNS lookup for %s failed or timed out", name_, host_);
+            return false;
+        }
+
         HttpClient& http = networkManager_.getHttpClient();
         doc_->clear();
         // These are internet-facing APIs, not LAN-local like NerdWinSense —
@@ -68,7 +79,10 @@ class JsonHttpService {
           networkManager_(networkManager),
           name_(name),
           url_(url),
-          doc_(std::make_unique<JsonDocument>()) {}
+          doc_(std::make_unique<JsonDocument>()) {
+        uint16_t unusedPort = 0;
+        UrlUtils::parseHostPort(url_, host_, sizeof(host_), unusedPort);
+    }
 
     ~JsonHttpService() = default;
 
@@ -79,14 +93,20 @@ class JsonHttpService {
     LoggerInterface& logger_;
 
  private:
-    static constexpr uint8_t kMaxAttempts = 2;
+    // Worst case per fetchData(): kDnsTimeoutMs + kConnectTimeoutMs +
+    // kResponseTimeoutMs ≈ 13 s, well inside the 20 s task watchdog. One
+    // attempt only — two (the old value) was already ~18 s before DNS, and
+    // the calling job's failure backoff provides the retry anyway (B38).
+    static constexpr uint8_t kMaxAttempts = 1;
     static constexpr uint32_t kRetryDelayMs = 100;
     static constexpr uint16_t kConnectTimeoutMs = 3000;
     static constexpr uint16_t kResponseTimeoutMs = 6000;
+    static constexpr uint32_t kDnsTimeoutMs = 4000;
 
     NetworkManager& networkManager_;
     const char* name_;
     const char* url_;
+    char host_[64] = "";
 
     // Reused across fetches to avoid heap fragmentation.
     std::unique_ptr<JsonDocument> doc_;

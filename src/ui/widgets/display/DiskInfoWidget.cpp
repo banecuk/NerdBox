@@ -54,7 +54,10 @@ void DiskInfoWidget::ensureRowsCreated() {
     const size_t count = DiskSnapshot::copy(pcMetrics_, snapshot, kMaxDisks);
 
     if (count == 0) {
-        rows_.clear();
+        if (!rows_.empty()) {
+            rows_.clear();
+            clearArea();  // don't leave the old rows painted
+        }
         return;
     }
 
@@ -114,14 +117,18 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
     const uint16_t barW = static_cast<uint16_t>(
         (static_cast<uint32_t>(kBarRight - kBarX) * (100 - percentClamped)) / 100);
 
+    // Computed once, before either redraw block updates r.lastPercent — the
+    // bar block used to assign it first, so the number block's own check
+    // below was always false and "NN%" never changed (B40).
+    const bool percentChanged = !r.drawn || r.lastPercent != percentClamped;
+
     // Usage bar — track + fill, redrawn only when the value or color changed.
-    if (!r.drawn || r.lastPercent != percentClamped || r.lastBarColor != barColor) {
+    if (percentChanged || r.lastBarColor != barColor) {
         lcd->fillRect(dimensions_.x + kBarX, barY, kBarRight - kBarX, kBarH, TFT_BLACK);
         lcd->fillRect(dimensions_.x + kBarX, barY, kBarRight - kBarX, kBarH, Colors::kHairline);
         if (barW > 0) {
             lcd->fillRect(dimensions_.x + kBarX, barY, barW, kBarH, barColor);
         }
-        r.lastPercent = percentClamped;
         r.lastBarColor = barColor;
     }
 
@@ -145,7 +152,7 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
     // '%' unit sits at the fixed right edge in kUnitColor (drawn once by
     // drawStaticUnits) while the value grows leftward of it; only the value
     // area is cleared here so the unit survives.
-    if (!r.drawn || r.lastPercent != percentClamped) {
+    if (percentChanged) {
         char numBuf[8];
         snprintf(numBuf, sizeof(numBuf), "%d", percentClamped);
         Fonts::loadMetric(lcd);
@@ -162,6 +169,7 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
                                                              kPercentValueGap - numW / 2),
                         centerY);
         Fonts::unload(lcd);
+        r.lastPercent = percentClamped;
     }
 
     // Read/write rate columns — label font, each colored by its own activity.

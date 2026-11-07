@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/ScreenTypes.h"
@@ -44,15 +42,18 @@ class WifiScanJob : public BackgroundJob {
         if (networkManager_.isReconnecting()) {
             return JobDue::never();
         }
-        if (data_.rescanRequested.load()) {
-            return JobDue::at(nextAttemptMs_);  // honours an active failure backoff
+        // Both timers are Cooldowns (elapsed-time compare) rather than raw
+        // millis() deadlines, so neither breaks after ~24.8 days of uptime
+        // (B35). The failure backoff applies to both the Rescan-button and
+        // the automatic path; the rescan interval only to the automatic one.
+        const unsigned long now = millis();
+        if (failureBackoff_.active(now)) {
+            return JobDue::at(failureBackoff_.deadlineMs());
         }
-        // max(...) so a failure's backoff deadline (nextAttemptMs_) still
-        // applies on the automatic path too — otherwise lastScanCompletedMs_
-        // (unchanged by a failed scan) puts the interval-based deadline in
-        // the past and the job retries immediately with no backoff at all.
-        return JobDue::at(std::max(lastScanCompletedMs_ + config_.wifiScanRescanIntervalMs,
-                                   nextAttemptMs_));
+        if (data_.rescanRequested.load()) {
+            return JobDue::now();
+        }
+        return JobDue::afterCooldown(rescanInterval_, now);
     }
 
     void run() override {
@@ -60,10 +61,11 @@ class WifiScanJob : public BackgroundJob {
             if (screenState_.activeScreen == ScreenName::WIFI) {
                 if (service_.poll(data_)) {
                     if (data_.state == WifiScanData::State::FAILED) {
-                        nextAttemptMs_ = millis() + config_.wifiScanFailureBackoffMs;
+                        failureBackoff_.start(millis(), config_.wifiScanFailureBackoffMs);
                         logger_.warning("WiFi scan failed");
                     } else {
-                        lastScanCompletedMs_ = millis();
+                        failureBackoff_.clear();
+                        rescanInterval_.start(millis(), config_.wifiScanRescanIntervalMs);
                     }
                 }
             } else {
@@ -85,6 +87,6 @@ class WifiScanJob : public BackgroundJob {
     const AppSettings& config_;
     LoggerInterface& logger_;
 
-    unsigned long nextAttemptMs_ = 0;
-    unsigned long lastScanCompletedMs_ = 0;
+    Cooldown failureBackoff_;
+    Cooldown rescanInterval_;
 };

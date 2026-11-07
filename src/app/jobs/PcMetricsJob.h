@@ -53,18 +53,18 @@ class PcMetricsJob : public BackgroundJob {
         if (!coreState_.isInitialized || !onMetricsScreen || !networkManager_.isConnected()) {
             return JobDue::never();
         }
-        return JobDue::at(nextSync_);
+        return JobDue::afterCooldown(nextSync_, millis());  // wrap-safe, see B35
     }
 
     void run() override {
         if (service_.fetchData(metrics_)) {
             consecutiveFailures_ = 0;
-            nextSync_ = millis() + config_.hardwareMonitorRefreshMs;
+            nextSync_.start(millis(), config_.hardwareMonitorRefreshMs);
             return;
         }
 
         consecutiveFailures_++;
-        nextSync_ = millis() + config_.hardwareMonitorFailureRefreshMs;
+        nextSync_.start(millis(), config_.hardwareMonitorFailureRefreshMs);
         LOG_DEBUG(logger_, "PC metrics update failed", true);
 
         if (consecutiveFailures_ >= config_.hardwareMonitorMaxRetries) {
@@ -90,5 +90,5 @@ class PcMetricsJob : public BackgroundJob {
     // PcMetricsWidget via the same PcMetrics::freshness field.
     DataFreshnessGuard freshness_;
     uint8_t consecutiveFailures_ = 0;
-    unsigned long nextSync_ = 0;
+    Cooldown nextSync_;
 };

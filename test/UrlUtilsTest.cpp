@@ -60,3 +60,19 @@ TEST(UrlUtilsTest, MalformedInputStillNullTerminatesAndDefaultsPort) {
     EXPECT_STREQ(host, "");
     EXPECT_EQ(port, 80);
 }
+
+TEST(UrlUtilsTest, IgnoresColonAfterPath) {
+    char host[64];
+    uint16_t port;
+    UrlUtils::parseHostPort("http://api.example.com/v1/x?t=a:b", host, sizeof(host), port);
+    EXPECT_STREQ(host, "api.example.com");
+    EXPECT_EQ(port, 80);
+}
+
+TEST(UrlUtilsTest, PortStillParsedWhenPathAlsoHasColon) {
+    char host[64];
+    uint16_t port;
+    UrlUtils::parseHostPort("http://host:8086/x?t=a:b", host, sizeof(host), port);
+    EXPECT_STREQ(host, "host");
+    EXPECT_EQ(port, 8086);
+}

@@ -130,7 +130,12 @@ void ProcessListWidget::drawRow(Column column, uint8_t row, const RowText& text,
     LGFX* lcd = getLcd();
     const uint16_t x = dimensions_.x + column * columnWidth_;
     const uint16_t y = dimensions_.y + kHeaderHeight + row * rowHeight_;
-    lcd->fillRect(x, y, columnWidth_, rowHeight_, kBgColor);
+    // Columns after the first start on their separator line (drawHeaders()
+    // draws it at x), so skip that pixel column or every row update erases
+    // the separator below the header (B47).
+    const uint16_t clearX = column > 0 ? x + 1 : x;
+    const uint16_t clearW = column > 0 ? columnWidth_ - 1 : columnWidth_;
+    lcd->fillRect(clearX, y, clearW, rowHeight_, kBgColor);
 
     if (text.name[0] == '\0') {
         return;

@@ -60,6 +60,15 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     if (!needsCreation)
         return;
 
+    // A drive-set change (not the first build after clearChildren()) can
+    // leave fewer/narrower tiles — tiles are capped at kMaxWidgetWidth, so
+    // e.g. 4→3 drives stops covering the right-hand 120 px. Wipe the band
+    // first so the removed drive's tile doesn't linger there (B41).
+    if (!diskDriveWidgets_.empty()) {
+        getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
+                           TFT_BLACK);
+    }
+
     // Rebuild widgets from the snapshot
     diskDriveWidgets_.clear();
     diskDriveNames_.clear();
@@ -220,11 +229,11 @@ void DiskBandWidget::drawFreshStatic() {
 }
 
 void DiskBandWidget::clearChildren() {
-    // The widget's static content never overlaps its activity line (draws at
-    // the very top). To make sure nothing bleeds above/below the band, clear
-    // a background 2px taller and 1px up from the widget's own bounds
-    // (widget size itself is unchanged).
-    getLcd()->fillRect(dimensions_.x, dimensions_.y - 1, dimensions_.width, dimensions_.height + 2,
+    // Clear exactly the widget's own bounds. (It used to clear 1 px above and
+    // below as well, but the row below is Layout::kBottomBarY — the top edge
+    // of the bottom-bar widgets — which nothing repaints, leaving a black
+    // line through them after every fresh/stale flip; B48.)
+    getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        TFT_BLACK);
 
     diskDriveWidgets_.clear();

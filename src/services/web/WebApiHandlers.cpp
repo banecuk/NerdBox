@@ -555,8 +555,9 @@ void WebApiHandlers::handleMetrics() {
     NetworkManager::LinkInfo link{};
     networkManager_.fillLinkInfo(link);
 
-    writeHeader(out, "nerdbox_wifi_rssi_dbm", "This device's own WiFi signal strength.", "gauge");
-    out.printf("nerdbox_wifi_rssi_dbm %d\n", link.rssi);
+    // nerdbox_wifi_rssi_dbm is already emitted above (from NetworkStatus) —
+    // a second HELP/TYPE block for the same name makes strict parsers
+    // (promtool, Go expfmt, Telegraf) reject the whole scrape (B45).
 
     writeHeader(out, "nerdbox_wifi_quality_percent", "This device's own WiFi signal quality.",
                "gauge");

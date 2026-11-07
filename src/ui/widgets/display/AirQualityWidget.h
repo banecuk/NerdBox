@@ -70,7 +70,7 @@ class AirQualityWidget : public Widget {
     // Data is sticky-available (AirQualityService never clears availability
     // on fetch failure) — freshness must be checked by age too, or a stale
     // outage-era reading displays forever with no indication.
-    DataFreshnessGuard freshness_{airData_.freshness, AirQualityService::kRefreshIntervalMs};
+    DataFreshnessGuard freshness_{airData_.freshness, AirQualityService::kStaleTimeoutMs};
 
     // Optional tap action (mirrors FpsWidget/ButtonWidget): when a callback
     // is set, a tap publishes `action_`, e.g. to open the Weather screen.

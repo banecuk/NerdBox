@@ -104,6 +104,10 @@ struct WeatherImpl {
     static constexpr uint8_t kForecastDays = Limits::kForecastDays;
     // How often to re-fetch while the Weather screen is displayed.
     static constexpr uint32_t kRefreshIntervalMs = 2ul * 60ul * 60ul * 1000ul;  // 2 h
+    // Widget staleness window. Must be a multiple of kRefreshIntervalMs:
+    // WeatherJob only fetches once the data is already 1x old, so a window
+    // equal to the interval blanked the forecast on every refresh (B42).
+    static constexpr uint32_t kStaleTimeoutMs = 3ul * kRefreshIntervalMs;
     // Cheap per-minute check while displayed so the forecast rolls over at
     // local midnight and shows the new day's data.
     static constexpr uint32_t kTimeCheckIntervalMs = 60ul * 1000ul;

@@ -32,21 +32,22 @@ class WeatherJob : public BackgroundJob {
         if (!coreState_.isInitialized || !networkManager_.isConnected()) {
             return JobDue::never();
         }
-        if (data_.refreshRequested.load() && millis() >= nextAttemptMs_) {
-            return JobDue::now();  // screen entry / midnight rollover → fire now (still honours
-                                   // failure backoff)
-        }
-        if (freshness_.isFresh()) {
+        // Screen entry / midnight rollover → fire now, still honouring the
+        // failure backoff. Otherwise only refresh once the data is stale.
+        // Cooldown compares elapsed time, so neither path breaks at the
+        // millis() rollover (B7/B35).
+        if (!data_.refreshRequested.load() && freshness_.isFresh()) {
             return JobDue::never();  // fetched < 2 h ago → skip
         }
-        return JobDue::at(nextAttemptMs_);
+        return JobDue::afterCooldown(backoff_, millis());
     }
 
     void run() override {
+        backoff_.clear();
         if (service_.fetchData(data_)) {
             LOG_DEBUG(logger_, "Weather data updated");
         } else {
-            nextAttemptMs_ = millis() + config_.weatherFailureBackoffMs;
+            backoff_.start(millis(), config_.weatherFailureBackoffMs);
             logger_.warning("Weather fetch failed");
         }
     }
@@ -59,5 +60,5 @@ class WeatherJob : public BackgroundJob {
     const AppSettings& config_;
     LoggerInterface& logger_;
     DataFreshnessGuard freshness_;
-    unsigned long nextAttemptMs_ = 0;
+    Cooldown backoff_;
 };

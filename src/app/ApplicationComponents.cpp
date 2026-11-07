@@ -13,7 +13,6 @@ ApplicationComponents::ApplicationComponents()
                    data.systemState.screen, config, data.weatherData),
       screenCtx{platform.logger_,
                 platform.displayContext.getScreenLogQueue(),
-                data.systemState.core,
                 platform.displayManager,
                 data.pcMetrics,
                 uiController,
@@ -94,9 +93,6 @@ void ApplicationComponents::setTimeSynced() {
 }
 void ApplicationComponents::setSystemInitialized() {
     data.systemState.core.isInitialized = true;
-}
-void ApplicationComponents::setBootProgressPercent(uint8_t percent) {
-    data.systemState.core.bootProgressPercent = percent;
 }
 
 uint8_t ApplicationComponents::initTimeSyncRetries() const {
