@@ -79,7 +79,7 @@ class EventBus {
     }
 
  private:
-    static constexpr size_t EVENT_TYPE_COUNT = static_cast<size_t>(EventType::COUNT);
+    static constexpr size_t kEventTypeCount = static_cast<size_t>(EventType::COUNT);
 
     static constexpr size_t index(EventType type) { return static_cast<size_t>(type); }
 
@@ -98,7 +98,7 @@ class EventBus {
         SemaphoreHandle_t mutex_;
     };
 
-    std::array<std::vector<Subscription>, EVENT_TYPE_COUNT> subscribers_;
+    std::array<std::vector<Subscription>, kEventTypeCount> subscribers_;
     SemaphoreHandle_t mutex_ = xSemaphoreCreateMutex();
     SubscriptionId nextId_ = 1;
 

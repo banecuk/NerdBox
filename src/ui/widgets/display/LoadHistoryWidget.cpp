@@ -111,7 +111,6 @@ void LoadHistoryWidget::onDraw(bool forceRedraw) {
     sampleIfNeeded();
     drawPlot(forceRedraw);
 
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 

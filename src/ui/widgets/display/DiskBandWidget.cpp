@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "services/pcMetrics/DiskSnapshot.h"
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 
@@ -45,39 +46,16 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     // a heap alloc/free pair on that cadence would fragment the
     // fragmentation-sensitive heap for no reason. kMaxDiskWidgets is already
     // a compile-time cap.
-    struct DriveSnapshot {
-        char name[4];
-        int freeSpacePercent;
-    };
-    DriveSnapshot snapshot[kMaxDiskWidgets];
-    size_t snapshotCount = 0;
-    {
-        ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        snapshotCount = pcMetrics_.disk_drives.size() < kMaxDiskWidgets
-                            ? pcMetrics_.disk_drives.size()
-                            : kMaxDiskWidgets;
-        for (size_t i = 0; i < snapshotCount; ++i) {
-            DriveSnapshot& s = snapshot[i];
-            strncpy(s.name, pcMetrics_.disk_drives[i].driveName, sizeof(s.name) - 1);
-            s.name[sizeof(s.name) - 1] = '\0';
-            s.freeSpacePercent =
-                static_cast<int>(pcMetrics_.disk_drives[i].freeSpacePercent + 0.5f);
-        }
-    }  // mutex released here — all remaining work is lock-free
+    DiskDrive snapshot[kMaxDiskWidgets];
+    const size_t snapshotCount = DiskSnapshot::copy(pcMetrics_, snapshot, kMaxDiskWidgets);
 
     if (snapshotCount == 0)
         return;
 
-    bool needsCreation = diskDriveWidgets_.empty() || (diskDriveWidgets_.size() != snapshotCount);
-    if (!needsCreation) {
-        for (size_t i = 0; i < snapshotCount; ++i) {
-            if (strncmp(diskDriveNames_[i].data(), snapshot[i].name, sizeof(snapshot[i].name)) !=
-                0) {
-                needsCreation = true;
-                break;
-            }
-        }
-    }
+    const bool needsCreation =
+        diskDriveWidgets_.empty() ||
+        DiskSnapshot::driveSetChanged(snapshot, snapshotCount, diskDriveWidgets_.size(),
+                                      [this](size_t i) { return diskDriveNames_[i].data(); });
 
     if (!needsCreation)
         return;
@@ -112,12 +90,12 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
             tileWidth = static_cast<uint16_t>(dimensions_.x + dimensions_.width - xPos);
 
         MetricWidget::Config config;
-        config.value = snapshot[i].freeSpacePercent;
+        config.value = static_cast<int>(snapshot[i].freeSpacePercent + 0.5f);
         config.unit = "";
         config.reverseThresholds = true;
         config.palette = MetricWidget::Palette::Dim;
         config.useSmallFont = true;
-        config.label = snapshot[i].name;
+        config.label = snapshot[i].driveName;
         config.labelWidth = kLabelWidth;  // narrow: the label is a single drive letter
         config.borderMargin = 0;  // flush against the activity lines — no edge gaps
         config.lowerThreshold = 0.0f;
@@ -141,7 +119,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
         initAndDrawWidget(*w);
 
         std::array<char, 4> name{};
-        strncpy(name.data(), snapshot[i].name, name.size() - 1);
+        strncpy(name.data(), snapshot[i].driveName, name.size() - 1);
         diskDriveNames_.push_back(name);
         diskDriveWidgets_.push_back(std::move(w));
     }
@@ -161,21 +139,8 @@ void DiskBandWidget::drawDynamicData() {
     if (widgetCount == 0)
         return;
 
-    // One float per widget slot (raw, pre-smoothing).
-    float freeSpaceRawSnapshot[kMaxDiskWidgets];
-    float writeSnapshot[kMaxDiskWidgets];
-    float readSnapshot[kMaxDiskWidgets];
-    size_t updateCount = 0;
-    {
-        ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        updateCount = (pcMetrics_.disk_drives.size() < widgetCount) ? pcMetrics_.disk_drives.size()
-                                                                    : widgetCount;
-        for (size_t i = 0; i < updateCount; ++i) {
-            freeSpaceRawSnapshot[i] = pcMetrics_.disk_drives[i].freeSpacePercent;
-            writeSnapshot[i] = pcMetrics_.disk_drives[i].writeKBPerSec;
-            readSnapshot[i] = pcMetrics_.disk_drives[i].readKBPerSec;
-        }
-    }  // mutex released — all display work below is lock-free
+    DiskDrive snapshot[kMaxDiskWidgets];
+    const size_t updateCount = DiskSnapshot::copy(pcMetrics_, snapshot, widgetCount);
 
     // Batch font load: every tile here is useSmallFont_ (NotoSansDisplay15),
     // so one loadValue()/unload() pair covers all drives instead of each
@@ -193,7 +158,7 @@ void DiskBandWidget::drawDynamicData() {
         // the previously displayed value, show the average of the two instead
         // of jumping straight down, and carry that average forward as the new
         // previous value. Rising values (or the first sample) are shown as-is.
-        const float raw = freeSpaceRawSnapshot[i];
+        const float raw = snapshot[i].freeSpacePercent;
         const float previous =
             (i < diskFreeSpaceSmoothed_.size()) ? diskFreeSpaceSmoothed_[i] : -1.0f;
         float smoothed = (previous >= 0.0f && raw < previous) ? (previous + raw) / 2.0f : raw;
@@ -231,13 +196,13 @@ void DiskBandWidget::drawDynamicData() {
         const uint16_t writeWidth = static_cast<uint16_t>(dims.width - readWidth);
         const uint16_t lineY = dimensions_.y;
 
-        const uint16_t readColor = bandActivityColor(readSnapshot[i], /*isWrite=*/false);
+        const uint16_t readColor = bandActivityColor(snapshot[i].readKBPerSec, /*isWrite=*/false);
         if (diskReadLineColor_[i] != readColor) {
             getLcd()->fillRect(dims.x, lineY, readWidth, kActivityLineHeight, readColor);
             diskReadLineColor_[i] = readColor;
         }
 
-        const uint16_t writeColor = bandActivityColor(writeSnapshot[i], /*isWrite=*/true);
+        const uint16_t writeColor = bandActivityColor(snapshot[i].writeKBPerSec, /*isWrite=*/true);
         if (diskWriteLineColor_[i] != writeColor) {
             getLcd()->fillRect(static_cast<int32_t>(dims.x + readWidth), lineY, writeWidth,
                                kActivityLineHeight, writeColor);

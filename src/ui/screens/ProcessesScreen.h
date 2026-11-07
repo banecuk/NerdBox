@@ -12,7 +12,7 @@
 // docs-local/PROCESSES-SCREEN-PLAN.md.
 class ProcessesScreen : public BaseWidgetScreen {
  public:
-    ProcessesScreen(LoggerInterface& logger, ProcessData& processData, UiController* uiController,
+    ProcessesScreen(LoggerInterface& logger, ProcessData& processData, UiController& uiController,
                     const AppSettings& config);
     ~ProcessesScreen() override = default;
 

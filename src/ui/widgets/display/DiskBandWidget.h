@@ -9,7 +9,6 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"
-#include "utils/ScopedLock.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
 // free-space tiles, each with a single solid activity line flush to its top
@@ -63,7 +62,7 @@ class DiskBandWidget : public PcDataCompositeWidget {
     static constexpr uint16_t kMaxWidgetWidth = 120;
 
     // Drive-letter label column width (mirrors the MetricWidget tile's own
-    // config.labelWidth), plus MetricWidget::SEPARATOR_WIDTH (1px) between
+    // config.labelWidth), plus MetricWidget::kSeparatorWidth (1px) between
     // its label and value areas. The activity line above each tile is split
     // to match: the read half spans this label column, the write half spans
     // the rest (the larger value-display area) — so read/write widths line

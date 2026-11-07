@@ -12,7 +12,7 @@
 
 // Streaming counterpart to PcMetricsJob: keeps one SseConnection open to
 // NerdWinSense's SSE endpoint (host:port taken from LIBRE_HM_API, path from
-// config.pcMetricsStreamPath) via the shared SseStreamJob base (see
+// config.pcMetricsStream.streamPath) via the shared SseStreamJob base (see
 // docs-local/11-code-quality.md Q1). Each event's `data:` payload is handed
 // to PcMetricsStreamService, which owns the JsonDocument/filter/parse/publish
 // logic — the same PcMetricsParser per-section functions the polling path

@@ -245,8 +245,8 @@ void MetricWidget::unloadValueFont() const {
 
 void MetricWidget::updateDimensionCache() {
     valueX_ =
-        hasLabel_ ? dimensions_.x + labelWidth_ + SEPARATOR_WIDTH : dimensions_.x + borderMargin_;
-    valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - SEPARATOR_WIDTH - borderMargin_
+        hasLabel_ ? dimensions_.x + labelWidth_ + kSeparatorWidth : dimensions_.x + borderMargin_;
+    valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - kSeparatorWidth - borderMargin_
                             : dimensions_.width - (2 * borderMargin_);
     dimensionsDirty_ = false;
     valueAreaDirty_ = true;
@@ -383,10 +383,10 @@ bool MetricWidget::handleTouch(uint16_t x, uint16_t y) {
 
 int16_t MetricWidget::computeStartX(int16_t areaX, int16_t areaWidth, int16_t totalW) const {
     if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        return areaX + TEXT_MARGIN;
+        return areaX + kTextMargin;
     }
     if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM || textAlignment_ == BR_DATUM) {
-        return areaX + areaWidth - TEXT_MARGIN - totalW;
+        return areaX + areaWidth - kTextMargin - totalW;
     }
     return areaX + areaWidth / 2 - totalW / 2;
 }
@@ -410,14 +410,14 @@ void MetricWidget::setValue(int value) {
     }
 }
 
-void MetricWidget::forceRefresh() {
+void MetricWidget::forceRefreshAndDraw() {
     hasDrawnOnce_ = false;     // Force the next draw to take the full-render path
     formatCacheDirty_ = true;  // Force format recalculation
     valueAreaDirty_ = true;    // Force area redraw
     markDirty();               // Mark widget as dirty
 
-    // Force an immediate draw, outside WidgetManager's normal draw pass.
-    if (isInitialized_ && getLcd()) {
+    // Immediate draw — see the header comment for why this is safe here.
+    if (isInitialized() && getLcd()) {
         onDraw(true);
     }
 }

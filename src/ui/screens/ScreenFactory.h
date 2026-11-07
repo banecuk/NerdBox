@@ -32,9 +32,9 @@ struct ScreenCreationContext {
     LoggerInterface& logger;
     ScreenLogQueue& screenLogQueue;
     const SystemState::CoreState& coreState;
-    DisplayManager* display;
+    DisplayManager& display;
     PcMetrics& metrics;
-    UiController* controller;
+    UiController& controller;
     const AppSettings& config;
     ApplicationMetrics& systemMetrics;
     NetworkManager& networkManager;

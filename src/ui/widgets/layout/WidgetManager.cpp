@@ -50,7 +50,7 @@ void WidgetManager::initializeWidgets() {
     isInitialized_ = true;
 }
 
-bool WidgetManager::hasAnyDirtyWidgets() {
+bool WidgetManager::evaluateDirtyWidgets() {
     if (!isInitialized_) {
         return false;
     }
@@ -70,7 +70,8 @@ bool WidgetManager::hasAnyDirtyWidgets() {
             anyWork = true;
         }
     }
-    lastHasAnyDirtyWidgetsResult_ = anyWork;
+    lastEvaluateFoundWork_ = anyWork;
+    dirtyEvaluated_ = true;
     return anyWork;
 }
 
@@ -91,16 +92,27 @@ void WidgetManager::updateDirtyWidgets() {
     if (!lcd_ || !isInitialized_) {
         return;
     }
+    if (!dirtyEvaluated_) {
+        // The cached per-entry verdicts are from an earlier tick (or never
+        // set) — painting from them would be wrong. See the header comment.
+        logger_.warning("WidgetManager::updateDirtyWidgets() without evaluateDirtyWidgets()");
+        return;
+    }
+    dirtyEvaluated_ = false;
 
     size_t dirtyCount = 0;
     size_t updatedCount = 0;
+#if DEBUG_MODE
     size_t skippedCount = 0;
+#endif
 
     lcd_->startWrite();
 
     for (auto& entry : widgetCache_) {
         if (entry.cachedSkip) {
+#if DEBUG_MODE
             skippedCount++;
+#endif
             continue;
         }
 
@@ -108,7 +120,9 @@ void WidgetManager::updateDirtyWidgets() {
         const bool valueDirty = entry.cachedValueDirty;
 
         if (!chromeDirty && !valueDirty) {
+#if DEBUG_MODE
             skippedCount++;
+#endif
             continue;
         }
 
@@ -135,10 +149,10 @@ void WidgetManager::updateDirtyWidgets() {
 
     allDirty_ = false;
 
-    // P1-20's exact failure shape, tracked generically: hasAnyDirtyWidgets()
+    // P1-20's exact failure shape, tracked generically: evaluateDirtyWidgets()
     // found work, but this pass drew nothing (every widget's chromeDirty and
     // valueDirty ended up false by the time draw() actually ran).
-    if (lastHasAnyDirtyWidgetsResult_ && updatedCount == 0) {
+    if (lastEvaluateFoundWork_ && updatedCount == 0) {
         systemMetrics_.incrementNoopDirtyFrames();
     }
 

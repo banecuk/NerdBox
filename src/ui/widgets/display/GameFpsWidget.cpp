@@ -189,7 +189,6 @@ void GameFpsWidget::onDraw(bool forceRedraw) {
         drawScaleLabels();
     drawSparkline(forceRedraw || scaleJustChanged);
 
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 

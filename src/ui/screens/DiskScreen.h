@@ -9,7 +9,7 @@
 // tapping the disk-drive tiles on the main screen; back button bottom-left.
 class DiskScreen : public BaseWidgetScreen {
  public:
-    DiskScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
+    DiskScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController& uiController,
                const AppSettings& config);
     ~DiskScreen() override = default;
 

@@ -272,7 +272,7 @@ bool PcMetricsWidget::needsUpdate() const {
     // One extra wake-up per cycle, right at the interpolator's midpoint
     // deadline, to snap the CPU tile from the averaged value to the actual
     // sample — see MidpointInterpolator. This is a non-mutating peek: it is
-    // called up to three times per frame (WidgetManager::hasAnyDirtyWidgets(),
+    // called up to three times per frame (WidgetManager::evaluateDirtyWidgets(),
     // Widget::draw(), PcDataCompositeWidget::onDraw()), so it must never
     // consume the one-shot itself — drawDynamicData() does that on the
     // actual draw path (see 07-performance.md P1-20).

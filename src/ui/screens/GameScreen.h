@@ -12,7 +12,7 @@
 // deliberately omits disk, weather, and network widgets.
 class GameScreen : public BaseWidgetScreen {
  public:
-    GameScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
+    GameScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController& uiController,
                const AppSettings& config);
     ~GameScreen() override = default;
 

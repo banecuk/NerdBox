@@ -3,7 +3,7 @@
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
-#include "utils/ScopedLock.h"
+#include "services/pcMetrics/DiskSnapshot.h"
 
 DiskSummaryWidget::DiskSummaryWidget(const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs, PcMetrics& pcMetrics,
@@ -35,11 +35,7 @@ void DiskSummaryWidget::onDraw(bool forceRedraw) {
     float readKBps = 0.0f;
     float writeKBps = 0.0f;
     if (hasData) {
-        ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        for (const auto& drive : pcMetrics_.disk_drives) {
-            readKBps += drive.readKBPerSec;
-            writeKBps += drive.writeKBPerSec;
-        }
+        DiskSnapshot::totals(pcMetrics_, readKBps, writeKBps);
     }
 
     const bool dataAvailabilityChanged = forceRedraw || hasData != lastHasData_;

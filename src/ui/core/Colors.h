@@ -5,11 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 
-// static const byte COLOR_LEVELS_COUNT = 17;
-// static const uint16_t COLOR_LEVELS[COLOR_LEVELS_COUNT] = { 0x09ea, 0x1229, 0x22c6,
-// 0x3363, 0x3ba2, 0x4400, 0x5c40, 0x7460, 0x8ca0, 0x9CC0, 0xa460, 0xb400, 0xbba0, 0xCB20,
-// 0xd280, 0xe180, 0xF800 };
-
 class Colors {
  public:
     // One {breakpoint, color} pair in a ramp sampled by sampleRamp(). Stops
@@ -26,23 +21,28 @@ class Colors {
     // bytes of lookup tables to live inside every Colors object — keeping
     // them static keeps sizeof(Colors) (and therefore ApplicationComponents)
     // unchanged from before these tables existed.
-    static uint16_t COLOR_GRADIENT[100];
-    static uint16_t COLOR_GRADIENT_DIM[100];
-    static uint16_t COLOR_GRADIENT_GPU[100];
-    static uint16_t COLOR_GRADIENT_RAM[100];
+    static uint16_t gradientDefault_[100];
+    static uint16_t gradientDim_[100];
+    static uint16_t gradientGpu_[100];
+    static uint16_t gradientRam_[100];
     // Light-gray-to-light-green ramp shared by every widget that wants a
     // smooth "idle/low -> good/high" scale instead of a metric-specific hue
     // (CpuClockWidget's per-core MHz color, NetworkTrafficWidget's idle-to-
     // moderate utilisation color) — named for the ramp's colors, not either
     // caller's metric, since it isn't specific to either one.
-    static uint16_t COLOR_GRADIENT_GRAY_GREEN[100];
-    // Blue-to-purple counterpart to COLOR_GRADIENT, used to tint hybrid-CPU
+    static uint16_t gradientGrayGreen_[100];
+    // Blue-to-purple counterpart to gradientDefault_, used to tint hybrid-CPU
     // E-core bars in ThreadsWidget so they're distinguishable at a glance from
     // P-core bars at the same load — same breakpoints. Stays clearly blue
     // through the low/mid stops; only the top (99%) stop turns purple. See
     // docs-local/13-threads-ecore-distinction.md.
-    static uint16_t COLOR_GRADIENT_ECORE[100];
+    static uint16_t gradientEcore_[100];
     static void generateGradient();
+    // Clamps value to 0-99 and indexes one of the 100-entry tables above —
+    // the one clamp every getColorFromPercent*() accessor shares.
+    static uint16_t lookup(const uint16_t* table, uint8_t value) {
+        return table[value > 99 ? 99 : value];
+    }
     static uint16_t diskActivityColorScale(float kbPerSec, uint16_t darkColor,
                                             uint16_t brightColor);
 

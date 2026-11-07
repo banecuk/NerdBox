@@ -87,7 +87,7 @@ class ApplicationMetrics {
     const std::array<WidgetDrawStat, kWidgetStatsCapacity>& getWidgetDrawStats() const;
     size_t getWidgetDrawStatsCount() const;
 
-    // Frames where WidgetManager::hasAnyDirtyWidgets() found work but
+    // Frames where WidgetManager::evaluateDirtyWidgets() found work but
     // updateDirtyWidgets() went on to draw nothing — P1-20's exact failure
     // shape (a needsUpdate() override that consumes a one-shot signal on the
     // pre-check but returns false again on the actual draw call), tracked

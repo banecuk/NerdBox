@@ -4,7 +4,7 @@
 #include "ui/core/Layout.h"
 #include "ui/widgets/display/IpAddressWidget.h"
 
-SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController* uiController,
+SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController& uiController,
                                const AppSettings& config, NetworkManager& networkManager,
                                ApplicationMetrics& systemMetrics)
     : BaseWidgetScreen(logger, uiController, config),
@@ -28,7 +28,7 @@ void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(
         std::make_unique<BrightnessWidget>(
             WidgetInterface::Dimensions{kGutter, 0, kContentW, kBrightnessH},
-            *uiController_->getDisplayManager(), config_),
+            *uiController_.getDisplayManager(), config_),
         "brightness");
 
     // Dim at night — toggles dimming brightness 50% between 20:00 and 06:00.
@@ -41,9 +41,9 @@ void SettingsScreen::createWidgets() {
     widgetManager_.addWidget(
         std::make_unique<SwitchWidget>(
             WidgetInterface::Dimensions{kGutter, kSwitchY, kSwitchW, kSwitchH}, "DIM AT NIGHT",
-            [this]() { return uiController_->getDisplayManager()->isDimAtNightEnabled(); },
+            [this]() { return uiController_.getDisplayManager()->isDimAtNightEnabled(); },
             [this](bool enabled) {
-                uiController_->getDisplayManager()->setDimAtNightEnabled(enabled);
+                uiController_.getDisplayManager()->setDimAtNightEnabled(enabled);
             }),
         "dim_at_night_switch");
 
@@ -56,7 +56,7 @@ void SettingsScreen::createWidgets() {
 
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), "Reset",
+            uiController_.getDisplayContext(), "Reset",
             WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
             EventType::RESET_DEVICE, [this](EventType action) { this->handleAction(action); },
             Colors::kDanger, TFT_WHITE),

@@ -13,6 +13,30 @@
 // doesn't carry rendering helpers only some subclasses need.
 namespace WidgetPainter {
 
+// One of Fonts::loadLabel/loadValue/loadMetric/loadHeader/loadMono.
+using FontLoader = void (*)(LGFX*);
+
+// The load-font / set-colour / MC_DATUM / drawString / unload sequence that
+// most widgets used to hand-write for every text cell. Draws `text` centred
+// on (cx, cy) with a per-glyph `bg` fill; does not clear anything first.
+inline void drawCenteredText(LGFX* lcd, int16_t cx, int16_t cy, const char* text,
+                             FontLoader font, uint16_t color, uint16_t bg = TFT_BLACK) {
+    font(lcd);
+    lcd->setTextColor(color, bg);
+    lcd->setTextDatum(MC_DATUM);
+    lcd->drawString(text, cx, cy);
+    Fonts::unload(lcd);
+}
+
+// fillRect(x, y, w, h, bg) then drawCenteredText() at the rect's centre —
+// for cells whose clear rect and text centre coincide.
+inline void drawCenteredCell(LGFX* lcd, int16_t x, int16_t y, int16_t w, int16_t h,
+                             const char* text, FontLoader font, uint16_t color,
+                             uint16_t bg = TFT_BLACK) {
+    lcd->fillRect(x, y, w, h, bg);
+    drawCenteredText(lcd, x + w / 2, y + h / 2, text, font, color, bg);
+}
+
 // Small grey caption drawn top-left of the widget (e.g. "UPTIME",
 // "BRIGHTNESS"), used by every widget with a label-row-above-value/track
 // layout. Caller must already have painted the background.

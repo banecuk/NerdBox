@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ArduinoJson.h>
 #include <WebServer.h>
 
 #include "config/AppSettings.h"
@@ -41,6 +42,23 @@ class WebApiHandlers {
     static const char* internetStatusToString(NetworkStatus::Internet status);
     static const char* screenNameToString(ScreenName screen);
     static const char* playStateToString(AudioData::PlayState state);
+
+    // /api/status is built from one independent object per feed; each
+    // writer below touches only the members it names.
+    void writeStatusSys(JsonDocument& doc);
+    void writeStatusApp(JsonDocument& doc);
+    void writeStatusNet(JsonDocument& doc);
+    void writeStatusPc(JsonDocument& doc);
+    void writeStatusStreams(JsonDocument& doc);
+    void writeStatusUi(JsonDocument& doc);
+    void writeStatusWeather(JsonDocument& doc);
+    void writeStatusRoom(JsonDocument& doc);
+    void writeStatusWifi(JsonDocument& doc);
+    void writeStatusAudio(JsonDocument& doc);
+    void writeStatusTasks(JsonDocument& doc);
+    // Shared shape of pc_stream/cpu_clock_stream/process_stream, so the
+    // three objects can't drift apart.
+    static void writeStreamHealth(JsonObject obj, const IStreamHealth& stream);
 
     WebServer& server_;
     ApplicationMetrics& systemMetrics_;

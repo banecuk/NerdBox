@@ -22,7 +22,7 @@
 
 class MainScreen : public BaseWidgetScreen {
  public:
-    MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
+    MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController& uiController,
                const AppSettings& config, ApplicationMetrics& systemMetrics,
                const AirQualityData& airQualityData, const NetworkStatus& netStatus,
                const AudioData& audioData, WeatherData& weatherData,

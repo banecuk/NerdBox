@@ -9,7 +9,7 @@
 
 class BaseWidgetScreen : public ScreenInterface {
  public:
-    BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
+    BaseWidgetScreen(LoggerInterface& logger, UiController& uiController,
                      const AppSettings& config);
     virtual ~BaseWidgetScreen() override;
 
@@ -33,6 +33,6 @@ class BaseWidgetScreen : public ScreenInterface {
     LoggerInterface& logger_;
     const AppSettings& config_;
 
-    UiController* uiController_;
+    UiController& uiController_;
     WidgetManager widgetManager_;
 };

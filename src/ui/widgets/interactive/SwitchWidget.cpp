@@ -33,7 +33,6 @@ void SwitchWidget::onDraw(bool forceRedraw) {
 
     lastDrawnState_ = current;
     hasDrawnOnce_ = true;
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 
@@ -49,7 +48,7 @@ void SwitchWidget::drawTrack(bool on) {
 }
 
 bool SwitchWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!isInitialized_ || !getLcd() || !getState_ || !setState_)
+    if (!isInitialized() || !getLcd() || !getState_ || !setState_)
         return false;
 
     const uint16_t trackY = dimensions_.y + kLabelH + kGap;

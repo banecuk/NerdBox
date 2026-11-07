@@ -41,9 +41,9 @@ class TaskManager : public ITaskStackReporter {
 
  private:
     // Constants
-    static constexpr const char* SCREEN_TASK_NAME = "ScreenUpdate";
-    static constexpr const char* BACKGROUND_TASK_NAME = "BackgroundTask";
-    static constexpr unsigned long STACK_MONITOR_INTERVAL_MS = 20000;
+    static constexpr const char* kScreenTaskName = "ScreenUpdate";
+    static constexpr const char* kBackgroundTaskName = "BackgroundTask";
+    static constexpr unsigned long kStackMonitorIntervalMs = 20000;
 
     // Dependencies
     LoggerInterface& logger_;

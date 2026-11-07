@@ -6,6 +6,7 @@
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 
 class IpAddressWidget : public Widget {
  public:
@@ -23,7 +24,7 @@ class IpAddressWidget : public Widget {
     uint16_t textColor_;
     uint16_t bgColor_;
     bool lastConnected_ = false;
-    char lastIp_[16] = {};
+    CachedString<16> lastIp_;
 
     uint16_t valueY_ = 0;  // computed from font metrics in computeLayout()
     bool layoutReady_ = false;

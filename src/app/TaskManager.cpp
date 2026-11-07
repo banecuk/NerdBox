@@ -19,7 +19,7 @@ bool TaskManager::createTasks() {
     logger_.info("Initializing Application Tasks", true);
 
     bool success =
-        createTask(updateScreenTask, SCREEN_TASK_NAME, config_.tasksScreenStack,
+        createTask(updateScreenTask, kScreenTaskName, config_.tasksScreenStack,
                    config_.tasksScreenPriority, &screenTaskHandle_, ARDUINO_RUNNING_CORE);
 
     if (!success) {
@@ -27,7 +27,7 @@ bool TaskManager::createTasks() {
         return false;
     }
 
-    success = createTask(backgroundTask, BACKGROUND_TASK_NAME, config_.tasksBackgroundStack,
+    success = createTask(backgroundTask, kBackgroundTaskName, config_.tasksBackgroundStack,
                          config_.tasksBackgroundPriority, &backgroundTaskHandle_, 0);
 
     if (!success) {
@@ -74,14 +74,14 @@ void TaskManager::initializeWatchdog() {
     if (screenTaskHandle_ != nullptr) {
         esp_err_t ret = esp_task_wdt_add(screenTaskHandle_);
         if (ret != ESP_OK) {
-            logger_.errorf("Failed to add %s to watchdog: %s", SCREEN_TASK_NAME,
+            logger_.errorf("Failed to add %s to watchdog: %s", kScreenTaskName,
                            esp_err_to_name(ret));
         }
     }
     if (backgroundTaskHandle_ != nullptr) {
         esp_err_t ret = esp_task_wdt_add(backgroundTaskHandle_);
         if (ret != ESP_OK) {
-            logger_.errorf("Failed to add %s to watchdog: %s", BACKGROUND_TASK_NAME,
+            logger_.errorf("Failed to add %s to watchdog: %s", kBackgroundTaskName,
                            esp_err_to_name(ret));
         }
     }
@@ -112,8 +112,8 @@ void TaskManager::executeScreenTask() {
         resetWatchdog();
 
         // Periodic stack monitoring
-        if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {
-            logStackHighWaterMark(SCREEN_TASK_NAME);
+        if (millis() - lastStackLogTime >= kStackMonitorIntervalMs) {
+            logStackHighWaterMark(kScreenTaskName);
             lastStackLogTime = millis();
         }
 
@@ -133,8 +133,8 @@ void TaskManager::executeBackgroundTask() {
 
         resetWatchdog();
 
-        if (millis() - lastStackLogTime >= STACK_MONITOR_INTERVAL_MS) {
-            logStackHighWaterMark(BACKGROUND_TASK_NAME);
+        if (millis() - lastStackLogTime >= kStackMonitorIntervalMs) {
+            logStackHighWaterMark(kBackgroundTaskName);
             lastStackLogTime = millis();
         }
 

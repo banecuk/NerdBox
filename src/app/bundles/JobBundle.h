@@ -6,15 +6,14 @@
 #include "app/bundles/DataBundle.h"
 #include "app/bundles/PlatformBundle.h"
 #include "app/bundles/ServiceBundle.h"
-#include "app/jobs/AirQualityJob.h"
 #include "app/jobs/CpuClockStreamJob.h"
 #include "app/jobs/DimAtNightJob.h"
 #include "app/jobs/NetworkStatusJob.h"
 #include "app/jobs/NtpRetryJob.h"
 #include "app/jobs/PcMetricsJob.h"
 #include "app/jobs/PcMetricsStreamJob.h"
+#include "app/jobs/PeriodicFetchJob.h"
 #include "app/jobs/ProcessStreamJob.h"
-#include "app/jobs/RoomClimateJob.h"
 #include "app/jobs/WeatherJob.h"
 #include "app/jobs/WifiReconnectJob.h"
 #include "app/jobs/WifiScanJob.h"
@@ -32,6 +31,9 @@
 // job that owns a nontrivial buffer (SseConnection, JsonDocument, a fixed
 // array of more than a few dozen bytes) should default to
 // std::unique_ptr<Job> from the start rather than an inline member.
+using AirQualityJob = PeriodicFetchJob<AirQualityService, AirQualityData>;
+using RoomClimateJob = PeriodicFetchJob<RoomClimateService, RoomClimateData>;
+
 struct JobBundle {
     WifiReconnectJob wifiReconnectJob;
     NtpRetryJob ntpRetryJob;
@@ -68,9 +70,11 @@ struct JobBundle {
           pcMetricsJob(services.pcMetricsService, data.pcMetrics, data.systemState.core,
                        data.systemState.screen, platform.networkManager, config, platform.logger_),
           airQualityJob(services.airQualityService, data.airQualityData, data.systemState.core,
-                        platform.networkManager, config, platform.logger_),
+                        platform.networkManager, platform.logger_, "AirQuality",
+                        config.airQualityFailureBackoffMs),
           roomClimateJob(services.roomClimateService, data.roomClimateData, data.systemState.core,
-                         platform.networkManager, config, platform.logger_),
+                         platform.networkManager, platform.logger_, "RoomClimate",
+                         config.roomClimateFailureBackoffMs),
           networkStatusJob(services.networkStatusService, data.netStatus),
           dimAtNightJob(platform.ntpService, platform.displayManager, config),
           weatherJob(services.weatherService, data.weatherData, data.systemState.core,

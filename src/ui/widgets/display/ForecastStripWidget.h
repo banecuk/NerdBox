@@ -9,6 +9,7 @@
 #include "services/weather/WeatherData.h"
 #include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 #include "utils/DataFreshnessGuard.h"
 
 // Compact daily-forecast strip — MultiWidget's default (resting-state)
@@ -62,10 +63,10 @@ class ForecastStripWidget : public Widget {
 
     // Per-column cached snapshot for dirty detection.
     struct ColumnCache {
-        char dayName[4] = {0};
-        char tempMax[8] = {0};
-        char tempMin[8] = {0};
-        char rain[8] = {0};
+        CachedString<4> dayName;
+        CachedString<8> tempMax;
+        CachedString<8> tempMin;
+        CachedString<8> rain;
     };
 
     WeatherData& weatherData_;

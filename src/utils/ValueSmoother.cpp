@@ -59,14 +59,14 @@ uint8_t ValueSmoother::getSmoothedValue(size_t index) const {
     if (index >= size_) {
         return 0;
     }
-    return static_cast<uint8_t>(smoothedValues_[index] + ROUNDING_OFFSET);
+    return static_cast<uint8_t>(smoothedValues_[index] + kRoundingOffset);
 }
 
 void ValueSmoother::getSmoothedValues(uint8_t* output, size_t count) const {
     assert(output != nullptr && "Output array cannot be null");
     const size_t copyCount = std::min(size_, count);
     for (size_t i = 0; i < copyCount; ++i) {
-        output[i] = static_cast<uint8_t>(smoothedValues_[i] + ROUNDING_OFFSET);
+        output[i] = static_cast<uint8_t>(smoothedValues_[i] + kRoundingOffset);
     }
 }
 

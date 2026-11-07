@@ -32,6 +32,14 @@ class PublishedFlag {
     bool available() const { return available_.load(std::memory_order_acquire); }
     unsigned long lastUpdateMs() const { return lastUpdateMs_; }
 
+    // Milliseconds since the last publish(), or 0 if never published — the
+    // "age" every /api/status feed object and a few widgets report.
+    // Wrap-safe: unsigned subtraction across a millis() rollover still
+    // yields the true elapsed time.
+    unsigned long ageMs(unsigned long nowMs) const {
+        return available() ? nowMs - lastUpdateMs_ : 0;
+    }
+
  private:
     std::atomic<bool> available_{false};
     unsigned long lastUpdateMs_ = 0;

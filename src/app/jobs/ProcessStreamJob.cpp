@@ -6,18 +6,13 @@ ProcessStreamJob::ProcessStreamJob(ProcessData& data, SystemState::CoreState& co
                                    SystemState::ScreenState& screenState,
                                    NetworkManager& networkManager, const AppSettings& config,
                                    LoggerInterface& logger)
-    : SseStreamJob(logger, networkManager,
-                   Config{"Process SSE stream", "screen", config.processStreamConnectTimeoutMs,
-                          config.processStreamHeaderTimeoutMs,
-                          config.processStreamReconnectBackoffMs,
-                          config.processStreamStaleTimeoutMs},
-                   config.processStreamMaxEventBufferBytes, config.processStreamMaxBytesPerPoll),
+    : SseStreamJob(logger, networkManager, Config{"Process SSE stream", "screen"}, config.processStream),
       coreState_(coreState),
       screenState_(screenState),
       streamService_(data, logger) {
     char pathWithQuery[96];
-    snprintf(pathWithQuery, sizeof(pathWithQuery), "%s?intervalMs=%lu", config.processStreamPath,
-             static_cast<unsigned long>(config.processStreamIntervalMs));
+    snprintf(pathWithQuery, sizeof(pathWithQuery), "%s?intervalMs=%lu", config.processStream.streamPath,
+             static_cast<unsigned long>(config.processStream.intervalMs));
     setPath(pathWithQuery);
 }
 

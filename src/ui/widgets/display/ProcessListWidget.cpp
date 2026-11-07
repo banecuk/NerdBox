@@ -69,8 +69,6 @@ void ProcessListWidget::onDraw(bool forceRedraw) {
     }
 
     wasFresh_ = fresh;
-    lastUpdateTimeMs_ = millis();
-    clearDirty();
 }
 
 void ProcessListWidget::formatEntry(Column column, const ProcessEntry& entry, RowText& out) {

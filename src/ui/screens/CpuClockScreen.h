@@ -12,7 +12,7 @@
 // docs-local/CPU-CLOCK-SCREEN-PLAN.md.
 class CpuClockScreen : public BaseWidgetScreen {
  public:
-    CpuClockScreen(LoggerInterface& logger, CpuClockData& cpuClockData, UiController* uiController,
+    CpuClockScreen(LoggerInterface& logger, CpuClockData& cpuClockData, UiController& uiController,
                    const AppSettings& config);
     ~CpuClockScreen() override = default;
 

@@ -11,7 +11,7 @@
 
 // Streaming counterpart to ProcessStreamService: keeps one SseConnection
 // open to NerdWinSense's opt-in top-N process list endpoint (host:port taken
-// from LIBRE_HM_API, path from config.processStreamPath) via the shared
+// from LIBRE_HM_API, path from config.processStream.streamPath) via the shared
 // SseStreamJob base (see docs-local/11-code-quality.md Q1) — the same
 // screen-gated pattern as CpuClockStreamJob: this stream is only ever
 // fetched while the PROCESSES screen is active.

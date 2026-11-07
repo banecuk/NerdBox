@@ -82,3 +82,24 @@ TEST_F(DataFreshnessGuardTest, SurvivesClockWraparound) {
 TEST_F(DataFreshnessGuardTest, DefaultTimeoutConstantIs5000) {
     EXPECT_EQ(DataFreshnessGuard::kDefaultTimeoutMs, 5000u);
 }
+
+// ─── PublishedFlag::ageMs ───────────────────────────────────────────────────
+
+TEST_F(DataFreshnessGuardTest, AgeIsZeroWhenNeverPublished) {
+    PublishedFlag flag;
+    EXPECT_EQ(flag.ageMs(12345), 0UL);
+}
+
+TEST_F(DataFreshnessGuardTest, AgeIsElapsedSincePublish) {
+    PublishedFlag flag;
+    flag.publish(1000);
+    EXPECT_EQ(flag.ageMs(1000), 0UL);
+    EXPECT_EQ(flag.ageMs(3500), 2500UL);
+}
+
+TEST_F(DataFreshnessGuardTest, AgeIsWrapSafeAcrossMillisRollover) {
+    PublishedFlag flag;
+    const unsigned long nearWrap = static_cast<unsigned long>(-1) - 99;  // 100 ms before wrap
+    flag.publish(nearWrap);
+    EXPECT_EQ(flag.ageMs(400), 500UL);  // 100 ms to wrap + 400 ms after it
+}

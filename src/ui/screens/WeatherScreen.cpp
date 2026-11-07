@@ -2,7 +2,7 @@
 
 #include "ui/core/Layout.h"
 
-WeatherScreen::WeatherScreen(LoggerInterface& logger, UiController* uiController,
+WeatherScreen::WeatherScreen(LoggerInterface& logger, UiController& uiController,
                              const AppSettings& config, WeatherData& weatherData)
     : BaseWidgetScreen(logger, uiController, config), weatherData_(weatherData) {}
 

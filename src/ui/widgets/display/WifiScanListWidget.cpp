@@ -55,8 +55,7 @@ void WifiScanListWidget::onDraw(bool forceRedraw) {
     // the scan changed — redraw the header whenever that display value would
     // differ, not just on a structural/freshness change, or it goes stale on
     // screen (e.g. stuck showing "0s ago").
-    const unsigned long ageS =
-        data_.freshness.available() ? (millis() - data_.freshness.lastUpdateMs()) / 1000 : 0;
+    const unsigned long ageS = data_.freshness.ageMs(millis()) / 1000;
     if (structuralChange || freshnessChanged || ageS != lastDrawnAgeS_) {
         drawHeader();
         lastDrawnAgeS_ = ageS;
@@ -96,7 +95,6 @@ void WifiScanListWidget::onDraw(bool forceRedraw) {
     lastState_ = data_.state;
     lastCount_ = data_.count;
     lastFreshnessMs_ = data_.freshness.lastUpdateMs();
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 

@@ -26,7 +26,7 @@ constexpr uint16_t kNetWidgetY = Layout::kBottomBarY + (Layout::kBottomBarH - kN
 
 WifiScreen::WifiScreen(LoggerInterface& logger, NetworkManager& networkManager,
                        WifiScanData& wifiScan, const NetworkStatus& netStatus,
-                       UiController* uiController, const AppSettings& config)
+                       UiController& uiController, const AppSettings& config)
     : BaseWidgetScreen(logger, uiController, config),
       networkManager_(networkManager),
       wifiScan_(wifiScan),
@@ -35,7 +35,7 @@ WifiScreen::WifiScreen(LoggerInterface& logger, NetworkManager& networkManager,
 void WifiScreen::createWidgets() {
     widgetManager_.addWidget(
         std::make_unique<WifiLinkWidget>(
-            uiController_->getDisplayContext(),
+            uiController_.getDisplayContext(),
             WidgetInterface::Dimensions{0, 0, Layout::kScreenW, kLinkH}, 1000, networkManager_,
             wifiScan_, config_),
         "wifi_link");
@@ -53,7 +53,7 @@ void WifiScreen::createWidgets() {
     // cross-cutting (see docs-local/13-wifi-screen-plan.md §4.4 option 1).
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), "Rescan",
+            uiController_.getDisplayContext(), "Rescan",
             WidgetInterface::Dimensions{kRescanX, Layout::kBottomBarY, kRescanW,
                                         Layout::kButtonSize},
             0, EventType::NONE,

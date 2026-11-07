@@ -17,7 +17,7 @@ constexpr uint16_t kArrowH = 48;
 constexpr uint16_t kArrowBg = Colors::kMutedBlueGrey;
 }  // namespace
 
-CalendarScreen::CalendarScreen(LoggerInterface& logger, UiController* uiController,
+CalendarScreen::CalendarScreen(LoggerInterface& logger, UiController& uiController,
                                const AppSettings& config)
     : BaseWidgetScreen(logger, uiController, config) {}
 
@@ -34,14 +34,14 @@ void CalendarScreen::createWidgets() {
     // buttons: both are owned by the same widgetManager_.
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), ButtonIcon::BACK, "",
+            uiController_.getDisplayContext(), ButtonIcon::BACK, "",
             WidgetInterface::Dimensions{0, 0, kArrowW, kArrowH}, 0, EventType::NONE,
             [calendar](EventType) { calendar->stepMonth(-1); }, kArrowBg, TFT_WHITE),
         "prev_month_button");
 
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), ButtonIcon::FORWARD, "",
+            uiController_.getDisplayContext(), ButtonIcon::FORWARD, "",
             WidgetInterface::Dimensions{Layout::kScreenW - kArrowW, 0, kArrowW, kArrowH}, 0,
             EventType::NONE, [calendar](EventType) { calendar->stepMonth(1); }, kArrowBg,
             TFT_WHITE),

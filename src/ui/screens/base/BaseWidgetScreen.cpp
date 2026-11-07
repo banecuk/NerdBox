@@ -6,12 +6,12 @@
 #include "ui/widgets/interactive/ButtonWidget.h"
 #include "utils/logging/LogMacros.h"
 
-BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController* uiController,
+BaseWidgetScreen::BaseWidgetScreen(LoggerInterface& logger, UiController& uiController,
                                    const AppSettings& config)
     : logger_(logger),
       config_(config),
       uiController_(uiController),
-      widgetManager_(uiController->getDisplayContext(), uiController->getSystemMetrics()) {}
+      widgetManager_(uiController.getDisplayContext(), uiController.getSystemMetrics()) {}
 
 BaseWidgetScreen::~BaseWidgetScreen() {
     LOG_DEBUG(logger_, "BaseWidgetScreen destructor");
@@ -27,32 +27,28 @@ void BaseWidgetScreen::onExit() {
 }
 
 void BaseWidgetScreen::draw() {
-    if (!uiController_ || uiController_->isTransitioning()) {
+    if (uiController_.isTransitioning()) {
         return;
     }
 
     // Skip the semaphore entirely when nothing needs painting.
     // This runs lock-free on every idle frame (~60 fps); the mutex is only
     // taken when at least one widget is actually dirty or due for an update.
-    if (!widgetManager_.hasAnyDirtyWidgets()) {
+    if (!widgetManager_.evaluateDirtyWidgets()) {
         return;
     }
 
-    if (!uiController_->tryAcquireDisplayLock()) {
+    if (!uiController_.tryAcquireDisplayLock()) {
         return;
     }
 
     // Use optimized dirty widget updates instead of full redraw
     widgetManager_.updateDirtyWidgets();
 
-    uiController_->releaseDisplayLock();
+    uiController_.releaseDisplayLock();
 }
 
 void BaseWidgetScreen::handleTouch(uint16_t x, uint16_t y) {
-    if (!uiController_) {
-        LOG_DEBUG(logger_, "UIController not initialized, can't handle touch");
-        return;
-    }
     widgetManager_.handleTouch(x, y);
 }
 
@@ -63,7 +59,7 @@ void BaseWidgetScreen::handleAction(EventType action) {
 void BaseWidgetScreen::addBackButton(EventType target) {
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), ButtonIcon::BACK, "",
+            uiController_.getDisplayContext(), ButtonIcon::BACK, "",
             WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
                                         Layout::kButtonSize},
             0, target, [this](EventType action) { this->handleAction(action); }, Theme::kSurface,

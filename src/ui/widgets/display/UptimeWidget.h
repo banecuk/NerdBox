@@ -5,6 +5,7 @@
 #include "ui/widgets/base/HmsFieldRenderer.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
+#include "utils/CachedString.h"
 
 // Displays device uptime as HH:MM:SS, updating once per second. Past 99h
 // uptime, ApplicationMetrics switches the source string to "Dd HH:MM" — this
@@ -32,7 +33,7 @@ class UptimeWidget : public Widget {
     // Last rendered string — avoids a redraw when the second hasn't ticked.
     // Sized for the "Dd HH:MM" fallback format (days up to 5 digits), not
     // just "HH:MM:SS" + null.
-    char lastRendered_[16] = {};
+    CachedString<16> lastRendered_;
     bool dayMode_ = false;  // true once ApplicationMetrics switches formats
 
     // Font-measured layout — computed once on first drawStatic().

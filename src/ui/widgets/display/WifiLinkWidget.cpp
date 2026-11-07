@@ -93,7 +93,6 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
     lastRssi_ = link.rssi;
 
     lastConnected_ = true;
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 

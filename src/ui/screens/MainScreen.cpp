@@ -3,7 +3,7 @@
 #include "ui/core/Layout.h"
 #include "ui/core/Theme.h"
 
-MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController* uiController,
+MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController& uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
                        const AirQualityData& airQualityData, const NetworkStatus& netStatus,
                        const AudioData& audioData, WeatherData& weatherData,
@@ -23,7 +23,7 @@ void MainScreen::createWidgets() {
     // 224/28 cores = 8px pitch, unchanged from before the room widget's space
     // was carved out of AirQualityWidget instead.
     auto threadsWidget = std::make_unique<ThreadsWidget>(
-        uiController_->getDisplayContext(), WidgetInterface::Dimensions{0, 0, 224, 56},
+        uiController_.getDisplayContext(), WidgetInterface::Dimensions{0, 0, 224, 56},
         config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_,
         EventType::SHOW_CPU_CLOCK, [this](EventType action) { this->handleAction(action); });
     widgetManager_.addWidget(std::move(threadsWidget), "threads");
@@ -53,7 +53,7 @@ void MainScreen::createWidgets() {
     // around the digits. Tapping any GPU tile opens the game screen
     // (requestScreen() no-ops if already there).
     auto gameMetricsWidget = std::make_unique<PcMetricsWidget>(
-        uiController_->getDisplayContext(),
+        uiController_.getDisplayContext(),
         WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 84}, 100, pcMetrics_,
         EventType::SHOW_GAME, [this](EventType action) { this->handleAction(action); });
     gameMetricsWidget->setStaleTimeout(5000);
@@ -80,7 +80,7 @@ void MainScreen::createWidgets() {
     // row (y=243..269, right above the bottom band).
     widgetManager_.addWidget(
         std::make_unique<DiskBandWidget>(
-            uiController_->getDisplayContext(),
+            uiController_.getDisplayContext(),
             WidgetInterface::Dimensions{0, 243, Layout::kScreenW, 26}, 100, pcMetrics_,
             EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); }),
         "disk_band");
@@ -115,7 +115,7 @@ void MainScreen::createWidgets() {
     // Settings button — gear icon, no label
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_->getDisplayContext(), ButtonIcon::SETTINGS, "",
+            uiController_.getDisplayContext(), ButtonIcon::SETTINGS, "",
             WidgetInterface::Dimensions{0, kBandY, Layout::kButtonSize, Layout::kButtonSize}, 0,
             EventType::SHOW_SETTINGS, [this](EventType action) { this->handleAction(action); },
             Theme::kSurface, TFT_WHITE),

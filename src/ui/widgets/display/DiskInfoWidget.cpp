@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "services/pcMetrics/DiskSnapshot.h"
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
@@ -37,7 +38,6 @@ void DiskInfoWidget::onDraw(bool forceRedraw) {
 
     if (!available) {
         drawNoDataMessage();
-        lastUpdateTimeMs_ = millis();
         clearDirty();
         return;
     }
@@ -45,67 +45,36 @@ void DiskInfoWidget::onDraw(bool forceRedraw) {
     ensureRowsCreated();
     drawRows(stale);
 
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 
 void DiskInfoWidget::ensureRowsCreated() {
-    struct DriveSnapshot {
-        char name[4];
-        float freeSpacePercent;
-        float readKBPerSec;
-        float writeKBPerSec;
-    };
-
     // Snapshot everything under one lock, then do all display work lock-free.
-    std::vector<DriveSnapshot> snapshot;
-    {
-        ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        const size_t driveCount =
-            pcMetrics_.disk_drives.size() < kMaxDisks ? pcMetrics_.disk_drives.size() : kMaxDisks;
-        snapshot.reserve(driveCount);
-        for (size_t i = 0; i < driveCount; ++i) {
-            DriveSnapshot s;
-            strncpy(s.name, pcMetrics_.disk_drives[i].driveName, sizeof(s.name) - 1);
-            s.name[sizeof(s.name) - 1] = '\0';
-            s.freeSpacePercent = pcMetrics_.disk_drives[i].freeSpacePercent;
-            s.readKBPerSec = pcMetrics_.disk_drives[i].readKBPerSec;
-            s.writeKBPerSec = pcMetrics_.disk_drives[i].writeKBPerSec;
-            snapshot.push_back(s);
-        }
-    }  // mutex released here — all remaining work is lock-free
+    DiskDrive snapshot[kMaxDisks];
+    const size_t count = DiskSnapshot::copy(pcMetrics_, snapshot, kMaxDisks);
 
-    if (snapshot.empty()) {
+    if (count == 0) {
         rows_.clear();
         return;
     }
 
     // Rebuild rows when the drive count changed, or the count stayed the same
-    // but the set of drives itself did (e.g. D: unplugged, E: appears at the
-    // same index) — a count-only comparison would leave the old row's cached
-    // name/state on screen forever.
-    bool needsCreation = rows_.size() != snapshot.size();
-    if (!needsCreation) {
-        for (size_t i = 0; i < snapshot.size(); ++i) {
-            if (strncmp(rows_[i].name, snapshot[i].name, sizeof(snapshot[i].name)) != 0) {
-                needsCreation = true;
-                break;
-            }
-        }
-    }
+    // but the set of drives itself did — see DiskSnapshot::driveSetChanged().
+    const bool needsCreation = DiskSnapshot::driveSetChanged(
+        snapshot, count, rows_.size(), [this](size_t i) { return rows_[i].name; });
     if (needsCreation) {
         rows_.clear();
-        rows_.reserve(snapshot.size());
-        for (const auto& s : snapshot) {
+        rows_.reserve(count);
+        for (size_t i = 0; i < count; ++i) {
             DiskRow r;
-            strncpy(r.name, s.name, sizeof(r.name) - 1);
+            strncpy(r.name, snapshot[i].driveName, sizeof(r.name) - 1);
             r.name[sizeof(r.name) - 1] = '\0';
             rows_.push_back(r);
         }
         clearArea();  // clean slate before drawing the new row set
     }
 
-    for (size_t i = 0; i < snapshot.size(); ++i) {
+    for (size_t i = 0; i < count; ++i) {
         rows_[i].freeSpacePercent = snapshot[i].freeSpacePercent;
         rows_[i].readKBPerSec = snapshot[i].readKBPerSec;
         rows_[i].writeKBPerSec = snapshot[i].writeKBPerSec;

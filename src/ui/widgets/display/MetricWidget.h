@@ -65,7 +65,13 @@ class MetricWidget : public Widget {
     // actually moved or recoloured it; a no-op otherwise.
     void drawUnitWithLoadedFont();
 
-    void forceRefresh();
+    // Resets the cached layout/format state and repaints the value
+    // immediately. Only meant for PcDataCompositeWidget::initAndDrawWidget(),
+    // which calls it from inside its own onDraw() — i.e. already inside
+    // WidgetManager's draw pass and startWrite()/endWrite() batch. Child
+    // tiles aren't registered with WidgetManager, so markDirty() alone
+    // would not get them painted this tick.
+    void forceRefreshAndDraw();
 
     // Getters
     int getValue() const { return value_; }
@@ -133,8 +139,8 @@ class MetricWidget : public Widget {
     bool unitNeedsRedraw_ = false;
 
     // Constants
-    static constexpr uint16_t TEXT_MARGIN = 10;
-    static constexpr uint16_t SEPARATOR_WIDTH = 1;
+    static constexpr uint16_t kTextMargin = 10;
+    static constexpr uint16_t kSeparatorWidth = 1;
 
     // Load/unload the correct value font based on useSmallFont_. Both
     // onDraw() callers of renderValue() route through this; the batch

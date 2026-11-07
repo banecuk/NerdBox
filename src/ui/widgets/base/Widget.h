@@ -52,24 +52,28 @@ class Widget : public WidgetInterface {
     virtual void onDraw(bool forceRedraw) = 0;
     virtual void onCleanUp() {}
 
-    // Protected member variables
+    // Protected member variables — the ones subclasses legitimately read
+    // in onDraw()/onDrawStatic(). Lifecycle/scheduling state is private
+    // below so the base owns its own invariants (see canDraw()).
     LGFX* lcd_ = nullptr;
     LoggerInterface* logger_ = nullptr;
     DisplayContext* context_ = nullptr;
 
     Dimensions dimensions_;
     uint32_t updateIntervalMs_;
-    uint32_t lastUpdateTimeMs_ = 0;
-
-    // Simple state tracking
-    WidgetInterface::State state_ = WidgetInterface::State::UNINITIALIZED;
-    bool isVisible_ = true;
-    bool isDirty_ = false;
     bool isStaticDrawn_ = false;  // Track if static elements are drawn
-    bool isInitialized_ = false;  // Track initialization status
 
  private:
     bool canDraw() const;
+
+    // Written only by Widget itself — draw() stamps lastUpdateTimeMs_ and
+    // clears isDirty_ after every onDraw(), so a subclass never needs to.
+    // Use markDirty()/isDirty()/isVisible()/isInitialized() instead.
+    uint32_t lastUpdateTimeMs_ = 0;
+    WidgetInterface::State state_ = WidgetInterface::State::UNINITIALIZED;
+    bool isVisible_ = true;
+    bool isDirty_ = false;
+    bool isInitialized_ = false;
 
     // Prevent copying
     Widget(const Widget&) = delete;

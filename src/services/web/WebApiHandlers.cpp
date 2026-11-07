@@ -12,7 +12,7 @@
 #include "services/web/ChunkedPrint.h"
 #include "services/wifiScan/WifiScanMath.h"
 #include "utils/DataFreshnessGuard.h"
-#include "utils/ScopedLock.h"
+#include "services/pcMetrics/DiskSnapshot.h"
 
 namespace {
 // The old snprintf-based handlers formatted these with a fixed number of
@@ -98,7 +98,32 @@ void WebApiHandlers::handleApiStatus() {
     server_.send(200, "application/json", "");
 
     JsonDocument doc;
+    writeStatusSys(doc);
+    writeStatusApp(doc);
+    writeStatusNet(doc);
+    writeStatusPc(doc);
+    writeStatusStreams(doc);
+    writeStatusUi(doc);
+    writeStatusWeather(doc);
+    writeStatusRoom(doc);
+    writeStatusWifi(doc);
+    writeStatusAudio(doc);
+    writeStatusTasks(doc);
 
+    ChunkedPrint output(server_);
+    serializeJson(doc, output);
+    output.flush();
+    server_.sendContent("");  // flush / end chunked transfer
+}
+
+/* static */ void WebApiHandlers::writeStreamHealth(JsonObject obj, const IStreamHealth& stream) {
+    obj["state"] = stream.stateName();
+    obj["reconnect_count"] = stream.reconnectCount();
+    obj["last_event_age_ms"] = stream.lastEventAgeMs();
+    obj["overflow_count"] = stream.overflowCount();
+}
+
+void WebApiHandlers::writeStatusSys(JsonDocument& doc) {
     JsonObject sys = doc["sys"].to<JsonObject>();
     sys["heap_free"] = ESP.getFreeHeap();
     sys["heap_min"] = ESP.getMinFreeHeap();
@@ -108,7 +133,9 @@ void WebApiHandlers::handleApiStatus() {
     sys["cpu_mhz"] = ESP.getCpuFreqMHz();
     sys["sdk"] = ESP.getSdkVersion();
     sys["reset_reason"] = static_cast<int>(esp_reset_reason());
+}
 
+void WebApiHandlers::writeStatusApp(JsonDocument& doc) {
     char uptime[20];
     systemMetrics_.getFormattedUptime(uptime, sizeof(uptime));
     JsonObject app = doc["app"].to<JsonObject>();
@@ -156,7 +183,9 @@ void WebApiHandlers::handleApiStatus() {
     for (size_t i = 0; i < drawCount && i < screenDrawTimes.size(); ++i) {
         drawTimes.add(screenDrawTimes[(drawStart + i) % screenDrawTimes.size()]);
     }
+}
 
+void WebApiHandlers::writeStatusNet(JsonDocument& doc) {
     char ip[16] = "0.0.0.0";
     if (WiFi.status() == WL_CONNECTED) {
         IPAddress addr = WiFi.localIP();
@@ -171,82 +200,73 @@ void WebApiHandlers::handleApiStatus() {
     for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i) {
         probes.add(netStatus_.endpoint_ok[i] ? 1 : 0);
     }
+}
 
+void WebApiHandlers::writeStatusPc(JsonDocument& doc) {
     const DataFreshnessGuard freshness(pcMetrics_.freshness);
-    const unsigned long pcAgeMs =
-        pcMetrics_.freshness.available() ? millis() - pcMetrics_.freshness.lastUpdateMs() : 0;
     JsonObject pc = doc["pc"].to<JsonObject>();
     pc["available"] = pcMetrics_.freshness.available();
     pc["fresh"] = freshness.isFresh();
-    pc["age_ms"] = pcAgeMs;
+    pc["age_ms"] = pcMetrics_.freshness.ageMs(millis());
     pc["fetch_ok"] = pcMetricsService_.getFetchOkCount();
     pc["fetch_fail"] = pcMetricsService_.getFetchFailCount();
     pc["last_error"] = pcMetricsService_.getLastError();
+}
 
+void WebApiHandlers::writeStatusStreams(JsonDocument& doc) {
     // pc_stream — SseConnection/PcMetricsStreamJob health, so the streaming
     // path can be observed without a serial monitor. State is meaningful even
     // when pcMetricsStreamEnabled is false: it just stays DISCONNECTED since
-    // the job's nextDue() is always Never.
+    // the job's nextDue() is always Never. `enabled` is pc_stream-only: it's
+    // the one stream with a polling fallback it can be disabled in favour of.
     JsonObject pcStream = doc["pc_stream"].to<JsonObject>();
     pcStream["enabled"] = config_.pcMetricsStreamEnabled;
-    pcStream["state"] = pcMetricsStreamJob_.stateName();
-    pcStream["reconnect_count"] = pcMetricsStreamJob_.reconnectCount();
-    pcStream["last_event_age_ms"] = pcMetricsStreamJob_.lastEventAgeMs();
-    pcStream["overflow_count"] = pcMetricsStreamJob_.overflowCount();
+    writeStreamHealth(pcStream, pcMetricsStreamJob_);
 
     // cpu_clock_stream / process_stream — same shape as pc_stream, for the
     // two opt-in, screen-gated streams. State is meaningful even when their
     // screen isn't active: it just stays DISCONNECTED since the job's
     // nextDue() is Never off-screen.
-    JsonObject cpuClockStream = doc["cpu_clock_stream"].to<JsonObject>();
-    cpuClockStream["state"] = cpuClockStreamJob_.stateName();
-    cpuClockStream["reconnect_count"] = cpuClockStreamJob_.reconnectCount();
-    cpuClockStream["last_event_age_ms"] = cpuClockStreamJob_.lastEventAgeMs();
-    cpuClockStream["overflow_count"] = cpuClockStreamJob_.overflowCount();
+    writeStreamHealth(doc["cpu_clock_stream"].to<JsonObject>(), cpuClockStreamJob_);
+    writeStreamHealth(doc["process_stream"].to<JsonObject>(), processStreamJob_);
+}
 
-    JsonObject processStream = doc["process_stream"].to<JsonObject>();
-    processStream["state"] = processStreamJob_.stateName();
-    processStream["reconnect_count"] = processStreamJob_.reconnectCount();
-    processStream["last_event_age_ms"] = processStreamJob_.lastEventAgeMs();
-    processStream["overflow_count"] = processStreamJob_.overflowCount();
-
+void WebApiHandlers::writeStatusUi(JsonDocument& doc) {
     JsonObject ui = doc["ui"].to<JsonObject>();
     ui["screen"] = screenNameToString(systemState_.screen.activeScreen);
     ui["time_synced"] = systemState_.core.isTimeSynced;
+}
 
+void WebApiHandlers::writeStatusWeather(JsonDocument& doc) {
     // weather — open-meteo forecast feed freshness, so the "fetch only while
     // displayed" gating can be observed without a serial monitor.
     // refresh_pending reflects WeatherWidget's midnight-rollover signal
     // awaiting the background job.
-    const unsigned long weatherAgeMs =
-        weatherData_.freshness.available() ? millis() - weatherData_.freshness.lastUpdateMs() : 0;
     JsonObject weather = doc["weather"].to<JsonObject>();
     weather["available"] = weatherData_.freshness.available();
-    weather["age_ms"] = weatherAgeMs;
+    weather["age_ms"] = weatherData_.freshness.ageMs(millis());
     weather["days"] = weatherData_.dayCount;
     weather["refresh_pending"] = weatherData_.refreshRequested.load();
+}
 
+void WebApiHandlers::writeStatusRoom(JsonDocument& doc) {
     // room — local LAN temperature/humidity sensor feed, so the room widget's
     // data path can be observed without a serial monitor — same rationale as
     // pc_stream/audio above.
-    const unsigned long roomAgeMs = roomClimateData_.freshness.available()
-                                        ? millis() - roomClimateData_.freshness.lastUpdateMs()
-                                        : 0;
     JsonObject room = doc["room"].to<JsonObject>();
     room["available"] = roomClimateData_.freshness.available();
     room["temperature_x10"] = roomClimateData_.temperature_x10;
     room["humidity"] = roomClimateData_.humidity;
-    room["last_event_age_ms"] = roomAgeMs;
+    room["last_event_age_ms"] = roomClimateData_.freshness.ageMs(millis());
+}
 
+void WebApiHandlers::writeStatusWifi(JsonDocument& doc) {
     // wifi — this device's own link plus the nearby-SSID scan feed, so the
     // WIFI screen's data path can be observed without a serial monitor or a
     // visible screen. Scan fields only advance while the WIFI screen is
     // open (see docs-local/13-wifi-screen-plan.md — the job is screen-gated).
     NetworkManager::LinkInfo link{};
     networkManager_.fillLinkInfo(link);
-    const unsigned long wifiScanAgeMs = wifiScanData_.freshness.available()
-                                            ? millis() - wifiScanData_.freshness.lastUpdateMs()
-                                            : 0;
     JsonObject wifi = doc["wifi"].to<JsonObject>();
     wifi["connected"] = link.connected;
     wifi["ssid"] = link.ssid;
@@ -265,13 +285,13 @@ void WebApiHandlers::handleApiStatus() {
     wifi["scan_state"] = static_cast<int>(wifiScanData_.state);
     wifi["scan_ap_count"] = wifiScanData_.count;
     wifi["scan_same_channel"] = wifiScanData_.sameChannelCount;
-    wifi["scan_age_ms"] = wifiScanAgeMs;
+    wifi["scan_age_ms"] = wifiScanData_.freshness.ageMs(millis());
+}
 
+void WebApiHandlers::writeStatusAudio(JsonDocument& doc) {
     // audio — mb_NerdBox MusicBee plugin push feed state, so the push path
     // (POST /audio) can be observed without a serial monitor or a visible
     // screen — see docs-local/NERDBOX_INTEGRATION.md.
-    const unsigned long audioAgeMs =
-        audioData_.freshness.available() ? millis() - audioData_.freshness.lastUpdateMs() : 0;
     JsonObject audio = doc["audio"].to<JsonObject>();
     audio["has_track"] = audioData_.hasTrack;
     audio["play_state"] = playStateToString(audioData_.playState);
@@ -286,22 +306,19 @@ void WebApiHandlers::handleApiStatus() {
     audio["seq"] = audioData_.seq;
     audio["track_id"] = audioData_.trackId;
     audio["session"] = audioData_.session;
-    audio["last_event_age_ms"] = audioAgeMs;
+    audio["last_event_age_ms"] = audioData_.freshness.ageMs(millis());
     // Age since the last stop/offline event, so "how long has it been
     // stopped" is observable without a screen — 0 while a track is loaded.
     audio["stopped_age_ms"] = audioData_.stopped ? millis() - audioData_.stoppedAtMs : 0;
+}
 
+void WebApiHandlers::writeStatusTasks(JsonDocument& doc) {
     // Stack high-water marks — early warning before a tight task stack
     // (6144/8192 B) overflows and reboots the device. 0 means the task
     // hasn't been created yet.
     JsonObject tasks = doc["tasks"].to<JsonObject>();
     tasks["screen_stack_free"] = taskStackReporter_.screenTaskStackFree();
     tasks["background_stack_free"] = taskStackReporter_.backgroundTaskStackFree();
-
-    ChunkedPrint output(server_);
-    serializeJson(doc, output);
-    output.flush();
-    server_.sendContent("");  // flush / end chunked transfer
 }
 
 // ---------------------------------------------------------------------------
@@ -358,18 +375,15 @@ void WebApiHandlers::handleApiPc() {
     }
 
     JsonArray drives = doc["disk_drives"].to<JsonArray>();
-    {
-        // disk_drives is written from core 0 — must hold the lock for the
-        // duration of the read, same as any other disk_drives access.
-        ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        for (size_t i = 0; i < pcMetrics_.disk_drives.size(); ++i) {
-            const DiskDrive& drive = pcMetrics_.disk_drives[i];
-            JsonObject d = drives.add<JsonObject>();
-            d["name"] = drive.driveName;
-            d["free_percent"] = roundToDecimals(drive.freeSpacePercent, 1);
-            d["read_kbps"] = roundToDecimals(drive.readKBPerSec, 1);
-            d["write_kbps"] = roundToDecimals(drive.writeKBPerSec, 1);
-        }
+    DiskDrive disks[DiskSnapshot::kMaxDrives];
+    const size_t diskCount = DiskSnapshot::copy(pcMetrics_, disks, DiskSnapshot::kMaxDrives);
+    for (size_t i = 0; i < diskCount; ++i) {
+        const DiskDrive& drive = disks[i];
+        JsonObject d = drives.add<JsonObject>();
+        d["name"] = drive.driveName;
+        d["free_percent"] = roundToDecimals(drive.freeSpacePercent, 1);
+        d["read_kbps"] = roundToDecimals(drive.readKBPerSec, 1);
+        d["write_kbps"] = roundToDecimals(drive.writeKBPerSec, 1);
     }
 
     ChunkedPrint output(server_);
@@ -446,20 +460,33 @@ void WebApiHandlers::handleMetrics() {
                 "Whether the last PC-metrics reading is within the staleness window.", "gauge");
     out.printf("nerdbox_pc_fresh %d\n", freshness.isFresh() ? 1 : 0);
 
-    writeHeader(out, "nerdbox_pc_stream_reconnects_total", "SSE reconnect count since boot.",
+    // ---- SSE stream health — all three streams, labelled by stream, so a
+    // flapping opt-in stream is as visible here as in /api/status. ----
+    struct NamedStream {
+        const char* label;
+        const IStreamHealth& health;
+    };
+    const NamedStream streams[] = {{"pc", pcMetricsStreamJob_},
+                                   {"cpu_clock", cpuClockStreamJob_},
+                                   {"process", processStreamJob_}};
+    writeHeader(out, "nerdbox_stream_reconnects_total", "SSE reconnect count since boot.",
                 "counter");
-    out.printf("nerdbox_pc_stream_reconnects_total %lu\n",
-               static_cast<unsigned long>(pcMetricsStreamJob_.reconnectCount()));
-
-    writeHeader(out, "nerdbox_pc_stream_overflow_total",
+    for (const NamedStream& st : streams) {
+        out.printf("nerdbox_stream_reconnects_total{stream=\"%s\"} %lu\n", st.label,
+                   static_cast<unsigned long>(st.health.reconnectCount()));
+    }
+    writeHeader(out, "nerdbox_stream_overflow_total",
                 "SSE event-buffer overflow count since boot.", "counter");
-    out.printf("nerdbox_pc_stream_overflow_total %lu\n",
-               static_cast<unsigned long>(pcMetricsStreamJob_.overflowCount()));
-
-    writeHeader(out, "nerdbox_pc_stream_last_event_age_ms",
+    for (const NamedStream& st : streams) {
+        out.printf("nerdbox_stream_overflow_total{stream=\"%s\"} %lu\n", st.label,
+                   static_cast<unsigned long>(st.health.overflowCount()));
+    }
+    writeHeader(out, "nerdbox_stream_last_event_age_ms",
                 "Milliseconds since the last SSE event was received.", "gauge");
-    out.printf("nerdbox_pc_stream_last_event_age_ms %lu\n",
-               static_cast<unsigned long>(pcMetricsStreamJob_.lastEventAgeMs()));
+    for (const NamedStream& st : streams) {
+        out.printf("nerdbox_stream_last_event_age_ms{stream=\"%s\"} %lu\n", st.label,
+                   static_cast<unsigned long>(st.health.lastEventAgeMs()));
+    }
 
     // ---- pc metrics values ----
 #define PCM_FIELD_U(member, promName, help)    \
@@ -491,45 +518,25 @@ void WebApiHandlers::handleMetrics() {
         out.printf("nerdbox_pc_system_fan_rpm{fan=\"%u\"} %u\n", i, pcMetrics_.system_fans[i]);
     }
 
-    // disk_drives is written from core 0 — snapshot under the lock, then
-    // print after releasing it, same as the JSON-building pattern above but
-    // with the copy landing in fixed-size locals instead of a JsonDocument.
-    struct DiskSnapshot {
-        char name[4];
-        float freePercent;
-        float readKBps;
-        float writeKBps;
-    };
-    static constexpr size_t kMaxDisksForMetrics = 16;
-    DiskSnapshot disks[kMaxDisksForMetrics];
-    size_t diskCount = 0;
-    {
-        ScopedLock lock(pcMetrics_.disk_drivesMutex);
-        diskCount = std::min(pcMetrics_.disk_drives.size(), kMaxDisksForMetrics);
-        for (size_t i = 0; i < diskCount; ++i) {
-            const DiskDrive& drive = pcMetrics_.disk_drives[i];
-            strncpy(disks[i].name, drive.driveName, sizeof(disks[i].name) - 1);
-            disks[i].name[sizeof(disks[i].name) - 1] = '\0';
-            disks[i].freePercent = drive.freeSpacePercent;
-            disks[i].readKBps = drive.readKBPerSec;
-            disks[i].writeKBps = drive.writeKBPerSec;
-        }
-    }
+    // disk_drives is written from core 0 — DiskSnapshot::copy() snapshots it
+    // under the lock so the printing below runs with it released.
+    DiskDrive disks[DiskSnapshot::kMaxDrives];
+    const size_t diskCount = DiskSnapshot::copy(pcMetrics_, disks, DiskSnapshot::kMaxDrives);
 
     writeHeader(out, "nerdbox_pc_disk_free_percent", "Free space per drive.", "gauge");
     for (size_t i = 0; i < diskCount; ++i) {
-        out.printf("nerdbox_pc_disk_free_percent{drive=\"%s\"} %.1f\n", disks[i].name,
-                   disks[i].freePercent);
+        out.printf("nerdbox_pc_disk_free_percent{drive=\"%s\"} %.1f\n", disks[i].driveName,
+                   disks[i].freeSpacePercent);
     }
     writeHeader(out, "nerdbox_pc_disk_read_kbps", "Read throughput per drive.", "gauge");
     for (size_t i = 0; i < diskCount; ++i) {
-        out.printf("nerdbox_pc_disk_read_kbps{drive=\"%s\"} %.1f\n", disks[i].name,
-                   disks[i].readKBps);
+        out.printf("nerdbox_pc_disk_read_kbps{drive=\"%s\"} %.1f\n", disks[i].driveName,
+                   disks[i].readKBPerSec);
     }
     writeHeader(out, "nerdbox_pc_disk_write_kbps", "Write throughput per drive.", "gauge");
     for (size_t i = 0; i < diskCount; ++i) {
-        out.printf("nerdbox_pc_disk_write_kbps{drive=\"%s\"} %.1f\n", disks[i].name,
-                   disks[i].writeKBps);
+        out.printf("nerdbox_pc_disk_write_kbps{drive=\"%s\"} %.1f\n", disks[i].driveName,
+                   disks[i].writeKBPerSec);
     }
 
     // ---- weather feed health ----

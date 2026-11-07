@@ -11,7 +11,7 @@
 // plus immediately on entry to this screen (UiController::loadAndActivateScreen).
 class WeatherScreen : public BaseWidgetScreen {
  public:
-    WeatherScreen(LoggerInterface& logger, UiController* uiController, const AppSettings& config,
+    WeatherScreen(LoggerInterface& logger, UiController& uiController, const AppSettings& config,
                   WeatherData& weatherData);
     ~WeatherScreen() override = default;
 

@@ -10,7 +10,6 @@
 #include "ui/core/Layout.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
-#include "utils/ScopedLock.h"
 
 // Full-screen disk info list (the content area of the DISKS screen): one row
 // per drive with a drive letter, a free-space usage bar + percent, and two

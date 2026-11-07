@@ -268,6 +268,34 @@ void WebPageHandlers::handleConfig() {
         server_.sendContent(buf);
     }
 
+    // The three SseStreamTuning instances — one struct, so one loop.
+    {
+        struct NamedTuning {
+            const char* name;
+            const SseStreamTuning& t;
+        };
+        const NamedTuning tunings[] = {{"pcMetricsStream", config_.pcMetricsStream},
+                                       {"cpuClockStream", config_.cpuClockStream},
+                                       {"processStream", config_.processStream}};
+        char key[48];
+        for (const NamedTuning& nt : tunings) {
+#define SEND_TUNING(kind, field)                              \
+    do {                                                      \
+        snprintf(key, sizeof(key), "%s.%s", nt.name, #field); \
+        SEND_CONFIG_##kind(key, nt.t.field);                  \
+    } while (0)
+            SEND_TUNING(U, intervalMs);
+            SEND_TUNING(U, connectTimeoutMs);
+            SEND_TUNING(U, headerTimeoutMs);
+            SEND_TUNING(U, reconnectBackoffMs);
+            SEND_TUNING(U, staleTimeoutMs);
+            SEND_TUNING(U, maxEventBufferBytes);
+            SEND_TUNING(U, maxBytesPerPoll);
+            SEND_TUNING(S, streamPath);
+#undef SEND_TUNING
+        }
+    }
+
 #undef SEND_CONFIG_U
 #undef SEND_CONFIG_F
 #undef SEND_CONFIG_B

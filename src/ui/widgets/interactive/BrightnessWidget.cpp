@@ -60,7 +60,6 @@ void BrightnessWidget::onDraw(bool forceRedraw) {
     }
 
     lastDrawnLevel_ = current;
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 
@@ -76,7 +75,7 @@ void BrightnessWidget::drawSegment(const Segment& seg, bool active) {
 }
 
 bool BrightnessWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!isInitialized_ || !getLcd())
+    if (!isInitialized() || !getLcd())
         return false;
 
     const uint16_t segY = dimensions_.y + kLabelH + kGap;

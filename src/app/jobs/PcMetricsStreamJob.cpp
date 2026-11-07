@@ -6,19 +6,14 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
                                        SystemState::ScreenState& screenState,
                                        NetworkManager& networkManager, const AppSettings& config,
                                        LoggerInterface& logger, ApplicationMetrics& systemMetrics)
-    : SseStreamJob(logger, networkManager,
-                   Config{"SSE stream", "metrics screen", config.pcMetricsStreamConnectTimeoutMs,
-                          config.pcMetricsStreamHeaderTimeoutMs,
-                          config.pcMetricsStreamReconnectBackoffMs,
-                          config.pcMetricsStreamStaleTimeoutMs},
-                   config.pcMetricsStreamMaxEventBufferBytes, config.pcMetricsStreamMaxBytesPerPoll),
+    : SseStreamJob(logger, networkManager, Config{"SSE stream", "metrics screen"}, config.pcMetricsStream),
       coreState_(coreState),
       screenState_(screenState),
       config_(config),
       streamService_(metrics, config, logger, systemMetrics) {
     char pathWithQuery[96];
     snprintf(pathWithQuery, sizeof(pathWithQuery), "%s?intervalMs=%lu&delta=%s",
-             config.pcMetricsStreamPath, static_cast<unsigned long>(config.pcMetricsStreamIntervalMs),
+             config.pcMetricsStream.streamPath, static_cast<unsigned long>(config.pcMetricsStream.intervalMs),
              config.pcMetricsStreamDelta ? "true" : "false");
     setPath(pathWithQuery);
 }

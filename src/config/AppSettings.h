@@ -5,6 +5,38 @@
 
 #include "config/AppConfig.h"
 
+// Connection tuning shared by every SSE stream (PcMetricsStreamJob,
+// CpuClockStreamJob, ProcessStreamJob). One struct instantiated once per
+// stream in AppSettings, instead of the same eight knobs spelled out as
+// eight flat fields per stream — a new stream costs one AppConfig::internal
+// *StreamImpl struct plus one AppSettings member line.
+struct SseStreamTuning {
+    uint32_t intervalMs;
+    uint16_t connectTimeoutMs;
+    uint16_t headerTimeoutMs;
+    uint32_t reconnectBackoffMs;
+    uint32_t staleTimeoutMs;
+    size_t maxEventBufferBytes;
+    uint16_t maxBytesPerPoll;
+    const char* streamPath;
+
+    // Built from an AppConfig::internal::*StreamImpl struct's k* constants,
+    // by name — so the field order above can't silently transpose values.
+    template <typename Impl>
+    static constexpr SseStreamTuning from() {
+        SseStreamTuning t{};
+        t.intervalMs = Impl::kIntervalMs;
+        t.connectTimeoutMs = Impl::kConnectTimeoutMs;
+        t.headerTimeoutMs = Impl::kHeaderTimeoutMs;
+        t.reconnectBackoffMs = Impl::kReconnectBackoffMs;
+        t.staleTimeoutMs = Impl::kStaleTimeoutMs;
+        t.maxEventBufferBytes = Impl::kMaxEventBufferBytes;
+        t.maxBytesPerPoll = Impl::kMaxBytesPerPoll;
+        t.streamPath = Impl::kStreamPath;
+        return t;
+    }
+};
+
 // Plain value object populated from AppConfig::internal's compile-time
 // constants. Replaces the old AppConfigInterface/AppConfigService virtual
 // dispatch pair — every value here is already known at compile time, so
@@ -23,4 +55,13 @@ struct AppSettings {
     // needs its own per-element dump in handleConfig() rather than a single
     // SEND_CONFIG_* call.
     const uint8_t* uiBrightnessLevels = AppConfig::internal::UiImpl::kBrightnessLevels;
+
+    // Per-stream SSE connection tuning — see SseStreamTuning above. Not in
+    // AppSettingsFields.def (nested struct, not a scalar); handleConfig()
+    // dumps all three with one loop.
+    SseStreamTuning pcMetricsStream =
+        SseStreamTuning::from<AppConfig::internal::PcMetricsStreamImpl>();
+    SseStreamTuning cpuClockStream =
+        SseStreamTuning::from<AppConfig::internal::CpuClockStreamImpl>();
+    SseStreamTuning processStream = SseStreamTuning::from<AppConfig::internal::ProcessStreamImpl>();
 };

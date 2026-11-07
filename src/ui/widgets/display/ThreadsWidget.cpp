@@ -123,7 +123,6 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     }
 
     wasFresh_ = fresh;
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 
@@ -228,7 +227,7 @@ void ThreadsWidget::drawBars() {
 }
 
 bool ThreadsWidget::needsUpdate() const {
-    if (!isInitialized_) {
+    if (!isInitialized()) {
         return false;
     }
 

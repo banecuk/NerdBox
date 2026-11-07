@@ -62,5 +62,5 @@ class ButtonWidget : public Widget {
     static constexpr uint16_t kBorderRadius = 5;
     static constexpr uint8_t kIconPad = 4;  // px between icon and label
 
-    static constexpr unsigned long PRESS_FEEDBACK_MS = 100;
+    static constexpr unsigned long kPressFeedbackMs = 100;
 };

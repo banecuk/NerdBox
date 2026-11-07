@@ -7,11 +7,12 @@
 #include "utils/logging/LogMacros.h"
 
 SseStreamJob::SseStreamJob(LoggerInterface& logger, NetworkManager& networkManager, Config config,
-                           size_t eventBufferBytes, uint16_t maxBytesPerPoll)
+                           const SseStreamTuning& tuning)
     : logger_(logger),
       networkManager_(networkManager),
       config_(config),
-      connection_(logger, eventBufferBytes, maxBytesPerPoll) {
+      tuning_(tuning),
+      connection_(logger, tuning.maxEventBufferBytes, tuning.maxBytesPerPoll) {
     UrlUtils::parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
 }
 
@@ -82,7 +83,7 @@ void SseStreamJob::run() {
         return;
     }
 
-    if (millis() - lastEventMs_ > config_.staleTimeoutMs) {
+    if (millis() - lastEventMs_ > tuning_.staleTimeoutMs) {
         // The socket can still look Connected here — WiFiClient::connected()
         // may keep reporting true on a half-open TCP connection even after
         // the peer is gone — but no event has arrived for staleTimeoutMs.
@@ -98,8 +99,8 @@ void SseStreamJob::run() {
 }
 
 void SseStreamJob::attemptConnect() {
-    if (connection_.connect(host_, port_, path_, config_.connectTimeoutMs,
-                            config_.headerTimeoutMs)) {
+    if (connection_.connect(host_, port_, path_, tuning_.connectTimeoutMs,
+                            tuning_.headerTimeoutMs)) {
         char msg[64];
         snprintf(msg, sizeof(msg), "%s connected", config_.logPrefix);
         logger_.info(msg, true);
@@ -115,5 +116,5 @@ void SseStreamJob::attemptConnect() {
 
 void SseStreamJob::scheduleReconnect() {
     reconnectCount_++;
-    nextReconnectAttemptMs_ = millis() + config_.reconnectBackoffMs;
+    nextReconnectAttemptMs_ = millis() + tuning_.reconnectBackoffMs;
 }

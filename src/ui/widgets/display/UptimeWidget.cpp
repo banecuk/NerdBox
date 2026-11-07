@@ -69,7 +69,7 @@ void UptimeWidget::onDrawStatic() {
         Fonts::unload(lcd);
     }
 
-    lastRendered_[0] = '\0';
+    lastRendered_.clear();
     fieldRenderer_.resetFields();
 }
 
@@ -82,7 +82,7 @@ void UptimeWidget::onDraw(bool forceRedraw) {
     const bool isDayMode = strchr(current, 'd') != nullptr;
 
     if (!forceRedraw && isDayMode == dayMode_ &&
-        strncmp(current, lastRendered_, sizeof(current)) == 0) {
+        lastRendered_.equals(current)) {
         clearDirty();
         return;
     }
@@ -117,8 +117,7 @@ void UptimeWidget::onDraw(bool forceRedraw) {
         Fonts::unload(lcd);
     }
 
-    strncpy(lastRendered_, current, sizeof(lastRendered_));
-    lastUpdateTimeMs_ = millis();
+    lastRendered_.set(current);
     clearDirty();
 }
 

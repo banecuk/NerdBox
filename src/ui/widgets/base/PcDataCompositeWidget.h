@@ -23,12 +23,12 @@ class PcDataCompositeWidget : public Widget {
 
     bool hasFreshData() const { return freshnessGuard_.isFresh(); }
 
-    // initialize() + drawStatic() + forceRefresh() on a freshly-(re)built
+    // initialize() + drawStatic() + forceRefreshAndDraw() on a freshly-(re)built
     // child MetricWidget tile — identical across every composite widget.
     // initialize() draws static chrome on first call only (no-op on repeat
     // calls once the tile is already initialized), so the explicit
     // drawStatic() is what actually repaints chrome on every subsequent
-    // stale->fresh transition; forceRefresh() resets the tile's cached
+    // stale->fresh transition; forceRefreshAndDraw() resets the tile's cached
     // layout state and performs the initial value draw immediately.
     void initAndDrawWidget(MetricWidget& widget);
 

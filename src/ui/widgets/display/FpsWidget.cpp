@@ -47,7 +47,6 @@ void FpsWidget::onDraw(bool forceRedraw) {
         }
         lastVisible_ = hasValue;
         lastDrawnFps_ = fps;
-        lastUpdateTimeMs_ = millis();
         clearDirty();
         return;
     }
@@ -64,7 +63,6 @@ void FpsWidget::onDraw(bool forceRedraw) {
     if (forceRedraw || fps != lastDrawnFps_) {
         renderFps(fps);
         lastDrawnFps_ = fps;
-        lastUpdateTimeMs_ = millis();
     }
 
     clearDirty();

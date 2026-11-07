@@ -56,14 +56,12 @@ void IpAddressWidget::onDraw(bool forceRedraw) {
         networkManager_.getLocalIp(currentIp, sizeof(currentIp));
     }
 
-    const bool changed =
-        (connected != lastConnected_) || (strncmp(currentIp, lastIp_, sizeof(currentIp)) != 0);
+    const bool ipChanged = lastIp_.setIfChanged(currentIp);
+    const bool changed = (connected != lastConnected_) || ipChanged;
 
     if (forceRedraw || changed) {
         renderContent(connected, currentIp);
         lastConnected_ = connected;
-        strncpy(lastIp_, currentIp, sizeof(lastIp_));
-        lastUpdateTimeMs_ = millis();
     }
 
     clearDirty();

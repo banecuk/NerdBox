@@ -7,7 +7,7 @@ PcDataCompositeWidget::PcDataCompositeWidget(const WidgetInterface::Dimensions& 
 void PcDataCompositeWidget::initAndDrawWidget(MetricWidget& widget) {
     widget.initialize(getContext());
     widget.drawStatic();
-    widget.forceRefresh();
+    widget.forceRefreshAndDraw();
 }
 
 void PcDataCompositeWidget::onDrawStatic() {
@@ -52,11 +52,10 @@ void PcDataCompositeWidget::onDraw(bool forceRedraw) {
         lastUpdateTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
     }
 
-    lastUpdateTimeMs_ = millis();
 }
 
 bool PcDataCompositeWidget::needsUpdate() const {
-    if (!isInitialized_)
+    if (!isInitialized())
         return false;
     if (hasFreshData() != wasFreshData_)
         return true;

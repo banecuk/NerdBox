@@ -118,7 +118,7 @@ bool Widget::needsUpdate() const {
     // data-timestamp check (PcMetricsWidget, DiskBandWidget) should return
     // on that check alone once it's known to be maintained correctly, not
     // OR it with a time-elapsed clause — see 07-performance.md P0-3. It must
-    // also be free of side effects: WidgetManager::hasAnyDirtyWidgets(),
+    // also be free of side effects: WidgetManager::evaluateDirtyWidgets(),
     // Widget::draw(), and (for composite widgets) PcDataCompositeWidget::
     // onDraw() each call needsUpdate() independently, up to three times per
     // frame — a mutating override can return true once and false on every

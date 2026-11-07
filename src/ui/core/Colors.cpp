@@ -2,12 +2,12 @@
 
 #include "config/LgfxConfig.h"  // TFT_* color constants
 
-uint16_t Colors::COLOR_GRADIENT[100] = {};
-uint16_t Colors::COLOR_GRADIENT_DIM[100] = {};
-uint16_t Colors::COLOR_GRADIENT_GPU[100] = {};
-uint16_t Colors::COLOR_GRADIENT_RAM[100] = {};
-uint16_t Colors::COLOR_GRADIENT_GRAY_GREEN[100] = {};
-uint16_t Colors::COLOR_GRADIENT_ECORE[100] = {};
+uint16_t Colors::gradientDefault_[100] = {};
+uint16_t Colors::gradientDim_[100] = {};
+uint16_t Colors::gradientGpu_[100] = {};
+uint16_t Colors::gradientRam_[100] = {};
+uint16_t Colors::gradientGrayGreen_[100] = {};
+uint16_t Colors::gradientEcore_[100] = {};
 
 Colors::Colors() {
     generateGradient();
@@ -32,10 +32,7 @@ Colors::~Colors() {}
 }
 
 uint16_t Colors::getColorFromPercent(uint8_t value, bool dim) {
-    if (value > 99) {
-        value = 99;
-    }
-    return dim ? COLOR_GRADIENT_DIM[value] : COLOR_GRADIENT[value];
+    return lookup(dim ? gradientDim_ : gradientDefault_, value);
 }
 
 void Colors::generateGradient() {
@@ -92,43 +89,31 @@ void Colors::generateGradient() {
 
     for (int i = 0; i < 100; i++) {
         const uint8_t v = static_cast<uint8_t>(i);
-        COLOR_GRADIENT[i] = sampleRamp(kDefaultStops, sizeof(kDefaultStops) / sizeof(GradientStop), v);
-        COLOR_GRADIENT_DIM[i] = darken(COLOR_GRADIENT[i], 128);
-        COLOR_GRADIENT_GPU[i] = sampleRamp(kGpuStops, sizeof(kGpuStops) / sizeof(GradientStop), v);
-        COLOR_GRADIENT_RAM[i] = sampleRamp(kRamStops, sizeof(kRamStops) / sizeof(GradientStop), v);
-        COLOR_GRADIENT_GRAY_GREEN[i] =
+        gradientDefault_[i] = sampleRamp(kDefaultStops, sizeof(kDefaultStops) / sizeof(GradientStop), v);
+        gradientDim_[i] = darken(gradientDefault_[i], 128);
+        gradientGpu_[i] = sampleRamp(kGpuStops, sizeof(kGpuStops) / sizeof(GradientStop), v);
+        gradientRam_[i] = sampleRamp(kRamStops, sizeof(kRamStops) / sizeof(GradientStop), v);
+        gradientGrayGreen_[i] =
             sampleRamp(kGrayGreenStops, sizeof(kGrayGreenStops) / sizeof(GradientStop), v);
-        COLOR_GRADIENT_ECORE[i] =
+        gradientEcore_[i] =
             sampleRamp(kEcoreStops, sizeof(kEcoreStops) / sizeof(GradientStop), v);
     }
 }
 
 uint16_t Colors::getColorFromPercentEcore(uint8_t value) {
-    if (value > 99) {
-        value = 99;
-    }
-    return COLOR_GRADIENT_ECORE[value];
+    return lookup(gradientEcore_, value);
 }
 
 uint16_t Colors::getColorFromPercentGpu(uint8_t value) {
-    if (value > 99) {
-        value = 99;
-    }
-    return COLOR_GRADIENT_GPU[value];
+    return lookup(gradientGpu_, value);
 }
 
 uint16_t Colors::getColorFromPercentRam(uint8_t value) {
-    if (value > 99) {
-        value = 99;
-    }
-    return COLOR_GRADIENT_RAM[value];
+    return lookup(gradientRam_, value);
 }
 
 uint16_t Colors::getColorFromPercentGrayGreen(uint8_t value) {
-    if (value > 99) {
-        value = 99;
-    }
-    return COLOR_GRADIENT_GRAY_GREEN[value];
+    return lookup(gradientGrayGreen_, value);
 }
 
 uint16_t Colors::utilizationColor(float percent) {

@@ -1,5 +1,7 @@
 #include "ForecastStripWidget.h"
 
+#include "ui/widgets/base/WidgetPainter.h"
+
 #include <cstring>
 
 #include "ui/core/Colors.h"
@@ -103,10 +105,12 @@ void ForecastStripWidget::onDraw(bool forceRedraw) {
         else
             snprintf(rain, sizeof(rain), "-");
 
-        const bool dayChanged = forceRedraw || strcmp(dayName, cache.dayName) != 0;
-        const bool maxChanged = forceRedraw || strcmp(tempMax, cache.tempMax) != 0;
-        const bool minChanged = forceRedraw || strcmp(tempMin, cache.tempMin) != 0;
-        const bool rainChanged = forceRedraw || strcmp(rain, cache.rain) != 0;
+        // setIfChanged() updates the cache as it compares — drawColumn()
+        // below draws from the fresh local strings, not the cache.
+        const bool dayChanged = cache.dayName.setIfChanged(dayName) || forceRedraw;
+        const bool maxChanged = cache.tempMax.setIfChanged(tempMax) || forceRedraw;
+        const bool minChanged = cache.tempMin.setIfChanged(tempMin) || forceRedraw;
+        const bool rainChanged = cache.rain.setIfChanged(rain) || forceRedraw;
 
         const uint16_t dayColor =
             (ltm.tm_wday == 0 || ltm.tm_wday == 6) ? kWeatherWeekendColor : kDayColor;
@@ -116,15 +120,6 @@ void ForecastStripWidget::onDraw(bool forceRedraw) {
             drawColumn(i, dayChanged, maxChanged, minChanged, rainChanged, dayName, dayColor,
                       tempMax, tempMin, rain, rainColor, i == 0);
         }
-
-        strncpy(cache.dayName, dayName, sizeof(cache.dayName) - 1);
-        cache.dayName[sizeof(cache.dayName) - 1] = '\0';
-        strncpy(cache.tempMax, tempMax, sizeof(cache.tempMax) - 1);
-        cache.tempMax[sizeof(cache.tempMax) - 1] = '\0';
-        strncpy(cache.tempMin, tempMin, sizeof(cache.tempMin) - 1);
-        cache.tempMin[sizeof(cache.tempMin) - 1] = '\0';
-        strncpy(cache.rain, rain, sizeof(cache.rain) - 1);
-        cache.rain[sizeof(cache.rain) - 1] = '\0';
     }
 }
 
@@ -185,11 +180,8 @@ void ForecastStripWidget::drawColumn(uint8_t col, bool dayChanged, bool maxChang
 
     if (dayChanged) {
         lcd->fillRect(colX + 1, dimensions_.y, colWidth_ - 2, kMaxY - kDayY, TFT_BLACK);
-        Fonts::loadLabel(lcd);
-        lcd->setTextColor(dayColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(dayName, cx, dimensions_.y + kDayY);
-        Fonts::unload(lcd);
+        WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + kDayY, dayName, Fonts::loadLabel,
+                                        dayColor);
         if (isToday) {
             lcd->drawFastHLine(colX + colWidth_ / 4, dimensions_.y + kDayY + 9, colWidth_ / 2,
                                kTodayUnderlineColor);
@@ -198,29 +190,18 @@ void ForecastStripWidget::drawColumn(uint8_t col, bool dayChanged, bool maxChang
 
     if (maxChanged) {
         lcd->fillRect(colX + 1, dimensions_.y + kMaxY - 12, colWidth_ - 2, 23, TFT_BLACK);
-        Fonts::loadMetric(lcd);
-        lcd->setTextColor(kTempMaxColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(tempMax, cx, dimensions_.y + kMaxY);
-        Fonts::unload(lcd);
+        WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + kMaxY, tempMax,
+                                        Fonts::loadMetric, kTempMaxColor);
     }
 
     if (minChanged) {
-        lcd->fillRect(colX + 1, dimensions_.y + kMinY - 10, colWidth_ - 2, 20, TFT_BLACK);
-        Fonts::loadValue(lcd);
-        lcd->setTextColor(kTempMinColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(tempMin, cx, dimensions_.y + kMinY);
-        Fonts::unload(lcd);
+        WidgetPainter::drawCenteredCell(lcd, colX + 1, dimensions_.y + kMinY - 10, colWidth_ - 2, 20,
+                                        tempMin, Fonts::loadValue, kTempMinColor);
     }
 
     if (rainChanged) {
-        lcd->fillRect(colX + 1, dimensions_.y + kRainY - 10, colWidth_ - 2, 20, TFT_BLACK);
-        Fonts::loadValue(lcd);
-        lcd->setTextColor(rainColor, TFT_BLACK);
-        lcd->setTextDatum(MC_DATUM);
-        lcd->drawString(rain, cx, dimensions_.y + kRainY);
-        Fonts::unload(lcd);
+        WidgetPainter::drawCenteredCell(lcd, colX + 1, dimensions_.y + kRainY - 10, colWidth_ - 2, 20,
+                                        rain, Fonts::loadValue, rainColor);
     }
 }
 

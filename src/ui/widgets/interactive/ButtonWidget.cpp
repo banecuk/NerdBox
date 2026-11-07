@@ -87,7 +87,7 @@ void ButtonWidget::onDraw(bool forceRedraw) {
     // this widget's updateIntervalMs is 0, needsUpdate() never returns true,
     // and nothing would ever call onDraw() again after the initial pressed
     // draw to notice the feedback window has elapsed.
-    if (isPressed_ && (now - pressStartTime_ >= PRESS_FEEDBACK_MS)) {
+    if (isPressed_ && (now - pressStartTime_ >= kPressFeedbackMs)) {
         isPressed_ = false;
         setUpdateInterval(0);  // stop the periodic wake-up until pressed again
         markDirty();
@@ -195,7 +195,7 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     pressStartTime_ = now;
     // Schedule a wake-up after the feedback window so onDraw() runs again to
     // auto-release the pressed state, even if nothing else redraws the button.
-    setUpdateInterval(PRESS_FEEDBACK_MS);
+    setUpdateInterval(kPressFeedbackMs);
     markDirty();
 
     callback_(action_);

@@ -13,7 +13,7 @@
 
 class SettingsScreen : public BaseWidgetScreen {
  public:
-    SettingsScreen(LoggerInterface& logger, UiController* uiController, const AppSettings& config,
+    SettingsScreen(LoggerInterface& logger, UiController& uiController, const AppSettings& config,
                    NetworkManager& networkManager, ApplicationMetrics& systemMetrics);
     ~SettingsScreen() override = default;
 

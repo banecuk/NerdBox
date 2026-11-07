@@ -14,9 +14,9 @@ ApplicationComponents::ApplicationComponents()
       screenCtx{platform.logger_,
                 platform.displayContext.getScreenLogQueue(),
                 data.systemState.core,
-                &platform.displayManager,
+                platform.displayManager,
                 data.pcMetrics,
-                &uiController,
+                uiController,
                 config,
                 services.systemMetrics,
                 platform.networkManager,
@@ -38,7 +38,7 @@ ApplicationComponents::ApplicationComponents()
                        *data.wifiScanData),
       initStateMachine(*this) {
     // uiController is constructed before screenCtx (declaration order) and
-    // screenCtx holds a pointer back to it, so the reverse link — giving
+    // screenCtx holds a reference back to it, so the reverse link — giving
     // uiController the address of screenCtx — can only happen here, once
     // both members exist. See the comment on ScreenCreationContext screenCtx
     // in ApplicationComponents.h.

@@ -14,7 +14,7 @@
 class WifiScreen : public BaseWidgetScreen {
  public:
     WifiScreen(LoggerInterface& logger, NetworkManager& networkManager, WifiScanData& wifiScan,
-              const NetworkStatus& netStatus, UiController* uiController,
+              const NetworkStatus& netStatus, UiController& uiController,
               const AppSettings& config);
     ~WifiScreen() override = default;
 

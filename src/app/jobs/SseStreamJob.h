@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
 #include "core/IStreamHealth.h"
 #include "network/NetworkManager.h"
@@ -18,24 +19,23 @@
 // (same guard order, same "off-screen: tear down once then idle", same
 // stale-timeout half-open-TCP guard) — see docs-local/11-code-quality.md Q1.
 //
-// A derived class supplies: a Config (log wording + per-stream timeouts),
+// A derived class supplies: a Config (log wording), its SseStreamTuning,
 // the request path via setPath() (host:port always comes from LIBRE_HM_API,
 // resolved here), its own screenGateOpen() rule, and an onEvent() that
 // forwards to its *StreamService. nextDue()/run() are `final` — the
 // scheduling shape is exactly the point of sharing this base.
 class SseStreamJob : public BackgroundJob, public IStreamHealth {
  public:
+    // Per-derived-class log wording; both strings must have static storage.
     struct Config {
-        const char* logPrefix;       // e.g. "SSE stream", "CPU clock SSE stream" — static storage
-        const char* offScreenScope;  // e.g. "metrics screen", "screen" — static storage
-        uint16_t connectTimeoutMs;
-        uint16_t headerTimeoutMs;
-        uint32_t reconnectBackoffMs;
-        uint32_t staleTimeoutMs;
+        const char* logPrefix;       // e.g. "SSE stream", "CPU clock SSE stream"
+        const char* offScreenScope;  // e.g. "metrics screen", "screen"
     };
 
+    // `tuning` must outlive the job — in practice it's a member of the
+    // app-lifetime AppSettings (pcMetricsStream/cpuClockStream/processStream).
     SseStreamJob(LoggerInterface& logger, NetworkManager& networkManager, Config config,
-                 size_t eventBufferBytes, uint16_t maxBytesPerPoll);
+                 const SseStreamTuning& tuning);
 
     JobDue nextDue() const final;
     void run() final;
@@ -76,6 +76,7 @@ class SseStreamJob : public BackgroundJob, public IStreamHealth {
     LoggerInterface& logger_;
     NetworkManager& networkManager_;
     Config config_;
+    const SseStreamTuning& tuning_;
 
     SseConnection connection_;
 

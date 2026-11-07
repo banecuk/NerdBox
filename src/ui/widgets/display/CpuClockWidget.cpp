@@ -74,7 +74,6 @@ void CpuClockWidget::onDraw(bool forceRedraw) {
     }
 
     wasFresh_ = fresh;
-    lastUpdateTimeMs_ = millis();
     clearDirty();
 }
 

@@ -25,16 +25,23 @@ class WidgetManager {
 
     // Dirty management
     void markAllDirty();
-    void updateDirtyWidgets();
 
-    // Cheap pre-lock check: returns true if updateDirtyWidgets() would find
-    // any work to do.  Call this before acquiring the display lock so the
-    // semaphore take/give is skipped entirely on idle frames. As a side
-    // effect it records each entry's chrome/value-dirty verdict, which
-    // updateDirtyWidgets() consumes instead of recomputing — the two are
-    // only ever called back-to-back from BaseWidgetScreen::draw(), so the
-    // cached verdicts are still fresh when updateDirtyWidgets() runs.
-    bool hasAnyDirtyWidgets();
+    // Two-phase draw, both halves in the same tick:
+    //
+    // evaluateDirtyWidgets() — cheap pre-lock pass. Records each entry's
+    //   chrome/value-dirty verdict and returns true if there is any work.
+    //   Call it before acquiring the display lock so the semaphore take/give
+    //   is skipped entirely on idle frames. NOT a pure query: it writes the
+    //   per-entry verdicts that updateDirtyWidgets() consumes.
+    //
+    // updateDirtyWidgets() — paints from those recorded verdicts without
+    //   re-deriving them. Must follow an evaluateDirtyWidgets() call in the
+    //   same tick; calling it without one logs a warning and paints nothing
+    //   rather than painting from stale verdicts (dirtyEvaluated_ guard).
+    //
+    // BaseWidgetScreen::draw() is the one caller of both.
+    bool evaluateDirtyWidgets();
+    void updateDirtyWidgets();
 
  private:
     // Cache structure to avoid repeated getDimensions() calls
@@ -45,7 +52,7 @@ class WidgetManager {
         bool isDirty = true;  // Track widget-level dirtiness
         uint32_t lastUpdateTime = 0;
 
-        // Verdict recorded by hasAnyDirtyWidgets(), consumed by
+        // Verdict recorded by evaluateDirtyWidgets(), consumed by
         // updateDirtyWidgets() so it doesn't re-derive the same answers.
         bool cachedSkip = true;
         bool cachedChromeDirty = false;
@@ -68,10 +75,15 @@ class WidgetManager {
     bool allDirty_ = false;
     uint32_t lastStatsLogTime_ = 0;
 
-    // Set by hasAnyDirtyWidgets(), consumed by updateDirtyWidgets() at the
+    // Set by evaluateDirtyWidgets(), consumed by updateDirtyWidgets() at the
     // end of its pass to detect P1-20's exact failure shape in general: work
     // was found, but nothing actually got drawn.
-    bool lastHasAnyDirtyWidgetsResult_ = false;
+    bool lastEvaluateFoundWork_ = false;
+
+    // Set by evaluateDirtyWidgets(), checked and cleared by
+    // updateDirtyWidgets() — enforces the evaluate-then-update ordering
+    // instead of leaving it to the caller.
+    bool dirtyEvaluated_ = false;
 
     // Publishes the top few widgets by cumulative draw time into
     // systemMetrics_, sorted descending — called after every
