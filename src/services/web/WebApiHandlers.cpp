@@ -140,7 +140,7 @@ void WebApiHandlers::writeStatusApp(JsonDocument& doc) {
     systemMetrics_.getFormattedUptime(uptime, sizeof(uptime));
     JsonObject app = doc["app"].to<JsonObject>();
     app["uptime"] = uptime;
-    app["uptime_ms"] = millis();
+    app["uptime_ms"] = ApplicationMetrics::uptimeMs();  // 64-bit, no 49.7-day wrap (B59)
     app["parse_ms"] = systemMetrics_.getPcMetricsJsonParseTime();
     // Streaming path's counterpart to parse_ms above — the default data path
     // never fed parse_ms, leaving it permanently 0 while streaming. Reported
@@ -414,7 +414,10 @@ void WebApiHandlers::handleMetrics() {
 
     // ---- system ----
     writeHeader(out, "nerdbox_uptime_seconds", "Device uptime.", "counter");
-    out.printf("nerdbox_uptime_seconds %.3f\n", millis() / 1000.0);
+    // 64-bit clock: a counter that resets at the millis() wrap reads as a
+    // reboot to Prometheus (B59).
+    out.printf("nerdbox_uptime_seconds %.3f\n",
+               static_cast<double>(ApplicationMetrics::uptimeMs()) / 1000.0);
 
     writeHeader(out, "nerdbox_heap_free_bytes", "Free heap memory.", "gauge");
     out.printf("nerdbox_heap_free_bytes %u\n", ESP.getFreeHeap());

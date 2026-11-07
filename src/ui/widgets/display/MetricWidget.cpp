@@ -373,7 +373,20 @@ void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_
         // Faux-bold: a second pass 1px right thickens NotoSans18's regular
         // strokes just enough to read as heavier, without swapping in a true
         // bold face's different (and here, too-large) glyph metrics.
+        //
+        // The second pass must be transparent: drawn with a background colour
+        // it repainted its whole glyph box and wiped out the first pass,
+        // leaving the same weight shifted 1px (B54). On this non-readable
+        // panel LovyanGFX's transparent mode skips empty pixels and blends
+        // anti-aliased edges against the base colour, so point that at the
+        // tile's background for the pass, then restore it.
+        const uint32_t prevBase = lcd->getBaseColor();
+        if (!transparent) {
+            lcd->setBaseColor(bgColor);
+        }
+        lcd->setTextColor(TFT_WHITE);
         lcd->drawString(text, x + 1, y);
+        lcd->setBaseColor(prevBase);
     }
 }
 

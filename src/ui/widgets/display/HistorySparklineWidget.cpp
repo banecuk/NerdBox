@@ -300,9 +300,11 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
     drawRow(leftPlotX_, bottomPlotY_, leftCols_, gpuLoadHistory_, lastGpuCol_, kGpuColor,
             kGpuColorDim, kCpuGpuLowThreshold, kCpuGpuWarnThreshold, kGpuWarnColor, forceRedraw);
     drawRow(rightPlotX_, topPlotY_, rightCols_, ramLoadHistory_, lastRamCol_, kRamColor,
-            kRamColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kRamWarnColor, forceRedraw);
+            // No warn band for RAM: with the spark starting at 85% the
+            // 80% warn band would swallow the whole normal range (85-89).
+            kRamColorDim, kRamLowThreshold, kNoWarnThreshold, kRamWarnColor, forceRedraw);
     drawRow(rightPlotX_, bottomPlotY_, rightCols_, vramLoadHistory_, lastVramCol_, kVramColor,
-            kVramColorDim, kRamVramLowThreshold, kRamVramWarnThreshold, kVramWarnColor,
+            kVramColorDim, kVramLowThreshold, kRamVramWarnThreshold, kVramWarnColor,
             forceRedraw);
     lcd->endWrite();
 

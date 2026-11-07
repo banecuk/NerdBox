@@ -43,7 +43,12 @@ class HistorySparklineWidget : public Widget {
     static constexpr uint16_t kSparkThickness = 2;
     static constexpr uint8_t kScaleMax = 100;
     static constexpr uint8_t kCpuGpuLowThreshold = 20;
-    static constexpr uint8_t kRamVramLowThreshold = 60;
+    // VRAM row: dim 1px line below this, bright 2px spark at/above it.
+    static constexpr uint8_t kVramLowThreshold = 75;
+    // RAM row: dim 1px line below this, bright 2px spark at/above it. Higher
+    // than VRAM's (75) on purpose — RAM sits around 60-80% in normal use, so 60
+    // made the row look permanently "active".
+    static constexpr uint8_t kRamLowThreshold = 85;
     // Any metric at or above this is flagged with the shared alert color,
     // regardless of which of the four sparklines it is.
     static constexpr uint8_t kHighUsageThreshold = 90;
@@ -51,8 +56,8 @@ class HistorySparklineWidget : public Widget {
     // as a blend of the metric's normal color and the alert color, so the
     // jump to red doesn't look sudden. CPU/GPU are volatile and spend a lot
     // of time near their low threshold, so their band starts earlier;
-    // RAM/VRAM sit high most of the time (their low threshold is already
-    // 60%), so their band starts later, closer to the alert threshold.
+    // RAM/VRAM sit high most of the time, so their band starts later, closer
+    // to the alert threshold (RAM has no warn band — see the .cpp).
     static constexpr uint8_t kCpuGpuWarnThreshold = 75;
     static constexpr uint8_t kRamVramWarnThreshold = 80;
     static constexpr uint8_t kNoWarnThreshold = 0;

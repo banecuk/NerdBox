@@ -42,6 +42,7 @@ class WifiScanListWidget : public Widget {
     unsigned long lastFreshnessMs_ = 0;
     unsigned long lastDrawnAgeS_ = 0;  // last "scanned Ns ago" value painted in the header
     RowCache lastRows_[kRows];
+    bool emptyStateDrawn_ = false;  // see B52 in onDraw()
 
     void drawHeader();
     void drawRow(uint8_t row, const WifiApEntry& entry, bool forceRedraw, uint8_t ourChannel);

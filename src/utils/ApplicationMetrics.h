@@ -57,6 +57,11 @@ class ApplicationMetrics {
     // Uptime method — writes directly into caller's buffer; zero heap allocation.
     void getFormattedUptime(char* buf, size_t size) const;
 
+    // Milliseconds since boot from the 64-bit esp_timer, not 32-bit millis()
+    // — millis() wraps after ~49.7 days, which reset the displayed uptime
+    // and made the Prometheus uptime counter read as a reboot (B59).
+    static uint64_t uptimeMs();
+
     // Thread widget FPS methods
     void addThreadWidgetFrameTime();
     float getThreadWidgetFPS() const;

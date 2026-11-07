@@ -78,16 +78,15 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
         rssiTrace_.clear();
     }
 
-    // RSSI changed (or a structural redraw) is also the gate for the trace:
-    // a flat run of identical samples renders a pixel-identical sparkline,
-    // so redrawing it every tick bought nothing but a flash on real hardware.
-    const bool rssiChanged = structural || link.rssi != lastRssi_;
-
     rssiTrace_.push(link.rssi);
 
     drawTopRow(link, structural);
-    if (rssiChanged)
-        drawTrace();
+    // Redraw on every push: the trace scrolls, so each new sample changes the
+    // image even when RSSI is steady. (Gating this on an RSSI change froze
+    // the trace in place — a dip never scrolled away, B51.) drawTrace()
+    // overdraws column by column instead of clear-then-draw, so it doesn't
+    // flash.
+    drawTrace();
     drawDetailsStrip(link, structural);
 
     lastRssi_ = link.rssi;
@@ -227,8 +226,6 @@ void WifiLinkWidget::drawTrace() {
     const uint16_t traceY = row2Y + 2;
     const uint16_t qualityX = dimensions_.x + dimensions_.width - 8;
 
-    lcd->fillRect(traceX, traceY, traceW, traceH, kBgColor);
-
     const size_t count = rssiTrace_.size();
     const size_t offset = kTraceLen - count;
     const WifiScanMath::SignalTier latestTier =
@@ -236,20 +233,30 @@ void WifiLinkWidget::drawTrace() {
     const uint16_t traceColor = tierColor(latestTier);
 
     for (size_t col = 0; col < kTraceLen; ++col) {
-        if (col < offset)
+        const uint16_t x = traceX + static_cast<uint16_t>(col) * kTraceColW;
+        if (col < offset) {
+            lcd->fillRect(x, traceY, kTraceColW, traceH, kBgColor);
             continue;
+        }
         const int8_t sample = rssiTrace_.at(col - offset);
         const int16_t clamped =
             sample < kTraceMinDbm ? kTraceMinDbm : (sample > kTraceMaxDbm ? kTraceMaxDbm : sample);
         const uint16_t h = static_cast<uint16_t>(
             ((clamped - kTraceMinDbm) * (traceH - 1)) / (kTraceMaxDbm - kTraceMinDbm) + 1);
-        const uint16_t x = traceX + static_cast<uint16_t>(col) * kTraceColW;
+        // Overdraw the whole column: background above the bar (plus the
+        // 1px gap column), then the bar — no full-area clear, no flash.
+        lcd->fillRect(x, traceY, kTraceColW, traceH - h, kBgColor);
+        lcd->fillRect(x + kTraceColW - 1, traceY + traceH - h, 1, h, kBgColor);
         lcd->fillRect(x, traceY + traceH - h, kTraceColW - 1, h, traceColor);
     }
 
     const uint8_t quality = count > 0 ? WifiScanMath::rssiToQuality(rssiTrace_.at(count - 1)) : 0;
     char qualityStr[6];
     snprintf(qualityStr, sizeof(qualityStr), "%u%%", quality);
+    // Clear the quality box first: it's right-aligned, so "100%"→"99%"
+    // otherwise leaves the old leading digit behind (B55).
+    const uint16_t qualityBoxX = traceX + traceW + 1;
+    lcd->fillRect(qualityBoxX, traceY, qualityX - qualityBoxX, traceH, kBgColor);
     Fonts::loadLabel(lcd);
     lcd->setTextColor(kLabelColor, kBgColor);
     lcd->setTextDatum(TR_DATUM);

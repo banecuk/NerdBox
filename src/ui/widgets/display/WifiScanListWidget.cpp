@@ -76,6 +76,15 @@ void WifiScanListWidget::onDraw(bool forceRedraw) {
         if (bodyChange)
             drawEmptyState("NO NETWORKS FOUND", TFT_DARKGREY);
     } else {
+        // Switching back from an empty-state message: clear the body once.
+        // drawEmptyState() invalidated every row cache, so clearRow() skips
+        // rows past the new list's end — a short list (<=3 APs) left
+        // "SCANNING..." etc. visible beneath it (B52).
+        if (emptyStateDrawn_) {
+            getLcd()->fillRect(dimensions_.x, dimensions_.y + kHeaderH, dimensions_.width,
+                               dimensions_.height - kHeaderH, kBgColor);
+            emptyStateDrawn_ = false;
+        }
         uint8_t ourChannel = 0;
         for (uint8_t i = 0; i < data_.count; ++i) {
             if (data_.entries[i].isCurrent) {
@@ -112,7 +121,7 @@ void WifiScanListWidget::drawHeader() {
     } else if (data_.state == WifiScanData::State::FAILED) {
         snprintf(status, sizeof(status), "NEARBY \xc2\xb7 scan failed");
     } else if (data_.freshness.available()) {
-        const unsigned long ageS = (millis() - data_.freshness.lastUpdateMs()) / 1000;
+        const unsigned long ageS = data_.freshness.ageMs(millis()) / 1000;  // clamped, B58
         snprintf(status, sizeof(status), "NEARBY \xc2\xb7 scanned %lus ago", ageS);
     } else {
         snprintf(status, sizeof(status), "NEARBY");
@@ -228,4 +237,5 @@ void WifiScanListWidget::drawEmptyState(const char* message, uint16_t color) {
     for (auto& row : lastRows_) {
         row = RowCache{};
     }
+    emptyStateDrawn_ = true;
 }

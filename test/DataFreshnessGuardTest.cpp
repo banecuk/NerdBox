@@ -1,5 +1,7 @@
 #include "DataFreshnessGuard.h"
 
+#include <climits>
+
 #include <gtest/gtest.h>
 
 // ─── Fake clock ─────────────────────────────────────────────────────────────
@@ -102,4 +104,17 @@ TEST_F(DataFreshnessGuardTest, AgeIsWrapSafeAcrossMillisRollover) {
     const unsigned long nearWrap = static_cast<unsigned long>(-1) - 99;  // 100 ms before wrap
     flag.publish(nearWrap);
     EXPECT_EQ(flag.ageMs(400), 500UL);  // 100 ms to wrap + 400 ms after it
+}
+
+// B58: a publish racing a reader that read millis() first makes the
+// timestamp newer than `now` — the age must clamp to 0, not wrap to ~4.29e9.
+TEST_F(DataFreshnessGuardTest, AgeClampsWhenTimestampIsAheadOfNow) {
+    PublishedFlag flag;
+    flag.publish(1005);
+    EXPECT_EQ(flag.ageMs(1000), 0UL);
+    EXPECT_EQ(flag.ageMs(1500), 495UL);
+}
+
+TEST_F(DataFreshnessGuardTest, ElapsedStaysWrapSafeAcrossRollover) {
+    EXPECT_EQ(PublishedFlag::elapsedMs(10, ULONG_MAX - 15), 26UL);
 }

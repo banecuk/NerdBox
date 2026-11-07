@@ -73,6 +73,10 @@ void IpAddressWidget::renderContent(bool connected, const char* ip) {
     Fonts::loadValue(lcd);
     lcd->setTextDatum(TL_DATUM);
 
+    // Clear the value row first — "Not connected" → a shorter IP otherwise
+    // leaves the old text's tail visible (B55).
+    lcd->fillRect(dimensions_.x, valueY_, dimensions_.width, lcd->fontHeight(), bgColor_);
+
     if (connected) {
         lcd->setTextColor(textColor_, bgColor_);
         lcd->drawString(ip, dimensions_.x, valueY_);

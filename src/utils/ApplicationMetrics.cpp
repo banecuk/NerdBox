@@ -1,5 +1,9 @@
 #include "ApplicationMetrics.h"
 
+#if defined(ESP_PLATFORM)
+#include <esp_timer.h>
+#endif
+
 #include <algorithm>
 #include <cstdio>
 
@@ -95,9 +99,17 @@ uint32_t ApplicationMetrics::getThreadsBarDrawTimeUs() const {
     return threadsBarDrawTimeUs_;
 }
 
+uint64_t ApplicationMetrics::uptimeMs() {
+#if defined(ESP_PLATFORM)
+    return static_cast<uint64_t>(esp_timer_get_time()) / 1000ULL;
+#else
+    return millis();  // host tests: the native stub clock
+#endif
+}
+
 void ApplicationMetrics::getFormattedUptime(char* buf, size_t size) const {
-    unsigned long uptimeMs = millis();
-    unsigned long seconds = uptimeMs / 1000;
+    const uint64_t seconds64 = uptimeMs() / 1000ULL;
+    const unsigned long seconds = static_cast<unsigned long>(seconds64);  // fits for ~136 years
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
 

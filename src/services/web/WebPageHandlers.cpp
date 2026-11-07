@@ -1,5 +1,6 @@
 #include "WebPageHandlers.h"
 
+#include <cstring>
 #include <memory>
 
 #include "services/web/WebAssets.h"
@@ -186,6 +187,46 @@ constexpr ApiEndpoint kApiEndpoints[] = {
     {"POST", "/screen/processes", "Switches the display to the Processes screen."      },
     {"POST", "/screen/wifi",     "Switches the display to the WiFi screen."            },
 };
+
+// Streams `text` with HTML special characters escaped, through a small
+// stack buffer — no heap String. Log messages can carry text from outside
+// the device (a proxy's HTML error page via JsonHttpService, or the `event`
+// field of any LAN client's POST /audio), so they must never be written into
+// the page raw (B56).
+void sendHtmlEscaped(WebServer& server, const char* text) {
+    char out[128];
+    size_t n = 0;
+    auto flush = [&]() {
+        out[n] = '\0';
+        server.sendContent(out);
+        n = 0;
+    };
+    for (const char* p = text; *p != '\0'; ++p) {
+        const char* rep = nullptr;
+        switch (*p) {
+            case '<': rep = "&lt;"; break;
+            case '>': rep = "&gt;"; break;
+            case '&': rep = "&amp;"; break;
+            case '"': rep = "&quot;"; break;
+            case '\'': rep = "&#39;"; break;
+            default: break;
+        }
+        const size_t need = rep ? strlen(rep) : 1;
+        if (n + need >= sizeof(out)) {
+            flush();
+        }
+        if (rep) {
+            memcpy(out + n, rep, need);
+            n += need;
+        } else {
+            out[n++] = *p;
+        }
+    }
+    if (n > 0) {
+        flush();
+    }
+}
+
 }  // namespace
 
 void WebPageHandlers::handleApiHelp() {
@@ -196,7 +237,6 @@ void WebPageHandlers::handleApiHelp() {
         "from scripts (curl, Home Assistant, etc.); POST endpoints change device state.</p>"
         "<table><tr><th>Method</th><th>Path</th><th>Description</th></tr>");
 
-    char row[384];
     for (const auto& endpoint : kApiEndpoints) {
         // Only GET endpoints are linked — a POST route (/restart, /screen/*)
         // would just 404 on a plain click since it can't send the method.
@@ -207,9 +247,16 @@ void WebPageHandlers::handleApiHelp() {
         } else {
             snprintf(pathCell, sizeof(pathCell), "<code>%s</code>", endpoint.path);
         }
-        snprintf(row, sizeof(row), "<tr><td>%s</td><td>%s</td><td>%s</td></tr>", endpoint.method,
-                 pathCell, endpoint.description);
-        server_.sendContent(row);
+        // Sent piecewise rather than formatted into one fixed buffer: the
+        // /api/status description alone is ~590 bytes, and a 384-byte row
+        // buffer cut it mid-sentence and dropped the closing tags (B57).
+        server_.sendContent("<tr><td>");
+        server_.sendContent(endpoint.method);
+        server_.sendContent("</td><td>");
+        server_.sendContent(pathCell);
+        server_.sendContent("</td><td>");
+        server_.sendContent(endpoint.description);
+        server_.sendContent("</td></tr>");
     }
     server_.sendContent("</table>");
 
@@ -351,9 +398,11 @@ void WebPageHandlers::handleLogs() {
         server_.sendContent("<table><tr><th>Time</th><th>Level</th><th>Message</th></tr>");
         for (size_t i = 0; i < count; ++i) {
             const LogEntry& entry = entries[i];
-            snprintf(row, sizeof(row), "<tr><td>%s</td><td>%s</td><td>%s</td></tr>",
-                     entry.timestamp, logLevelToString(entry.level), entry.message);
+            snprintf(row, sizeof(row), "<tr><td>%s</td><td>%s</td><td>", entry.timestamp,
+                     logLevelToString(entry.level));
             server_.sendContent(row);
+            sendHtmlEscaped(server_, entry.message);
+            server_.sendContent("</td></tr>");
         }
         server_.sendContent("</table>");
     }

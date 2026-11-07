@@ -15,11 +15,12 @@ class WifiReconnectJob : public BackgroundJob {
         return coreState_.isInitialized ? JobDue::now() : JobDue::never();
     }
 
-    void run() override {
-        if (!networkManager_.isConnected()) {
-            networkManager_.checkAndReconnect();
-        }
-    }
+    // Unconditional: checkAndReconnect() is a cheap early return while
+    // connected, but it's also where the "link came back" branch clears
+    // reconnecting_ and restarts mDNS. Gating it on !isConnected() made that
+    // branch unreachable — after a rejoin the WiFi scan stayed disabled and
+    // nerdbox.local stopped resolving until reboot (B36).
+    void run() override { networkManager_.checkAndReconnect(); }
 
  private:
     NetworkManager& networkManager_;

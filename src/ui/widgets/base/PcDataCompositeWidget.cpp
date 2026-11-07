@@ -63,5 +63,7 @@ bool PcDataCompositeWidget::needsUpdate() const {
     // contract); the timestamp comparison is what actually decides whether
     // there's new data to draw. A time-only OR here forced a full repaint
     // every tick regardless of whether anything changed.
-    return pcMetrics_.freshness.lastUpdateMs() > lastUpdateTimestamp_;
+    // `!=`, not `>`: after the 49.7-day millis() wrap new timestamps are
+    // smaller than the cached one, and `>` froze the tiles (B53).
+    return pcMetrics_.freshness.lastUpdateMs() != lastUpdateTimestamp_;
 }

@@ -11,11 +11,10 @@
 // exactly one freshness contract shared by all of them.
 //
 // isFresh() reads PublishedFlag::available() (an acquire load) before
-// lastUpdateMs() (a plain read) — observing available() true synchronizes-
-// with the writer's release in publish(), which happens-before every field
-// the writer set prior to it (including the timestamp), so the subsequent
-// plain read of lastUpdateMs() is guaranteed to see the matching value, not
-// a torn/stale one.
+// lastUpdateMs() (itself an atomic acquire load, since later publishes
+// rewrite it while readers run). Observing available() true synchronizes-
+// with the writer's release in publish(), so the timestamp read sees at
+// least the value from the first publish — never an uninitialised one.
 //
 // Deliberately non-owning and header-only — holds a reference, no heap
 // allocation or RTOS dependency.
@@ -37,7 +36,10 @@ class DataFreshnessGuard {
         if (!published_.available()) {
             return false;
         }
-        return (clock_() - published_.lastUpdateMs()) <= timeoutMs_;
+        // Timestamp first, clock second, and a clamped difference — so a
+        // publish racing this read can't produce a wrapped huge age (B58).
+        const unsigned long last = published_.lastUpdateMs();
+        return PublishedFlag::elapsedMs(clock_(), last) <= timeoutMs_;
     }
 
     void setTimeout(unsigned long timeoutMs) { timeoutMs_ = timeoutMs; }
