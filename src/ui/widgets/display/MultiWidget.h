@@ -28,7 +28,7 @@ class HistorySparklineWidget;
 //        config_.audioStoppedMessageMs, then falls back to the idle
 //        candidate unless a new track starts first.
 //   2. HistorySparklineWidget — no audio, and PC metrics show high activity
-//      (ActivityDetector, hysteresis over cpu_load/gpu_load).
+//      (ActivityDetector, hysteresis over cpu_power/gpu_power watts).
 //   3. ForecastStripWidget (default/resting state) — no audio, machine idle.
 //      Falls back to 2 if the forecast has no data (never fetched, or stale).
 class MultiWidget : public Widget {
@@ -80,7 +80,7 @@ class MultiWidget : public Widget {
     DataFreshnessGuard pcMetricsFreshness_{pcMetrics_.freshness};
 
     ActivityDetector activity_{
-        config_.multiWidgetActivityEnterPct, config_.multiWidgetActivityExitPct,
+        config_.multiWidgetActivityEnterWatts, config_.multiWidgetActivityExitWatts,
         config_.multiWidgetActivityQuietMs, config_.multiWidgetActivityEnterHoldMs};
 
     // 0 = not currently in the post-stop transient window; otherwise the

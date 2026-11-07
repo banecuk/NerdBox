@@ -1,12 +1,15 @@
 #include "ActivityDetector.h"
 
-ActivityDetector::ActivityDetector(uint8_t enterPct, uint8_t exitPct, uint32_t quietMs,
+ActivityDetector::ActivityDetector(uint16_t enterLevel, uint16_t exitLevel, uint32_t quietMs,
                                    uint32_t enterHoldMs)
-    : enterPct_(enterPct), exitPct_(exitPct), quietMs_(quietMs), enterHoldMs_(enterHoldMs) {}
+    : enterLevel_(enterLevel),
+      exitLevel_(exitLevel),
+      quietMs_(quietMs),
+      enterHoldMs_(enterHoldMs) {}
 
-void ActivityDetector::tick(uint32_t nowMs, bool fresh, uint8_t cpuLoad, uint8_t gpuLoad) {
-    const bool aboveExit = fresh && (cpuLoad >= exitPct_ || gpuLoad >= exitPct_);
-    const bool aboveEnter = fresh && (cpuLoad >= enterPct_ || gpuLoad >= enterPct_);
+void ActivityDetector::tick(uint32_t nowMs, bool fresh, uint16_t cpuValue, uint16_t gpuValue) {
+    const bool aboveExit = fresh && (cpuValue >= exitLevel_ || gpuValue >= exitLevel_);
+    const bool aboveEnter = fresh && (cpuValue >= enterLevel_ || gpuValue >= enterLevel_);
 
     if (!active_) {
         if (!aboveExit) {

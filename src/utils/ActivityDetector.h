@@ -7,27 +7,31 @@
 // Pure logic, no Arduino/hardware dependency — host-tested under
 // [env:native] (test/ActivityDetectorTest.cpp).
 //
-// Two thresholds, not one: `enterPct` is the bar for "worth interrupting the
-// forecast for", `exitPct` is the lower floor both timers key off. The enter
-// hold clock starts once a sample reaches enterPct and keeps running through
-// dips as low as exitPct — only a sample below exitPct resets it — so an
-// oscillating real workload (e.g. 60/90 alternating) still accumulates
-// enterHoldMs instead of restarting every dip. The exit quiet clock is the
-// mirror image: any sample at-or-above exitPct resets it, so leaving active
-// requires both metrics to sit below exitPct continuously for quietMs.
+// Unit-agnostic: MultiWidget feeds it CPU/GPU power draw in watts, but the
+// logic only compares samples against the two levels.
+//
+// Two thresholds, not one: `enterLevel` is the bar for "worth interrupting the
+// forecast for", `exitLevel` is the lower floor both timers key off. The enter
+// hold clock starts once a sample reaches enterLevel and keeps running through
+// dips as low as exitLevel — only a sample below exitLevel resets it — so an
+// oscillating real workload still accumulates enterHoldMs instead of
+// restarting every dip. The exit quiet clock is the mirror image: any sample
+// at-or-above exitLevel resets it, so leaving active requires both metrics to
+// sit below exitLevel continuously for quietMs.
 class ActivityDetector {
  public:
-    ActivityDetector(uint8_t enterPct, uint8_t exitPct, uint32_t quietMs, uint32_t enterHoldMs);
+    ActivityDetector(uint16_t enterLevel, uint16_t exitLevel, uint32_t quietMs,
+                     uint32_t enterHoldMs);
 
     // Feed one sample. `fresh == false` means "no usable metrics" — treated
     // as below-threshold (the quiet timer keeps running, the enter hold
     // clock resets) rather than as activity.
-    void tick(uint32_t nowMs, bool fresh, uint8_t cpuLoad, uint8_t gpuLoad);
+    void tick(uint32_t nowMs, bool fresh, uint16_t cpuValue, uint16_t gpuValue);
     bool isActive() const { return active_; }
 
  private:
-    uint8_t enterPct_;
-    uint8_t exitPct_;
+    uint16_t enterLevel_;
+    uint16_t exitLevel_;
     uint32_t quietMs_;
     uint32_t enterHoldMs_;
 

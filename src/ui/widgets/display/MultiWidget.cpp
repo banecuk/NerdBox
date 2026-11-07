@@ -117,8 +117,8 @@ void MultiWidget::onDraw(bool forceRedraw) {
     // machine is still detected while the forecast strip is showing, and the
     // sparkline's own history keeps advancing while it is hidden (avoids
     // splicing pre-hide samples against post-hide ones with no time gap).
-    activity_.tick(millis(), pcMetricsFreshness_.isFresh(), pcMetrics_.cpu_load,
-                  pcMetrics_.gpu_load);
+    activity_.tick(millis(), pcMetricsFreshness_.isFresh(), pcMetrics_.cpu_power,
+                   pcMetrics_.gpu_power);
     if (sparkline_)
         sparkline_->sampleTick();
 
