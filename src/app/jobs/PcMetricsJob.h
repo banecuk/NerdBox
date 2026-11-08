@@ -6,7 +6,7 @@
 
 #include "config/AppSettings.h"
 #include "core/BackgroundJob.h"
-#include "core/ScreenTypes.h"
+#include "core/ScreenRegistry.h"
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
@@ -16,7 +16,7 @@
 #include "utils/logging/LogMacros.h"
 
 // Periodically fetches PC hardware metrics while a screen that displays them
-// (main or game) is active. Owns the retry/backoff and consecutive-failure
+// (ScreenRegistry's needsPcMetrics column) is active. Owns the retry/backoff and consecutive-failure
 // bookkeeping that used to live directly in TaskManager.
 //
 // As of SSE-PUSH-PLAN.md milestone 6, PcMetricsStreamJob (SSE) is the
@@ -47,9 +47,7 @@ class PcMetricsJob : public BackgroundJob {
         if (config_.pcMetricsStreamEnabled) {
             return JobDue::never();
         }
-        const bool onMetricsScreen = screenState_.activeScreen == ScreenName::MAIN ||
-                                     screenState_.activeScreen == ScreenName::GAME ||
-                                     screenState_.activeScreen == ScreenName::DISKS;
+        const bool onMetricsScreen = screenNeedsPcMetrics(screenState_.activeScreen);
         if (!coreState_.isInitialized || !onMetricsScreen || !networkManager_.isConnected()) {
             return JobDue::never();
         }

@@ -35,4 +35,5 @@ class Application {
     // does not need to reach into the composition root on every loop tick.
     const AppSettings& config_;
     WebServerService& webServerService_;
+    TaskManager& taskManager_;
 };

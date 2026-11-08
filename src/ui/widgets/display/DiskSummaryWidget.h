@@ -7,6 +7,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 #include "utils/FreshnessTransition.h"
 
 // Compact disk activity summary — sits right of NetworkTrafficWidget in the
@@ -39,13 +40,13 @@ class DiskSummaryWidget : public Widget {
     // Cached *rendered* text + colour (not the raw KB/s sum) so a value that
     // rounds to the same displayed text doesn't force a redraw — same
     // rationale as NetworkTrafficWidget's lastUpText_/lastDownText_.
-    char lastReadText_[16] = "";
-    char lastWriteText_[16] = "";
+    CachedString<16> lastReadText_;
+    CachedString<16> lastWriteText_;
     uint16_t lastReadColor_ = 0;
     uint16_t lastWriteColor_ = 0;
 
     void drawRow(int16_t rowY, bool isRead, float mbps, bool hasData, bool forceRedraw,
-                 char* lastText, size_t lastTextSize, uint16_t& lastColor);
+                 CachedString<16>& lastText, uint16_t& lastColor);
 
     // Write-rate colour: a light-grey-to-light-green ramp (like
     // NetworkTrafficWidget::trafficColor()'s idle-to-moderate range) up to

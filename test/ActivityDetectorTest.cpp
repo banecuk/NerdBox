@@ -5,7 +5,8 @@
 #include <gtest/gtest.h>
 
 namespace {
-// Matches AppConfig::internal::MultiWidgetImpl's defaults (watts).
+// Fixed test thresholds (watts) — exercise the algorithm, independent of
+// AppConfig::internal::MultiWidgetImpl's tuned defaults.
 constexpr uint16_t kEnterW = 50;
 constexpr uint16_t kExitW = 40;
 constexpr uint32_t kQuietMs = 30000;

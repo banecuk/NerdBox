@@ -14,20 +14,28 @@ struct ScreenDescriptor {
     EventType event;    // EventType::NONE for screens with no event (BOOT)
     const char* route;  // nullptr for screens with no HTTP route (BOOT)
     const char* name;   // "MAIN", "CPU_CLOCK", ... — the /api/status string
+    // True for screens that display PcMetrics. PcMetricsJob (polling) and
+    // PcMetricsStreamJob (SSE) only fetch while one of these is active, via
+    // screenNeedsPcMetrics() — one column here instead of a hand-written
+    // screen list in each job, which could drift apart (A12).
+    bool needsPcMetrics;
 };
 
+// clang-format off
 inline constexpr ScreenDescriptor kScreens[] = {
-    {ScreenName::MAIN,      EventType::SHOW_MAIN,      "/screen/main",      "MAIN"     },
-    {ScreenName::SETTINGS,  EventType::SHOW_SETTINGS,  "/screen/settings",  "SETTINGS" },
-    {ScreenName::GAME,      EventType::SHOW_GAME,      "/screen/game",      "GAME"     },
-    {ScreenName::DISKS,     EventType::SHOW_DISKS,     "/screen/disks",     "DISKS"    },
-    {ScreenName::CPU_CLOCK, EventType::SHOW_CPU_CLOCK, "/screen/cpu-clock", "CPU_CLOCK"},
-    {ScreenName::PROCESSES, EventType::SHOW_PROCESSES, "/screen/processes", "PROCESSES"},
-    {ScreenName::WEATHER,   EventType::SHOW_WEATHER,   "/screen/weather",   "WEATHER"  },
-    {ScreenName::CALENDAR,  EventType::SHOW_CALENDAR,  "/screen/calendar",  "CALENDAR" },
-    {ScreenName::WIFI,      EventType::SHOW_WIFI,      "/screen/wifi",      "WIFI"     },
-    {ScreenName::BOOT,      EventType::NONE,           nullptr,             "BOOT"     },
+    // screen               event                      route                name         needsPcMetrics
+    {ScreenName::MAIN,      EventType::SHOW_MAIN,      "/screen/main",      "MAIN",      true },
+    {ScreenName::SETTINGS,  EventType::SHOW_SETTINGS,  "/screen/settings",  "SETTINGS",  false},
+    {ScreenName::GAME,      EventType::SHOW_GAME,      "/screen/game",      "GAME",      true },
+    {ScreenName::DISKS,     EventType::SHOW_DISKS,     "/screen/disks",     "DISKS",     true },
+    {ScreenName::CPU_CLOCK, EventType::SHOW_CPU_CLOCK, "/screen/cpu-clock", "CPU_CLOCK", false},
+    {ScreenName::PROCESSES, EventType::SHOW_PROCESSES, "/screen/processes", "PROCESSES", false},
+    {ScreenName::WEATHER,   EventType::SHOW_WEATHER,   "/screen/weather",   "WEATHER",   false},
+    {ScreenName::CALENDAR,  EventType::SHOW_CALENDAR,  "/screen/calendar",  "CALENDAR",  false},
+    {ScreenName::WIFI,      EventType::SHOW_WIFI,      "/screen/wifi",      "WIFI",      false},
+    {ScreenName::BOOT,      EventType::NONE,           nullptr,             "BOOT",      false},
 };
+// clang-format on
 inline constexpr size_t kScreenCount = sizeof(kScreens) / sizeof(kScreens[0]);
 
 // Linear scan over kScreens; falls back to "NONE" (also covers ScreenName::NONE
@@ -37,4 +45,12 @@ inline const char* screenName(ScreenName screen) {
         if (d.screen == screen) return d.name;
     }
     return "NONE";
+}
+
+// The registry row's needsPcMetrics; false for ScreenName::NONE (no row).
+inline constexpr bool screenNeedsPcMetrics(ScreenName screen) {
+    for (const auto& d : kScreens) {
+        if (d.screen == screen) return d.needsPcMetrics;
+    }
+    return false;
 }

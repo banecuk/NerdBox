@@ -1,10 +1,7 @@
 #include "UiController.h"
 
 #include "ui/core/UiEventHandler.h"
-#include "ui/screens/BootScreen.h"
-#include "ui/screens/MainScreen.h"
 #include "ui/screens/ScreenFactory.h"
-#include "ui/screens/SettingsScreen.h"
 #include "utils/logging/LogMacros.h"
 
 UiController::UiController(DisplayContext& context, DisplayManager& displayManager,
@@ -75,28 +72,27 @@ void UiController::updateDisplay() {
     const ScreenName requested =
         pendingScreen_.exchange(ScreenName::NONE, std::memory_order_acquire);
     if (requested != ScreenName::NONE &&
-        !(requested == screenState_.activeScreen && !activeTransition_.isActive)) {
+        !(requested == screenState_.activeScreen && !activeTransition_.isActive())) {
         activeTransition_.nextScreen = requested;
         activeTransition_.phase = TransitionPhase::UNLOADING;
-        activeTransition_.isActive = true;
         activeTransition_.startTime = startTime;
     }
 
     // Night-dim changes are applied here, on the screen task and only between
     // transitions, so they can't relight a half-cleared screen or fight a
     // fade ramp (B49).
-    if (!activeTransition_.isActive) {
+    if (!activeTransition_.isActive()) {
         displayManager_.applyPendingNightWindow();
     }
 
-    if (activeTransition_.isActive) {
+    if (activeTransition_.isActive()) {
         processTransitionPhase();
 
-        // Re-check isActive: processTransitionPhase() may have just completed
+        // Re-check isActive(): processTransitionPhase() may have just completed
         // the transition, which zeroes startTime — testing the timeout
         // anyway read as `millis() - 0 > timeout` and logged a false
         // "Transition timeout" error on every screen change (B46).
-        if (activeTransition_.isActive &&
+        if (activeTransition_.isActive() &&
             millis() - activeTransition_.startTime > config_.uiTransitionTimeoutMs) {
             logger_.error("[UiController] Transition timeout, resetting");
             completeTransition();
@@ -217,7 +213,6 @@ void UiController::loadAndActivateScreen() {
 void UiController::completeTransition() {
     activeTransition_.nextScreen = ScreenName::NONE;
     activeTransition_.phase = TransitionPhase::IDLE;
-    activeTransition_.isActive = false;
     activeTransition_.startTime = 0;
 
     // Suppress touches briefly to prevent accidental input / rapid re-triggering

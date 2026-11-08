@@ -219,11 +219,14 @@ struct MultiWidgetImpl {
     // this... Power rather than load %: short load-% spikes (app launches,
     // browser tabs) were pulling the forecast off screen too often, while
     // power only stays high under real sustained work (games, renders).
-    static constexpr uint16_t kActivityEnterWatts = 50;
+    // Must sit well clear of idle draw: a GPU idling at ~40 W with the old
+    // 50/40 W pair never dropped below the exit level, so once the sparkline
+    // took over it never handed back (2026-11-08).
+    static constexpr uint16_t kActivityEnterWatts = 80;
     // ...and hands back to the forecast only once both stay below this...
-    static constexpr uint16_t kActivityExitWatts = 40;
-    // ...for this long (the requested 30 s quiet period).
-    static constexpr uint32_t kActivityQuietMs = 30000;
+    static constexpr uint16_t kActivityExitWatts = 60;
+    // ...for this long (quiet period before the forecast returns).
+    static constexpr uint32_t kActivityQuietMs = 10000;
     // Power must hold this long before the sparkline takes over, so a short
     // burst never pulls the forecast off screen. The hold clock tolerates
     // dips down to kActivityExitWatts — see ActivityDetector.

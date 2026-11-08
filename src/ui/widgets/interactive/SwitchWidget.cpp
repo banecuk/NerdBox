@@ -3,12 +3,11 @@
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
 
-SwitchWidget::SwitchWidget(const WidgetInterface::Dimensions& dims, std::string label,
+SwitchWidget::SwitchWidget(const WidgetInterface::Dimensions& dims, const char* label,
                            GetStateFn getState, SetStateFn setState)
-    : Widget(dims, 0),
-      label_(std::move(label)),
-      getState_(std::move(getState)),
-      setState_(std::move(setState)) {}
+    : Widget(dims, 0), getState_(std::move(getState)), setState_(std::move(setState)) {
+    label_.set(label ? label : "");
+}
 
 void SwitchWidget::onDrawStatic() {
     LGFX* lcd = getLcd();

@@ -6,6 +6,15 @@
 
 class HttpClient {
  public:
+    // LAN-appropriate defaults — NerdWinSense is on the same network, so a
+    // slow response almost certainly means the request is stuck, not just
+    // crossing the internet. Keeps a failed fetch cycle from stalling the
+    // background task for the HTTPClient library's default 5 s timeouts.
+    // Public so other LAN-only fetches (PcMetricsService::fetchRawJson())
+    // share the same bound instead of repeating literals.
+    static constexpr uint16_t kDefaultConnectTimeoutMs = 1000;
+    static constexpr uint16_t kDefaultResponseTimeoutMs = 2000;
+
     HttpClient();
     ~HttpClient();
 
@@ -41,13 +50,6 @@ class HttpClient {
     const String& getLastErrorBody() const { return lastErrorBody_; }
 
  private:
-    // LAN-appropriate defaults — NerdWinSense is on the same network, so a
-    // slow response almost certainly means the request is stuck, not just
-    // crossing the internet. Keeps a failed fetch cycle from stalling the
-    // background task for the HTTPClient library's default 5 s timeouts.
-    static constexpr uint16_t kDefaultConnectTimeoutMs = 1000;
-    static constexpr uint16_t kDefaultResponseTimeoutMs = 2000;
-
     HTTPClient http_;
     int lastHttpCode_ = 0;
     DeserializationError lastParseError_ = DeserializationError::Ok;

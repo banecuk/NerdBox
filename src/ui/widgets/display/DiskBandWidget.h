@@ -10,6 +10,7 @@
 #include "ui/widgets/base/PcDataCompositeWidget.h"
 #include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/display/MetricWidget.h"
+#include "utils/CachedString.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
 // free-space tiles, each with a single solid activity line flush to its top
@@ -77,6 +78,5 @@ class DiskBandWidget : public PcDataCompositeWidget {
     // Drive letters the current tiles were built for — lets ensureChildWidgetsCreated()
     // detect a same-count drive swap (e.g. D: unplugged, E: appears) that a
     // count-only comparison would miss.
-    std::vector<std::array<char, 4>> diskDriveNames_;
-
+    std::vector<CachedString<4>> diskDriveNames_;
 };

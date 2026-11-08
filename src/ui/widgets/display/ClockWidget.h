@@ -1,6 +1,5 @@
 #pragma once
 #include <functional>
-#include <string>
 
 #include "core/events/EventTypes.h"
 #include "ui/resources/FontRegistry.h"
@@ -16,7 +15,7 @@ class ClockWidget : public Widget {
     // SettingsScreen, WeatherScreen, ...) non-tappable.
     ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs = 1000,
                 uint16_t textColor = TFT_LIGHTGREY, uint16_t bgColor = TFT_BLACK,
-                const std::string& format = "%H:%M:%S", TapAction tap = {});
+                TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 

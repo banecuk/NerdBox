@@ -33,7 +33,7 @@ void AirQualityWidget::onDrawStatic() {
     lastPressure_ = -1;
     lastWindX10_ = 0xFFFF;
     lastAqi_ = 0xFF;
-    lastIcon_[0] = '\0';
+    lastIcon_.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
         return;
     }
 
-    const bool iconChanged = (strncmp(airData_.icon_code, lastIcon_, sizeof(lastIcon_)) != 0);
+    const bool iconChanged = !lastIcon_.equals(airData_.icon_code);
     const bool becomingAvailable = edge == FreshnessTransition::Edge::BecameFresh;
 
     const bool tempChanged = forceRedraw || becomingAvailable || airData_.temperature != lastTemp_;
@@ -108,8 +108,7 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
     lastPressure_ = airData_.pressure;
     lastWindX10_ = airData_.wind_speed_x10;
     lastAqi_ = airData_.aqi_us;
-    strncpy(lastIcon_, airData_.icon_code, sizeof(lastIcon_) - 1);
-    lastIcon_[sizeof(lastIcon_) - 1] = '\0';
+    lastIcon_.set(airData_.icon_code);
 }
 
 // ---------------------------------------------------------------------------
@@ -201,14 +200,9 @@ void AirQualityWidget::drawNoData() {
     if (!lcd)
         return;
 
-    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
-                    dimensions_.y + dimensions_.height / 2);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredCell(lcd, dimensions_.x, dimensions_.y, dimensions_.width,
+                                    dimensions_.height, UiText::kNoData, Fonts::loadLabel,
+                                    TFT_DARKGREY);
 }
 
 // ---------------------------------------------------------------------------

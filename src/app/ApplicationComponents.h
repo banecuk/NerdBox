@@ -77,6 +77,9 @@ class ApplicationComponents : public IInitializationTarget {
     bool initializeUi() override;
     void requestScreen(ScreenName screen) override;
 
+    bool initWatchdog(uint32_t timeoutMs) override;
+    bool addCurrentTaskToWatchdog() override;
+
     bool createTasks() override;
 
     bool connectNetwork() override;
@@ -89,11 +92,9 @@ class ApplicationComponents : public IInitializationTarget {
     void setScreenInitialized() override;
     void setSystemInitialized() override;
 
-    uint8_t initTimeSyncRetries() const override;
-    uint32_t initTimeSyncBaseDelayMs() const override;
-    uint16_t initBackoffJitterMs() const override;
-    bool watchdogEnabledOnBoot() const override;
-    unsigned long watchdogTimeoutMs() const override;
+    void delayMs(uint32_t ms) override;
+    uint32_t randomBelow(uint32_t bound) override;
+    uint32_t freeHeap() const override;
 
     // -----------------------------------------------------------------------
     // Public data — accessed by Application, TaskManager wiring, etc.

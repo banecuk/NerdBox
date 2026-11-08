@@ -7,6 +7,7 @@
 
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/RateFormat.h"
+#include "utils/CachedString.h"
 
 // Free-function draw helpers shared by a minority of widget subclasses
 // (label-row-above-value/track layouts and tappable pill tracks). Extracted
@@ -125,6 +126,8 @@ inline void drawValueWithUnit(LGFX* lcd, int16_t centerX, int16_t centerY, const
 // draw a direction indicator (arrow / letter) after it — but that indicator
 // differs enough between the two widgets (a fillTriangle vs. a coloured
 // letter) that it stays the caller's job.
+using RateRowText = CachedString<16>;
+
 struct RateRow {
     int16_t x, y, w, h;
     float value;        // already in display units (MB/s, Mbps, ...)
@@ -132,10 +135,9 @@ struct RateRow {
     uint8_t intDigits;  // 3 ("999") or 4 ("9999") — sizes the fixed integer column
     uint16_t valueColor;
     // Cache of the last *rendered* text + colour, in/out: a value that rounds
-    // to the same displayed text doesn't force a redraw. Empty lastText
-    // forces the first draw.
-    char* lastText;
-    size_t lastTextSize;
+    // to the same displayed text doesn't force a redraw. An empty (clear()ed)
+    // lastText forces the first draw.
+    RateRowText* lastText;
     uint16_t* lastColor;
     bool forceRedraw;
 };
@@ -156,8 +158,7 @@ inline int16_t drawRateRow(LGFX* lcd, const RateRow& row) {
     char buf[20];
     snprintf(buf, sizeof(buf), "%s%s", intBuf, decBuf);
 
-    if (!row.forceRedraw && row.valueColor == *row.lastColor &&
-        strncmp(buf, row.lastText, row.lastTextSize) == 0) {
+    if (!row.forceRedraw && row.valueColor == *row.lastColor && row.lastText->equals(buf)) {
         return -1;
     }
 
@@ -181,8 +182,7 @@ inline int16_t drawRateRow(LGFX* lcd, const RateRow& row) {
         lcd->drawString(decBuf, intColX, textY);
     }
 
-    strncpy(row.lastText, buf, row.lastTextSize - 1);
-    row.lastText[row.lastTextSize - 1] = '\0';
+    row.lastText->set(buf);
     *row.lastColor = row.valueColor;
 
     return intColX + decFieldWidth;

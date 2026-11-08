@@ -174,7 +174,6 @@ void MainScreen::createWidgets() {
     // to the calendar screen.
     widgetManager_.addWidget(std::make_unique<ClockWidget>(
                                  WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH},
-                                 1000, TFT_LIGHTGREY, TFT_BLACK, "%H:%M:%S",
-                                 tapTo(EventType::SHOW_CALENDAR)),
+                                 1000, TFT_LIGHTGREY, TFT_BLACK, tapTo(EventType::SHOW_CALENDAR)),
                              "clock");
 }

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <string>
 
 #include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 
 // Tappable ON/OFF switch with a label, for boolean settings (e.g. "dim at
 // night"). State is not owned by the widget — getState()/setState() read and
@@ -15,7 +15,7 @@ class SwitchWidget : public Widget {
     using GetStateFn = std::function<bool()>;
     using SetStateFn = std::function<void(bool)>;
 
-    SwitchWidget(const WidgetInterface::Dimensions& dims, std::string label, GetStateFn getState,
+    SwitchWidget(const WidgetInterface::Dimensions& dims, const char* label, GetStateFn getState,
                  SetStateFn setState);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
@@ -27,7 +27,9 @@ class SwitchWidget : public Widget {
  private:
     void drawTrack(bool on);
 
-    std::string label_;
+    // Fixed storage (no heap): longest label today is "DIM AT NIGHT".
+    static constexpr size_t kLabelCapacity = 24;
+    CachedString<kLabelCapacity> label_;
     GetStateFn getState_;
     SetStateFn setState_;
 

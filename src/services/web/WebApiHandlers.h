@@ -1,35 +1,20 @@
 #pragma once
 
-#include <ArduinoJson.h>
 #include <WebServer.h>
 
-#include "config/AppSettings.h"
-#include "core/IStreamHealth.h"
-#include "core/ITaskStackReporter.h"
-#include "core/state/SystemState.h"
-#include "services/audio/AudioData.h"
-#include "services/network/NetworkStatus.h"
-#include "services/pcMetrics/PcMetrics.h"
-#include "services/pcMetrics/PcMetricsService.h"
-#include "services/roomClimate/RoomClimateData.h"
-#include "services/weather/WeatherData.h"
-#include "services/wifiScan/WifiScanData.h"
-#include "utils/ApplicationMetrics.h"
+#include "services/web/WebDataSources.h"
+#include "services/web/WebEmitters.h"
 
-// The /api/* JSON handlers, split out of WebServerService so that class isn't
-// also responsible for hand-rolled JSON assembly. Every response is built as
-// an ArduinoJson JsonDocument and streamed via ChunkedPrint — no snprintf
-// argument lists to keep in sync positionally, same zero-large-buffer memory
-// profile as before.
+// The /api/* JSON handlers and /metrics, split out of WebServerService so
+// that class isn't also responsible for response assembly. Each handler is
+// two steps (A3): captureSnapshot() does every hardware/clock/service read
+// (ESP.*, WiFi.*, millis(), PcMetricsService counters) into a plain
+// StatusSnapshot, then a pure WebEmitters::write*() function builds the body
+// from (snapshot, feeds) — those are host-tested under [env:native]. Bodies
+// are streamed via ChunkedPrint, so no large String or buffer is assembled.
 class WebApiHandlers {
  public:
-    WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetrics, PcMetrics& pcMetrics,
-                   PcMetricsService& pcMetricsService, IStreamHealth& pcMetricsStreamJob,
-                   IStreamHealth& cpuClockStreamJob, IStreamHealth& processStreamJob,
-                   const NetworkStatus& netStatus, const SystemState& systemState,
-                   const WeatherData& weatherData, const AppSettings& config,
-                   const ITaskStackReporter& taskStackReporter, const AudioData& audioData,
-                   const RoomClimateData& roomClimateData, const WifiScanData& wifiScanData);
+    WebApiHandlers(WebServer& server, const WebDataSources& sources);
 
     void handleApiStatus();
     void handleApiRaw();
@@ -37,40 +22,12 @@ class WebApiHandlers {
     void handleMetrics();
 
  private:
-    static const char* internetStatusToString(NetworkStatus::Internet status);
-    static const char* screenNameToString(ScreenName screen);
-    static const char* playStateToString(AudioData::PlayState state);
-
-    // /api/status is built from one independent object per feed; each
-    // writer below touches only the members it names.
-    void writeStatusSys(JsonDocument& doc);
-    void writeStatusApp(JsonDocument& doc);
-    void writeStatusNet(JsonDocument& doc);
-    void writeStatusPc(JsonDocument& doc);
-    void writeStatusStreams(JsonDocument& doc);
-    void writeStatusUi(JsonDocument& doc);
-    void writeStatusWeather(JsonDocument& doc);
-    void writeStatusRoom(JsonDocument& doc);
-    void writeStatusWifi(JsonDocument& doc);
-    void writeStatusAudio(JsonDocument& doc);
-    void writeStatusTasks(JsonDocument& doc);
-    // Shared shape of pc_stream/cpu_clock_stream/process_stream, so the
-    // three objects can't drift apart.
-    static void writeStreamHealth(JsonObject obj, const IStreamHealth& stream);
+    // The only place this class touches ESP/WiFi/the clock for /api/status
+    // and /metrics.
+    void captureSnapshot(StatusSnapshot& snap) const;
+    // Starts a chunked, uncached response with the given content type.
+    void beginChunked(const char* contentType);
 
     WebServer& server_;
-    ApplicationMetrics& systemMetrics_;
-    PcMetrics& pcMetrics_;
-    PcMetricsService& pcMetricsService_;
-    IStreamHealth& pcMetricsStreamJob_;
-    IStreamHealth& cpuClockStreamJob_;
-    IStreamHealth& processStreamJob_;
-    const NetworkStatus& netStatus_;
-    const SystemState& systemState_;
-    const WeatherData& weatherData_;
-    const AppSettings& config_;
-    const ITaskStackReporter& taskStackReporter_;
-    const AudioData& audioData_;
-    const RoomClimateData& roomClimateData_;
-    const WifiScanData& wifiScanData_;
+    const WebDataSources& sources_;
 };

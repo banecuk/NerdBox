@@ -54,5 +54,5 @@ void UiEventHandler::resetDevice() {
 
 void UiEventHandler::cycleBrightness() {
     LOG_DEBUG(logger_, "BRIGHTNESS action received");
-    uiController_->getDisplayManager()->cycleBrightness();
+    uiController_->getDisplayManager().cycleBrightness();
 }

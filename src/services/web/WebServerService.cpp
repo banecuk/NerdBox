@@ -1,24 +1,16 @@
 #include "WebServerService.h"
 
 #include "core/events/EventBus.h"
+#include "core/IScreenNavigator.h"
 #include "core/ScreenRegistry.h"
+#include "services/audio/AudioService.h"
+#include "utils/logging/LoggerInterface.h"
 
-WebServerService::WebServerService(
-    WebServer& server, IScreenNavigator& screenNavigator, ApplicationMetrics& systemMetrics,
-    PcMetrics& pcMetrics, PcMetricsService& pcMetricsService, IStreamHealth& pcMetricsStreamJob,
-    IStreamHealth& cpuClockStreamJob, IStreamHealth& processStreamJob,
-    const NetworkStatus& netStatus, const SystemState& systemState, const WeatherData& weatherData,
-    const AppSettings& config, const ITaskStackReporter& taskStackReporter, LoggerInterface& logger,
-    RecentLogView& recentLogView, const AudioData& audioData, AudioService& audioService,
-    const RoomClimateData& roomClimateData, const WifiScanData& wifiScanData)
+WebServerService::WebServerService(WebServer& server, const WebDataSources& sources)
     : server_(server),
-      screenNavigator_(screenNavigator),
-      logger_(logger),
-      audioService_(audioService),
-      apiHandlers_(server, systemMetrics, pcMetrics, pcMetricsService, pcMetricsStreamJob,
-                   cpuClockStreamJob, processStreamJob, netStatus, systemState, weatherData, config,
-                   taskStackReporter, audioData, roomClimateData, wifiScanData),
-      pageHandlers_(server, systemMetrics, config, recentLogView) {}
+      sources_(sources),
+      apiHandlers_(server, sources_),
+      pageHandlers_(server, sources_) {}
 
 void WebServerService::begin() {
     server_.on("/", [this]() { pageHandlers_.handleHome(); });
@@ -43,7 +35,7 @@ void WebServerService::begin() {
             continue;
         const ScreenName screen = descriptor.screen;
         server_.on(descriptor.route, HTTP_POST, [this, screen]() {
-            screenNavigator_.requestScreen(screen);
+            sources_.screenNavigator.requestScreen(screen);
             server_.send(200, "text/plain", "OK");
         });
     }
@@ -60,7 +52,7 @@ void WebServerService::processRequests() {
 // ---------------------------------------------------------------------------
 
 void WebServerService::handleRestart() {
-    logger_.info("Restart requested via web server");
+    sources_.logger.info("Restart requested via web server");
     server_.send(200, "text/plain", "Restarting...");
     server_.client().flush();
     delay(200);  // give the TCP stack time to push the response before reboot
@@ -73,7 +65,8 @@ void WebServerService::handleRestart() {
 
 void WebServerService::handleAudioPush() {
     const String body = server_.arg("plain");
-    const bool needsResync = audioService_.handlePush(body.c_str(), body.length(), millis());
+    const bool needsResync =
+        sources_.audioService.handlePush(body.c_str(), body.length(), millis());
     // The plugin only inspects HTTP 409 or a body containing "resend" — any
     // other response is ordinary success/failure and otherwise ignored.
     if (needsResync) {

@@ -5,8 +5,7 @@
 #include <time.h>
 
 ClockWidget::ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                         uint16_t textColor, uint16_t bgColor, const std::string& format,
-                         TapAction tap)
+                         uint16_t textColor, uint16_t bgColor, TapAction tap)
     : Widget(dims, updateIntervalMs),
       textColor_(textColor),
       bgColor_(bgColor),

@@ -9,6 +9,7 @@
 #include "ui/resources/weather_icons_44.h"
 #include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 #include "utils/FreshnessTransition.h"
 
 // Four-column block shown to the right of RoomClimateWidget on the main
@@ -79,7 +80,7 @@ class AirQualityWidget : public Widget {
     int16_t lastPressure_ = -1;
     uint16_t lastWindX10_ = 0xFFFF;
     uint16_t lastAqi_ = 0xFFFF;
-    char lastIcon_[4] = {0};
+    CachedString<4> lastIcon_;
 
     // -----------------------------------------------------------------------
     // Helpers

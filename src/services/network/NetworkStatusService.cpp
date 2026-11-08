@@ -27,6 +27,13 @@ NetworkStatusService::NetworkStatusService(LoggerInterface& logger,
                                            const AppSettings& config)
     : logger_(logger), networkManager_(networkManager), config_(config) {}
 
+NetworkStatusService::~NetworkStatusService() {
+    if (probeTask_ != nullptr) {
+        vTaskDelete(probeTask_);
+        probeTask_ = nullptr;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // updateWifi — cheap, called every background loop tick
 // ---------------------------------------------------------------------------
@@ -53,12 +60,16 @@ void NetworkStatusService::updateWifi(NetworkStatus& status) {
 }
 
 // ---------------------------------------------------------------------------
-// maybeTriggerProbe — spawns a one-shot task when the interval has elapsed
+// maybeTriggerProbe — wakes the persistent probe task when the interval has
+// elapsed
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::maybeTriggerProbe(NetworkStatus& status) {
     if (!status.wifi_connected)
         return;
+    // A probe still in flight (slow endpoint) when the next one falls due:
+    // skip, don't queue. The interval is measured from that probe's
+    // completion (last_probe), so the next one simply starts later.
     if (status.probe_running)
         return;
 
@@ -67,35 +78,61 @@ void NetworkStatusService::maybeTriggerProbe(NetworkStatus& status) {
     if (status.last_probe != 0 && (millis() - status.last_probe) < interval)
         return;
 
-    // Allocate context on the heap — freed by the probe task before self-delete.
-    auto* ctx = new ProbeContext{this, &status};
-    status.probe_running = true;
+    if (!ensureProbeTask()) {
+        // Back off a full interval rather than retrying (and logging) on every
+        // 20 ms background tick.
+        status.last_probe = millis();
+        return;
+    }
 
-    BaseType_t ok = xTaskCreatePinnedToCore(
-        probeTaskEntry, "net_probe", kProbeStack, ctx, kProbePriority, nullptr,
+    // The probe task is parked (probe_running was false), so the context is
+    // safe to write. Set probe_running before the wake: the probe task clears
+    // it when done, and nothing rewrites probeCtx_ or notifies again until then.
+    probeCtx_.status = &status;
+    status.probe_running = true;
+    xTaskNotifyGive(probeTask_);
+}
+
+// ---------------------------------------------------------------------------
+// ensureProbeTask — creates the persistent probe task once, lazily
+// ---------------------------------------------------------------------------
+
+bool NetworkStatusService::ensureProbeTask() {
+    if (probeTask_ != nullptr)
+        return true;
+
+    const BaseType_t ok = xTaskCreatePinnedToCore(
+        probeTaskEntry, "net_probe", kProbeStack, this, kProbePriority, &probeTask_,
         0  // core 0 — same as background task, away from display core
     );
-
     if (ok != pdPASS) {
-        logger_.warning("NetworkStatus: failed to spawn probe task");
-        delete ctx;
-        status.probe_running = false;
+        probeTask_ = nullptr;
+        logger_.warning("NetworkStatus: failed to create probe task");
+        return false;
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// probeTaskEntry — persistent task body on core 0: sleep until notified, run
+// one probe, repeat. Never returns.
+// ---------------------------------------------------------------------------
+
+void NetworkStatusService::probeTaskEntry(void* param) {
+    auto* self = static_cast<NetworkStatusService*>(param);
+    for (;;) {
+        // pdTRUE clears the count, so any duplicate notification collapses
+        // into a single probe rather than queueing a backlog.
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        NetworkStatus* status = self->probeCtx_.status;
+        if (status != nullptr) {
+            self->runProbe(*status);
+        }
     }
 }
 
 // ---------------------------------------------------------------------------
-// probeTaskEntry — static trampoline; runs on core 0, self-deletes on exit
-// ---------------------------------------------------------------------------
-
-void NetworkStatusService::probeTaskEntry(void* param) {
-    auto* ctx = static_cast<ProbeContext*>(param);
-    ctx->service->runProbe(*ctx->status);
-    delete ctx;
-    vTaskDelete(nullptr);
-}
-
-// ---------------------------------------------------------------------------
-// runProbe — executed inside the short-lived probe task
+// runProbe — executed on the persistent probe task
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::runProbe(NetworkStatus& status) {

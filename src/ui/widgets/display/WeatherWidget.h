@@ -10,6 +10,7 @@
 #include "ui/resources/FontRegistry.h"
 #include "ui/resources/weather_icons_44.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 #include "utils/FreshnessTransition.h"
 #include "utils/ScopedLock.h"
 
@@ -69,20 +70,20 @@ class WeatherWidget : public Widget {
     // value ("10°"→"9°") otherwise leaves the old one's edges behind (B43).
     // Boundaries sit midway between neighbouring text rows.
     static constexpr int16_t kHeaderBandY = kIconY + kIconSize;             // 50
-    static constexpr int16_t kTempBandY = (kDateY + kTempMaxY) / 2;          // 103
-    static constexpr int16_t kRainBandY = (kTempMinY + kRainLabelY) / 2;     // 171
-    static constexpr int16_t kWindBandY = (kRainValueY + kWindLabelY) / 2;   // 214
+    static constexpr int16_t kTempBandY = (kDateY + kTempMaxY) / 2;         // 103
+    static constexpr int16_t kRainBandY = (kTempMinY + kRainLabelY) / 2;    // 171
+    static constexpr int16_t kWindBandY = (kRainValueY + kWindLabelY) / 2;  // 214
 
     // Per-column cached snapshot for dirty detection. Equal-length arrays, one
     // element per possible column; only the first `columns_` are live.
     struct ColumnCache {
         int16_t iconWmo = -1;
-        char dayName[4] = {0};
-        char date[6] = {0};
-        char tempMax[8] = {0};
-        char tempMin[8] = {0};
-        char rain[12] = {0};
-        char wind[11] = {0};
+        CachedString<4> dayName;
+        CachedString<6> date;
+        CachedString<8> tempMax;
+        CachedString<8> tempMin;
+        CachedString<12> rain;
+        CachedString<12> wind;
     };
 
     const WeatherData& weatherData_;
@@ -115,7 +116,6 @@ class WeatherWidget : public Widget {
     void drawTempBlock(const char* tempMax, const char* tempMin, uint8_t col);
     void clearCellBand(uint8_t col, int16_t bandTop, int16_t bandBottom);
     void drawLabeledValue(int16_t bandTop, int16_t bandBottom, int16_t labelY, int16_t valueY,
-                          const char* label, const char* value,
-                          uint16_t valueColor, uint8_t col);
+                          const char* label, const char* value, uint16_t valueColor, uint8_t col);
     void drawNoData();
 };

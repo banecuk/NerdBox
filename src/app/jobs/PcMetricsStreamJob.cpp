@@ -2,6 +2,8 @@
 
 #include <cstdio>
 
+#include "core/ScreenRegistry.h"
+
 PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreState& coreState,
                                        SystemState::ScreenState& screenState,
                                        NetworkManager& networkManager, const AppSettings& config,
@@ -21,9 +23,7 @@ PcMetricsStreamJob::PcMetricsStreamJob(PcMetrics& metrics, SystemState::CoreStat
 }
 
 bool PcMetricsStreamJob::screenGateOpen() const {
-    return screenState_.activeScreen == ScreenName::MAIN ||
-           screenState_.activeScreen == ScreenName::GAME ||
-           screenState_.activeScreen == ScreenName::DISKS;
+    return screenNeedsPcMetrics(screenState_.activeScreen);
 }
 
 bool PcMetricsStreamJob::extraGateOpen() const {

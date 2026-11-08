@@ -20,7 +20,7 @@ constexpr size_t kMaxDrives = 16;
 
 // Copies up to `max` drives out from under disk_drivesMutex into `out`.
 // driveName is always NUL-terminated in the copy. Returns the count copied.
-inline size_t copy(PcMetrics& metrics, DiskDrive* out, size_t max) {
+inline size_t copy(const PcMetrics& metrics, DiskDrive* out, size_t max) {
     ScopedLock lock(metrics.disk_drivesMutex);
     const size_t n = metrics.disk_drives.size() < max ? metrics.disk_drives.size() : max;
     for (size_t i = 0; i < n; ++i) {
@@ -32,7 +32,7 @@ inline size_t copy(PcMetrics& metrics, DiskDrive* out, size_t max) {
 
 // Sum of read/write rates across every drive — DiskSummaryWidget's view,
 // which needs totals rather than a per-drive copy.
-inline void totals(PcMetrics& metrics, float& readKBps, float& writeKBps) {
+inline void totals(const PcMetrics& metrics, float& readKBps, float& writeKBps) {
     readKBps = 0.0f;
     writeKBps = 0.0f;
     ScopedLock lock(metrics.disk_drivesMutex);

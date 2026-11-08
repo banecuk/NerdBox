@@ -10,4 +10,6 @@ class ITaskStackReporter {
     virtual ~ITaskStackReporter() = default;
     virtual uint32_t screenTaskStackFree() const = 0;
     virtual uint32_t backgroundTaskStackFree() const = 0;
+    // True only when the task watchdog really armed and a task joined it (B6).
+    virtual bool watchdogActive() const = 0;
 };

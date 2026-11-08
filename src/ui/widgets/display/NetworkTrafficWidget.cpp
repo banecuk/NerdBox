@@ -17,8 +17,8 @@ void NetworkTrafficWidget::onDrawStatic() {
                        TFT_BLACK);
 
     // Reset cache so onDraw does a full repaint.
-    lastUpText_[0] = '\0';
-    lastDownText_[0] = '\0';
+    lastUpText_.clear();
+    lastDownText_.clear();
     lastUpColor_ = 0;
     lastDownColor_ = 0;
 }
@@ -35,13 +35,13 @@ void NetworkTrafficWidget::onDraw(bool forceRedraw) {
     const bool dataAvailabilityChanged = forceRedraw || availabilityFlipped;
     const int16_t rowH = dimensions_.height / 2;
     drawRow(dimensions_.y, true, upMbps, uploadLinkMbps_, hasData, dataAvailabilityChanged,
-            lastUpText_, sizeof(lastUpText_), lastUpColor_);
+            lastUpText_, lastUpColor_);
     drawRow(dimensions_.y + rowH, false, downMbps, downloadLinkMbps_, hasData,
-            dataAvailabilityChanged, lastDownText_, sizeof(lastDownText_), lastDownColor_);
+            dataAvailabilityChanged, lastDownText_, lastDownColor_);
 }
 
 void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData,
-                                   bool forceRedraw, char* lastText, size_t lastTextSize,
+                                   bool forceRedraw, CachedString<16>& lastText,
                                    uint16_t& lastColor) {
     const float percent = (hasData && maxMbps > 0.0f) ? (mbps / maxMbps) * 100.0f : 0.0f;
     const uint16_t color = hasData ? trafficColor(mbps, percent) : Colors::kHairline;
@@ -55,8 +55,7 @@ void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float ma
                                      hasData,
                                      /*intDigits=*/3,
                                      color,
-                                     lastText,
-                                     lastTextSize,
+                                     &lastText,
                                      &lastColor,
                                      forceRedraw};
     const int16_t suffixX = WidgetPainter::drawRateRow(getLcd(), row);

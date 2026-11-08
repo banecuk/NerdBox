@@ -5,12 +5,11 @@
 
 #include "services/web/WebAssets.h"
 
-WebPageHandlers::WebPageHandlers(WebServer& server, ApplicationMetrics& systemMetrics,
-                                 const AppSettings& config, RecentLogView& recentLogView)
+WebPageHandlers::WebPageHandlers(WebServer& server, const WebDataSources& sources)
     : server_(server),
-      systemMetrics_(systemMetrics),
-      config_(config),
-      recentLogView_(recentLogView) {}
+      systemMetrics_(sources.feeds.systemMetrics),
+      config_(sources.feeds.config),
+      recentLogView_(sources.recentLogView) {}
 
 void WebPageHandlers::handleNotFound() {
     server_.send(404, "text/plain", "Not found");
@@ -165,11 +164,12 @@ constexpr ApiEndpoint kApiEndpoints[] = {
      "(resets on a screen change); app.noop_dirty_frames counts frames where a "
      "widget was found dirty but nothing was actually drawn. wifi.ssid/rssi/ip/etc. "
      "are always live; wifi.scan_* (nearby-network scan results) only advance while "
-     "the WIFI screen is open — the scan job is screen-gated."                        },
+     "the WIFI screen is open — the scan job is screen-gated."                          },
     {"GET",  "/api/raw",
      "Last raw NerdWinSense payload, unfiltered — for debugging a field that reads "
      "0 or -1. Triggers a dedicated fetch; not the same connection as the regular "
-     "poll."                                                                            },
+     "poll. Synchronous: while NerdWinSense answers, every other request (POST /audio "
+     "included) waits, up to ~3 s (LAN connect + response timeouts) if it's down."      },
     {"GET",  "/api/pc",
      "Full current PcMetrics snapshot as JSON — every parsed field, including disk "
      "drives. Verify what the display should show vs. what NerdWinSense sent."          },

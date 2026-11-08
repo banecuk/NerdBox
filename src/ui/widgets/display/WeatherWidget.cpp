@@ -1,6 +1,7 @@
 #include "WeatherWidget.h"
 
 #include "ui/core/UiText.h"
+#include "ui/widgets/base/WidgetPainter.h"
 #include "ui/widgets/display/WeatherFormat.h"
 
 // ---------------------------------------------------------------------------
@@ -100,11 +101,11 @@ void WeatherWidget::onDraw(bool forceRedraw) {
 
         const bool iconChanged = forceRedraw || day.weatherCode != cache.iconWmo;
         const bool headerChanged =
-            forceRedraw || strcmp(dayName, cache.dayName) != 0 || strcmp(date, cache.date) != 0;
-        const bool tempChanged = forceRedraw || strcmp(tempMax, cache.tempMax) != 0 ||
-                                 strcmp(tempMin, cache.tempMin) != 0;
-        const bool rainChanged = forceRedraw || strcmp(rain, cache.rain) != 0;
-        const bool windChanged = forceRedraw || strcmp(wind, cache.wind) != 0;
+            forceRedraw || !cache.dayName.equals(dayName) || !cache.date.equals(date);
+        const bool tempChanged =
+            forceRedraw || !cache.tempMax.equals(tempMax) || !cache.tempMin.equals(tempMin);
+        const bool rainChanged = forceRedraw || !cache.rain.equals(rain);
+        const bool windChanged = forceRedraw || !cache.wind.equals(wind);
 
         // SAT/SUN in light red, other days white.
         const uint16_t dayColor =
@@ -126,18 +127,12 @@ void WeatherWidget::onDraw(bool forceRedraw) {
                              kWindValueY, "m/s", wind, kValueColor, i);
 
         cache.iconWmo = day.weatherCode;
-        strncpy(cache.dayName, dayName, sizeof(cache.dayName) - 1);
-        cache.dayName[sizeof(cache.dayName) - 1] = '\0';
-        strncpy(cache.date, date, sizeof(cache.date) - 1);
-        cache.date[sizeof(cache.date) - 1] = '\0';
-        strncpy(cache.tempMax, tempMax, sizeof(cache.tempMax) - 1);
-        cache.tempMax[sizeof(cache.tempMax) - 1] = '\0';
-        strncpy(cache.tempMin, tempMin, sizeof(cache.tempMin) - 1);
-        cache.tempMin[sizeof(cache.tempMin) - 1] = '\0';
-        strncpy(cache.rain, rain, sizeof(cache.rain) - 1);
-        cache.rain[sizeof(cache.rain) - 1] = '\0';
-        strncpy(cache.wind, wind, sizeof(cache.wind) - 1);
-        cache.wind[sizeof(cache.wind) - 1] = '\0';
+        cache.dayName.set(dayName);
+        cache.date.set(date);
+        cache.tempMax.set(tempMax);
+        cache.tempMin.set(tempMin);
+        cache.rain.set(rain);
+        cache.wind.set(wind);
     }
 }
 
@@ -224,17 +219,10 @@ void WeatherWidget::drawDayHeader(const char* dayName, const char* date, uint16_
     clearCellBand(col, kHeaderBandY, kTempBandY);
 
     // Day name is larger than the date beneath it, so draw each on its own font.
-    Fonts::loadValue(lcd);
-    lcd->setTextColor(dayColor, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(dayName, cx, dimensions_.y + kDayNameY);
-    Fonts::unload(lcd);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(kDateColor, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(date, cx, dimensions_.y + kDateY);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + kDayNameY, dayName, Fonts::loadValue,
+                                    dayColor);
+    WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + kDateY, date, Fonts::loadLabel,
+                                    kDateColor);
 }
 
 void WeatherWidget::drawIcon(int16_t wmo, uint8_t col) {
@@ -256,18 +244,12 @@ void WeatherWidget::drawTempBlock(const char* tempMax, const char* tempMin, uint
     clearCellBand(col, kTempBandY, kRainBandY);
 
     // Bright max value.
-    Fonts::loadMetric(lcd);
-    lcd->setTextColor(kTempColor, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(tempMax, cx, dimensions_.y + kTempMaxY);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + kTempMaxY, tempMax, Fonts::loadMetric,
+                                    kTempColor);
 
     // Min value beneath, same colour and size as the max value.
-    Fonts::loadMetric(lcd);
-    lcd->setTextColor(kTempColor, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(tempMin, cx, dimensions_.y + kTempMinY);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + kTempMinY, tempMin, Fonts::loadMetric,
+                                    kTempColor);
 }
 
 void WeatherWidget::drawLabeledValue(int16_t bandTop, int16_t bandBottom, int16_t labelY,
@@ -278,28 +260,17 @@ void WeatherWidget::drawLabeledValue(int16_t bandTop, int16_t bandBottom, int16_
     clearCellBand(col, bandTop, bandBottom);
 
     // Label above the value.
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(kLabelColor, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(label, cx, dimensions_.y + labelY);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + labelY, label, Fonts::loadLabel,
+                                    kLabelColor);
 
     // Value below.
-    Fonts::loadMetric(lcd);
-    lcd->setTextColor(valueColor, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(value, cx, dimensions_.y + valueY);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, cx, dimensions_.y + valueY, value, Fonts::loadMetric,
+                                    valueColor);
 }
 
 void WeatherWidget::drawNoData() {
     LGFX* lcd = getLcd();
-    lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
-                    dimensions_.y + dimensions_.height / 2);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredCell(lcd, dimensions_.x, dimensions_.y, dimensions_.width,
+                                    dimensions_.height, UiText::kNoData, Fonts::loadLabel,
+                                    TFT_DARKGREY);
 }

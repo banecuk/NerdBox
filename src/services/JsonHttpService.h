@@ -18,10 +18,14 @@
 // CRTP rather than virtuals: every hook is known at compile time and each
 // service is instantiated exactly once, so a vtable would buy nothing.
 //
-// Only PcMetricsService, AirQualityService, and WeatherService derive from
-// this — PcMetricsStreamService (the default PC-metrics data path) is SSE,
-// not a bounded request/response GET, and can't fit this pattern. Don't
-// assume every service shares this base.
+// Only AirQualityService, RoomClimateService, and WeatherService derive from
+// this. PcMetricsStreamService (the default PC-metrics data path) is SSE,
+// not a bounded request/response GET, and can't fit this pattern.
+// PcMetricsService (the polling fallback) is a bounded GET but deliberately
+// keeps its own fetchData(): it is LAN-only (HttpClient's short default
+// timeouts, no DNS pre-check, no isConnected() early-out), and it keeps
+// fetch_ok/fetch_fail/last_error counters for /api/status that this base has
+// no hook for. Don't assume every service shares this base.
 // Derived must provide:
 //     void initFilter(JsonDocument& filter);   // called once, from init()
 //     bool parseData(TData& outData);          // reads doc(), fills outData

@@ -29,12 +29,20 @@ ApplicationComponents::ApplicationComponents()
                 *data.wifiScanData},
       taskManager(platform.logger_, uiController, config, data.systemState.screen, jobs.asVector()),
       webServer(80),
-      webServerService(webServer, uiController, services.systemMetrics, data.pcMetrics,
-                       services.pcMetricsService, *jobs.pcMetricsStreamJob, *jobs.cpuClockStreamJob,
-                       *jobs.processStreamJob, data.netStatus, data.systemState, data.weatherData,
-                       config, taskManager, platform.logger_, platform.logger_, data.audioData,
-                       services.audioService, data.roomClimateData, *data.wifiScanData),
-      initStateMachine(*this) {
+      // WebDataSources is built here once, as a temporary WebServerService
+      // copies (it's a struct of references) — see WebDataSources.h (A3).
+      webServerService(
+          webServer,
+          WebDataSources{{config, services.systemMetrics, data.pcMetrics, *jobs.pcMetricsStreamJob,
+                          *jobs.cpuClockStreamJob, *jobs.processStreamJob, data.netStatus,
+                          data.systemState, data.weatherData, data.roomClimateData, data.audioData,
+                          *data.wifiScanData, taskManager},
+                         uiController,
+                         services.pcMetricsService,
+                         services.audioService,
+                         platform.logger_,
+                         platform.logger_}),
+      initStateMachine(*this, config) {
     // uiController is constructed before screenCtx (declaration order) and
     // screenCtx holds a reference back to it, so the reverse link — giving
     // uiController the address of screenCtx — can only happen here, once
@@ -65,6 +73,13 @@ void ApplicationComponents::requestScreen(ScreenName screen) {
     uiController.requestScreen(screen);
 }
 
+bool ApplicationComponents::initWatchdog(uint32_t timeoutMs) {
+    return taskManager.initWatchdog(timeoutMs);
+}
+bool ApplicationComponents::addCurrentTaskToWatchdog() {
+    return taskManager.addCurrentTaskToWatchdog();
+}
+
 bool ApplicationComponents::createTasks() {
     return taskManager.createTasks();
 }
@@ -91,18 +106,12 @@ void ApplicationComponents::setSystemInitialized() {
     data.systemState.core.isInitialized = true;
 }
 
-uint8_t ApplicationComponents::initTimeSyncRetries() const {
-    return config.initTimeSyncRetries;
+void ApplicationComponents::delayMs(uint32_t ms) {
+    delay(ms);
 }
-uint32_t ApplicationComponents::initTimeSyncBaseDelayMs() const {
-    return config.initTimeSyncBaseDelayMs;
+uint32_t ApplicationComponents::randomBelow(uint32_t bound) {
+    return bound == 0 ? 0 : static_cast<uint32_t>(random(0, static_cast<long>(bound)));
 }
-uint16_t ApplicationComponents::initBackoffJitterMs() const {
-    return config.initBackoffJitterMs;
-}
-bool ApplicationComponents::watchdogEnabledOnBoot() const {
-    return config.watchdogEnableOnBoot;
-}
-unsigned long ApplicationComponents::watchdogTimeoutMs() const {
-    return config.watchdogTimeoutMs;
+uint32_t ApplicationComponents::freeHeap() const {
+    return ESP.getFreeHeap();
 }

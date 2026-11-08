@@ -17,9 +17,6 @@
 #include "utils/logging/LogMacros.h"
 
 // Forward declarations
-class BootScreen;
-class MainScreen;
-class SettingsScreen;
 class UiEventHandler;
 struct ScreenCreationContext;
 
@@ -44,7 +41,7 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
     // must transition to FAILED rather than press on with a null mutex.
     bool initialize();
     void updateDisplay() override;
-    bool isTransitioning() const { return activeTransition_.isActive; }
+    bool isTransitioning() const { return activeTransition_.isActive(); }
 
     // Screen transition methods. Callable from any task — requestTransitionTo()
     // only ever stores into the atomic pendingScreen_; the ScreenUpdate task is
@@ -60,7 +57,7 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
     // Display access methods
     DisplayContext& getDisplayContext() { return context_; }
     ApplicationMetrics& getSystemMetrics() { return systemMetrics_; }
-    DisplayManager* getDisplayManager() const { return &displayManager_; }
+    DisplayManager& getDisplayManager() const { return displayManager_; }
     bool tryAcquireDisplayLock();
     void releaseDisplayLock();
 
@@ -75,8 +72,11 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
     struct ScreenTransition {
         ScreenName nextScreen = ScreenName::NONE;
         TransitionPhase phase = TransitionPhase::IDLE;
-        bool isActive = false;
         unsigned long startTime = 0;
+
+        // Derived, not stored: a transition is in progress exactly when
+        // the phase isn't IDLE.
+        bool isActive() const { return phase != TransitionPhase::IDLE; }
     };
 
     // Transition lifecycle methods

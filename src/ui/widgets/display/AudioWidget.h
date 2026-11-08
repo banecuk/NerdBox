@@ -4,6 +4,7 @@
 
 #include "services/audio/AudioData.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 
 // Now-playing view for the mb_NerdBox MusicBee plugin push feed (see
 // docs-local/NERDBOX_INTEGRATION.md) — title/artist, an elapsed/duration
@@ -33,10 +34,10 @@ class AudioWidget : public Widget {
     bool firstDraw_ = true;
     bool lastWasStopped_ = false;
     bool lastOffline_ = false;
-    char lastTitle_[sizeof(AudioData::title)] = {0};
-    char lastArtist_[sizeof(AudioData::artist)] = {0};
-    char lastAlbum_[sizeof(AudioData::album)] = {0};
-    char lastQuality_[24] = {0};
+    CachedString<sizeof(AudioData::title)> lastTitle_;
+    CachedString<sizeof(AudioData::artist)> lastArtist_;
+    CachedString<sizeof(AudioData::album)> lastAlbum_;
+    CachedString<24> lastQuality_;
     uint16_t lastBarWidth_ = 0xFFFF;  // sentinel — never a real fill width
     uint32_t lastPositionMs_ = 0xFFFFFFFF;
     uint32_t lastDurationMs_ = 0xFFFFFFFF;

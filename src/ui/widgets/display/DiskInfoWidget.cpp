@@ -9,6 +9,7 @@
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/RateFormat.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 DiskInfoWidget::DiskInfoWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                                PcMetrics& pcMetrics)
@@ -59,14 +60,13 @@ void DiskInfoWidget::ensureRowsCreated() {
     // Rebuild rows when the drive count changed, or the count stayed the same
     // but the set of drives itself did — see DiskSnapshot::driveSetChanged().
     const bool needsCreation = DiskSnapshot::driveSetChanged(
-        snapshot, count, rows_.size(), [this](size_t i) { return rows_[i].name; });
+        snapshot, count, rows_.size(), [this](size_t i) { return rows_[i].name.c_str(); });
     if (needsCreation) {
         rows_.clear();
         rows_.reserve(count);
         for (size_t i = 0; i < count; ++i) {
             DiskRow r;
-            strncpy(r.name, snapshot[i].driveName, sizeof(r.name) - 1);
-            r.name[sizeof(r.name) - 1] = '\0';
+            r.name.set(snapshot[i].driveName);
             rows_.push_back(r);
         }
         clearArea();  // clean slate before drawing the new row set
@@ -132,9 +132,9 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
         Fonts::loadHeader(lcd);
         lcd->setTextColor(stale ? Colors::kInactiveText : TFT_LIGHTGREY, TFT_BLACK);
         lcd->setTextDatum(ML_DATUM);
-        const int16_t nameW = lcd->textWidth(r.name);
-        lcd->drawString(r.name, dimensions_.x + static_cast<int16_t>((kNameColW - nameW) / 2),
-                        centerY);
+        const int16_t nameW = lcd->textWidth(r.name.c_str());
+        lcd->drawString(r.name.c_str(),
+                        dimensions_.x + static_cast<int16_t>((kNameColW - nameW) / 2), centerY);
         Fonts::unload(lcd);
 
         // Static '%' and "MB/s" units — drawn exactly once per row, before any
@@ -200,8 +200,8 @@ void DiskInfoWidget::drawRate(size_t index, bool stale, uint8_t role) {
               : (hasActivity ? ((role == kRateRead) ? TFT_GREEN : kActivityWriteColor)
                              : kIdleLetterColor);
 
-    if (!r.drawn || strcmp(rateText, r.lastRateText[role]) != 0 ||
-        r.lastRateColor[role] != valueColor || r.lastLetterColor[role] != letterColor) {
+    if (!r.drawn || !r.lastRateText[role].equals(rateText) || r.lastRateColor[role] != valueColor ||
+        r.lastLetterColor[role] != letterColor) {
         // The static "MB/s" label (drawn once by drawStaticUnits) sits
         // right-aligned at valueRightX, and the static '|' separator at
         // kRateSepX; only the letter + value region is cleared here so both
@@ -232,8 +232,7 @@ void DiskInfoWidget::drawRate(size_t index, bool stale, uint8_t role) {
                         centerY);
         Fonts::unload(lcd);
 
-        strncpy(r.lastRateText[role], rateText, sizeof(r.lastRateText[role]) - 1);
-        r.lastRateText[role][sizeof(r.lastRateText[role]) - 1] = '\0';
+        r.lastRateText[role].set(rateText);
         r.lastRateColor[role] = valueColor;
         r.lastLetterColor[role] = letterColor;
     }
@@ -286,12 +285,9 @@ void DiskInfoWidget::drawNoDataMessage() {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(UiText::kNoData, dimensions_.x + dimensions_.width / 2,
-                    dimensions_.y + dimensions_.height / 2);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, dimensions_.x + dimensions_.width / 2,
+                                    dimensions_.y + dimensions_.height / 2, UiText::kNoData,
+                                    Fonts::loadLabel, TFT_DARKGREY);
 }
 
 void DiskInfoWidget::clearArea() {

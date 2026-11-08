@@ -3,6 +3,7 @@
 #include <WebServer.h>
 
 #include "config/AppSettings.h"
+#include "services/web/WebDataSources.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/logging/RecentLogView.h"
 
@@ -13,8 +14,7 @@
 // assembled on the heap.
 class WebPageHandlers {
  public:
-    WebPageHandlers(WebServer& server, ApplicationMetrics& systemMetrics, const AppSettings& config,
-                    RecentLogView& recentLogView);
+    WebPageHandlers(WebServer& server, const WebDataSources& sources);
 
     void handleNotFound();
     void handleHome();
@@ -48,7 +48,7 @@ class WebPageHandlers {
     static const char* logLevelToString(LogLevel level);
 
     WebServer& server_;
-    ApplicationMetrics& systemMetrics_;
+    const ApplicationMetrics& systemMetrics_;
     const AppSettings& config_;
     RecentLogView& recentLogView_;
 };

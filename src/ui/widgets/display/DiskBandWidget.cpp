@@ -21,7 +21,7 @@ uint16_t bandActivityColor(float kbPerSec, bool isWrite) {
     if (kbPerSec <= kIdleThresholdKbPerSec)
         return TFT_BLACK;
     const uint16_t color = isWrite ? Colors::diskWriteActivityColor(kbPerSec)
-                                    : Colors::diskReadActivityColor(kbPerSec);
+                                   : Colors::diskReadActivityColor(kbPerSec);
     if (color != Colors::kHairline)
         return color;
     // TFT_DARKRED is a buggy LovyanGFX constant (duplicate of TFT_DARKMAGENTA's
@@ -52,7 +52,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
     const bool needsCreation =
         diskDriveWidgets_.empty() ||
         DiskSnapshot::driveSetChanged(snapshot, snapshotCount, diskDriveWidgets_.size(),
-                                      [this](size_t i) { return diskDriveNames_[i].data(); });
+                                      [this](size_t i) { return diskDriveNames_[i].c_str(); });
 
     if (!needsCreation)
         return;
@@ -103,7 +103,7 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
         config.useSmallFont = true;
         config.label = snapshot[i].driveName;
         config.labelWidth = kLabelWidth;  // narrow: the label is a single drive letter
-        config.borderMargin = 0;  // flush against the activity lines — no edge gaps
+        config.borderMargin = 0;          // flush against the activity lines — no edge gaps
         config.lowerThreshold = 0.0f;
         config.upperThreshold = 95.0f;
         config.gradientBackground = true;
@@ -124,8 +124,8 @@ void DiskBandWidget::ensureChildWidgetsCreated() {
             w->initialize(getContext());
         initAndDrawWidget(*w);
 
-        std::array<char, 4> name{};
-        strncpy(name.data(), snapshot[i].driveName, name.size() - 1);
+        CachedString<4> name;
+        name.set(snapshot[i].driveName);
         diskDriveNames_.push_back(name);
         diskDriveWidgets_.push_back(std::move(w));
     }
@@ -197,8 +197,8 @@ void DiskBandWidget::drawDynamicData() {
         // MetricWidget label/value split below it: the read half spans the
         // drive-letter label column, the write half fills the rest (the
         // larger value-display area).
-        const uint16_t readWidth = static_cast<uint16_t>(
-            dims.width < kLabelColumnWidth ? dims.width : kLabelColumnWidth);
+        const uint16_t readWidth =
+            static_cast<uint16_t>(dims.width < kLabelColumnWidth ? dims.width : kLabelColumnWidth);
         const uint16_t writeWidth = static_cast<uint16_t>(dims.width - readWidth);
         const uint16_t lineY = dimensions_.y;
 

@@ -1,9 +1,9 @@
 #include "DiskSummaryWidget.h"
 
+#include "services/pcMetrics/DiskSnapshot.h"
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/WidgetPainter.h"
-#include "services/pcMetrics/DiskSnapshot.h"
 
 DiskSummaryWidget::DiskSummaryWidget(const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs, PcMetrics& pcMetrics, TapAction tap)
@@ -17,8 +17,8 @@ void DiskSummaryWidget::onDrawStatic() {
                        TFT_BLACK);
 
     // Reset cache so onDraw does a full repaint.
-    lastReadText_[0] = '\0';
-    lastWriteText_[0] = '\0';
+    lastReadText_.clear();
+    lastWriteText_.clear();
     lastReadColor_ = 0;
     lastWriteColor_ = 0;
 }
@@ -39,14 +39,13 @@ void DiskSummaryWidget::onDraw(bool forceRedraw) {
     const bool dataAvailabilityChanged = forceRedraw || availabilityFlipped;
     const int16_t rowH = dimensions_.height / 2;
     drawRow(dimensions_.y, false, writeKBps * kKBpsToMBps, hasData, dataAvailabilityChanged,
-            lastWriteText_, sizeof(lastWriteText_), lastWriteColor_);
+            lastWriteText_, lastWriteColor_);
     drawRow(dimensions_.y + rowH, true, readKBps * kKBpsToMBps, hasData, dataAvailabilityChanged,
-            lastReadText_, sizeof(lastReadText_), lastReadColor_);
+            lastReadText_, lastReadColor_);
 }
 
 void DiskSummaryWidget::drawRow(int16_t rowY, bool isRead, float mbps, bool hasData,
-                                bool forceRedraw, char* lastText, size_t lastTextSize,
-                                uint16_t& lastColor) {
+                                bool forceRedraw, CachedString<16>& lastText, uint16_t& lastColor) {
     // Colors::disk*ActivityColor() render idle (<1 MB/s) as a dark hairline
     // grey, meant to disappear against DiskBandWidget's black background.
     // Here — like NetworkTrafficWidget's idle state — no activity should
@@ -62,10 +61,17 @@ void DiskSummaryWidget::drawRow(int16_t rowY, bool isRead, float mbps, bool hasD
     }
 
     const int16_t rowH = dimensions_.height / 2;
-    const WidgetPainter::RateRow row{static_cast<int16_t>(dimensions_.x), rowY,
-                                     static_cast<int16_t>(dimensions_.width), rowH,
-                                     mbps, hasData, /*intDigits=*/4, color,
-                                     lastText, lastTextSize, &lastColor, forceRedraw};
+    const WidgetPainter::RateRow row{static_cast<int16_t>(dimensions_.x),
+                                     rowY,
+                                     static_cast<int16_t>(dimensions_.width),
+                                     rowH,
+                                     mbps,
+                                     hasData,
+                                     /*intDigits=*/4,
+                                     color,
+                                     &lastText,
+                                     &lastColor,
+                                     forceRedraw};
     const int16_t suffixX = WidgetPainter::drawRateRow(getLcd(), row);
     if (suffixX < 0)
         return;  // rendered text+colour unchanged — letter stays as-is too

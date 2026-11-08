@@ -60,11 +60,12 @@ struct NetworkStatus {
     // Updated atomically (bool is word-sized on Xtensa) — no mutex needed.
     bool endpoint_ok[AppConfig::Limits::kNetworkProbeEndpoints] = {};
 
-    // Set true while the one-shot probe task is in-flight; guards against
-    // spawning overlapping tasks. std::atomic (not volatile) so the probe
-    // task's writes to last_probe/results/endpoint_ok/internet are guaranteed
-    // visible to the background task on the other core once it observes
-    // probe_running go false — volatile gives no such ordering on Xtensa.
+    // Set true while a probe is in flight on NetworkStatusService's persistent
+    // probe task; guards against waking it again (and rewriting its context)
+    // mid-probe. std::atomic (not volatile) so the probe task's writes to
+    // last_probe/results/endpoint_ok/internet are guaranteed visible to the
+    // background task once it observes probe_running go false — volatile
+    // gives no such ordering on Xtensa.
     std::atomic<bool> probe_running{false};
 
     // millis() of the last completed probe — used by TaskManager to pace retriggers

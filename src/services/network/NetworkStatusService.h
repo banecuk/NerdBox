@@ -20,9 +20,13 @@
 //               or down, so no other task has to query the WiFi driver (A8).
 //
 // Internet    — call maybeTriggerProbe() from the background task every tick.
-//               When the probe interval has elapsed and no probe is running, a
-//               one-shot FreeRTOS task is spawned that does a single HTTP GET
-//               to one of eight rotating endpoints, then self-deletes.
+//               When the probe interval has elapsed and no probe is running,
+//               the persistent probe task (created once, on the first probe)
+//               is woken via a task notification and does a single HTTP GET
+//               to one of eight rotating endpoints, then sleeps again. The
+//               GET runs off the background task so a slow endpoint can never
+//               stall it past the watchdog. No per-probe task or heap
+//               allocation (A21).
 //               The rolling 8-slot result buffer prevents a single slow response
 //               from flipping the state.
 //               Until all 8 endpoints have been probed once, probing runs at
@@ -39,7 +43,10 @@ class NetworkStatusService {
  public:
     NetworkStatusService(LoggerInterface& logger, const NetworkManager& networkManager,
                          const AppSettings& config);
-    ~NetworkStatusService() = default;
+    // Deletes the probe task if one was created. In practice the service
+    // lives for the whole program (ServiceBundle); this only stops the task
+    // from outliving `this`.
+    ~NetworkStatusService();
 
     NetworkStatusService(const NetworkStatusService&) = delete;
     NetworkStatusService& operator=(const NetworkStatusService&) = delete;
@@ -48,7 +55,7 @@ class NetworkStatusService {
     void updateWifi(NetworkStatus& status);
 
     // Call from background task every loop tick.
-    // Spawns a probe task when the interval has elapsed.
+    // Wakes the probe task when the interval has elapsed.
     void maybeTriggerProbe(NetworkStatus& status);
 
     static constexpr uint8_t kNumEndpoints = AppConfig::Limits::kNetworkProbeEndpoints;
@@ -65,11 +72,21 @@ class NetworkStatusService {
     // -----------------------------------------------------------------------
     // Probe task
     // -----------------------------------------------------------------------
+    // What the probe task works on. Written by the background task only while
+    // NetworkStatus::probe_running is false (i.e. the probe task is parked in
+    // ulTaskNotifyTake), and read by the probe task only after it is woken —
+    // so it is never rewritten mid-probe. xTaskNotifyGive's critical section
+    // orders the write before the wake.
     struct ProbeContext {
-        NetworkStatusService* service;
-        NetworkStatus* status;
+        NetworkStatus* status = nullptr;
     };
 
+    // Creates the probe task if it doesn't exist yet. Returns false (and
+    // logs) if creation failed; the next due probe retries.
+    bool ensureProbeTask();
+
+    // Task body: block on the notification, run one probe, repeat. The
+    // parameter is `this`.
     static void probeTaskEntry(void* param);
     void runProbe(NetworkStatus& status);
 
@@ -99,8 +116,14 @@ class NetworkStatusService {
     // failures and misreport DEGRADED/DOWN during the warm-up window.
     ProbeResult probes_[kNumEndpoints] = {};
 
+    TaskHandle_t probeTask_ = nullptr;
+    ProbeContext probeCtx_;
+
     // Not tuning knobs: the probe task's stack is sized for HTTPClient, and
-    // its priority must stay at or below the background task's.
+    // its priority must stay at or below the background task's. The task is
+    // deliberately not registered with the task watchdog: it spends almost
+    // all its life blocked in ulTaskNotifyTake (portMAX_DELAY), and each
+    // HTTP GET is bounded by networkProbeTimeoutMs anyway.
     static constexpr uint32_t kProbeStack = 4096;
     static constexpr UBaseType_t kProbePriority = 1;
 

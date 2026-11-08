@@ -7,6 +7,7 @@
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
+#include "ui/widgets/base/WidgetPainter.h"
 #include "ui/widgets/display/AudioFormat.h"
 
 namespace {
@@ -96,16 +97,9 @@ void AudioWidget::drawStoppedMessage(bool forceRedraw) {
 
     lcd->setClipRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height);
 
-    Fonts::loadValue(lcd);
-    lcd->setTextColor(offline ? TFT_RED : TFT_ORANGE, TFT_BLACK);
-    lcd->setTextDatum(MC_DATUM);
-    lcd->drawString(offline ? "Disconnected" : "Stopped", cx, cy - 10);
-    Fonts::unload(lcd);
-
-    Fonts::loadLabel(lcd);
-    lcd->setTextColor(TFT_DARKGREY, TFT_BLACK);
-    lcd->drawString(line2, cx, cy + 14);
-    Fonts::unload(lcd);
+    WidgetPainter::drawCenteredText(lcd, cx, cy - 10, offline ? "Disconnected" : "Stopped",
+                                    Fonts::loadValue, offline ? TFT_RED : TFT_ORANGE);
+    WidgetPainter::drawCenteredText(lcd, cx, cy + 14, line2, Fonts::loadLabel, TFT_DARKGREY);
 
     lcd->clearClipRect();
 }
@@ -117,9 +111,9 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
 
     LGFX* lcd = getLcd();
 
-    const bool titleChanged = forceRedraw || strcmp(audioData_.title, lastTitle_) != 0;
-    const bool artistChanged = forceRedraw || strcmp(audioData_.artist, lastArtist_) != 0;
-    const bool albumChanged = forceRedraw || strcmp(audioData_.album, lastAlbum_) != 0;
+    const bool titleChanged = forceRedraw || !lastTitle_.equals(audioData_.title);
+    const bool artistChanged = forceRedraw || !lastArtist_.equals(audioData_.artist);
+    const bool albumChanged = forceRedraw || !lastAlbum_.equals(audioData_.album);
 
     if (titleChanged) {
         lcd->fillRect(dimensions_.x, titleY_, dimensions_.width, kTitleRowH, TFT_BLACK);
@@ -131,7 +125,7 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
                         titleY_);
         Fonts::unload(lcd);
         lcd->clearClipRect();
-        snprintf(lastTitle_, sizeof(lastTitle_), "%s", audioData_.title);
+        lastTitle_.set(audioData_.title);
     }
 
     if (artistChanged) {
@@ -143,7 +137,7 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
         lcd->drawString(audioData_.artist, dimensions_.x, artistY_);
         Fonts::unload(lcd);
         lcd->clearClipRect();
-        snprintf(lastArtist_, sizeof(lastArtist_), "%s", audioData_.artist);
+        lastArtist_.set(audioData_.artist);
     }
 
     if (albumChanged) {
@@ -155,7 +149,7 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
         lcd->drawString(audioData_.album, dimensions_.x, albumY_);
         Fonts::unload(lcd);
         lcd->clearClipRect();
-        snprintf(lastAlbum_, sizeof(lastAlbum_), "%s", audioData_.album);
+        lastAlbum_.set(audioData_.album);
     }
 
     const uint32_t duration = audioData_.durationMs;
@@ -194,7 +188,7 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
     // left (grey) — both share one row instead of a separate quality line.
     char quality[24];
     AudioFormat::formatQuality(audioData_.format, audioData_.bitrate, quality, sizeof(quality));
-    const bool qualityChanged = strcmp(quality, lastQuality_) != 0;
+    const bool qualityChanged = !lastQuality_.equals(quality);
 
     if (forceRedraw || position != lastPositionMs_ || duration != lastDurationMs_ ||
         qualityChanged) {
@@ -221,6 +215,6 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
 
         lastPositionMs_ = position;
         lastDurationMs_ = duration;
-        snprintf(lastQuality_, sizeof(lastQuality_), "%s", quality);
+        lastQuality_.set(quality);
     }
 }

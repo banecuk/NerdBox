@@ -5,6 +5,7 @@
 
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 #include "utils/FreshnessTransition.h"
 
 // Compact Ethernet throughput widget — sits right of the Settings button in
@@ -44,13 +45,13 @@ class NetworkTrafficWidget : public Widget {
     // time), not the raw Mbps value — comparing raw floats redraws on every
     // tiny fluctuation even when the rounded text on screen wouldn't change,
     // which reads as the units flickering. Empty string forces the first draw.
-    char lastUpText_[16] = "";
-    char lastDownText_[16] = "";
+    CachedString<16> lastUpText_;
+    CachedString<16> lastDownText_;
     uint16_t lastUpColor_ = 0;
     uint16_t lastDownColor_ = 0;
 
     void drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData, bool forceRedraw,
-                 char* lastText, size_t lastTextSize, uint16_t& lastColor);
+                 CachedString<16>& lastText, uint16_t& lastColor);
     void drawArrow(int16_t cx, int16_t cy, bool up, uint16_t color);
 
     // Colour by absolute Mbps (idle threshold) and utilisation percentage of

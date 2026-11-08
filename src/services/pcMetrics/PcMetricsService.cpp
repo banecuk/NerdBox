@@ -54,8 +54,12 @@ bool PcMetricsService::fetchRawJson(String& outRaw) {
     if (!http.begin(config_.endpoints.pcMetricsApi)) {
         return false;
     }
-    http.setConnectTimeout(1000);
-    http.setTimeout(2000);
+    // Runs synchronously on the web server's (main-loop) task, so every other
+    // request (POST /audio included) waits on it — bound it by the same LAN
+    // timeouts as the regular poll rather than HTTPClient's 5 s defaults
+    // (A22; noted on the /api help page).
+    http.setConnectTimeout(HttpClient::kDefaultConnectTimeoutMs);
+    http.setTimeout(HttpClient::kDefaultResponseTimeoutMs);
     const int code = http.GET();
     const bool ok = (code == HTTP_CODE_OK);
     if (ok) {

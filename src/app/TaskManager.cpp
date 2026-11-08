@@ -36,8 +36,8 @@ bool TaskManager::createTasks() {
         return false;
     }
 
-    if (config_.watchdogEnableOnBoot) {
-        initializeWatchdog();
+    if (watchdogInitialized_) {
+        addTasksToWatchdog();
     }
 
     logger_.info("All tasks created successfully", true);
@@ -70,20 +70,52 @@ bool TaskManager::createTask(TaskFunction_t taskFunction, const char* taskName, 
     return true;
 }
 
-void TaskManager::initializeWatchdog() {
+bool TaskManager::initWatchdog(uint32_t timeoutMs) {
+    // esp_task_wdt_init() takes whole seconds on this core (IDF 4.4).
+    esp_err_t ret = esp_task_wdt_init(timeoutMs / 1000, true);
+    if (ret == ESP_ERR_INVALID_STATE) {
+        // Already initialised (e.g. by the core at startup on IDF 5) — it is
+        // armed, just not by us. See B6's note. (IDF 4.4 re-inits and returns
+        // ESP_OK instead.)
+        logger_.warning("Watchdog already initialized, keeping existing config");
+        ret = ESP_OK;
+    }
+    if (ret != ESP_OK) {
+        logger_.errorf("Failed to initialize watchdog: %s", esp_err_to_name(ret));
+        watchdogInitialized_ = false;
+        return false;
+    }
+    watchdogInitialized_ = true;
+    return true;
+}
+
+bool TaskManager::addTaskToWatchdog(TaskHandle_t handle, const char* taskName) {
+    esp_err_t ret = esp_task_wdt_add(handle);
+    if (ret != ESP_OK) {
+        logger_.errorf("Failed to add %s to watchdog: %s", taskName, esp_err_to_name(ret));
+        return false;
+    }
+    return true;
+}
+
+bool TaskManager::addCurrentTaskToWatchdog() {
+    if (!watchdogInitialized_)
+        return false;
+    const bool added = addTaskToWatchdog(nullptr, "main task");
+    mainTaskWatched_ = added;
+    return added;
+}
+
+void TaskManager::feedMainTaskWatchdog() {
+    resetWatchdog(mainTaskWatched_);
+}
+
+void TaskManager::addTasksToWatchdog() {
     if (screenTaskHandle_ != nullptr) {
-        esp_err_t ret = esp_task_wdt_add(screenTaskHandle_);
-        if (ret != ESP_OK) {
-            logger_.errorf("Failed to add %s to watchdog: %s", kScreenTaskName,
-                           esp_err_to_name(ret));
-        }
+        screenTaskWatched_ = addTaskToWatchdog(screenTaskHandle_, kScreenTaskName);
     }
     if (backgroundTaskHandle_ != nullptr) {
-        esp_err_t ret = esp_task_wdt_add(backgroundTaskHandle_);
-        if (ret != ESP_OK) {
-            logger_.errorf("Failed to add %s to watchdog: %s", kBackgroundTaskName,
-                           esp_err_to_name(ret));
-        }
+        backgroundTaskWatched_ = addTaskToWatchdog(backgroundTaskHandle_, kBackgroundTaskName);
     }
     LOG_DEBUG(logger_, "Watchdog initialized for tasks", true);
 }
@@ -109,7 +141,7 @@ void TaskManager::executeScreenTask() {
         }
 
         // Feed the watchdog every tick regardless of init state.
-        resetWatchdog();
+        resetWatchdog(screenTaskWatched_);
 
         // Periodic stack monitoring
         if (millis() - lastStackLogTime >= kStackMonitorIntervalMs) {
@@ -129,9 +161,9 @@ void TaskManager::executeBackgroundTask() {
         // Feed the watchdog after every job, not just once per tick — several
         // blocking jobs (HTTP fetch, WiFi reconnect) coming due on the same
         // tick would otherwise stack up before a single reset.
-        jobScheduler_.tick(jobs_, millis(), [this] { resetWatchdog(); });
+        jobScheduler_.tick(jobs_, millis(), [this] { resetWatchdog(backgroundTaskWatched_); });
 
-        resetWatchdog();
+        resetWatchdog(backgroundTaskWatched_);
 
         if (millis() - lastStackLogTime >= kStackMonitorIntervalMs) {
             logStackHighWaterMark(kBackgroundTaskName);
@@ -154,8 +186,11 @@ void TaskManager::logStackHighWaterMark(const char* taskName) {
 #endif
 }
 
-void TaskManager::resetWatchdog() {
-    if (config_.watchdogEnableOnBoot) {
+void TaskManager::resetWatchdog(const std::atomic<bool>& taskWatched) {
+    // Only a task actually subscribed to an armed WDT resets it (B6) —
+    // AppSettings::watchdogEnableOnBoot says what was requested, not what
+    // succeeded.
+    if (taskWatched) {
         esp_task_wdt_reset();
     }
 }

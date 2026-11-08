@@ -9,6 +9,7 @@
 #include "ui/core/DisplayContext.h"
 #include "ui/core/Layout.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 #include "utils/DataFreshnessGuard.h"
 
 // Full-screen disk info list (the content area of the DISKS screen): one row
@@ -92,7 +93,7 @@ class DiskInfoWidget : public Widget {
     static constexpr uint8_t kRateWrite = 1;
 
     struct DiskRow {
-        char name[4] = "";
+        CachedString<4> name;
         float freeSpacePercent = 0.0f;
         float readKBPerSec = 0.0f;
         float writeKBPerSec = 0.0f;
@@ -101,7 +102,7 @@ class DiskInfoWidget : public Widget {
         bool drawn = false;
         int lastPercent = -1;
         uint16_t lastBarColor = 0xFFFF;  // sentinel: force first draw
-        char lastRateText[2][20] = {{""}, {""}};
+        CachedString<20> lastRateText[2];
         uint16_t lastRateColor[2] = {0xFFFF, 0xFFFF};    // sentinel: force first draw
         uint16_t lastLetterColor[2] = {0xFFFF, 0xFFFF};  // sentinel: force first draw
     };

@@ -2,6 +2,7 @@
 
 #include "ui/resources/FontRegistry.h"
 #include "ui/resources/icons_24.h"
+#include "ui/widgets/base/WidgetPainter.h"
 
 namespace {
 // Maps the enum to its backing bitmap — nullptr for NONE/unrendered icons.
@@ -26,25 +27,22 @@ const uint16_t* iconBitmap(ButtonIcon icon) {
 // Constructors
 // ---------------------------------------------------------------------------
 
-ButtonWidget::ButtonWidget(const std::string& label, const WidgetInterface::Dimensions& dims,
+ButtonWidget::ButtonWidget(const char* label, const WidgetInterface::Dimensions& dims,
                            uint32_t updateIntervalMs, TapAction tap, uint16_t bgColor,
                            uint16_t textColor)
-    : Widget(dims, updateIntervalMs),
-      label_(label),
-      icon_(ButtonIcon::NONE),
-      tap_(std::move(tap)),
-      bgColor_(bgColor),
-      textColor_(textColor) {}
+    : ButtonWidget(ButtonIcon::NONE, label, dims, updateIntervalMs, std::move(tap), bgColor,
+                   textColor) {}
 
-ButtonWidget::ButtonWidget(ButtonIcon icon, const std::string& label,
+ButtonWidget::ButtonWidget(ButtonIcon icon, const char* label,
                            const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                            TapAction tap, uint16_t bgColor, uint16_t textColor)
     : Widget(dims, updateIntervalMs),
-      label_(label),
       icon_(icon),
       tap_(std::move(tap)),
       bgColor_(bgColor),
-      textColor_(textColor) {}
+      textColor_(textColor) {
+    label_.set(label ? label : "");
+}
 
 // ---------------------------------------------------------------------------
 // drawStatic — background fill + border; called once on init / force repaint
@@ -119,7 +117,7 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
     const int16_t cy = dimensions_.y + dimensions_.height / 2;
 
     const bool hasIcon = (icon_ != ButtonIcon::NONE);
-    const bool hasLabel = !label_.empty();
+    const bool hasLabel = label_.c_str()[0] != '\0';
 
     if (hasIcon && !hasLabel) {
         // Icon only — centred
@@ -135,11 +133,7 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
 
     } else if (!hasIcon && hasLabel) {
         // Label only — centred (original behaviour)
-        lcd->setTextColor(fg, bg);
-        lcd->setTextDatum(MC_DATUM);
-        Fonts::loadLabel(lcd);
-        lcd->drawString(label_.c_str(), cx, cy);
-        Fonts::unload(lcd);
+        WidgetPainter::drawCenteredText(lcd, cx, cy, label_.c_str(), Fonts::loadLabel, fg, bg);
 
     } else if (hasIcon && hasLabel) {
         // Icon left + gap + label right, combined block centred in button
@@ -163,11 +157,7 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
             lcd->pushImage(ix, iy, kIconSize, kIconSize, bitmap, static_cast<uint16_t>(0x0000));
         }
 
-        lcd->setTextColor(fg, bg);
-        lcd->setTextDatum(MC_DATUM);
-        Fonts::loadLabel(lcd);
-        lcd->drawString(label_.c_str(), labelX, cy);
-        Fonts::unload(lcd);
+        WidgetPainter::drawCenteredText(lcd, labelX, cy, label_.c_str(), Fonts::loadLabel, fg, bg);
     }
 }
 
