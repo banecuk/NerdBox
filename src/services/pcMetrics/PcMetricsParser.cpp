@@ -1,5 +1,6 @@
 #include "PcMetricsParser.h"
 
+#include "services/JsonNumber.h"
 #include "utils/ScopedLock.h"
 
 namespace PcMetricsParser {
@@ -102,7 +103,8 @@ bool parseCpuData(JsonObjectConst cpu, PcMetrics& outData, uint8_t configuredCor
         actualCores = min(actualCores, static_cast<uint8_t>(maxThreads));
 
         for (int i = 0; i < actualCores; i++) {
-            newThreadLoad[i] = static_cast<uint8_t>(coreLoads[i] | 0);
+            // roundAs, not `| 0`: a fractional load would read as 0 (B5).
+            newThreadLoad[i] = JsonNumber::roundAs<uint8_t>(coreLoads[i]);
         }
 
         if (actualCores < coreCount) {
@@ -211,7 +213,7 @@ bool parseMotherboardData(JsonObjectConst motherboard, PcMetrics& outData) {
         uint8_t newFanCount = 0;
 
         for (size_t i = 0; i < systemFans.size() && newFanCount < PcMetrics::kMaxSystemFans; i++) {
-            uint16_t rpm = static_cast<uint16_t>(systemFans[i] | 0);
+            uint16_t rpm = JsonNumber::roundAs<uint16_t>(systemFans[i]);  // B5
             if (rpm > 0) {
                 newFans[newFanCount++] = rpm;
             }

@@ -2,7 +2,6 @@
 
 #include <ArduinoJson.h>
 
-#include "config/Environment.h"
 #include "network/NetworkManager.h"
 #include "services/airQuality/AirQualityData.h"
 #include "services/JsonHttpService.h"
@@ -11,7 +10,8 @@
 // Fetches and parses the AirVisual nearest-city API response.
 // Call fetchData() from the background task — it writes results directly into
 // the shared AirQualityData struct. fetchData() itself lives in JsonHttpService;
-// only the filter and the parse are specific to this endpoint.
+// the filter and the JSON -> AirQualityData mapping live in AirQualityParser
+// (host-tested), so this class only adds the endpoint URL and the publish.
 //
 // Refresh cadence: 30 minutes — within the AirVisual free-tier rate limit.
 class AirQualityService : public JsonHttpService<AirQualityData, AirQualityService> {

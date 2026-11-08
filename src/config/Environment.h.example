@@ -1,5 +1,9 @@
 #pragma once
 
+// CI copies this file to Environment.h before building (.github/workflows/ci.yml),
+// so it must declare the same symbol set as the real header. Add any new
+// constant here too, with a placeholder value, or CI breaks.
+
 constexpr char WIFI_SSID[] = "-";
 constexpr char WIFI_PASSWORD[] = "-";
 

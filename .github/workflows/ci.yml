@@ -32,6 +32,11 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
+      - name: Create Environment.h from template
+        # Environment.h is gitignored (real secrets); a fresh clone only has
+        # the .example. It must declare the same symbols as the real header.
+        run: cp src/config/Environment.h.example src/config/Environment.h
+
       - name: Build (${{ matrix.env }})
         # Linux runner also catches include-case bugs (e.g. UIController.h vs
         # ui/core/UiController.h) that a case-insensitive Windows filesystem

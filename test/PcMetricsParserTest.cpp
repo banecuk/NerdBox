@@ -276,3 +276,36 @@ TEST(PcMetricsParserTest, MatchingCoreCountDoesNotWarn) {
 
     EXPECT_TRUE(logger.lastWarning().empty());
 }
+
+// ─── Fractional array entries (B5) ──────────────────────────────────────────
+// `node | 0` returns the fallback for a float node, so fractional CoreLoads /
+// SystemFans used to read as 0. These fixtures use the float form on purpose.
+
+TEST(PcMetricsParserTest, FractionalCoreLoadsAreReadNotZeroed) {
+    JsonDocument doc;
+    JsonObjectConst metrics =
+        metricsOf(doc, R"({"Metrics": {"Cpu": {"CoreLoads": [12.4, 87.6, 0.0, 100.0]}}})");
+
+    PcMetrics m;
+    NullLogger logger;
+    PcMetricsParser::parseAllSections(metrics, m, 4, logger);
+
+    EXPECT_EQ(m.cpu_thread_load[0], 12);
+    EXPECT_EQ(m.cpu_thread_load[1], 88);
+    EXPECT_EQ(m.cpu_thread_load[2], 0);
+    EXPECT_EQ(m.cpu_thread_load[3], 100);
+}
+
+TEST(PcMetricsParserTest, FractionalSystemFansAreReadNotZeroed) {
+    JsonDocument doc;
+    JsonObjectConst metrics =
+        metricsOf(doc, R"({"Metrics": {"Motherboard": {"SystemFans": [812.7, 0.0, 905.2]}}})");
+
+    PcMetrics m;
+    NullLogger logger;
+    PcMetricsParser::parseAllSections(metrics, m, 4, logger);
+
+    ASSERT_EQ(m.system_fan_count, 2);
+    EXPECT_EQ(m.system_fans[0], 813);
+    EXPECT_EQ(m.system_fans[1], 905);
+}

@@ -5,6 +5,7 @@
 #include <freertos/task.h>
 
 #include "config/Limits.h"
+#include "services/network/InternetVerdict.h"
 #include "services/network/NetworkStatus.h"
 #include "utils/logging/LoggerInterface.h"
 
@@ -91,14 +92,12 @@ class NetworkStatusService {
     LoggerInterface& logger_;
 
     uint8_t probeTarget_ = 0;  // round-robin index into kProbeUrls
-    // Rolling pass/fail buffer, one slot per endpoint.
-    uint8_t results_[kNumEndpoints] = {};
-    // Tracks which slots have received at least one real result. Until every
-    // slot has been probed once (kNumEndpoints * kProbeIntervalMs after boot),
-    // recordResult() must only weigh the slots that have actually been probed
-    // — otherwise never-probed slots default to "fail" and the status is
-    // misreported as DEGRADED/DOWN during the warm-up window.
-    bool probed_[kNumEndpoints] = {};
+    // Rolling pass/fail buffer, one slot per endpoint. `probed` tracks which
+    // slots have received at least one real result — until every slot has
+    // been probed once, only the probed ones count towards the verdict
+    // (see classifyInternet), otherwise never-probed slots would read as
+    // failures and misreport DEGRADED/DOWN during the warm-up window.
+    ProbeResult probes_[kNumEndpoints] = {};
 
     static constexpr uint32_t kProbeStack = 4096;
     static constexpr uint32_t kProbeTimeoutMs = 1500;

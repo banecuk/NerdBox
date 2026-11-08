@@ -111,54 +111,20 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
 }
 
 // ---------------------------------------------------------------------------
-// recordResult — update per-endpoint slot and recompute internet state
-//
-// Only slots that have actually been probed at least once count towards the
-// verdict — a never-probed slot is neither a pass nor a fail. This keeps the
-// status accurate during the ~kNumEndpoints * kProbeIntervalMs warm-up window
-// right after boot, when most slots haven't been probed yet.
-//
-// DOWN     — every probed slot failed
-// OK       — at most 1 probed slot failed. These are third-party endpoints;
-//            one of them going down (or rate-limiting us) says nothing about
-//            this device's connectivity, so a lone failure is not flagged —
-//            its dot still turns red in NetworkWidget, the globe stays white.
-// WARNING  — exactly 2 probed slots failed
-// DEGRADED — 3 or more probed slots failed, but not all of them
+// recordResult — update per-endpoint slot and recompute internet state.
+// The verdict rules live in classifyInternet() (InternetVerdict.h).
 // ---------------------------------------------------------------------------
 
 void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointIdx, bool success) {
-    results_[endpointIdx] = success ? 1u : 0u;
-    probed_[endpointIdx] = true;
+    probes_[endpointIdx].ok = success;
+    probes_[endpointIdx].probed = true;
     status.endpoint_ok[endpointIdx] = success;
-
-    uint8_t passes = 0;
-    uint8_t probedCount = 0;
-    for (uint8_t i = 0; i < kNumEndpoints; ++i) {
-        if (probed_[i]) {
-            ++probedCount;
-            passes += results_[i];
-        }
-    }
-
-    const uint8_t failures = probedCount - passes;
-
-    if (probedCount == 0) {
-        status.internet = NetworkStatus::Internet::UNKNOWN;
-    } else if (failures == probedCount) {
-        status.internet = NetworkStatus::Internet::DOWN;
-    } else if (failures <= 1) {
-        status.internet = NetworkStatus::Internet::OK;
-    } else if (failures == 2) {
-        status.internet = NetworkStatus::Internet::WARNING;
-    } else {
-        status.internet = NetworkStatus::Internet::DEGRADED;
-    }
+    status.internet = classifyInternet(probes_, kNumEndpoints);
 }
 
 bool NetworkStatusService::allEndpointsProbed() const {
     for (uint8_t i = 0; i < kNumEndpoints; ++i) {
-        if (!probed_[i])
+        if (!probes_[i].probed)
             return false;
     }
     return true;

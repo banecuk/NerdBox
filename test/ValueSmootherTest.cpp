@@ -1,3 +1,4 @@
+// This file owns the single main() for the whole native test binary; don't add another.
 #include "ValueSmoother.h"
 
 #include <cmath>
