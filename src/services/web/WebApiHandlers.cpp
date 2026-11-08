@@ -236,10 +236,10 @@ void WebApiHandlers::writeStatusUi(JsonDocument& doc) {
 }
 
 void WebApiHandlers::writeStatusWeather(JsonDocument& doc) {
-    // weather — open-meteo forecast feed freshness, so the "fetch only while
-    // displayed" gating can be observed without a serial monitor.
-    // refresh_pending reflects WeatherWidget's midnight-rollover signal
-    // awaiting the background job.
+    // weather — open-meteo forecast feed freshness, observable without a
+    // serial monitor. refresh_pending is a screen-entry or midnight-rollover
+    // refetch request (WeatherScreen::onEnter() / WeatherJob) awaiting the
+    // background job.
     JsonObject weather = doc["weather"].to<JsonObject>();
     weather["available"] = weatherData_.freshness.available();
     weather["age_ms"] = weatherData_.freshness.ageMs(millis());

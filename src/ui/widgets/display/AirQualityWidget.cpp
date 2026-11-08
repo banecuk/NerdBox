@@ -13,13 +13,11 @@
 
 AirQualityWidget::AirQualityWidget(const WidgetInterface::Dimensions& dims,
                                    uint32_t updateIntervalMs, const AirQualityData& airData,
-                                   uint32_t staleTimeoutMs, EventType action,
-                                   ActionCallback callback)
+                                   uint32_t staleTimeoutMs, TapAction tap)
     : Widget(dims, updateIntervalMs),
       airData_(airData),
       freshness_(airData.freshness, staleTimeoutMs),
-      action_(action),
-      callback_(std::move(callback)) {}
+      tap_(std::move(tap)) {}
 
 // ---------------------------------------------------------------------------
 // drawStatic
@@ -30,7 +28,6 @@ void AirQualityWidget::onDrawStatic() {
 
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    lastAvail_ = false;
     lastTemp_ = -128;
     lastHumidity_ = 0xFF;
     lastPressure_ = -1;
@@ -47,16 +44,16 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    if (!freshness_.isFresh()) {
-        if (forceRedraw || lastAvail_) {
+    const auto edge = freshness_.poll();
+    if (!freshness_.fresh()) {
+        if (forceRedraw || edge == FreshnessTransition::Edge::BecameStale) {
             drawNoData();
-            lastAvail_ = false;
         }
         return;
     }
 
     const bool iconChanged = (strncmp(airData_.icon_code, lastIcon_, sizeof(lastIcon_)) != 0);
-    const bool becomingAvailable = !lastAvail_;
+    const bool becomingAvailable = edge == FreshnessTransition::Edge::BecameFresh;
 
     const bool tempChanged = forceRedraw || becomingAvailable || airData_.temperature != lastTemp_;
     const bool humidityChanged =
@@ -106,7 +103,6 @@ void AirQualityWidget::onDraw(bool forceRedraw) {
         drawValueWithUnit(3, true, bufAqi, "", aqiColor(airData_.aqi_us));
 
     // Cache
-    lastAvail_ = true;
     lastTemp_ = airData_.temperature;
     lastHumidity_ = airData_.humidity;
     lastPressure_ = airData_.pressure;
@@ -278,9 +274,5 @@ uint16_t AirQualityWidget::aqiColor(uint16_t aqi) const {
 }
 
 bool AirQualityWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
-    if (!callback_) {
-        return false;
-    }
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }

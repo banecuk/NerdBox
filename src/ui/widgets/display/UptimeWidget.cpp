@@ -83,7 +83,6 @@ void UptimeWidget::onDraw(bool forceRedraw) {
 
     if (!forceRedraw && isDayMode == dayMode_ &&
         lastRendered_.equals(current)) {
-        clearDirty();
         return;
     }
 
@@ -118,7 +117,6 @@ void UptimeWidget::onDraw(bool forceRedraw) {
     }
 
     lastRendered_.set(current);
-    clearDirty();
 }
 
 bool UptimeWidget::handleTouch(uint16_t x, uint16_t y) {

@@ -6,6 +6,7 @@
 #include "core/events/EventTypes.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
 
@@ -20,11 +21,8 @@
 // tile stays tappable even while showing the "---" placeholder.
 class FpsWidget : public Widget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
-    FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-              uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action = EventType::NONE,
-              ActionCallback callback = nullptr);
+    FpsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+              PcMetrics& pcMetrics, TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -34,8 +32,7 @@ class FpsWidget : public Widget {
 
  private:
     PcMetrics& pcMetrics_;
-    EventType action_;
-    ActionCallback callback_;
+    TapAction tap_;
     DataFreshnessGuard freshnessGuard_;
 
     int16_t lastDrawnFps_ = -2;  // sentinel so the first draw always renders

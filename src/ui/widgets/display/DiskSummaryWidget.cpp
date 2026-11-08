@@ -6,13 +6,11 @@
 #include "services/pcMetrics/DiskSnapshot.h"
 
 DiskSummaryWidget::DiskSummaryWidget(const WidgetInterface::Dimensions& dims,
-                                     uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                                     EventType action, ActionCallback callback)
+                                     uint32_t updateIntervalMs, PcMetrics& pcMetrics, TapAction tap)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.freshness),
-      action_(action),
-      callback_(std::move(callback)) {}
+      freshness_(pcMetrics.freshness),
+      tap_(std::move(tap)) {}
 
 void DiskSummaryWidget::onDrawStatic() {
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
@@ -23,14 +21,14 @@ void DiskSummaryWidget::onDrawStatic() {
     lastWriteText_[0] = '\0';
     lastReadColor_ = 0;
     lastWriteColor_ = 0;
-    lastHasData_ = false;
 }
 
 void DiskSummaryWidget::onDraw(bool forceRedraw) {
     if (!getLcd() || !isStaticDrawn_)
         return;
 
-    const bool hasData = freshnessGuard_.isFresh();
+    const bool availabilityFlipped = freshness_.poll() != FreshnessTransition::Edge::None;
+    const bool hasData = freshness_.fresh();
 
     float readKBps = 0.0f;
     float writeKBps = 0.0f;
@@ -38,14 +36,12 @@ void DiskSummaryWidget::onDraw(bool forceRedraw) {
         DiskSnapshot::totals(pcMetrics_, readKBps, writeKBps);
     }
 
-    const bool dataAvailabilityChanged = forceRedraw || hasData != lastHasData_;
+    const bool dataAvailabilityChanged = forceRedraw || availabilityFlipped;
     const int16_t rowH = dimensions_.height / 2;
     drawRow(dimensions_.y, false, writeKBps * kKBpsToMBps, hasData, dataAvailabilityChanged,
             lastWriteText_, sizeof(lastWriteText_), lastWriteColor_);
     drawRow(dimensions_.y + rowH, true, readKBps * kKBpsToMBps, hasData, dataAvailabilityChanged,
             lastReadText_, sizeof(lastReadText_), lastReadColor_);
-
-    lastHasData_ = hasData;
 }
 
 void DiskSummaryWidget::drawRow(int16_t rowY, bool isRead, float mbps, bool hasData,
@@ -104,8 +100,5 @@ uint16_t DiskSummaryWidget::writeColor(float mbps) {
 }
 
 bool DiskSummaryWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
-    if (!callback_)
-        return false;
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }

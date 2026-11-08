@@ -12,18 +12,15 @@
     #define DEBUG_MODE 0
 #endif
 
-ThreadsWidget::ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                             uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                             const AppSettings& config, ApplicationMetrics& systemMetrics,
-                             EventType action, ActionCallback callback)
+ThreadsWidget::ThreadsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                             PcMetrics& pcMetrics, const AppSettings& config,
+                             ApplicationMetrics& systemMetrics, TapAction tap)
     : Widget(dims, updateIntervalMs),
-      context_(context),
       pcMetrics_(pcMetrics),
       config_(config),
       systemMetrics_(systemMetrics),
-      action_(action),
-      callback_(std::move(callback)),
-      freshnessGuard_(pcMetrics.freshness) {}
+      tap_(std::move(tap)),
+      freshness_(pcMetrics.freshness) {}
 
 void ThreadsWidget::initialize(DisplayContext& context) {
     Widget::initialize(context);
@@ -31,8 +28,12 @@ void ThreadsWidget::initialize(DisplayContext& context) {
     // Set update interval to the faster threads refresh rate for high FPS animation
     setUpdateInterval(config_.hardwareMonitorThreadsRefreshMs);
 
-    // Initialize the value smoother with current data if available
-    if (freshnessGuard_.isFresh() && ensureLayoutInitialized()) {
+    // Initialize the value smoother with current data if available. Recording
+    // the verdict here (rather than leaving it to the first onDraw()) keeps a
+    // widget that starts fresh from treating its first draw as a stale→fresh
+    // recovery.
+    freshness_.poll(freshness_.isFreshNow() && ensureLayoutInitialized());
+    if (freshness_.fresh()) {
         updateSmoothedValues();
     }
 }
@@ -94,9 +95,10 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool fresh = freshnessGuard_.isFresh() && ensureLayoutInitialized();
+    const auto edge = freshness_.poll(freshness_.isFreshNow() && ensureLayoutInitialized());
+    const bool fresh = freshness_.fresh();
 
-    if (!wasFresh_ && fresh) {
+    if (edge == FreshnessTransition::Edge::BecameFresh) {
         // Coming back from stale: reset cached bar state so the next
         // drawBars() treats every bar as changed instead of diffing against
         // pre-outage heights/colors left over from before the "No Data"
@@ -116,14 +118,12 @@ void ThreadsWidget::onDraw(bool forceRedraw) {
 #else
         drawBars();
 #endif
-    } else if (wasFresh_) {
-        // Just went stale: replace the frozen bars with an explicit message
-        // instead of leaving them looking like live (if dim) data.
+    } else if (edge == FreshnessTransition::Edge::BecameStale || forceRedraw) {
+        // Just went stale (or a forced repaint while stale): replace the
+        // frozen bars with an explicit message instead of leaving them
+        // looking like live (if dim) data.
         drawNoDataMessage();
     }
-
-    wasFresh_ = fresh;
-    clearDirty();
 }
 
 void ThreadsWidget::updateSmoothedValues() {
@@ -187,9 +187,9 @@ void ThreadsWidget::drawBars() {
         newHeight = min(newHeight, maxBarHeight);
         newHeight = newHeight + 1;  // Ensure minimum visible height
 
-        const uint16_t newColor = isEcore_[i]
-                                       ? context_.getColors().getColorFromPercentEcore(threadLoad)
-                                       : context_.getColors().getColorFromPercent(threadLoad, false);
+        const uint16_t newColor =
+            isEcore_[i] ? getContext().getColors().getColorFromPercentEcore(threadLoad)
+                        : getContext().getColors().getColorFromPercent(threadLoad, false);
         const uint16_t oldHeight = previousBarHeights_[i];
         const uint16_t oldColor = previousColors_[i];
 
@@ -234,9 +234,9 @@ bool ThreadsWidget::needsUpdate() const {
     // Mirrors onDraw()'s "fresh" without mutating layout state here: layout
     // initialization only happens inside ensureLayoutInitialized(), called
     // from the non-const onDraw()/initialize().
-    const bool dataFresh = freshnessGuard_.isFresh();
+    const bool dataFresh = freshness_.isFreshNow();
     const bool fresh = dataFresh && (coreCount_ != 0 || pcMetrics_.cpu_core_count != 0);
-    if (fresh != wasFresh_) {
+    if (fresh != freshness_.fresh()) {
         return true;  // one redraw to switch between bars and "No Data"
     }
     if (!fresh) {
@@ -245,14 +245,7 @@ bool ThreadsWidget::needsUpdate() const {
     return Widget::needsUpdate();
 }
 
-bool ThreadsWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!callback_)
-        return false;
-
-    if (x >= dimensions_.x && x < dimensions_.x + dimensions_.width && y >= dimensions_.y &&
-        y < dimensions_.y + dimensions_.height) {
-        callback_(action_);
-        return true;
-    }
-    return false;
+bool ThreadsWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
+    // WidgetManager has already hit-tested (x, y) against this widget's box.
+    return tap_.fire();
 }

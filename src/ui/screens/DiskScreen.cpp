@@ -9,9 +9,7 @@ DiskScreen::DiskScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
 void DiskScreen::createWidgets() {
     // Per-drive rows — content area above the bottom band.
     auto diskWidget = std::make_unique<DiskInfoWidget>(
-        uiController_.getDisplayContext(),
         WidgetInterface::Dimensions{0, 0, Layout::kScreenW, Layout::kContentH}, 250, pcMetrics_);
-    diskWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(diskWidget), "disk_info");
 
     addBackButton();

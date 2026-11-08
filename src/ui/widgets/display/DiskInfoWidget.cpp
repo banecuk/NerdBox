@@ -10,12 +10,9 @@
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/RateFormat.h"
 
-DiskInfoWidget::DiskInfoWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                               uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs),
-      context_(context),
-      pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.freshness) {}
+DiskInfoWidget::DiskInfoWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                               PcMetrics& pcMetrics)
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
 
 void DiskInfoWidget::onDrawStatic() {
     clearArea();
@@ -39,14 +36,11 @@ void DiskInfoWidget::onDraw(bool forceRedraw) {
 
     if (!available) {
         drawNoDataMessage();
-        clearDirty();
         return;
     }
 
     ensureRowsCreated();
     drawRows(stale);
-
-    clearDirty();
 }
 
 void DiskInfoWidget::ensureRowsCreated() {
@@ -109,10 +103,9 @@ void DiskInfoWidget::drawRow(size_t index, bool stale) {
     // low=blue/green → high=red, so pass the inverted value to match the main
     // screen's disk tiles (reversed thresholds on free space): a nearly-full
     // disk reads red, an almost-empty disk reads green.
-    const uint16_t barColor =
-        stale
-            ? Colors::kInactiveText
-            : context_.getColors().getColorFromPercent(static_cast<uint8_t>(100 - percentClamped));
+    const uint16_t barColor = stale ? Colors::kInactiveText
+                                    : getContext().getColors().getColorFromPercent(
+                                          static_cast<uint8_t>(100 - percentClamped));
     // Bar width tracks occupied space (100 - free%), not free space, so a
     // nearly-full disk shows a long red bar rather than a short one.
     const uint16_t barW = static_cast<uint16_t>(

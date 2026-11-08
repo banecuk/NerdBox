@@ -5,10 +5,11 @@
 #include <vector>
 
 #include "core/events/EventTypes.h"
-#include "ui/widgets/display/MetricWidget.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"
+#include "ui/widgets/base/TapAction.h"
+#include "ui/widgets/display/MetricWidget.h"
 
 // Slim, position-independent disk-band strip: a single row of per-drive
 // free-space tiles, each with a single solid activity line flush to its top
@@ -30,11 +31,8 @@
 //                            of the widget's height
 class DiskBandWidget : public PcDataCompositeWidget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
-    DiskBandWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                   uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                   EventType action = EventType::SHOW_DISKS, ActionCallback callback = nullptr);
+    DiskBandWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                   PcMetrics& pcMetrics, TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -70,8 +68,7 @@ class DiskBandWidget : public PcDataCompositeWidget {
     static constexpr uint16_t kLabelWidth = 14;
     static constexpr uint16_t kLabelColumnWidth = kLabelWidth + 1;
 
-    EventType action_;
-    ActionCallback callback_;
+    TapAction tap_;
 
     std::vector<std::unique_ptr<MetricWidget>> diskDriveWidgets_;
     std::vector<uint16_t> diskWriteLineColor_;

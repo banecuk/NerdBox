@@ -39,7 +39,7 @@ struct WeatherData {
     PublishedFlag freshness;
 
     // Mutex protecting days[] only — the background fetch (background task)
-    // and WeatherWidget's draw (screen task) both touch it. freshness /
+    // and the weather widgets' draws (screen task) both touch it. freshness /
     // dayCount / refreshRequested are word-sized and accessed as naturally
     // atomic, mirroring PcMetrics's disk_drives lock pattern.
     SemaphoreHandle_t daysMutex = xSemaphoreCreateMutex();
@@ -47,9 +47,9 @@ struct WeatherData {
     WeatherForecastDay days[AppConfig::Limits::kForecastDays];
     uint8_t dayCount = 0;
 
-    // Written by the screen task and read by the background job — signals
-    // that the forecast should refetch immediately regardless of staleness:
-    // on a local-midnight rollover (WeatherWidget), or on Weather screen
-    // entry (UiController::loadAndActivateScreen).
+    // Signals that the forecast should refetch immediately regardless of
+    // staleness: set on Weather screen entry (WeatherScreen::onEnter(), screen
+    // task) or on a local-midnight rollover (WeatherJob, background task);
+    // consumed by WeatherJob::run().
     std::atomic<bool> refreshRequested{false};
 };

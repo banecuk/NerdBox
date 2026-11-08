@@ -10,7 +10,7 @@
 #include "ui/resources/FontRegistry.h"
 #include "ui/resources/weather_icons_44.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 #include "utils/ScopedLock.h"
 
 #include <time.h>
@@ -34,14 +34,12 @@
 // Values use the smaller 15 pt value font so up to seven columns stay legible.
 // Each cell is dirty-cached so only changed cells repaint.
 //
-// The widget ticks every second while displayed to detect a local-midnight
-// rollover (compare device-local midnight against days[0].dayStart) and
-// signals WeatherData::refreshRequested so WeatherJob refetches immediately,
-// but throttles that cheap date check to weatherTimeCheckIntervalMs.
+// Read-only over WeatherData: the local-midnight rollover check that used to
+// live here (and in ForecastStripWidget) is WeatherJob's job now (A11).
 class WeatherWidget : public Widget {
  public:
     WeatherWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                  WeatherData& weatherData, const AppSettings& config);
+                  const WeatherData& weatherData, const AppSettings& config);
 
  protected:
     void onDraw(bool forceRedraw) override;
@@ -87,7 +85,7 @@ class WeatherWidget : public Widget {
         char wind[11] = {0};
     };
 
-    WeatherData& weatherData_;
+    const WeatherData& weatherData_;
     const AppSettings& config_;
 
     // WeatherData is sticky-available (WeatherService never clears
@@ -95,13 +93,10 @@ class WeatherWidget : public Widget {
     // or a stale outage-era forecast displays forever with no indication.
     // Timeout mirrors WeatherJob's own refetch threshold: once a refetch was
     // already due but hasn't landed, the display should say so.
-    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
+    FreshnessTransition freshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
 
     ColumnCache lastColumns_[kMaxColumns];
     uint8_t columns_ = 0;
-    bool lastHasData_ = false;
-
-    unsigned long lastTimeCheckMs_ = 0;
 
     // Column geometry for the current draw pass; recomputed on every count change.
     uint8_t colWidth_ = 0;
@@ -112,8 +107,6 @@ class WeatherWidget : public Widget {
     // Soft vertical dividers between columns — drawn once per structural
     // layout change (see docs-local/03-visual-ux.md V13), not per tick.
     void drawColumnDividers() const;
-
-    void checkMidnightRollover();
 
     const uint16_t* iconForWeatherCode(int16_t wmo) const;
 

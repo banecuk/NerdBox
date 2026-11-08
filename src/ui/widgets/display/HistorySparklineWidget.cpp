@@ -54,7 +54,7 @@ HistorySparklineWidget::HistorySparklineWidget(const WidgetInterface::Dimensions
                                                uint32_t updateIntervalMs, PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.freshness),
+      freshness_(pcMetrics.freshness),
       cpuLoadHistory_(plotWidthForHalf(dims, true) / kColWidth),
       gpuLoadHistory_(plotWidthForHalf(dims, true) / kColWidth),
       ramLoadHistory_(plotWidthForHalf(dims, false) / kColWidth),
@@ -137,7 +137,7 @@ void HistorySparklineWidget::drawRowBorders() {
 }
 
 bool HistorySparklineWidget::sampleTick() {
-    if (!freshnessGuard_.isFresh()) {
+    if (!freshness_.isFreshNow()) {
         sampledThisTick_ = false;
         return false;
     }
@@ -252,27 +252,24 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool hasData = freshnessGuard_.isFresh();
-    if (!hasData) {
+    const auto edge = freshness_.poll();
+    if (!freshness_.fresh()) {
         // Blank the whole widget (captions included) the moment data goes
         // stale, rather than leaving a frozen last-known plot on screen —
         // an unmoving sparkline reads as live data, which it no longer is.
-        if (forceRedraw || lastHasData_) {
+        if (forceRedraw || edge == FreshnessTransition::Edge::BecameStale) {
             getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                                kBgColor);
         }
-        lastHasData_ = false;
-        clearDirty();
         return;
     }
 
     // Coming back from stale: captions were blanked above, so repaint them
     // (and reset the redraw caches so every column repaints fresh) before
     // resuming normal per-column diffing.
-    if (!lastHasData_) {
+    if (edge == FreshnessTransition::Edge::BecameFresh) {
         onDrawStatic();
     }
-    lastHasData_ = true;
 
     if (pendingFullRepaint_) {
         forceRedraw = true;
@@ -289,7 +286,6 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
         // No new sample landed and nothing else forces a repaint — the
         // per-column diff in drawRow would just re-encode every column to
         // discover nothing changed, so skip the whole pass.
-        clearDirty();
         return;
     }
 
@@ -307,6 +303,4 @@ void HistorySparklineWidget::onDraw(bool forceRedraw) {
             kVramColorDim, kVramLowThreshold, kRamVramWarnThreshold, kVramWarnColor,
             forceRedraw);
     lcd->endWrite();
-
-    clearDirty();
 }

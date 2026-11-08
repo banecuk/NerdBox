@@ -18,8 +18,8 @@
 // a gap in the sparkline rather than a zero dip; the big number shows "---".
 class GameFpsWidget : public Widget {
  public:
-    GameFpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                  uint32_t updateIntervalMs, PcMetrics& pcMetrics);
+    GameFpsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                  PcMetrics& pcMetrics);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 

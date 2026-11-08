@@ -51,12 +51,9 @@ float valueSwapUsed(const PcMetrics& m) {
 }
 }  // namespace
 
-PcMetricsWidget::PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                                 uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
-                                 ActionCallback callback)
-    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics),
-      action_(action),
-      callback_(std::move(callback)) {
+PcMetricsWidget::PcMetricsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                                 PcMetrics& pcMetrics, TapAction tap)
+    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics), tap_(std::move(tap)) {
     buildFixedWidgets();
 }
 
@@ -280,7 +277,7 @@ bool PcMetricsWidget::needsUpdate() const {
 }
 
 bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!callback_)
+    if (!tap_.isSet())
         return false;
 
     for (uint8_t i = kGpuTileFirstIndex; i <= kGpuTileLastIndex; ++i) {
@@ -289,8 +286,7 @@ bool PcMetricsWidget::handleTouch(uint16_t x, uint16_t y) {
             continue;
         const auto d = widget->getDimensions();
         if (x >= d.x && x < d.x + d.width && y >= d.y && y < d.y + d.height) {
-            callback_(action_);
-            return true;
+            return tap_.fire();
         }
     }
     return false;

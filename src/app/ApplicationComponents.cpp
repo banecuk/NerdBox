@@ -11,7 +11,7 @@ ApplicationComponents::ApplicationComponents()
       services(platform.networkManager, platform.logger_, config, data.audioData),
       jobs(platform, data, services, config),
       uiController(platform.displayContext, platform.displayManager, services.systemMetrics,
-                   data.systemState.screen, config, data.weatherData),
+                   data.systemState.screen, config),
       screenCtx{platform.logger_,
                 platform.displayContext.getScreenLogQueue(),
                 platform.displayManager,

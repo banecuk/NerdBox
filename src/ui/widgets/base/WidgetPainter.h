@@ -15,18 +15,17 @@
 namespace WidgetPainter {
 
 // One of Fonts::loadLabel/loadValue/loadMetric/loadHeader/loadMono.
-using FontLoader = void (*)(LGFX*);
+using FontLoader = ScopedFont::Loader;
 
 // The load-font / set-colour / MC_DATUM / drawString / unload sequence that
 // most widgets used to hand-write for every text cell. Draws `text` centred
 // on (cx, cy) with a per-glyph `bg` fill; does not clear anything first.
 inline void drawCenteredText(LGFX* lcd, int16_t cx, int16_t cy, const char* text, FontLoader font,
                              uint16_t color, uint16_t bg = TFT_BLACK) {
-    font(lcd);
+    ScopedFont scoped(lcd, font);
     lcd->setTextColor(color, bg);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(text, cx, cy);
-    Fonts::unload(lcd);
 }
 
 // fillRect(x, y, w, h, bg) then drawCenteredText() at the rect's centre —
@@ -43,11 +42,10 @@ inline void drawCenteredCell(LGFX* lcd, int16_t x, int16_t y, int16_t w, int16_t
 // layout. Caller must already have painted the background.
 inline void drawCaptionLabel(LGFX* lcd, int32_t x, int32_t y, const char* label,
                              uint16_t bgColor = TFT_BLACK) {
-    Fonts::loadLabel(lcd);
+    ScopedFont font(lcd, Fonts::loadLabel);
     lcd->setTextColor(TFT_DARKGREY, bgColor);
     lcd->setTextDatum(TL_DATUM);
     lcd->drawString(label, x, y + 2);
-    Fonts::unload(lcd);
 }
 
 // Rounded-rect "pill" with a centered label, used by tappable
@@ -62,11 +60,10 @@ inline void drawPillToggle(LGFX* lcd, uint16_t x, uint16_t y, uint16_t w, uint16
     // matches the real (black) screen background behind every pill today.
     lcd->fillSmoothRoundRect(x, y, w, h, radius, bgColor);
 
-    Fonts::loadLabel(lcd);
+    ScopedFont font(lcd, Fonts::loadLabel);
     lcd->setTextColor(textColor, bgColor);
     lcd->setTextDatum(MC_DATUM);
     lcd->drawString(label, static_cast<int32_t>(x + w / 2), static_cast<int32_t>(y + h / 2));
-    Fonts::unload(lcd);
 }
 
 // Draws a value followed by its unit, centred as a pair at (centerX,
@@ -88,23 +85,21 @@ inline void drawValueWithUnit(LGFX* lcd, int16_t centerX, int16_t centerY, const
         // fontHeight/2 baseline offset. Using MC_DATUM here made
         // unit-less cells (e.g. the AQI value) sit visibly higher than
         // cells with a unit.
-        Fonts::loadMetric(lcd);
+        ScopedFont font(lcd, Fonts::loadMetric);
         const int16_t valueH = static_cast<int16_t>(lcd->fontHeight());
         lcd->setTextColor(valueColor, TFT_BLACK);
         lcd->setTextDatum(C_BASELINE);
         lcd->drawString(value, centerX, centerY + valueH / 2);
-        Fonts::unload(lcd);
         return;
     }
 
-    int16_t valueW, valueH, unitW;
-    Fonts::loadMetric(lcd);
-    valueW = static_cast<int16_t>(lcd->textWidth(value));
-    valueH = static_cast<int16_t>(lcd->fontHeight());
-    Fonts::unload(lcd);
-    Fonts::loadLabel(lcd);
-    unitW = static_cast<int16_t>(lcd->textWidth(unit));
-    Fonts::unload(lcd);
+    // One scope across measure + draw: use() swaps the face, the scope's end
+    // unloads once (previously four separate load/unload pairs).
+    ScopedFont font(lcd, Fonts::loadMetric);
+    const int16_t valueW = static_cast<int16_t>(lcd->textWidth(value));
+    const int16_t valueH = static_cast<int16_t>(lcd->fontHeight());
+    font.use(Fonts::loadLabel);
+    const int16_t unitW = static_cast<int16_t>(lcd->textWidth(unit));
 
     const int16_t startX = centerX - (valueW + unitW) / 2;
     // Draw both on the same baseline so the unit sits at the bottom of the
@@ -112,17 +107,15 @@ inline void drawValueWithUnit(LGFX* lcd, int16_t centerX, int16_t centerY, const
     // glyph height below its vertical centre.
     const int16_t baselineY = centerY + valueH / 2;
 
-    Fonts::loadMetric(lcd);
+    font.use(Fonts::loadMetric);
     lcd->setTextColor(valueColor, TFT_BLACK);
     lcd->setTextDatum(L_BASELINE);
     lcd->drawString(value, startX, baselineY);
-    Fonts::unload(lcd);
 
-    Fonts::loadLabel(lcd);
+    font.use(Fonts::loadLabel);
     lcd->setTextColor(unitColor, TFT_BLACK);
     lcd->setTextDatum(L_BASELINE);
     lcd->drawString(unit, startX + valueW, baselineY);
-    Fonts::unload(lcd);
 }
 
 // Shared by NetworkTrafficWidget and DiskSummaryWidget's stacked-rate-row
@@ -173,18 +166,20 @@ inline int16_t drawRateRow(LGFX* lcd, const RateRow& row) {
     const int16_t textY = row.y + row.h / 2;
     const int16_t textX = row.x + 2;
 
-    Fonts::loadValue(lcd);
-    lcd->setTextColor(row.valueColor, TFT_BLACK);
+    int16_t intColX, decFieldWidth;
+    {
+        ScopedFont font(lcd, Fonts::loadValue);
+        lcd->setTextColor(row.valueColor, TFT_BLACK);
 
-    const int16_t intFieldWidth = lcd->textWidth(row.intDigits >= 4 ? "9999" : "999");
-    const int16_t decFieldWidth = lcd->textWidth(".9");
-    const int16_t intColX = textX + intFieldWidth;
+        const int16_t intFieldWidth = lcd->textWidth(row.intDigits >= 4 ? "9999" : "999");
+        decFieldWidth = lcd->textWidth(".9");
+        intColX = textX + intFieldWidth;
 
-    lcd->setTextDatum(MR_DATUM);
-    lcd->drawString(intBuf, intColX, textY);
-    lcd->setTextDatum(ML_DATUM);
-    lcd->drawString(decBuf, intColX, textY);
-    Fonts::unload(lcd);
+        lcd->setTextDatum(MR_DATUM);
+        lcd->drawString(intBuf, intColX, textY);
+        lcd->setTextDatum(ML_DATUM);
+        lcd->drawString(decBuf, intColX, textY);
+    }
 
     strncpy(row.lastText, buf, row.lastTextSize - 1);
     row.lastText[row.lastTextSize - 1] = '\0';

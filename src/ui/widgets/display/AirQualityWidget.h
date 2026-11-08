@@ -7,8 +7,9 @@
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/resources/weather_icons_44.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Four-column block shown to the right of RoomClimateWidget on the main
 // screen.
@@ -28,11 +29,8 @@
 // uses loadLabel() — NotoSansDisplay 12 pt.
 class AirQualityWidget : public Widget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
     AirQualityWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                     const AirQualityData& airData, uint32_t staleTimeoutMs,
-                     EventType action = EventType::NONE, ActionCallback callback = nullptr);
+                     const AirQualityData& airData, uint32_t staleTimeoutMs, TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -70,12 +68,10 @@ class AirQualityWidget : public Widget {
     // on fetch failure) — freshness must be checked by age too, or a stale
     // outage-era reading displays forever with no indication.
     // Window: AppSettings::airQualityStaleTimeoutMs.
-    DataFreshnessGuard freshness_;
+    FreshnessTransition freshness_;
 
-    // Optional tap action (mirrors FpsWidget/ButtonWidget): when a callback
-    // is set, a tap publishes `action_`, e.g. to open the Weather screen.
-    EventType action_;
-    ActionCallback callback_;
+    // Optional tap action, e.g. to open the Weather screen.
+    TapAction tap_;
 
     // Cached values for dirty detection
     int8_t lastTemp_ = -128;
@@ -83,7 +79,6 @@ class AirQualityWidget : public Widget {
     int16_t lastPressure_ = -1;
     uint16_t lastWindX10_ = 0xFFFF;
     uint16_t lastAqi_ = 0xFFFF;
-    bool lastAvail_ = false;
     char lastIcon_[4] = {0};
 
     // -----------------------------------------------------------------------

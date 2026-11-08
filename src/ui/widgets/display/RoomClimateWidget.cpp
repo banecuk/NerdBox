@@ -21,7 +21,6 @@ void RoomClimateWidget::onDrawStatic() {
 
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    lastAvail_ = false;
     lastTempX10_ = INT16_MIN;
     lastHumidity_ = 0xFF;
 }
@@ -30,15 +29,15 @@ void RoomClimateWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    if (!freshness_.isFresh()) {
-        if (forceRedraw || lastAvail_) {
+    const auto edge = freshness_.poll();
+    if (!freshness_.fresh()) {
+        if (forceRedraw || edge == FreshnessTransition::Edge::BecameStale) {
             drawNoData();
-            lastAvail_ = false;
         }
         return;
     }
 
-    const bool becomingAvailable = !lastAvail_;
+    const bool becomingAvailable = edge == FreshnessTransition::Edge::BecameFresh;
     const bool tempChanged =
         forceRedraw || becomingAvailable || roomClimateData_.temperature_x10 != lastTempX10_;
     const bool humidityChanged =
@@ -71,7 +70,6 @@ void RoomClimateWidget::onDraw(bool forceRedraw) {
                                          kUnitColor);
     }
 
-    lastAvail_ = true;
     lastTempX10_ = roomClimateData_.temperature_x10;
     lastHumidity_ = roomClimateData_.humidity;
 }

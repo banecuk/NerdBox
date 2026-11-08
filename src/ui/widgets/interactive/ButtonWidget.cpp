@@ -26,27 +26,23 @@ const uint16_t* iconBitmap(ButtonIcon icon) {
 // Constructors
 // ---------------------------------------------------------------------------
 
-ButtonWidget::ButtonWidget(DisplayContext& context, const std::string& label,
-                           const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                           EventType action, ActionCallback callback, uint16_t bgColor,
+ButtonWidget::ButtonWidget(const std::string& label, const WidgetInterface::Dimensions& dims,
+                           uint32_t updateIntervalMs, TapAction tap, uint16_t bgColor,
                            uint16_t textColor)
     : Widget(dims, updateIntervalMs),
       label_(label),
       icon_(ButtonIcon::NONE),
-      action_(action),
-      callback_(callback),
+      tap_(std::move(tap)),
       bgColor_(bgColor),
       textColor_(textColor) {}
 
-ButtonWidget::ButtonWidget(DisplayContext& context, ButtonIcon icon, const std::string& label,
+ButtonWidget::ButtonWidget(ButtonIcon icon, const std::string& label,
                            const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                           EventType action, ActionCallback callback, uint16_t bgColor,
-                           uint16_t textColor)
+                           TapAction tap, uint16_t bgColor, uint16_t textColor)
     : Widget(dims, updateIntervalMs),
       label_(label),
       icon_(icon),
-      action_(action),
-      callback_(callback),
+      tap_(std::move(tap)),
       bgColor_(bgColor),
       textColor_(textColor) {}
 
@@ -82,14 +78,13 @@ void ButtonWidget::onDraw(bool forceRedraw) {
     const unsigned long now = millis();
 
     // Auto-release press feedback. Runs unconditionally (before the dirty
-    // early-return below) so it also fires on the interval-driven wake-up
-    // that handleTouch() schedules via setUpdateInterval() — without that,
-    // this widget's updateIntervalMs is 0, needsUpdate() never returns true,
-    // and nothing would ever call onDraw() again after the initial pressed
-    // draw to notice the feedback window has elapsed.
+    // early-return below) so it also fires on the one-shot wake-up that
+    // handleTouch() schedules via requestWakeAfter() — without that, this
+    // widget's updateIntervalMs is 0, needsUpdate() never returns true, and
+    // nothing would ever call onDraw() again after the initial pressed draw
+    // to notice the feedback window has elapsed.
     if (isPressed_ && (now - pressStartTime_ >= kPressFeedbackMs)) {
         isPressed_ = false;
-        setUpdateInterval(0);  // stop the periodic wake-up until pressed again
         markDirty();
     }
 
@@ -109,8 +104,6 @@ void ButtonWidget::onDraw(bool forceRedraw) {
     // 3. Draw the border LAST so it layer-composes on top of the image canvas
     getLcd()->drawRoundRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                             kBorderRadius, kBorderColor);
-
-    clearDirty();
 }
 
 // ---------------------------------------------------------------------------
@@ -182,11 +175,9 @@ void ButtonWidget::drawContent(uint16_t bg, uint16_t fg) {
 // Touch handling
 // ---------------------------------------------------------------------------
 
-bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!getDimensions().contains(x, y))
-        return false;
-
-    if (!callback_ || !isInitialized() || !getLcd())
+bool ButtonWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
+    // WidgetManager has already hit-tested (x, y) against this widget's box.
+    if (!tap_.isSet() || !isInitialized() || !getLcd())
         return false;
 
     const unsigned long now = millis();
@@ -195,19 +186,13 @@ bool ButtonWidget::handleTouch(uint16_t x, uint16_t y) {
     pressStartTime_ = now;
     // Schedule a wake-up after the feedback window so onDraw() runs again to
     // auto-release the pressed state, even if nothing else redraws the button.
-    setUpdateInterval(kPressFeedbackMs);
+    requestWakeAfter(kPressFeedbackMs);
     markDirty();
 
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }
 
 void ButtonWidget::cleanUp() {
-    callback_ = nullptr;
+    tap_ = TapAction{};
     Widget::cleanUp();
-}
-
-void ButtonWidget::setCallback(ActionCallback callback) {
-    callback_ = callback;
-    markDirty();
 }

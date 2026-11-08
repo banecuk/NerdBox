@@ -8,7 +8,11 @@
 class Widget : public WidgetInterface {
  public:
     Widget(const Dimensions& dims, uint32_t updateIntervalMs);
-    virtual ~Widget();
+    // Deliberately does NOT call cleanUp(): from inside a destructor the
+    // virtual onCleanUp() would resolve to this base's no-op, so subclass
+    // cleanup never ran this way anyway. WidgetManager::cleanupWidgets() is
+    // the one path that calls cleanUp() — before destroying each widget.
+    virtual ~Widget() = default;
 
     // Lifecycle
     void initialize(DisplayContext& context) override;
@@ -46,25 +50,47 @@ class Widget : public WidgetInterface {
     LoggerInterface* getLogger() const { return logger_; }
     DisplayContext& getContext() const { return *context_; }
 
+    // One-shot wake-up: makes needsUpdate() report true once `ms` has
+    // elapsed, independent of (and without touching) updateIntervalMs_ — for
+    // a widget that is otherwise static (interval 0) but needs one more draw
+    // later, e.g. ButtonWidget releasing its pressed state. Cleared when the
+    // draw it triggers runs; calling it again re-arms it.
+    void requestWakeAfter(uint32_t ms);
+
     // Hooks for derived classes
     virtual void onInitialize() {}
     virtual void onDrawStatic() {}
-    virtual void onDraw(bool forceRedraw) = 0;
+    // `fullRepaint` is true when the draw was forced by the caller *or* the
+    // widget was marked dirty (Widget::draw() passes `forceRedraw ||
+    // isDirty_`): repaint everything, don't diff against cached state.
+    // Widget::draw() clears the dirty flag after this returns, so overrides
+    // must not call clearDirty() themselves. Subclasses still name the
+    // parameter forceRedraw — same meaning.
+    virtual void onDraw(bool fullRepaint) = 0;
     virtual void onCleanUp() {}
 
-    // Protected member variables — the ones subclasses legitimately read
-    // in onDraw()/onDrawStatic(). Lifecycle/scheduling state is private
-    // below so the base owns its own invariants (see canDraw()).
-    LGFX* lcd_ = nullptr;
-    LoggerInterface* logger_ = nullptr;
-    DisplayContext* context_ = nullptr;
-
+    // Geometry and scheduling state subclasses legitimately read in
+    // onDraw()/onDrawStatic(). The display/logger/context pointers are
+    // private below — use getLcd()/getLogger()/getContext().
     Dimensions dimensions_;
     uint32_t updateIntervalMs_;
     bool isStaticDrawn_ = false;  // Track if static elements are drawn
 
  private:
     bool canDraw() const;
+    bool wakeDue() const;
+
+    // Supplied by initialize(), cleared by cleanUp(). Private so a subclass
+    // can't shadow or reseat them (ThreadsWidget/DiskInfoWidget used to keep
+    // their own constructor-injected DisplayContext& context_).
+    LGFX* lcd_ = nullptr;
+    LoggerInterface* logger_ = nullptr;
+    DisplayContext* context_ = nullptr;
+
+    // requestWakeAfter() state.
+    uint32_t wakeRequestedAtMs_ = 0;
+    uint32_t wakeAfterMs_ = 0;
+    bool wakePending_ = false;
 
     // Written only by Widget itself — draw() stamps lastUpdateTimeMs_ and
     // clears isDirty_ after every onDraw(), so a subclass never needs to.

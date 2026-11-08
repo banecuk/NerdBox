@@ -76,7 +76,6 @@ void AudioWidget::onDraw(bool forceRedraw) {
     } else {
         drawNowPlaying(forceRedraw);
     }
-    clearDirty();
 }
 
 void AudioWidget::drawStoppedMessage(bool forceRedraw) {

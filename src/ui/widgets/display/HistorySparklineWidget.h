@@ -4,7 +4,7 @@
 
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 #include "utils/HeapRingHistory.h"
 
 // CPU/GPU/RAM/VRAM load over the last few minutes, rendered as four mini
@@ -69,7 +69,7 @@ class HistorySparklineWidget : public Widget {
     static constexpr size_t kMaxColumns = 256;
 
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard freshnessGuard_;
+    FreshnessTransition freshness_;
 
     HeapRingHistory<uint8_t> cpuLoadHistory_;
     HeapRingHistory<uint8_t> gpuLoadHistory_;
@@ -91,14 +91,8 @@ class HistorySparklineWidget : public Widget {
     uint16_t topPlotY_ = 0;
     uint16_t bottomPlotY_ = 0;
 
-    // Whether the widget (captions + sparklines) was showing on the last
-    // draw — lets onDraw detect the fresh/stale transition so it can blank
-    // the area exactly once instead of leaving a frozen last-known plot on
-    // screen while PcMetrics is stale, and redraw captions once data returns.
-    bool lastHasData_ = true;
-
     // Set in onDrawStatic(), consumed (and cleared) as a forceRedraw on the
-    // next onDraw() — subsumes the lastHasData_ stale->fresh force path.
+    // next onDraw() — subsumes the BecameFresh force path.
     // Fixes a repaint bug: switching to this candidate mid-second used to
     // leave the plot area blank (captions/borders only) until the next
     // sample landed, since onDraw(forceRedraw=false) returns early when no

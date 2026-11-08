@@ -4,8 +4,16 @@
 //
 // Usage in a widget:
 //   #include "ui/resources/FontRegistry.h"
-//   Fonts::loadLabel(lcd);   // before drawString
-//   Fonts::unload(lcd);      // immediately after drawString
+//   {
+//       ScopedFont font(lcd, Fonts::loadLabel);  // loads now
+//       lcd->drawString(...);
+//   }                                            // unloads here, on every path
+//
+// Prefer ScopedFont over a hand-written loadX()/unload() pair in new code
+// and anywhere with an early return between them (A17): the pairing then
+// holds by construction instead of by audit. The bare loadX()/unload() calls
+// remain for the batch paths whose contract is "caller has the font loaded"
+// (MetricWidget::drawValueWithLoadedFont and its callers).
 //
 // Fonts::init() parses every PROGMEM font array into a runtime glyph table
 // exactly once (called from ApplicationComponents::initializeDisplay(), right
@@ -56,4 +64,24 @@ struct Fonts {
     static void loadMono(LGFX* lcd);
 
     static void unload(LGFX* lcd);
+};
+
+// RAII font scope: loads a face on construction, Fonts::unload() on
+// destruction. `load` is one of Fonts::loadLabel/loadValue/loadMetric/
+// loadHeader/loadMono. use() switches face mid-scope; whichever face is
+// current, the destructor still unloads.
+class ScopedFont {
+ public:
+    using Loader = void (*)(LGFX*);
+
+    ScopedFont(LGFX* lcd, Loader load) : lcd_(lcd) { load(lcd_); }
+    ~ScopedFont() { Fonts::unload(lcd_); }
+
+    void use(Loader load) { load(lcd_); }
+
+    ScopedFont(const ScopedFont&) = delete;
+    ScopedFont& operator=(const ScopedFont&) = delete;
+
+ private:
+    LGFX* lcd_;
 };

@@ -8,7 +8,7 @@ NetworkTrafficWidget::NetworkTrafficWidget(const WidgetInterface::Dimensions& di
                                            float uploadLinkMbps, float downloadLinkMbps)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
-      freshnessGuard_(pcMetrics.freshness),
+      freshness_(pcMetrics.freshness),
       uploadLinkMbps_(uploadLinkMbps),
       downloadLinkMbps_(downloadLinkMbps) {}
 
@@ -21,25 +21,23 @@ void NetworkTrafficWidget::onDrawStatic() {
     lastDownText_[0] = '\0';
     lastUpColor_ = 0;
     lastDownColor_ = 0;
-    lastHasData_ = false;
 }
 
 void NetworkTrafficWidget::onDraw(bool forceRedraw) {
     if (!getLcd() || !isStaticDrawn_)
         return;
 
-    const bool hasData = freshnessGuard_.isFresh();
+    const bool availabilityFlipped = freshness_.poll() != FreshnessTransition::Edge::None;
+    const bool hasData = freshness_.fresh();
     const float upMbps = hasData ? pcMetrics_.eth_up * kKBpsToMbps : 0.0f;
     const float downMbps = hasData ? pcMetrics_.eth_dn * kKBpsToMbps : 0.0f;
 
-    const bool dataAvailabilityChanged = forceRedraw || hasData != lastHasData_;
+    const bool dataAvailabilityChanged = forceRedraw || availabilityFlipped;
     const int16_t rowH = dimensions_.height / 2;
     drawRow(dimensions_.y, true, upMbps, uploadLinkMbps_, hasData, dataAvailabilityChanged,
             lastUpText_, sizeof(lastUpText_), lastUpColor_);
     drawRow(dimensions_.y + rowH, false, downMbps, downloadLinkMbps_, hasData,
             dataAvailabilityChanged, lastDownText_, sizeof(lastDownText_), lastDownColor_);
-
-    lastHasData_ = hasData;
 }
 
 void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData,

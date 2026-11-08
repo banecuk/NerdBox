@@ -34,9 +34,10 @@ void SettingsScreen::createWidgets() {
     // Actual dimming is applied by DimAtNightJob/DisplayManager in the
     // background; this widget just reflects/writes the enabled flag. Sits
     // directly below the brightness selector, moving with its height.
-    // Width matches two BrightnessWidget segments + the gap between them:
-    // segW = (kContentW - kGap*5) / 6 = 73, so 73*2 + kGap(3) = 149.
-    static constexpr uint16_t kSwitchW = 149;
+    // Width matches two BrightnessWidget segments + the gap between them, so
+    // the switch's right edge lines up with segment 2's.
+    static constexpr uint16_t kSwitchW = BrightnessWidget::spanForSegments(kContentW, 2);
+    static_assert(kSwitchW == 149, "2 segments of a 456px BrightnessWidget: 73*2 + 3");
     widgetManager_.addWidget(
         std::make_unique<SwitchWidget>(
             WidgetInterface::Dimensions{kGutter, kSwitchY, kSwitchW, kSwitchH}, "DIM AT NIGHT",
@@ -54,11 +55,9 @@ void SettingsScreen::createWidgets() {
     static constexpr uint16_t kResetY = kSwitchY + (kSwitchH - kResetH) / 2;   // = 80
 
     widgetManager_.addWidget(std::make_unique<ButtonWidget>(
-                                 uiController_.getDisplayContext(), "Reset",
+                                 "Reset",
                                  WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
-                                 EventType::RESET_DEVICE,
-                                 [this](EventType action) { this->handleAction(action); },
-                                 Colors::kDanger, TFT_WHITE),
+                                 tapTo(EventType::RESET_DEVICE), Colors::kDanger, TFT_WHITE),
                              "reset_button");
 
     // ── Info widgets ────────────────────────────────────────────────────────

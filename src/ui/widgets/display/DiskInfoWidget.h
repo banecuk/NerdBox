@@ -21,11 +21,10 @@
 // redraws are gated on cached last-drawn state.
 class DiskInfoWidget : public Widget {
  public:
-    DiskInfoWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                   uint32_t updateIntervalMs, PcMetrics& pcMetrics);
+    DiskInfoWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                   PcMetrics& pcMetrics);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
-    void setStaleTimeout(unsigned long timeoutMs) { freshnessGuard_.setTimeout(timeoutMs); }
 
  protected:
     void onDraw(bool forceRedraw) override;
@@ -110,7 +109,6 @@ class DiskInfoWidget : public Widget {
     // -----------------------------------------------------------------------
     // Dependencies
     // -----------------------------------------------------------------------
-    DisplayContext& context_;
     PcMetrics& pcMetrics_;
     DataFreshnessGuard freshnessGuard_;
 

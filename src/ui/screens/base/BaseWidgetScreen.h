@@ -4,6 +4,7 @@
 #include "core/events/EventBus.h"
 #include "ui/core/UiController.h"
 #include "ui/screens/base/ScreenInterface.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/layout/WidgetManager.h"
 #include "utils/logging/Logger.h"
 
@@ -20,7 +21,12 @@ class BaseWidgetScreen : public ScreenInterface {
 
  protected:
     virtual void createWidgets() = 0;
-    void handleAction(EventType action);
+    // The one "publish on the EventBus" callback every navigation tap uses
+    // (A14) — previously an identical `[this](EventType a) { handleAction(a); }`
+    // lambda at each of 11 call sites.
+    static TapAction::Callback publisher();
+    // A tap that publishes `event` — e.g. tapTo(EventType::SHOW_WEATHER).
+    static TapAction tapTo(EventType event) { return TapAction(event, publisher()); }
 
     // Shared screen chrome — bottom-left back button and bottom-right clock,
     // same box every screen but MainScreen (shares its band with

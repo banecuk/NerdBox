@@ -8,7 +8,6 @@
 #include "core/IScreenUpdater.h"
 #include "core/ScreenTypes.h"
 #include "core/state/SystemState.h"
-#include "services/weather/WeatherData.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/core/DisplayManager.h"
 #include "ui/core/TouchManager.h"
@@ -27,9 +26,8 @@ struct ScreenCreationContext;
 class UiController : public IScreenUpdater, public IScreenNavigator {
  public:
     explicit UiController(DisplayContext& context, DisplayManager& displayManager,
-                          ApplicationMetrics& systemMetrics,
-                          SystemState::ScreenState& screenState, const AppSettings& config,
-                          WeatherData& weatherData);
+                          ApplicationMetrics& systemMetrics, SystemState::ScreenState& screenState,
+                          const AppSettings& config);
     ~UiController();
 
     // Bound once, after ApplicationComponents has constructed both this
@@ -97,7 +95,6 @@ class UiController : public IScreenUpdater, public IScreenNavigator {
     ApplicationMetrics& systemMetrics_;
     SystemState::ScreenState& screenState_;
     const AppSettings& config_;
-    WeatherData& weatherData_;
 
     // Set once via bindScreenContext(), after construction — see its comment
     // above. Never null once the app is running; loadAndActivateScreen()

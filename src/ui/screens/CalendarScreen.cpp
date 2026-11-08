@@ -34,17 +34,15 @@ void CalendarScreen::createWidgets() {
     // buttons: both are owned by the same widgetManager_.
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_.getDisplayContext(), ButtonIcon::BACK, "",
-            WidgetInterface::Dimensions{0, 0, kArrowW, kArrowH}, 0, EventType::NONE,
-            [calendar](EventType) { calendar->stepMonth(-1); }, kArrowBg, TFT_WHITE),
+            ButtonIcon::BACK, "", WidgetInterface::Dimensions{0, 0, kArrowW, kArrowH}, 0,
+            TapAction::local([calendar] { calendar->stepMonth(-1); }), kArrowBg, TFT_WHITE),
         "prev_month_button");
 
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_.getDisplayContext(), ButtonIcon::FORWARD, "",
+            ButtonIcon::FORWARD, "",
             WidgetInterface::Dimensions{Layout::kScreenW - kArrowW, 0, kArrowW, kArrowH}, 0,
-            EventType::NONE, [calendar](EventType) { calendar->stepMonth(1); }, kArrowBg,
-            TFT_WHITE),
+            TapAction::local([calendar] { calendar->stepMonth(1); }), kArrowBg, TFT_WHITE),
         "next_month_button");
 
     addBackButton();

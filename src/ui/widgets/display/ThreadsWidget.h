@@ -9,21 +9,19 @@
 #include "core/events/EventTypes.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/ThreadStaggerScheduler.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ApplicationMetrics.h"
 #include "utils/CpuTopology.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 #include "utils/ValueSmoother.h"
 
 class ThreadsWidget : public Widget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
-    ThreadsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                  uint32_t updateIntervalMs, PcMetrics& pcMetrics, const AppSettings& config,
-                  ApplicationMetrics& systemMetrics,
-                  EventType action = EventType::SHOW_CPU_CLOCK, ActionCallback callback = nullptr);
+    ThreadsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                  PcMetrics& pcMetrics, const AppSettings& config,
+                  ApplicationMetrics& systemMetrics, TapAction tap = {});
 
     void initialize(DisplayContext& context) override;
     bool handleTouch(uint16_t x, uint16_t y) override;
@@ -34,13 +32,11 @@ class ThreadsWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    DisplayContext& context_;
     PcMetrics& pcMetrics_;
     const AppSettings& config_;
     ApplicationMetrics& systemMetrics_;
-    EventType action_;
-    ActionCallback callback_;
-    DataFreshnessGuard freshnessGuard_;
+    TapAction tap_;
+    FreshnessTransition freshness_;
 
     uint16_t barWidth_ = 0;
     // dimensions_.width % coreCount_ — the first remainder_ bars get one
@@ -74,11 +70,11 @@ class ThreadsWidget : public Widget {
     // (CpuTopology::hasSplit()).
     std::vector<uint8_t> isEcore_;
 
-    // Tracks the freshness state as of the last draw, so needsUpdate() can
-    // (a) force one redraw on a fresh<->stale transition and (b) otherwise
-    // stop ticking every kThreadsRefreshMs while stale — there's nothing new
-    // to animate, and a "No Data" message is already shown in place of bars.
-    bool wasFresh_ = true;
+    // freshness_.fresh() is the state as of the last draw, so needsUpdate()
+    // can (a) force one redraw on a fresh<->stale transition and (b)
+    // otherwise stop ticking every kThreadsRefreshMs while stale — there's
+    // nothing new to animate, and a "No Data" message is already shown in
+    // place of bars.
 
     // Sizes barWidth_/the per-bar vectors/the smoother from
     // pcMetrics_.cpu_core_count the first time it's non-zero, since the

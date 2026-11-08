@@ -6,12 +6,11 @@
 
 ClockWidget::ClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                          uint16_t textColor, uint16_t bgColor, const std::string& format,
-                         EventType action, ActionCallback callback)
+                         TapAction tap)
     : Widget(dims, updateIntervalMs),
       textColor_(textColor),
       bgColor_(bgColor),
-      action_(action),
-      callback_(std::move(callback)) {}
+      tap_(std::move(tap)) {}
 
 void ClockWidget::computeLayout() {
     LGFX* lcd = getLcd();
@@ -87,13 +86,8 @@ void ClockWidget::updateIfNeeded(struct tm& timeinfo, bool forceRedraw) {
     lcd->setTextColor(textColor_, bgColor_);
     fieldRenderer_.draw(lcd, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, forceRedraw);
     Fonts::unload(lcd);
-
-    clearDirty();
 }
 
 bool ClockWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
-    if (!callback_)
-        return false;
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }

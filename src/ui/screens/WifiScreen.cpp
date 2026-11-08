@@ -31,7 +31,6 @@ WifiScreen::WifiScreen(LoggerInterface& logger, WifiScanData& wifiScan,
 
 void WifiScreen::createWidgets() {
     widgetManager_.addWidget(std::make_unique<WifiLinkWidget>(
-                                 uiController_.getDisplayContext(),
                                  WidgetInterface::Dimensions{0, 0, Layout::kScreenW, kLinkH}, 1000,
                                  netStatus_, wifiScan_, config_),
                              "wifi_link");
@@ -47,14 +46,14 @@ void WifiScreen::createWidgets() {
     // Rescan — a plain local action, not an EventBus round-trip: the screen
     // already holds the WifiScanData& it needs to set, and this action isn't
     // cross-cutting (see docs-local/13-wifi-screen-plan.md §4.4 option 1).
-    widgetManager_.addWidget(std::make_unique<ButtonWidget>(
-                                 uiController_.getDisplayContext(), "Rescan",
-                                 WidgetInterface::Dimensions{kRescanX, Layout::kBottomBarY,
-                                                             kRescanW, Layout::kButtonSize},
-                                 0, EventType::NONE,
-                                 [this](EventType) { wifiScan_.rescanRequested.store(true); },
-                                 Theme::kSurface, TFT_WHITE),
-                             "rescan_button");
+    widgetManager_.addWidget(
+        std::make_unique<ButtonWidget>(
+            "Rescan",
+            WidgetInterface::Dimensions{kRescanX, Layout::kBottomBarY, kRescanW,
+                                        Layout::kButtonSize},
+            0, TapAction::local([this] { wifiScan_.rescanRequested.store(true); }), Theme::kSurface,
+            TFT_WHITE),
+        "rescan_button");
 
     // Internet-reachability probe state — untappable here (this screen *is*
     // the connectivity detail view already).

@@ -52,18 +52,17 @@ void BaseWidgetScreen::handleTouch(uint16_t x, uint16_t y) {
     widgetManager_.handleTouch(x, y);
 }
 
-void BaseWidgetScreen::handleAction(EventType action) {
-    EventBus::getInstance().publish(action);
+TapAction::Callback BaseWidgetScreen::publisher() {
+    return [](EventType event) { EventBus::getInstance().publish(event); };
 }
 
 void BaseWidgetScreen::addBackButton(EventType target) {
     widgetManager_.addWidget(
-        std::make_unique<ButtonWidget>(
-            uiController_.getDisplayContext(), ButtonIcon::BACK, "",
-            WidgetInterface::Dimensions{0, Layout::kBottomBarY, Layout::kButtonSize,
-                                        Layout::kButtonSize},
-            0, target, [this](EventType action) { this->handleAction(action); }, Theme::kSurface,
-            TFT_WHITE),
+        std::make_unique<ButtonWidget>(ButtonIcon::BACK, "",
+                                       WidgetInterface::Dimensions{0, Layout::kBottomBarY,
+                                                                   Layout::kButtonSize,
+                                                                   Layout::kButtonSize},
+                                       0, tapTo(target), Theme::kSurface, TFT_WHITE),
         "back_button");
 }
 

@@ -7,10 +7,6 @@ Widget::Widget(const Dimensions& dims, uint32_t updateIntervalMs)
     }
 }
 
-Widget::~Widget() {
-    cleanUp();
-}
-
 void Widget::initialize(DisplayContext& context) {
     if (state_ != WidgetInterface::State::UNINITIALIZED) {
         return;  // Already initialized
@@ -53,6 +49,11 @@ void Widget::draw(bool forceRedraw) {
     bool shouldDraw = forceRedraw || isDirty_ || needsUpdate();
 
     if (shouldDraw) {
+        // Consume a due one-shot wake before onDraw(), so onDraw() itself can
+        // re-arm it with requestWakeAfter().
+        if (wakeDue()) {
+            wakePending_ = false;
+        }
         // Callers that want a static repaint on a forced redraw are
         // responsible for calling drawStatic() themselves beforehand —
         // every current call site already does. Calling it here too used
@@ -79,6 +80,7 @@ void Widget::cleanUp() {
     isInitialized_ = false;
     isStaticDrawn_ = false;
     isDirty_ = false;
+    wakePending_ = false;
 
     lcd_ = nullptr;
     logger_ = nullptr;
@@ -124,10 +126,27 @@ bool Widget::needsUpdate() const {
     // frame — a mutating override can return true once and false on every
     // later call in the same frame, silently dropping the draw it just
     // announced (see 07-performance.md P1-20).
-    if (updateIntervalMs_ == 0 || !isInitialized_ || !isVisible_) {
+    if (!isInitialized_ || !isVisible_) {
+        return false;
+    }
+    if (wakeDue()) {
+        return true;
+    }
+    if (updateIntervalMs_ == 0) {
         return false;
     }
     return (millis() - lastUpdateTimeMs_ >= updateIntervalMs_);
+}
+
+void Widget::requestWakeAfter(uint32_t ms) {
+    wakeRequestedAtMs_ = millis();
+    wakeAfterMs_ = ms;
+    wakePending_ = true;
+}
+
+bool Widget::wakeDue() const {
+    // Elapsed-time compare: wrap-safe across the millis() rollover.
+    return wakePending_ && (millis() - wakeRequestedAtMs_ >= wakeAfterMs_);
 }
 
 bool Widget::isInitialized() const {

@@ -5,7 +5,7 @@
 #include "services/cpuClock/CpuClockData.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Content widget for CpuClockScreen: a grid of per-core clock speeds (MHz)
 // plus a bus-speed line below it. Reads a const CpuClockData&, gated on
@@ -15,8 +15,8 @@
 // "just opened the screen, first event hasn't landed yet."
 class CpuClockWidget : public Widget {
  public:
-    CpuClockWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                   uint32_t updateIntervalMs, const CpuClockData& data);
+    CpuClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                   const CpuClockData& data);
 
  protected:
     void onDraw(bool forceRedraw) override;
@@ -32,7 +32,7 @@ class CpuClockWidget : public Widget {
     static constexpr uint8_t kColumns = 4;
 
     const CpuClockData& data_;
-    DataFreshnessGuard freshnessGuard_;
+    FreshnessTransition freshness_;
 
     // 0 until the first CoreClocksMHz payload arrives; then latched to the
     // reported core count for the widget's lifetime, mirroring
@@ -48,7 +48,6 @@ class CpuClockWidget : public Widget {
     // redraws a pixel-identical cell (see 07-performance.md P1-21).
     std::vector<int16_t> previousClockMHz_;
     float previousBusSpeedMHz_ = -1.0f;
-    bool wasFresh_ = false;
 
     bool ensureLayoutInitialized();
     void drawGrid(bool forceRedraw);

@@ -25,20 +25,28 @@ MetricWidget::MetricWidget(const WidgetInterface::Dimensions& dims, uint32_t upd
       hasLabel_(config.label[0] != '\0'),
       verticalLabel_(config.verticalLabel),
       gradientBackground_(config.gradientBackground) {
-    safeStringCopy(unit_, config.unit, sizeof(unit_));
-    safeStringCopy(label_, config.label, sizeof(label_));
-    updateDimensionCache();
-    formattedValue_[0] = '\0';
+    unit_.set(config.unit);
+    label_.set(config.label);
+    const MetricTileLayout::Rect tile{
+        static_cast<int16_t>(dimensions_.x), static_cast<int16_t>(dimensions_.y),
+        static_cast<int16_t>(dimensions_.width), static_cast<int16_t>(dimensions_.height)};
+    valueArea_ = MetricTileLayout::valueArea(tile, hasLabel_, static_cast<int16_t>(labelWidth_),
+                                             kSeparatorWidth, static_cast<int16_t>(borderMargin_));
+}
+
+void MetricWidget::onInitialize() {
+    // Widget::initialize() runs this before its own first drawStatic(), so
+    // the width is known before any draw path reads it.
+    LGFX* lcd = getLcd();
+    unitWidth_ = 0;
+    if (lcd && unit_.c_str()[0] != '\0') {
+        ScopedFont font(lcd, Fonts::loadLabel);
+        unitWidth_ = static_cast<uint16_t>(lcd->textWidth(unit_.c_str()));
+    }
 }
 
 void MetricWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
-
-    if (dimensionsDirty_) {
-        updateDimensionCache();
-    }
-
-    refreshUnitWidthIfNeeded();
 
     // Clear the entire widget area
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
@@ -55,12 +63,12 @@ void MetricWidget::onDrawStatic() {
             // Stack one character per row, evenly spaced across the tile's
             // full height — for tall (double-row) tiles where "RAM"/"VRAM"
             // would otherwise overflow the narrow label column.
-            const size_t len = strlen(label_);
+            const size_t len = strlen(label_.c_str());
             if (len > 0) {
                 const int16_t rowH = dimensions_.height / static_cast<int16_t>(len);
                 char ch[2] = {'\0', '\0'};
                 for (size_t i = 0; i < len; ++i) {
-                    ch[0] = label_[i];
+                    ch[0] = label_.c_str()[i];
                     const int16_t labelY =
                         dimensions_.y + rowH * static_cast<int16_t>(i) + rowH / 2;
                     lcd->drawString(ch, labelX, labelY);
@@ -68,16 +76,14 @@ void MetricWidget::onDrawStatic() {
             }
         } else {
             const int16_t labelY = dimensions_.y + (dimensions_.height / 2);
-            lcd->drawString(label_, labelX, labelY);
+            lcd->drawString(label_.c_str(), labelX, labelY);
         }
 
         Fonts::unload(lcd);
     }
 
-    lastDrawnValue_ = -1;
-    hasDrawnOnce_ = false;
     lastTextWidth_ = 0;
-    valueAreaDirty_ = true;
+    pending_ = RedrawLevel::Full;
 }
 
 void MetricWidget::onDraw(bool forceRedraw) {
@@ -85,33 +91,20 @@ void MetricWidget::onDraw(bool forceRedraw) {
         return;
     }
 
-    refreshUnitWidthIfNeeded();
-
-    bool valueChanged = (value_ != lastDrawnValue_);
-    bool baseWidgetDirty = isDirty();
-
-    // Always draw on the first render since drawStatic().
-    bool firstRender = !hasDrawnOnce_;
-
-    // Only check other dirty flags if value changed or forced
-    if (!firstRender && !valueChanged && !forceRedraw && !baseWidgetDirty && !valueAreaDirty_) {
+    if (pending_ == RedrawLevel::None && !forceRedraw && !isDirty()) {
         return;  // Nothing to do
     }
 
-    if (valueChanged && hasDrawnOnce_ && !forceRedraw && !valueAreaDirty_ && !gradientBackground_) {
-        // Optimization: only redraw text if just the value changed. Skipped
-        // for gradientBackground_ tiles — a per-glyph opaque bg fill would
-        // flatten the gradient into a solid block behind the new digits, so
-        // those always retake the full background+text path below.
-        renderValue(/*fontsLoadedByCaller=*/false, /*clearWholeArea=*/false);
-    } else {
-        // Full value area redraw (background + text)
-        renderValue(/*fontsLoadedByCaller=*/false, /*clearWholeArea=*/true);
-    }
-    lastDrawnValue_ = value_;
-    hasDrawnOnce_ = true;
+    // Optimization: only redraw text if just the value changed. Skipped for
+    // gradientBackground_ tiles — a per-glyph opaque bg fill would flatten
+    // the gradient into a solid block behind the new digits, so those always
+    // retake the full background+text path.
+    const bool valueOnly = pending_ == RedrawLevel::Value && !forceRedraw && !gradientBackground_;
+    renderValue(/*fontsLoadedByCaller=*/false, /*clearWholeArea=*/!valueOnly);
+    pending_ = RedrawLevel::None;
+    // Kept, unlike other widgets (A15): child tiles are also drawn through
+    // drawValueWithLoadedFont()/forceRefreshAndDraw(), outside Widget::draw().
     clearDirty();
-    valueAreaDirty_ = false;
 }
 
 void MetricWidget::renderValue(bool fontsLoadedByCaller, bool clearWholeArea) {
@@ -126,20 +119,19 @@ void MetricWidget::renderValue(bool fontsLoadedByCaller, bool clearWholeArea) {
     // per tick by PcMetricsWidget/DiskBandWidget's draw pass, so it needs its
     // own unchanged-value early-out; the onDraw() path already gated on
     // value/dirty changes before choosing which flags to call in with.
-    if (fontsLoadedByCaller && hasDrawnOnce_ && value_ == lastDrawnValue_ && !bgChanged &&
-        !isDirty() && !valueAreaDirty_) {
-        unitNeedsRedraw_ = false;
+    if (fontsLoadedByCaller && pending_ == RedrawLevel::None && !bgChanged && !isDirty()) {
         return;
     }
 
     int16_t areaX, areaY, areaWidth, areaHeight;
     getValueAreaBounds(areaX, areaY, areaWidth, areaHeight);
 
-    const char* displayText = getFormattedValueText();
-    if (displayText == nullptr || displayText[0] == '\0') {
-        displayText = "0";  // Fallback to show something
-    }
-    const int16_t unitW = static_cast<int16_t>(unitWidthCache_);
+    // Bare number only — the unit suffix is drawn separately (smaller,
+    // dimmed font). Formatted here, on the draw path only, rather than
+    // cached: renderValue() runs only when something changed.
+    char displayText[12];
+    snprintf(displayText, sizeof(displayText), "%d", value_);
+    const int16_t unitW = static_cast<int16_t>(unitWidth_);
 
     // Value font stays loaded across the measure and draw below — fewer
     // setFont() calls. Skipped when the caller already loaded it for the
@@ -183,12 +175,12 @@ void MetricWidget::renderValue(bool fontsLoadedByCaller, bool clearWholeArea) {
         unitDrawX_ = startX + newTextW;
         unitDrawY_ = textY;
         unitBgColor_ = textBgColor;
-        unitNeedsRedraw_ = unitW > 0 && clearNow;
+        pending_ = (unitW > 0 && clearNow) ? RedrawLevel::Unit : RedrawLevel::None;
     } else if (unitW > 0 && clearNow) {
         // Only redrawn when the layout actually shifted (or this is a full
         // redraw) — otherwise the previously drawn glyphs are still valid.
         Fonts::loadLabel(lcd);
-        drawValueText(unit_, startX + newTextW, textY, textBgColor, gradientBackground_);
+        drawValueText(unit_.c_str(), startX + newTextW, textY, textBgColor, gradientBackground_);
         Fonts::unload(lcd);
     }
 }
@@ -203,30 +195,30 @@ void MetricWidget::drawValueWithLoadedFont() {
     if (!getLcd() || !isStaticDrawn_)
         return;
 
+    // Leaves pending_ at Unit (unit suffix moved — drawUnitWithLoadedFont()
+    // repaints it) or None.
     renderValue(/*fontsLoadedByCaller=*/true, /*clearWholeArea=*/false);
-
-    lastDrawnValue_ = value_;
-    hasDrawnOnce_ = true;
+    if (pending_ != RedrawLevel::Unit)
+        pending_ = RedrawLevel::None;
     clearDirty();
-    valueAreaDirty_ = false;
 }
 
 void MetricWidget::drawUnitWithLoadedFont() {
     // Fast path: label font is already loaded by PcMetricsWidget's batch
     // caller (see drawDynamicData's second pass). No-op unless the paired
     // drawValueWithLoadedFont() call just moved or recoloured the unit.
-    if (!unitNeedsRedraw_)
+    if (pending_ != RedrawLevel::Unit)
         return;
 
     if (!getLcd())
         return;
 
-    drawValueText(unit_, unitDrawX_, unitDrawY_, unitBgColor_, gradientBackground_);
+    drawValueText(unit_.c_str(), unitDrawX_, unitDrawY_, unitBgColor_, gradientBackground_);
 
-    unitNeedsRedraw_ = false;
+    pending_ = RedrawLevel::None;
 }
 
-void MetricWidget::loadValueFont() const {
+void MetricWidget::loadValueFont() {
     LGFX* lcd = getLcd();
     if (!lcd)
         return;
@@ -237,48 +229,10 @@ void MetricWidget::loadValueFont() const {
     }
 }
 
-void MetricWidget::unloadValueFont() const {
+void MetricWidget::unloadValueFont() {
     LGFX* lcd = getLcd();
     if (lcd)
         Fonts::unload(lcd);
-}
-
-void MetricWidget::updateDimensionCache() {
-    const MetricTileLayout::Rect tile{
-        static_cast<int16_t>(dimensions_.x), static_cast<int16_t>(dimensions_.y),
-        static_cast<int16_t>(dimensions_.width), static_cast<int16_t>(dimensions_.height)};
-    valueArea_ = MetricTileLayout::valueArea(tile, hasLabel_, static_cast<int16_t>(labelWidth_),
-                                             kSeparatorWidth, static_cast<int16_t>(borderMargin_));
-    dimensionsDirty_ = false;
-    valueAreaDirty_ = true;
-}
-
-const char* MetricWidget::getFormattedValueText() const {
-    // The unit suffix is drawn separately (smaller, dimmed font) — see
-    // refreshUnitWidthIfNeeded() — so this only formats the bare number.
-    if (formatCacheDirty_) {
-        snprintf(formattedValue_, sizeof(formattedValue_), "%d", value_);
-        formatCacheDirty_ = false;
-    }
-    return formattedValue_;
-}
-
-void MetricWidget::refreshUnitWidthIfNeeded() const {
-    if (!unitWidthDirty_)
-        return;
-
-    LGFX* lcd = getLcd();
-    if (!lcd)
-        return;
-
-    if (unit_[0] != '\0') {
-        Fonts::loadLabel(lcd);
-        unitWidthCache_ = static_cast<uint16_t>(lcd->textWidth(unit_));
-        Fonts::unload(lcd);
-    } else {
-        unitWidthCache_ = 0;
-    }
-    unitWidthDirty_ = false;
 }
 
 uint16_t MetricWidget::calculateBackgroundColor() const {
@@ -347,7 +301,7 @@ uint16_t MetricWidget::backgroundColorAtY(int16_t y, int16_t areaY, int16_t area
 
 void MetricWidget::getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& areaWidth,
                                       int16_t& areaHeight) const {
-    // Cached by updateDimensionCache(); see MetricTileLayout::valueArea().
+    // Computed once in the constructor; see MetricTileLayout::valueArea().
     areaX = valueArea_.x;
     areaY = valueArea_.y;
     areaWidth = valueArea_.w;
@@ -406,26 +360,17 @@ bool MetricWidget::layoutShifted(int16_t newTextWidth, int16_t unitWidth) const 
     return MetricTileLayout::needsClear(newTextWidth, lastTextWidth_, unitWidth);
 }
 
-void MetricWidget::safeStringCopy(char* dest, const char* src, size_t destSize) const {
-    if (destSize > 0) {
-        strncpy(dest, src, destSize - 1);
-        dest[destSize - 1] = '\0';
-    }
-}
-
 void MetricWidget::setValue(int value) {
     if (value_ != value) {
         value_ = value;
-        formatCacheDirty_ = true;
+        raise(RedrawLevel::Value);
         markDirty();
     }
 }
 
 void MetricWidget::forceRefreshAndDraw() {
-    hasDrawnOnce_ = false;     // Force the next draw to take the full-render path
-    formatCacheDirty_ = true;  // Force format recalculation
-    valueAreaDirty_ = true;    // Force area redraw
-    markDirty();               // Mark widget as dirty
+    pending_ = RedrawLevel::Full;  // Force the next draw to take the full-render path
+    markDirty();
 
     // Immediate draw — see the header comment for why this is safe here.
     if (isInitialized() && getLcd()) {

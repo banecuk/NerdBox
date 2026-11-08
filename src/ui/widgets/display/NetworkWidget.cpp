@@ -7,12 +7,8 @@
 // ---------------------------------------------------------------------------
 
 NetworkWidget::NetworkWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                             const NetworkStatus& status, EventType action,
-                             ActionCallback callback)
-    : Widget(dims, updateIntervalMs),
-      status_(status),
-      action_(action),
-      callback_(std::move(callback)) {}
+                             const NetworkStatus& status, TapAction tap)
+    : Widget(dims, updateIntervalMs), status_(status), tap_(std::move(tap)) {}
 
 // ---------------------------------------------------------------------------
 // drawStatic — background only; called once on first paint and after wipe
@@ -236,8 +232,5 @@ bool NetworkWidget::endpointsDirty() const {
 }
 
 bool NetworkWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
-    if (!callback_)
-        return false;
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }

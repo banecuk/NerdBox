@@ -28,9 +28,9 @@ uint16_t tierColor(WifiScanMath::SignalTier tier) {
 }
 }  // namespace
 
-WifiLinkWidget::WifiLinkWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                               uint32_t updateIntervalMs, const NetworkStatus& netStatus,
-                               const WifiScanData& wifiScan, const AppSettings& config)
+WifiLinkWidget::WifiLinkWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                               const NetworkStatus& netStatus, const WifiScanData& wifiScan,
+                               const AppSettings& config)
     : Widget(dims, updateIntervalMs), netStatus_(netStatus), wifiScan_(wifiScan), config_(config) {}
 
 void WifiLinkWidget::onDrawStatic() {
@@ -58,7 +58,6 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
             drawDisconnected();
         }
         lastConnected_ = false;
-        clearDirty();
         return;
     }
 
@@ -89,7 +88,6 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
     lastRssi_ = link.rssi;
 
     lastConnected_ = true;
-    clearDirty();
 }
 
 void WifiLinkWidget::drawDisconnected() {

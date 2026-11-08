@@ -3,7 +3,7 @@
 #include "services/roomClimate/RoomClimateData.h"
 #include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Local room temperature/humidity readout — a single 64x56 column sitting
 // between ThreadsWidget and AirQualityWidget on the main screen's top band.
@@ -38,12 +38,11 @@ class RoomClimateWidget : public Widget {
     const RoomClimateData& roomClimateData_;
 
     // Window: AppSettings::roomClimateStaleTimeoutMs.
-    DataFreshnessGuard freshness_;
+    FreshnessTransition freshness_;
 
     // Cached values for dirty detection
     int16_t lastTempX10_ = INT16_MIN;
     uint8_t lastHumidity_ = 0xFF;
-    bool lastAvail_ = false;
 
     // Centre Y (widget-relative) of the top / bottom row of the two-row
     // column — mirrors AirQualityWidget::rowCenterY so the two blocks share

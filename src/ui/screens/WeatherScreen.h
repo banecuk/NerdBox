@@ -8,12 +8,15 @@
 // Weather forecast screen: full-width daily column strip (up to 7 days) plus
 // a back button. Entered by tapping the AirQualityWidget on the main screen.
 // Data is refreshed by WeatherJob every ~2h regardless of active screen,
-// plus immediately on entry to this screen (UiController::loadAndActivateScreen).
+// plus immediately on entry to this screen (onEnter() raises
+// WeatherData::refreshRequested — the screen's only write to WeatherData).
 class WeatherScreen : public BaseWidgetScreen {
  public:
     WeatherScreen(LoggerInterface& logger, UiController& uiController, const AppSettings& config,
                   WeatherData& weatherData);
     ~WeatherScreen() override = default;
+
+    void onEnter() override;
 
  private:
     void createWidgets() override;

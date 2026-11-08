@@ -26,9 +26,9 @@ uint8_t clockPercent(float mhz) {
 }
 }  // namespace
 
-CpuClockWidget::CpuClockWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                               uint32_t updateIntervalMs, const CpuClockData& data)
-    : Widget(dims, updateIntervalMs), data_(data), freshnessGuard_(data.freshness) {}
+CpuClockWidget::CpuClockWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                               const CpuClockData& data)
+    : Widget(dims, updateIntervalMs), data_(data), freshness_(data.freshness) {}
 
 bool CpuClockWidget::ensureLayoutInitialized() {
     if (coreCount_ != 0) {
@@ -60,21 +60,21 @@ void CpuClockWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool fresh = freshnessGuard_.isFresh() && ensureLayoutInitialized();
+    // Layout latches only once data is fresh, so it's checked after the
+    // guard (short-circuit), never ahead of it.
+    const auto edge = freshness_.poll(freshness_.isFreshNow() && ensureLayoutInitialized());
+    const bool becameFresh = edge == FreshnessTransition::Edge::BecameFresh;
 
-    if (!wasFresh_ && fresh) {
+    if (becameFresh) {
         onDrawStatic();
     }
 
-    if (fresh) {
-        drawGrid(forceRedraw || !wasFresh_);
-        drawBusSpeed(forceRedraw || !wasFresh_);
-    } else if (wasFresh_ || forceRedraw) {
+    if (freshness_.fresh()) {
+        drawGrid(forceRedraw || becameFresh);
+        drawBusSpeed(forceRedraw || becameFresh);
+    } else if (edge == FreshnessTransition::Edge::BecameStale || forceRedraw) {
         drawNoDataMessage();
     }
-
-    wasFresh_ = fresh;
-    clearDirty();
 }
 
 void CpuClockWidget::drawGrid(bool forceRedraw) {

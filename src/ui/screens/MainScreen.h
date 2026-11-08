@@ -25,7 +25,7 @@ class MainScreen : public BaseWidgetScreen {
     MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController& uiController,
                const AppSettings& config, ApplicationMetrics& systemMetrics,
                const AirQualityData& airQualityData, const NetworkStatus& netStatus,
-               const AudioData& audioData, WeatherData& weatherData,
+               const AudioData& audioData, const WeatherData& weatherData,
                const RoomClimateData& roomClimateData);
     ~MainScreen() override = default;
 
@@ -36,6 +36,6 @@ class MainScreen : public BaseWidgetScreen {
     const AirQualityData& airQualityData_;
     const NetworkStatus& netStatus_;
     const AudioData& audioData_;
-    WeatherData& weatherData_;
+    const WeatherData& weatherData_;
     const RoomClimateData& roomClimateData_;
 };

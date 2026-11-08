@@ -19,21 +19,18 @@ static constexpr uint16_t kRainColor = kWeatherRainColor;
 static constexpr uint16_t kNoRainColor = TFT_DARKGREY;
 
 ForecastStripWidget::ForecastStripWidget(const WidgetInterface::Dimensions& dims,
-                                         uint32_t updateIntervalMs, WeatherData& weatherData,
-                                         const AppSettings& config, EventType action,
-                                         ActionCallback callback)
+                                         uint32_t updateIntervalMs, const WeatherData& weatherData,
+                                         const AppSettings& config, TapAction tap)
     : Widget(dims, updateIntervalMs),
       weatherData_(weatherData),
       config_(config),
-      action_(action),
-      callback_(std::move(callback)) {}
+      tap_(std::move(tap)) {}
 
 void ForecastStripWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
     columns_ = 0;
-    lastHasData_ = false;
     lastDataUpdateMsValid_ = false;
     for (auto& cache : lastColumns_) {
         cache = ColumnCache{};
@@ -44,12 +41,10 @@ void ForecastStripWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    checkMidnightRollover();
-
-    if (!freshness_.isFresh() || weatherData_.dayCount == 0) {
-        if (forceRedraw || lastHasData_) {
+    const auto edge = freshness_.poll(weatherData_.dayCount > 0);
+    if (!freshness_.fresh()) {
+        if (forceRedraw || edge == FreshnessTransition::Edge::BecameStale) {
             drawNoData();
-            lastHasData_ = false;
             columns_ = 0;
         }
         return;
@@ -61,10 +56,10 @@ void ForecastStripWidget::onDraw(bool forceRedraw) {
     if (count > kMaxColumns)
         count = kMaxColumns;
 
-    const bool layoutChanged = forceRedraw || !lastHasData_ || count != columns_;
+    const bool layoutChanged =
+        forceRedraw || edge == FreshnessTransition::Edge::BecameFresh || count != columns_;
     if (layoutChanged) {
         drawStatic();
-        lastHasData_ = true;
         columns_ = count;
         recomputeLayout(count);
     }
@@ -139,37 +134,6 @@ int16_t ForecastStripWidget::columnCenter(uint8_t col) const {
     return dimensions_.x + leftPad_ + static_cast<int16_t>(colWidth_) * col + colWidth_ / 2;
 }
 
-void ForecastStripWidget::checkMidnightRollover() {
-    const unsigned long now = millis();
-    if (now - lastTimeCheckMs_ < config_.weatherTimeCheckIntervalMs) {
-        return;
-    }
-    lastTimeCheckMs_ = now;
-
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 0)) {
-        return;
-    }
-    timeinfo.tm_hour = 0;
-    timeinfo.tm_min = 0;
-    timeinfo.tm_sec = 0;
-    const time_t localMidnight = mktime(&timeinfo);
-
-    if (weatherData_.dayCount == 0) {
-        return;
-    }
-
-    time_t firstDayStart;
-    {
-        ScopedLock lock(weatherData_.daysMutex);
-        firstDayStart = weatherData_.days[0].dayStart;
-    }
-
-    if (localMidnight != firstDayStart) {
-        weatherData_.refreshRequested.store(true);
-    }
-}
-
 void ForecastStripWidget::drawColumn(uint8_t col, bool dayChanged, bool maxChanged,
                                      bool minChanged, bool rainChanged, const char* dayName,
                                      uint16_t dayColor, const char* tempMax, const char* tempMin,
@@ -218,9 +182,5 @@ void ForecastStripWidget::drawNoData() {
 }
 
 bool ForecastStripWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
-    if (!callback_) {
-        return false;
-    }
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }

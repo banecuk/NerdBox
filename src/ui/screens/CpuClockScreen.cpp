@@ -11,7 +11,6 @@ void CpuClockScreen::createWidgets() {
     // Per-core clock grid + bus speed — content area above the bottom band.
     widgetManager_.addWidget(
         std::make_unique<CpuClockWidget>(
-            uiController_.getDisplayContext(),
             WidgetInterface::Dimensions{0, 0, Layout::kScreenW, Layout::kContentH}, 250,
             cpuClockData_),
         "cpu_clock_grid");
@@ -22,10 +21,9 @@ void CpuClockScreen::createWidgets() {
     // here (not MAIN).
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_.getDisplayContext(), ButtonIcon::PROCESSES, "Processes",
+            ButtonIcon::PROCESSES, "Processes",
             WidgetInterface::Dimensions{56, Layout::kBottomBarY, 120, Layout::kButtonSize}, 0,
-            EventType::SHOW_PROCESSES, [this](EventType a) { this->handleAction(a); },
-            Theme::kSurface, TFT_WHITE),
+            tapTo(EventType::SHOW_PROCESSES), Theme::kSurface, TFT_WHITE),
         "processes_button");
 
     addBottomClock();

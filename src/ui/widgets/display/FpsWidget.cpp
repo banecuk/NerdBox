@@ -8,13 +8,11 @@ static constexpr uint16_t kLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kValueColor = Colors::kOk;
 static constexpr uint16_t kPlaceholderColor = Colors::kHairline;
 
-FpsWidget::FpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                     uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
-                     ActionCallback callback)
+FpsWidget::FpsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                     PcMetrics& pcMetrics, TapAction tap)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
-      action_(action),
-      callback_(std::move(callback)),
+      tap_(std::move(tap)),
       freshnessGuard_(pcMetrics.freshness) {}
 
 void FpsWidget::onDrawStatic() {
@@ -47,7 +45,6 @@ void FpsWidget::onDraw(bool forceRedraw) {
         }
         lastVisible_ = hasValue;
         lastDrawnFps_ = fps;
-        clearDirty();
         return;
     }
 
@@ -55,7 +52,6 @@ void FpsWidget::onDraw(bool forceRedraw) {
         if (forceRedraw) {
             renderPlaceholder();
         }
-        clearDirty();
         return;
     }
 
@@ -64,8 +60,6 @@ void FpsWidget::onDraw(bool forceRedraw) {
         renderFps(fps);
         lastDrawnFps_ = fps;
     }
-
-    clearDirty();
 }
 
 void FpsWidget::renderFps(int16_t fps) {
@@ -121,8 +115,5 @@ void FpsWidget::clearArea() {
 }
 
 bool FpsWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!callback_)
-        return false;
-    callback_(action_);
-    return true;
+    return tap_.fire();
 }

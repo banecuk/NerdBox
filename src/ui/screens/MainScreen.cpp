@@ -6,7 +6,7 @@
 MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiController& uiController,
                        const AppSettings& config, ApplicationMetrics& systemMetrics,
                        const AirQualityData& airQualityData, const NetworkStatus& netStatus,
-                       const AudioData& audioData, WeatherData& weatherData,
+                       const AudioData& audioData, const WeatherData& weatherData,
                        const RoomClimateData& roomClimateData)
     : BaseWidgetScreen(logger, uiController, config),
       pcMetrics_(pcMetrics),
@@ -17,73 +17,91 @@ MainScreen::MainScreen(LoggerInterface& logger, PcMetrics& pcMetrics, UiControll
       weatherData_(weatherData),
       roomClimateData_(roomClimateData) {}
 
+namespace {
+// Band geometry, top to bottom. Each band starts where the previous one
+// ends, so changing one height moves everything below it and the
+// static_assert catches a stack that no longer meets the bottom band (A18).
+constexpr uint16_t kTopBandY = 0;
+constexpr uint16_t kTopBandH = 56;
+// PcMetricsWidget: 84px tall (28px rows, borderMargin=0 on every tile) —
+// see docs-local/10-pcmetrics-tile-height.md.
+constexpr uint16_t kPcMetricsY = kTopBandY + kTopBandH;  // 56
+constexpr uint16_t kPcMetricsH = 84;
+// MultiWidget absorbs whatever PcMetricsWidget/DiskBandWidget don't use.
+constexpr uint16_t kMultiY = kPcMetricsY + kPcMetricsH;  // 140
+constexpr uint16_t kMultiH = 103;
+// DiskBandWidget: one shared 3px read/write activity line, a 1px gap, then a
+// ~22px borderless per-drive tile area that fits the NotoSans15 value font.
+constexpr uint16_t kDiskBandY = kMultiY + kMultiH;  // 243
+constexpr uint16_t kDiskBandH = 26;
+static_assert(kDiskBandY + kDiskBandH == Layout::kBottomBarY,
+              "MainScreen's bands must tile exactly down to the shared bottom band");
+
+// Top band, left to right: threads | room climate | air quality.
+// ThreadsWidget spreads any width % coreCount remainder across its first
+// bars' pitch (V20), so kThreadsW needn't divide by Limits::kCores; at the
+// default 28 threads it does (8px pitch) and every bar is the same width.
+constexpr uint16_t kThreadsW = 224;
+constexpr uint16_t kRoomX = kThreadsW;
+// One decimal place, always positive (indoor sensor) — worst case "99.9°C"
+// still needs the full 64px column despite never needing a sign.
+constexpr uint16_t kRoomW = 64;
+constexpr uint16_t kAirX = kRoomX + kRoomW;  // 288
+constexpr uint16_t kAirW = 192;
+static_assert(kThreadsW + kRoomW + kAirW == Layout::kScreenW,
+              "MainScreen's top band must span the screen width exactly");
+}  // namespace
+
 void MainScreen::createWidgets() {
     // Threads — reduced-width row filling the left side of the top band, so
-    // RoomClimateWidget's 64px column fits between it and AirQualityWidget.
-    // 224/28 cores = 8px pitch, unchanged from before the room widget's space
-    // was carved out of AirQualityWidget instead.
+    // RoomClimateWidget's column fits between it and AirQualityWidget.
     auto threadsWidget = std::make_unique<ThreadsWidget>(
-        uiController_.getDisplayContext(), WidgetInterface::Dimensions{0, 0, 224, 56},
+        WidgetInterface::Dimensions{0, kTopBandY, kThreadsW, kTopBandH},
         config_.hardwareMonitorThreadsRefreshMs, pcMetrics_, config_, systemMetrics_,
-        EventType::SHOW_CPU_CLOCK, [this](EventType action) { this->handleAction(action); });
+        tapTo(EventType::SHOW_CPU_CLOCK));
     widgetManager_.addWidget(std::move(threadsWidget), "threads");
 
     // Room climate — local temperature/humidity sensor, between the threads
-    // and air quality blocks on the same top band. One decimal place, always
-    // positive (indoor sensor) — worst case "99.9°C" still needs the full
-    // 64px column despite never needing a sign.
-    widgetManager_.addWidget(
-        std::make_unique<RoomClimateWidget>(WidgetInterface::Dimensions{224, 0, 64, 56}, 5000,
-                                            roomClimateData_, config_.roomClimateStaleTimeoutMs),
-        "room_climate");
+    // and air quality blocks on the same top band.
+    widgetManager_.addWidget(std::make_unique<RoomClimateWidget>(
+                                 WidgetInterface::Dimensions{kRoomX, kTopBandY, kRoomW, kTopBandH},
+                                 5000, roomClimateData_, config_.roomClimateStaleTimeoutMs),
+                             "room_climate");
 
     // Air quality block — right of the room climate widget, same top band.
     // Reorganized into four compact columns (icon | temp+humidity |
     // pressure+wind | AQI). Tappable to the weather forecast screen.
     widgetManager_.addWidget(std::make_unique<AirQualityWidget>(
-                                 WidgetInterface::Dimensions{288, 0, 192, 56}, 5000,
-                                 airQualityData_, config_.airQualityStaleTimeoutMs,
-                                 EventType::SHOW_WEATHER,
-                                 [this](EventType action) { this->handleAction(action); }),
+                                 WidgetInterface::Dimensions{kAirX, kTopBandY, kAirW, kTopBandH},
+                                 5000, airQualityData_, config_.airQualityStaleTimeoutMs,
+                                 tapTo(EventType::SHOW_WEATHER)),
                              "air_quality");
 
-    // Game metrics grid — replaces PcMetricsWidget, directly below threads.
-    // Moved up (y=56) since the top band got shorter. 84px tall (28px rows,
-    // borderMargin=0 on every tile) — see docs-local/10-pcmetrics-tile-height.md.
-    // 28px rows (rather than the 26px floor) leave a bit more breathing room
-    // around the digits. Tapping any GPU tile opens the game screen
-    // (requestScreen() no-ops if already there).
-    auto gameMetricsWidget = std::make_unique<PcMetricsWidget>(
-        uiController_.getDisplayContext(), WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 84},
-        100, pcMetrics_, EventType::SHOW_GAME,
-        [this](EventType action) { this->handleAction(action); });
-    gameMetricsWidget->setStaleTimeout(5000);
-    widgetManager_.addWidget(std::move(gameMetricsWidget), "pc_metrics");
-
-    // Multifunctional widget — full screen width now that the FPS tile is
-    // gone from the main screen (still shown on the game screen via
-    // FpsWidget/GameFpsWidget). Moved up to y=140 (PcMetricsWidget's new
-    // bottom edge) and grown to 104px tall, absorbing the remaining 22px
-    // freed by PcMetricsWidget's height cut — see
-    // docs-local/10-pcmetrics-tile-height.md. Trimmed to 103px to hand the
-    // freed pixel to DiskBandWidget's activity lines below.
+    // Game metrics grid, directly below threads. 28px rows (rather than the
+    // 26px floor) leave a bit more breathing room around the digits. Tapping
+    // any GPU tile opens the game screen (requestScreen() no-ops if already
+    // there). Stale window is PcDataCompositeWidget's default (5 s).
     widgetManager_.addWidget(
-        std::make_unique<MultiWidget>(WidgetInterface::Dimensions{0, 140, Layout::kScreenW, 103},
-                                      200, pcMetrics_, audioData_, weatherData_, config_,
-                                      EventType::SHOW_WEATHER,
-                                      [this](EventType action) { this->handleAction(action); }),
-        "multi");
+        std::make_unique<PcMetricsWidget>(
+            WidgetInterface::Dimensions{0, kPcMetricsY, Layout::kScreenW, kPcMetricsH}, 100,
+            pcMetrics_, tapTo(EventType::SHOW_GAME)),
+        "pc_metrics");
 
-    // Disk band — slim strip, tappable to the disk screen. 26px tall: one
-    // shared 3px read/write activity line at the top (split left/right, see
-    // DiskBandWidget), a 1px gap, then a ~22px borderless per-drive tile area
-    // that fits the NotoSans15 value font. Moved below the MultiWidget/FpsWidget
-    // row (y=243..269, right above the bottom band).
+    // Multifunctional widget — full screen width (the FPS tile lives on the
+    // game screen only, via FpsWidget/GameFpsWidget), filling the gap
+    // between PcMetricsWidget and DiskBandWidget.
+    widgetManager_.addWidget(std::make_unique<MultiWidget>(
+                                 WidgetInterface::Dimensions{0, kMultiY, Layout::kScreenW, kMultiH},
+                                 200, pcMetrics_, audioData_, weatherData_, config_,
+                                 tapTo(EventType::SHOW_WEATHER)),
+                             "multi");
+
+    // Disk band — slim strip right above the bottom band, tappable to the
+    // disk screen (activity line split left/right, see DiskBandWidget).
     widgetManager_.addWidget(
-        std::make_unique<DiskBandWidget>(uiController_.getDisplayContext(),
-                                         WidgetInterface::Dimensions{0, 243, Layout::kScreenW, 26},
-                                         100, pcMetrics_, EventType::SHOW_DISKS,
-                                         [this](EventType action) { this->handleAction(action); }),
+        std::make_unique<DiskBandWidget>(
+            WidgetInterface::Dimensions{0, kDiskBandY, Layout::kScreenW, kDiskBandH}, 100,
+            pcMetrics_, tapTo(EventType::SHOW_DISKS)),
         "disk_band");
 
     // ── Bottom band is unchanged below this point ──────────────────────────────
@@ -116,10 +134,9 @@ void MainScreen::createWidgets() {
     // Settings button — gear icon, no label
     widgetManager_.addWidget(
         std::make_unique<ButtonWidget>(
-            uiController_.getDisplayContext(), ButtonIcon::SETTINGS, "",
+            ButtonIcon::SETTINGS, "",
             WidgetInterface::Dimensions{0, kBandY, Layout::kButtonSize, Layout::kButtonSize}, 0,
-            EventType::SHOW_SETTINGS, [this](EventType action) { this->handleAction(action); },
-            Theme::kSurface, TFT_WHITE),
+            tapTo(EventType::SHOW_SETTINGS), Theme::kSurface, TFT_WHITE),
         "settings_button");
 
     // Network traffic widget — Ethernet up/down rates, right of the settings
@@ -137,8 +154,7 @@ void MainScreen::createWidgets() {
     // instead of direction arrows. Tappable to the disk info screen.
     widgetManager_.addWidget(std::make_unique<DiskSummaryWidget>(
                                  WidgetInterface::Dimensions{kDiskSumX, kBandY, kDiskSumW, kBandH},
-                                 100, pcMetrics_, EventType::SHOW_DISKS,
-                                 [this](EventType action) { this->handleAction(action); }),
+                                 100, pcMetrics_, tapTo(EventType::SHOW_DISKS)),
                              "disk_summary");
 
     // Network widget — compact, right-aligned next to the clock. Hit box
@@ -150,7 +166,7 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(
         std::make_unique<NetworkWidget>(
             WidgetInterface::Dimensions{kNetWidgetX, kBandY, kNetWidgetW, kBandH}, 1000, netStatus_,
-            EventType::SHOW_WIFI, [this](EventType action) { this->handleAction(action); }),
+            tapTo(EventType::SHOW_WIFI)),
         "network_status");
 
     // Clock — taller row so Mono24 glyphs get vertical padding. Centered on
@@ -159,7 +175,6 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(std::make_unique<ClockWidget>(
                                  WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH},
                                  1000, TFT_LIGHTGREY, TFT_BLACK, "%H:%M:%S",
-                                 EventType::SHOW_CALENDAR,
-                                 [this](EventType action) { this->handleAction(action); }),
+                                 tapTo(EventType::SHOW_CALENDAR)),
                              "clock");
 }

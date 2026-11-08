@@ -12,8 +12,7 @@ BrightnessWidget::BrightnessWidget(const WidgetInterface::Dimensions& dims,
 
 void BrightnessWidget::buildSegments() {
     // Evenly divide available width across kSegmentCount segments.
-    const uint16_t totalGaps = kGap * (kSegmentCount - 1);
-    const uint16_t segW = (dimensions_.width - totalGaps) / kSegmentCount;
+    const uint16_t segW = segmentWidth(dimensions_.width);
 
     // Labels — one per level, ordered dim → bright.
     static constexpr const char* kLabels[kSegmentCount] = {"1", "2", "3", "4", "5", "6"};
@@ -51,7 +50,6 @@ void BrightnessWidget::onDraw(bool forceRedraw) {
 
     const uint8_t current = displayManager_.getBrightness();
     if (!forceRedraw && current == lastDrawnLevel_) {
-        clearDirty();
         return;
     }
 
@@ -60,7 +58,6 @@ void BrightnessWidget::onDraw(bool forceRedraw) {
     }
 
     lastDrawnLevel_ = current;
-    clearDirty();
 }
 
 void BrightnessWidget::drawSegment(const Segment& seg, bool active) {

@@ -9,6 +9,7 @@
 #include "services/audio/AudioData.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "services/weather/WeatherData.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/ActivityDetector.h"
 #include "utils/DataFreshnessGuard.h"
@@ -34,9 +35,8 @@ class HistorySparklineWidget;
 class MultiWidget : public Widget {
  public:
     MultiWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                PcMetrics& pcMetrics, const AudioData& audioData, WeatherData& weatherData,
-                const AppSettings& config, EventType forecastTapAction = EventType::NONE,
-                std::function<void(EventType)> forecastTapCallback = nullptr);
+                PcMetrics& pcMetrics, const AudioData& audioData, const WeatherData& weatherData,
+                const AppSettings& config, TapAction forecastTap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -60,10 +60,9 @@ class MultiWidget : public Widget {
 
     PcMetrics& pcMetrics_;
     const AudioData& audioData_;
-    WeatherData& weatherData_;
+    const WeatherData& weatherData_;
     const AppSettings& config_;
-    EventType forecastTapAction_;
-    std::function<void(EventType)> forecastTapCallback_;
+    TapAction forecastTap_;
 
     std::vector<std::unique_ptr<WidgetInterface>> candidates_;
     // Raw pointer into candidates_[kSparklineIndex] — sampleTick() must run

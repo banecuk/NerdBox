@@ -5,8 +5,9 @@
 
 #include "core/events/EventTypes.h"
 #include "services/pcMetrics/PcMetrics.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Compact disk activity summary — sits right of NetworkTrafficWidget in the
 // bottom band. Two stacked rows, mirroring NetworkTrafficWidget's layout:
@@ -21,11 +22,8 @@
 // (default SHOW_DISKS action, mirroring DiskBandWidget/FpsWidget).
 class DiskSummaryWidget : public Widget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
     DiskSummaryWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                      PcMetrics& pcMetrics, EventType action = EventType::SHOW_DISKS,
-                      ActionCallback callback = nullptr);
+                      PcMetrics& pcMetrics, TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -35,9 +33,8 @@ class DiskSummaryWidget : public Widget {
 
  private:
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard freshnessGuard_;
-    EventType action_;
-    ActionCallback callback_;
+    FreshnessTransition freshness_;
+    TapAction tap_;
 
     // Cached *rendered* text + colour (not the raw KB/s sum) so a value that
     // rounds to the same displayed text doesn't force a redraw — same
@@ -46,7 +43,6 @@ class DiskSummaryWidget : public Widget {
     char lastWriteText_[16] = "";
     uint16_t lastReadColor_ = 0;
     uint16_t lastWriteColor_ = 0;
-    bool lastHasData_ = false;
 
     void drawRow(int16_t rowY, bool isRead, float mbps, bool hasData, bool forceRedraw,
                  char* lastText, size_t lastTextSize, uint16_t& lastColor);

@@ -10,7 +10,6 @@ void ProcessesScreen::createWidgets() {
     // Three-column process list — content area above the bottom band.
     widgetManager_.addWidget(
         std::make_unique<ProcessListWidget>(
-            uiController_.getDisplayContext(),
             WidgetInterface::Dimensions{0, 0, Layout::kScreenW, Layout::kContentH}, 500,
             processData_),
         "process_list");

@@ -59,8 +59,6 @@ void IpAddressWidget::onDraw(bool forceRedraw) {
         renderContent(connected, currentIp);
         lastConnected_ = connected;
     }
-
-    clearDirty();
 }
 
 void IpAddressWidget::renderContent(bool connected, const char* ip) {

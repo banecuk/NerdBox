@@ -5,17 +5,21 @@
 #include "core/state/SystemState.h"
 #include "network/NetworkManager.h"
 #include "services/weather/WeatherData.h"
+#include "services/weather/WeatherDayMath.h"
 #include "services/weather/WeatherService.h"
 #include "utils/DataFreshnessGuard.h"
 #include "utils/logging/LoggerInterface.h"
 #include "utils/logging/LogMacros.h"
+#include "utils/ScopedLock.h"
 
 // Refreshes the open-meteo weather forecast every kWeatherRefreshIntervalMs
 // (2 h), regardless of which screen is active, so data is already current
 // whenever the user opens the Weather screen. Fires immediately, ahead of
-// that interval, when refreshRequested is set — on screen entry (UiController)
-// or on a local-midnight rollover (WeatherWidget). Failed fetches back off
-// for AppSettings::weatherFailureBackoffMs.
+// that interval, when refreshRequested is set (on Weather screen entry —
+// WeatherScreen::onEnter()) or when the forecast's first day is no longer
+// today (a local-midnight rollover, checked here every
+// weatherTimeCheckIntervalMs via WeatherDayMath — A11). Failed fetches back
+// off for AppSettings::weatherFailureBackoffMs.
 class WeatherJob : public BackgroundJob {
  public:
     WeatherJob(WeatherService& service, WeatherData& data, SystemState::CoreState& coreState,
@@ -32,6 +36,7 @@ class WeatherJob : public BackgroundJob {
         if (!coreState_.isInitialized || !networkManager_.isConnected()) {
             return JobDue::never();
         }
+        checkMidnightRollover();
         // Screen entry / midnight rollover → fire now, still honouring the
         // failure backoff. Otherwise only refresh once the data is stale.
         // Cooldown compares elapsed time, so neither path breaks at the
@@ -61,6 +66,36 @@ class WeatherJob : public BackgroundJob {
     }
 
  private:
+    // Throttled to weatherTimeCheckIntervalMs (nextDue() runs every
+    // background tick). Raises refreshRequested rather than returning a
+    // separate verdict, so the request survives a failed fetch exactly like
+    // a screen-entry one (run() re-arms it). Mutable/const because
+    // nextDue() is the scheduler's only hook; it touches nothing but the
+    // throttle stamp and the shared request flag.
+    void checkMidnightRollover() const {
+        const unsigned long now = millis();
+        if (now - lastTimeCheckMs_ < config_.weatherTimeCheckIntervalMs) {
+            return;
+        }
+        lastTimeCheckMs_ = now;
+
+        if (!coreState_.isTimeSynced || data_.dayCount == 0) {
+            return;
+        }
+        struct tm nowLocal;
+        if (!getLocalTime(&nowLocal, 0)) {
+            return;
+        }
+        time_t firstDayStart;
+        {
+            ScopedLock lock(data_.daysMutex);
+            firstDayStart = data_.days[0].dayStart;
+        }
+        if (WeatherDayMath::needsRollover(nowLocal, firstDayStart)) {
+            data_.refreshRequested.store(true);
+        }
+    }
+
     WeatherService& service_;
     WeatherData& data_;
     SystemState::CoreState& coreState_;
@@ -69,4 +104,5 @@ class WeatherJob : public BackgroundJob {
     LoggerInterface& logger_;
     DataFreshnessGuard freshness_;
     Cooldown backoff_;
+    mutable unsigned long lastTimeCheckMs_ = 0;
 };

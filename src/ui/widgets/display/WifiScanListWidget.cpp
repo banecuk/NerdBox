@@ -106,7 +106,6 @@ void WifiScanListWidget::onDraw(bool forceRedraw) {
     lastState_ = data_.state;
     lastCount_ = data_.count;
     lastFreshnessMs_ = data_.freshness.lastUpdateMs();
-    clearDirty();
 }
 
 // ---------------------------------------------------------------------------

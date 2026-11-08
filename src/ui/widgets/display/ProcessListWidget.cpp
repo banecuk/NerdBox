@@ -14,9 +14,9 @@ constexpr uint16_t kValueColor = TFT_WHITE;
 constexpr uint16_t kSeparatorColor = Colors::kBorderGrey;
 }  // namespace
 
-ProcessListWidget::ProcessListWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
+ProcessListWidget::ProcessListWidget(const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs, const ProcessData& data)
-    : Widget(dims, updateIntervalMs), data_(data), freshnessGuard_(data.freshness) {
+    : Widget(dims, updateIntervalMs), data_(data), freshness_(data.freshness) {
     columnWidth_ = dimensions_.width / kColumns;
     const uint16_t gridHeight = dimensions_.height - kHeaderHeight;
     rowHeight_ = gridHeight / kRows;
@@ -54,21 +54,20 @@ void ProcessListWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool fresh = freshnessGuard_.isFresh();
+    const auto edge = freshness_.poll();
+    const bool repaint = forceRedraw || edge == FreshnessTransition::Edge::BecameFresh;
 
-    if (!wasFresh_ && fresh) {
+    if (edge == FreshnessTransition::Edge::BecameFresh) {
         onDrawStatic();
     }
 
-    if (fresh) {
-        drawColumn(kCpu, data_.byCpu, data_.byCpuCount, forceRedraw || !wasFresh_);
-        drawColumn(kRam, data_.byRam, data_.byRamCount, forceRedraw || !wasFresh_);
-        drawColumn(kDisk, data_.byDisk, data_.byDiskCount, forceRedraw || !wasFresh_);
-    } else if (wasFresh_ || forceRedraw) {
+    if (freshness_.fresh()) {
+        drawColumn(kCpu, data_.byCpu, data_.byCpuCount, repaint);
+        drawColumn(kRam, data_.byRam, data_.byRamCount, repaint);
+        drawColumn(kDisk, data_.byDisk, data_.byDiskCount, repaint);
+    } else if (edge == FreshnessTransition::Edge::BecameStale || forceRedraw) {
         drawNoDataMessage();
     }
-
-    wasFresh_ = fresh;
 }
 
 void ProcessListWidget::formatEntry(Column column, const ProcessEntry& entry, RowText& out) {

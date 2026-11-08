@@ -8,16 +8,14 @@
 #include "utils/logging/LogMacros.h"
 
 UiController::UiController(DisplayContext& context, DisplayManager& displayManager,
-                           ApplicationMetrics& systemMetrics,
-                           SystemState::ScreenState& screenState, const AppSettings& config,
-                           WeatherData& weatherData)
+                           ApplicationMetrics& systemMetrics, SystemState::ScreenState& screenState,
+                           const AppSettings& config)
     : logger_(context.getLogger()),
       displayManager_(displayManager),
       context_(context),
       systemMetrics_(systemMetrics),
       screenState_(screenState),
       config_(config),
-      weatherData_(weatherData),
       actionHandler_(std::make_unique<UiEventHandler>(this, context.getLogger())),
       touchManager_(
           std::make_unique<TouchManager>(context.getDisplay(), context.getLogger(), config)),
@@ -208,15 +206,6 @@ void UiController::loadAndActivateScreen() {
     if (newScreen) {
         currentScreen_ = std::move(newScreen);
         screenState_.activeScreen = activeTransition_.nextScreen;
-
-        // Weather screen: fetch on entry rather than waiting for WeatherJob's
-        // own 2h background refresh, so tapping in always shows current
-        // conditions. WeatherJob backs off on failure, so this one-shot
-        // request doesn't turn into aggressive polling — reuses the same
-        // flag as its midnight-rollover refresh.
-        if (activeTransition_.nextScreen == ScreenName::WEATHER) {
-            weatherData_.refreshRequested.store(true);
-        }
 
         currentScreen_->onEnter();
     } else {

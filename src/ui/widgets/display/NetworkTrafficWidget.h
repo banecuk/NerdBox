@@ -5,7 +5,7 @@
 
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Compact Ethernet throughput widget — sits right of the Settings button in
 // the bottom band. Two stacked rows: upload on top, download on bottom, each
@@ -36,7 +36,7 @@ class NetworkTrafficWidget : public Widget {
 
  private:
     PcMetrics& pcMetrics_;
-    DataFreshnessGuard freshnessGuard_;
+    FreshnessTransition freshness_;
     const float uploadLinkMbps_;
     const float downloadLinkMbps_;
 
@@ -48,7 +48,6 @@ class NetworkTrafficWidget : public Widget {
     char lastDownText_[16] = "";
     uint16_t lastUpColor_ = 0;
     uint16_t lastDownColor_ = 0;
-    bool lastHasData_ = false;
 
     void drawRow(int16_t rowY, bool isUp, float mbps, float maxMbps, bool hasData, bool forceRedraw,
                  char* lastText, size_t lastTextSize, uint16_t& lastColor);

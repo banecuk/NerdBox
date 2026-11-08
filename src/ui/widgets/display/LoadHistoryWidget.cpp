@@ -11,10 +11,9 @@ static constexpr uint16_t kGpuColor = Colors::kGpuAccent;
 static constexpr uint16_t kHighUsageColor = TFT_RED;
 static constexpr uint8_t kGpuHighUsageThreshold = 90;
 
-LoadHistoryWidget::LoadHistoryWidget(DisplayContext& context,
-                                     const WidgetInterface::Dimensions& dims,
+LoadHistoryWidget::LoadHistoryWidget(const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
+    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshness_(pcMetrics.freshness) {}
 
 void LoadHistoryWidget::computePlotLayout() {
     plotX_ = dimensions_.x + kCaptionWidth;
@@ -43,7 +42,7 @@ void LoadHistoryWidget::onDrawStatic() {
 }
 
 void LoadHistoryWidget::sampleIfNeeded() {
-    if (!freshnessGuard_.isFresh())
+    if (!freshness_.fresh())
         return;
     if (pcMetrics_.freshness.lastUpdateMs() == lastSampledTimestamp_)
         return;
@@ -112,27 +111,23 @@ void LoadHistoryWidget::onDraw(bool forceRedraw) {
     // last-known trace on screen (an unmoving plot reads as live data) —
     // same rule as HistorySparklineWidget/GameFpsWidget on this screen (B50).
     // The caption and frame stay, so the widget's slot is still recognisable.
-    if (!freshnessGuard_.isFresh()) {
-        if (forceRedraw || lastHasData_) {
+    const auto edge = freshness_.poll();
+    if (!freshness_.fresh()) {
+        if (forceRedraw || edge == FreshnessTransition::Edge::BecameStale) {
             getLcd()->fillRect(plotX_, plotY_, plotWidth_, plotHeight_, kBgColor);
             for (auto& h : lastCpuHeight_)
                 h = 0;
             for (auto& h : lastGpuHeight_)
                 h = 0;
         }
-        lastHasData_ = false;
-        clearDirty();
         return;
     }
 
     // Coming back from stale: the plot was blanked, so repaint every column.
-    const bool repaintAll = forceRedraw || !lastHasData_;
-    lastHasData_ = true;
+    const bool repaintAll = forceRedraw || edge == FreshnessTransition::Edge::BecameFresh;
 
     sampleIfNeeded();
     drawPlot(repaintAll);
-
-    clearDirty();
 }
 
 bool LoadHistoryWidget::handleTouch(uint16_t x, uint16_t y) {

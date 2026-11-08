@@ -9,6 +9,7 @@
 #include "services/pcMetrics/PcMetrics.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/PcDataCompositeWidget.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/display/MetricWidget.h"
 #include "utils/MidpointInterpolator.h"
 
@@ -17,15 +18,12 @@
 // both 84px tall (28px rows), via the rowHeight() rescale in toScreenSpace().
 class PcMetricsWidget : public PcDataCompositeWidget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
     // action/callback mirror AirQualityWidget/FpsWidget's tap-to-navigate
     // pattern: a tap on any GPU tile (load/temp/power/fan/memory/3D/compute)
     // publishes `action` via `callback` (e.g. to open the game screen).
     // No-op when either is left at its default.
-    PcMetricsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                    uint32_t updateIntervalMs, PcMetrics& pcMetrics,
-                    EventType action = EventType::NONE, ActionCallback callback = nullptr);
+    PcMetricsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                    PcMetrics& pcMetrics, TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -98,8 +96,7 @@ class PcMetricsWidget : public PcDataCompositeWidget {
     static constexpr uint8_t kGpuTileFirstIndex = 5;
     static constexpr uint8_t kGpuTileLastIndex = 11;
 
-    EventType action_;
-    ActionCallback callback_;
+    TapAction tap_;
 
     uint8_t lastSystemFanCount_ = 0xFF;  // sentinel: force creation on first data
 

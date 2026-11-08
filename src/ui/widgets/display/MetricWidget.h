@@ -5,6 +5,7 @@
 
 #include "ui/widgets/base/MetricTileLayout.h"
 #include "ui/widgets/base/Widget.h"
+#include "utils/CachedString.h"
 
 class MetricWidget : public Widget {
  public:
@@ -83,12 +84,13 @@ class MetricWidget : public Widget {
     int getValue() const { return value_; }
     int getMinValue() const { return minValue_; }
     int getMaxValue() const { return maxValue_; }
-    const char* getUnit() const { return unit_; }
+    const char* getUnit() const { return unit_.c_str(); }
     float getLowerThreshold() const { return lowerThreshold_; }
     float getUpperThreshold() const { return upperThreshold_; }
     bool isSmallFont() const { return useSmallFont_; }
 
  protected:
+    void onInitialize() override;
     void onDraw(bool forceRedraw) override;
     void onDrawStatic() override;
 
@@ -97,14 +99,14 @@ class MetricWidget : public Widget {
     int value_;
     int minValue_;
     int maxValue_;
-    char unit_[8];  // Stack-allocated buffer
+    CachedString<8> unit_;
     float lowerThreshold_;
     float upperThreshold_;
     bool reverseThresholds_;
     bool useSmallFont_;
     Palette palette_;
     uint16_t labelColor_;
-    char label_[32];  // Stack-allocated buffer
+    CachedString<32> label_;
     uint16_t labelWidth_;
     uint8_t textAlignment_;
     uint16_t borderMargin_;
@@ -112,37 +114,46 @@ class MetricWidget : public Widget {
     bool verticalLabel_;
     bool gradientBackground_;
 
-    // State
-    // Value-area bounds, recomputed by updateDimensionCache() on a resize.
+    // What the next draw has to repaint (A16) — one ordered level instead of
+    // the seven overlapping flags it replaced (dimensionsDirty_,
+    // valueAreaDirty_, formatCacheDirty_, unitWidthDirty_, unitNeedsRedraw_,
+    // hasDrawnOnce_, lastDrawnValue_):
+    //   None  — what's on screen is current.
+    //   Value — only the number changed (setValue()); the text-only fast
+    //           path can repaint it over the existing background.
+    //   Unit  — batch path only: drawValueWithLoadedFont() moved/recoloured
+    //           the value, so the paired drawUnitWithLoadedFont() must
+    //           repaint the unit suffix.
+    //   Full  — nothing on screen can be trusted (after drawStatic(),
+    //           construction, or forceRefreshAndDraw()): clear and redraw
+    //           the whole value area.
+    enum class RedrawLevel : uint8_t {
+        None,
+        Value,
+        Unit,
+        Full
+    };
+    RedrawLevel pending_ = RedrawLevel::Full;
+    void raise(RedrawLevel level) {
+        if (level > pending_)
+            pending_ = level;
+    }
+
+    // Value-area bounds; the tile never resizes, so computed once in the
+    // constructor (see MetricTileLayout::valueArea()).
     MetricTileLayout::Rect valueArea_{0, 0, 0, 0};
-    bool dimensionsDirty_ = true;
-    int lastDrawnValue_ = -1;
-    // Tracks "has this widget completed at least one draw since the last
-    // drawStatic()?" separately from lastDrawnValue_, since -1 is also a
-    // legitimate value domain for a signed int (e.g. any future metric that
-    // uses -1 as a "not available" sentinel, mirroring PcMetrics::gpu_fps) —
-    // using lastDrawnValue_ == -1 as the "first render" check would collide
-    // with that and force a full redraw every frame instead of just once.
-    bool hasDrawnOnce_ = false;
     uint16_t lastBgColor_ = TFT_BLACK;
     int16_t lastTextWidth_ = 0;
-    bool valueAreaDirty_ = true;
-
-    // Cached values for performance
-    mutable char formattedValue_[24];  // Buffer for formatted value
-    mutable bool formatCacheDirty_ = true;
 
     // Unit suffix (label font) — rendered as a second piece next to the
     // value instead of being baked into the same string/font. Width is
-    // measured once (not on every draw) so the batched hot path
-    // (drawValueWithLoadedFont/drawUnitWithLoadedFont) never has to load a
-    // font itself. See refreshUnitWidthIfNeeded().
-    mutable uint16_t unitWidthCache_ = 0;
-    mutable bool unitWidthDirty_ = true;
+    // measured once in onInitialize() (the first point the LCD exists), so
+    // the batched hot path (drawValueWithLoadedFont/drawUnitWithLoadedFont)
+    // never has to load a font itself.
+    uint16_t unitWidth_ = 0;
     int16_t unitDrawX_ = 0;
     int16_t unitDrawY_ = 0;
     uint16_t unitBgColor_ = TFT_BLACK;
-    bool unitNeedsRedraw_ = false;
 
     // Constants
     static constexpr uint16_t kTextMargin = 10;
@@ -152,8 +163,9 @@ class MetricWidget : public Widget {
     // onDraw() callers of renderValue() route through this; the batch
     // (fontsLoadedByCaller) path skips it since the caller already loaded
     // the font for the whole tile pass.
-    void loadValueFont() const;
-    void unloadValueFont() const;
+    // Not const: they switch the LCD's (global) current font.
+    void loadValueFont();
+    void unloadValueFont();
 
     // Single render core behind onDraw()'s two paths and the public
     // drawValueWithLoadedFont(): recompute background colour, clear the
@@ -182,10 +194,6 @@ class MetricWidget : public Widget {
     // unchanged when gradientBackground_ is not set.
     uint16_t backgroundColorAtY(int16_t y, int16_t areaY, int16_t areaHeight,
                                 uint16_t bottomColor) const;
-    void updateDimensionCache();
-    const char* getFormattedValueText() const;
-    void refreshUnitWidthIfNeeded() const;
-    void safeStringCopy(char* dest, const char* src, size_t destSize) const;
 
     // Value area bounds for the current hasLabel_/borderMargin_ — was
     // computed via a hasLabel_ if/else copy-pasted at every render-path call

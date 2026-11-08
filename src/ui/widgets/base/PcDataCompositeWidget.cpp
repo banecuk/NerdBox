@@ -37,7 +37,6 @@ void PcDataCompositeWidget::onDraw(bool forceRedraw) {
         } else {
             drawNoDataMessage();
         }
-        clearDirty();
         wasFreshData_ = currentlyHasFreshData;
     }
 
@@ -48,7 +47,6 @@ void PcDataCompositeWidget::onDraw(bool forceRedraw) {
     const bool needsRedraw = forceRedraw || isDirty() || needsUpdate();
     if (currentlyHasFreshData && needsRedraw) {
         drawDynamicData();
-        clearDirty();
         lastUpdateTimestamp_ = pcMetrics_.freshness.lastUpdateMs();
     }
 

@@ -8,9 +8,10 @@
 #include "core/events/EventTypes.h"
 #include "services/weather/WeatherData.h"
 #include "ui/core/Colors.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/CachedString.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Compact daily-forecast strip — MultiWidget's default (resting-state)
 // candidate. Not a squeeze of WeatherWidget: that one is a full-screen
@@ -31,11 +32,9 @@
 // See docs-local/09-multiwidget-rotation-and-forecast-strip.md.
 class ForecastStripWidget : public Widget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
     ForecastStripWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                        WeatherData& weatherData, const AppSettings& config,
-                        EventType action = EventType::NONE, ActionCallback callback = nullptr);
+                        const WeatherData& weatherData, const AppSettings& config,
+                        TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -69,21 +68,18 @@ class ForecastStripWidget : public Widget {
         CachedString<8> rain;
     };
 
-    WeatherData& weatherData_;
+    const WeatherData& weatherData_;
     const AppSettings& config_;
 
     // WeatherData is sticky-available — freshness must be checked by age too,
     // or a stale outage-era forecast displays forever with no indication.
-    DataFreshnessGuard freshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
+    FreshnessTransition freshness_{weatherData_.freshness, config_.weatherStaleTimeoutMs};
 
-    EventType action_;
-    ActionCallback callback_;
+    TapAction tap_;
 
     ColumnCache lastColumns_[kMaxColumns];
     uint8_t columns_ = 0;
-    bool lastHasData_ = false;
 
-    unsigned long lastTimeCheckMs_ = 0;
     unsigned long lastDataUpdateMs_ = 0;
     bool lastDataUpdateMsValid_ = false;
 
@@ -92,8 +88,6 @@ class ForecastStripWidget : public Widget {
 
     void recomputeLayout(uint8_t count);
     int16_t columnCenter(uint8_t col) const;
-
-    void checkMidnightRollover();
 
     void drawColumn(uint8_t col, bool dayChanged, bool maxChanged, bool minChanged,
                     bool rainChanged, const char* dayName, uint16_t dayColor, const char* tempMax,

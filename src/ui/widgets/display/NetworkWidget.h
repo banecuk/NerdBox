@@ -6,6 +6,7 @@
 #include "services/network/NetworkStatus.h"
 #include "services/network/NetworkStatusService.h"
 #include "ui/core/Colors.h"
+#include "ui/widgets/base/TapAction.h"
 #include "ui/widgets/base/Widget.h"
 
 // Compact status bar widget — sits left of the clock in the bottom strip.
@@ -37,8 +38,6 @@
 // endpoint_ok flag changes.
 class NetworkWidget : public Widget {
  public:
-    using ActionCallback = std::function<void(EventType)>;
-
     // Optional tap action (mirrors ClockWidget/AirQualityWidget): when a
     // callback is set, a tap publishes `action`, e.g. to open the WIFI
     // screen. Defaults keep every other NetworkWidget instance (this
@@ -48,8 +47,7 @@ class NetworkWidget : public Widget {
     // tap target without changing what's painted (docs-local/
     // 13-wifi-screen-plan.md §4.5).
     NetworkWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                  const NetworkStatus& status, EventType action = EventType::NONE,
-                  ActionCallback callback = nullptr);
+                  const NetworkStatus& status, TapAction tap = {});
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -113,8 +111,7 @@ class NetworkWidget : public Widget {
     // -----------------------------------------------------------------------
     const NetworkStatus& status_;
 
-    EventType action_;
-    ActionCallback callback_;
+    TapAction tap_;
 
     // Top of the (fixed-height) drawn content, vertically centred within
     // dimensions_ — see kContentH's comment.

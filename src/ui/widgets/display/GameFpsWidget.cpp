@@ -10,8 +10,8 @@ static constexpr uint16_t kScaleLabelColor = TFT_DARKGREY;
 static constexpr uint16_t kBarColor = TFT_DARKGREEN;
 static constexpr uint16_t kNewestBarColor = Colors::kOk;
 
-GameFpsWidget::GameFpsWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                             uint32_t updateIntervalMs, PcMetrics& pcMetrics)
+GameFpsWidget::GameFpsWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                             PcMetrics& pcMetrics)
     : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
 
 void GameFpsWidget::computePlotLayout() {
@@ -188,8 +188,6 @@ void GameFpsWidget::onDraw(bool forceRedraw) {
     if (scaleJustChanged)
         drawScaleLabels();
     drawSparkline(forceRedraw || scaleJustChanged);
-
-    clearDirty();
 }
 
 void GameFpsWidget::clearNumberValueArea() {

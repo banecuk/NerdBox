@@ -31,12 +31,9 @@ uint16_t bandActivityColor(float kbPerSec, bool isWrite) {
 }
 }  // namespace
 
-DiskBandWidget::DiskBandWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                               uint32_t updateIntervalMs, PcMetrics& pcMetrics, EventType action,
-                               ActionCallback callback)
-    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics),
-      action_(action),
-      callback_(std::move(callback)) {}
+DiskBandWidget::DiskBandWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                               PcMetrics& pcMetrics, TapAction tap)
+    : PcDataCompositeWidget(dims, updateIntervalMs, pcMetrics), tap_(std::move(tap)) {}
 
 void DiskBandWidget::ensureChildWidgetsCreated() {
     // Snapshot everything we need under one lock, then do all widget work
@@ -243,15 +240,11 @@ void DiskBandWidget::clearChildren() {
     diskDriveNames_.clear();
 }
 
-bool DiskBandWidget::handleTouch(uint16_t x, uint16_t y) {
-    if (!callback_ || diskDriveWidgets_.empty())
-        return false;
-
+bool DiskBandWidget::handleTouch(uint16_t /*x*/, uint16_t /*y*/) {
     // The whole strip is tappable: the drive tiles span the widget's full
-    // width and height.
-    if (y >= dimensions_.y && y < dimensions_.y + dimensions_.height) {
-        callback_(action_);
-        return true;
-    }
-    return false;
+    // width and height, and WidgetManager has already hit-tested (x, y)
+    // against that box. Nothing to tap until a drive is shown.
+    if (diskDriveWidgets_.empty())
+        return false;
+    return tap_.fire();
 }

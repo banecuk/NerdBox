@@ -19,9 +19,9 @@
 // sameChannelCount.
 class WifiLinkWidget : public Widget {
  public:
-    WifiLinkWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                   uint32_t updateIntervalMs, const NetworkStatus& netStatus,
-                   const WifiScanData& wifiScan, const AppSettings& config);
+    WifiLinkWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                   const NetworkStatus& netStatus, const WifiScanData& wifiScan,
+                   const AppSettings& config);
 
  protected:
     void onDraw(bool forceRedraw) override;

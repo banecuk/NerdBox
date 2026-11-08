@@ -14,7 +14,6 @@
 // both (see docs-local/02-architecture.md, A5).
 class PcDataCompositeWidget : public Widget {
  public:
-    void setStaleTimeout(unsigned long timeoutMs) { freshnessGuard_.setTimeout(timeoutMs); }
     bool needsUpdate() const override;
 
  protected:

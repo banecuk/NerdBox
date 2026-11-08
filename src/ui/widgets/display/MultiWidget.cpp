@@ -6,16 +6,14 @@
 
 MultiWidget::MultiWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
                          PcMetrics& pcMetrics, const AudioData& audioData,
-                         WeatherData& weatherData, const AppSettings& config,
-                         EventType forecastTapAction,
-                         std::function<void(EventType)> forecastTapCallback)
+                         const WeatherData& weatherData, const AppSettings& config,
+                         TapAction forecastTap)
     : Widget(dims, updateIntervalMs),
       pcMetrics_(pcMetrics),
       audioData_(audioData),
       weatherData_(weatherData),
       config_(config),
-      forecastTapAction_(forecastTapAction),
-      forecastTapCallback_(std::move(forecastTapCallback)) {}
+      forecastTap_(std::move(forecastTap)) {}
 
 void MultiWidget::onInitialize() {
     auto sparkline =
@@ -25,8 +23,7 @@ void MultiWidget::onInitialize() {
     candidates_.push_back(
         std::make_unique<AudioWidget>(dimensions_, updateIntervalMs_, audioData_));
     candidates_.push_back(std::make_unique<ForecastStripWidget>(
-        dimensions_, updateIntervalMs_, weatherData_, config_, forecastTapAction_,
-        forecastTapCallback_));
+        dimensions_, updateIntervalMs_, weatherData_, config_, forecastTap_));
     for (auto& candidate : candidates_)
         candidate->initialize(getContext());
     activeIndex_ = kForecastIndex;
@@ -125,7 +122,6 @@ void MultiWidget::onDraw(bool forceRedraw) {
     updateActiveCandidate();
     if (activeIndex_ < candidates_.size())
         candidates_[activeIndex_]->draw(forceRedraw);
-    clearDirty();
 }
 
 void MultiWidget::onCleanUp() {

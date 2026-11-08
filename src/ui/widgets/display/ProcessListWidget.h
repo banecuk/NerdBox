@@ -3,7 +3,7 @@
 #include "services/processes/ProcessData.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
-#include "utils/DataFreshnessGuard.h"
+#include "utils/FreshnessTransition.h"
 
 // Content widget for ProcessesScreen: three side-by-side columns (CPU / RAM /
 // Disk), each a header plus ProcessData::kEntriesPerList rows. Reads a const
@@ -13,8 +13,8 @@
 // "just opened the screen, first event hasn't landed yet."
 class ProcessListWidget : public Widget {
  public:
-    ProcessListWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                      uint32_t updateIntervalMs, const ProcessData& data);
+    ProcessListWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
+                      const ProcessData& data);
 
  protected:
     void onDraw(bool forceRedraw) override;
@@ -33,11 +33,10 @@ class ProcessListWidget : public Widget {
     };
 
     const ProcessData& data_;
-    DataFreshnessGuard freshnessGuard_;
+    FreshnessTransition freshness_;
 
     uint16_t columnWidth_ = 0;
     uint16_t rowHeight_ = 0;
-    bool wasFresh_ = false;
 
     // Cached last-rendered text per cell, so onDraw only repaints rows whose
     // text actually changed — same lesson as AudioWidget's progress bar.

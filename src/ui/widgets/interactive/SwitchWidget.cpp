@@ -25,7 +25,6 @@ void SwitchWidget::onDraw(bool forceRedraw) {
 
     const bool current = getState_ ? getState_() : false;
     if (!forceRedraw && hasDrawnOnce_ && current == lastDrawnState_) {
-        clearDirty();
         return;
     }
 
@@ -33,7 +32,6 @@ void SwitchWidget::onDraw(bool forceRedraw) {
 
     lastDrawnState_ = current;
     hasDrawnOnce_ = true;
-    clearDirty();
 }
 
 void SwitchWidget::drawTrack(bool on) {

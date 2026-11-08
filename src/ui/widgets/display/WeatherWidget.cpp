@@ -20,7 +20,7 @@ static constexpr uint16_t kRainColor = kWeatherRainColor;
 // ---------------------------------------------------------------------------
 
 WeatherWidget::WeatherWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                             WeatherData& weatherData, const AppSettings& config)
+                             const WeatherData& weatherData, const AppSettings& config)
     : Widget(dims, updateIntervalMs), weatherData_(weatherData), config_(config) {}
 
 // ---------------------------------------------------------------------------
@@ -32,7 +32,6 @@ void WeatherWidget::onDrawStatic() {
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
     columns_ = 0;
-    lastHasData_ = false;
     // Reassign rather than memset — a raw zero-fill would clobber iconWmo's
     // -1 "no icon cached yet" sentinel with 0, which collides with WMO code 0
     // (clear sky). That collision then skips painting the icon on the first
@@ -50,12 +49,10 @@ void WeatherWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    checkMidnightRollover();
-
-    if (!freshness_.isFresh() || weatherData_.dayCount == 0) {
-        if (forceRedraw || lastHasData_) {
+    const auto edge = freshness_.poll(weatherData_.dayCount > 0);
+    if (!freshness_.fresh()) {
+        if (forceRedraw || edge == FreshnessTransition::Edge::BecameStale) {
             drawNoData();
-            lastHasData_ = false;
             columns_ = 0;
         }
         return;
@@ -68,9 +65,8 @@ void WeatherWidget::onDraw(bool forceRedraw) {
 
     // Structural change (screen (re)entry, data first arriving, or the count
     // changing) — clear the whole area and treat every cell as changed.
-    if (forceRedraw || !lastHasData_ || count != columns_) {
+    if (forceRedraw || edge == FreshnessTransition::Edge::BecameFresh || count != columns_) {
         drawStatic();
-        lastHasData_ = true;
         columns_ = count;
         recomputeLayout(count);
         drawColumnDividers();
@@ -175,41 +171,6 @@ void WeatherWidget::drawColumnDividers() const {
         const int16_t x = dimensions_.x + leftPad_ + static_cast<int16_t>(colWidth_) * col;
         lcd->drawGradientVLine(x, dimensions_.y, topHalf, kBlack, Colors::kHairline);
         lcd->drawGradientVLine(x, midY, dimensions_.height - topHalf, Colors::kHairline, kBlack);
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Midnight rollover detection
-// ---------------------------------------------------------------------------
-
-void WeatherWidget::checkMidnightRollover() {
-    const unsigned long now = millis();
-    if (now - lastTimeCheckMs_ < config_.weatherTimeCheckIntervalMs) {
-        return;
-    }
-    lastTimeCheckMs_ = now;
-
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 0)) {
-        return;
-    }
-    timeinfo.tm_hour = 0;
-    timeinfo.tm_min = 0;
-    timeinfo.tm_sec = 0;
-    const time_t localMidnight = mktime(&timeinfo);
-
-    if (weatherData_.dayCount == 0) {
-        return;
-    }
-
-    time_t firstDayStart;
-    {
-        ScopedLock lock(weatherData_.daysMutex);
-        firstDayStart = weatherData_.days[0].dayStart;
-    }
-
-    if (localMidnight != firstDayStart) {
-        weatherData_.refreshRequested.store(true);
     }
 }
 

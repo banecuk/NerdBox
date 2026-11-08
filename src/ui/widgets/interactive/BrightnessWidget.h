@@ -21,6 +21,19 @@
 class BrightnessWidget : public Widget {
  public:
     static constexpr uint8_t kSegmentCount = AppConfig::Limits::kBrightnessLevelCount;
+    static constexpr uint8_t kGap = 3;  // px gap between segments
+
+    // Segment width for a widget `totalWidth` wide: the width left after
+    // the gaps, divided evenly (any remainder is unused at the right edge).
+    static constexpr uint16_t segmentWidth(uint16_t totalWidth) {
+        return static_cast<uint16_t>((totalWidth - kGap * (kSegmentCount - 1)) / kSegmentCount);
+    }
+    // Width of `n` adjacent segments plus the gaps between them — lets a
+    // neighbouring widget line up with segment edges (SettingsScreen's
+    // DIM AT NIGHT switch spans two) without re-deriving this math.
+    static constexpr uint16_t spanForSegments(uint16_t totalWidth, uint8_t n) {
+        return static_cast<uint16_t>(n * segmentWidth(totalWidth) + (n - 1) * kGap);
+    }
 
     BrightnessWidget(const WidgetInterface::Dimensions& dims, DisplayManager& displayManager,
                      const AppSettings& config);
@@ -50,6 +63,5 @@ class BrightnessWidget : public Widget {
     void drawSegment(const Segment& seg, bool active);
 
     static constexpr uint8_t kLabelH = 13;  // px for "BRIGHTNESS" label row
-    static constexpr uint8_t kGap = 3;      // px gap between segments
     static constexpr uint8_t kRadius = 4;   // corner radius
 };
