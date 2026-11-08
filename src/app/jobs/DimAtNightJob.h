@@ -9,14 +9,16 @@
 // inside the "dim at night" window (config_.uiDimAtNightStartHour..EndHour).
 // DisplayManager itself gates on whether the feature is enabled and only
 // touches the display when the night/day state actually flips. The clock only
-// needs hour-granularity, so polling every kCheckIntervalMs is plenty prompt
+// needs hour-granularity, so polling every uiDimAtNightCheckIntervalMs is plenty prompt
 // for catching the 20:00/06:00 boundary without checking every single tick.
 class DimAtNightJob : public BackgroundJob {
  public:
     DimAtNightJob(NtpService& ntpService, DisplayManager& displayManager, const AppSettings& config)
         : ntpService_(ntpService), displayManager_(displayManager), config_(config) {}
 
-    JobDue nextDue() const override { return JobDue::at(lastCheckMs_ + kCheckIntervalMs); }
+    JobDue nextDue() const override {
+        return JobDue::at(lastCheckMs_ + config_.uiDimAtNightCheckIntervalMs);
+    }
 
     void run() override {
         lastCheckMs_ = millis();
@@ -32,8 +34,6 @@ class DimAtNightJob : public BackgroundJob {
     }
 
  private:
-    static constexpr unsigned long kCheckIntervalMs = 60000;
-
     NtpService& ntpService_;
     DisplayManager& displayManager_;
     const AppSettings& config_;

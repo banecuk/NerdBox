@@ -122,7 +122,6 @@ bool InitializationStateMachine::handleTimeInit() {
     for (uint8_t attempt = 1; attempt <= maxRetries; ++attempt) {
         if (target_.syncTime()) {
             target_.logger().info("Time synchronized successfully", true);
-            target_.setTimeSynced();
             addMainTaskToWatchdog();
             transitionTo(State::FINAL_SETUP);
             return true;

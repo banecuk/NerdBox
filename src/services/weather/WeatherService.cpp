@@ -1,11 +1,11 @@
 #include "WeatherService.h"
 
-#include "config/Environment.h"
 #include "services/weather/WeatherParser.h"
 #include "utils/logging/LogMacros.h"
 
-WeatherService::WeatherService(NetworkManager& networkManager, LoggerInterface& logger)
-    : JsonHttpService(networkManager, logger, "Weather", WEATHER_API) {
+WeatherService::WeatherService(NetworkManager& networkManager, LoggerInterface& logger,
+                               const AppSettings& config, const char* url)
+    : JsonHttpService(networkManager, logger, config, "Weather", url) {
     init();
 }
 

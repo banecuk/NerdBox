@@ -15,7 +15,6 @@ class PcMetrics;
 class UiController;
 struct AppSettings;
 class ApplicationMetrics;
-class NetworkManager;
 struct AirQualityData;
 struct NetworkStatus;
 struct WeatherData;
@@ -36,7 +35,6 @@ struct ScreenCreationContext {
     UiController& controller;
     const AppSettings& config;
     ApplicationMetrics& systemMetrics;
-    NetworkManager& networkManager;
     const AirQualityData& airQualityData;
     const NetworkStatus& netStatus;
     WeatherData& weatherData;

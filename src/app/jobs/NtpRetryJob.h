@@ -19,8 +19,9 @@ class NtpRetryJob : public BackgroundJob {
     }
 
     void run() override {
+        // retrySyncIfNeeded() sets coreState_.isTimeSynced itself (NtpService
+        // is that flag's only writer), which also stops nextDue() firing.
         if (ntpService_.retrySyncIfNeeded()) {
-            coreState_.isTimeSynced = true;
             logger_.info("Time synchronized (background retry)", true);
         }
     }

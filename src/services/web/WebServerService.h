@@ -7,7 +7,6 @@
 #include "core/IStreamHealth.h"
 #include "core/ITaskStackReporter.h"
 #include "core/state/SystemState.h"
-#include "network/NetworkManager.h"
 #include "services/audio/AudioData.h"
 #include "services/audio/AudioService.h"
 #include "services/network/NetworkStatus.h"
@@ -15,9 +14,9 @@
 #include "services/pcMetrics/PcMetricsService.h"
 #include "services/roomClimate/RoomClimateData.h"
 #include "services/weather/WeatherData.h"
-#include "services/wifiScan/WifiScanData.h"
 #include "services/web/WebApiHandlers.h"
 #include "services/web/WebPageHandlers.h"
+#include "services/wifiScan/WifiScanData.h"
 #include "utils/logging/LoggerInterface.h"
 #include "utils/logging/RecentLogView.h"
 
@@ -37,7 +36,7 @@ class WebServerService {
                      const ITaskStackReporter& taskStackReporter, LoggerInterface& logger,
                      RecentLogView& recentLogView, const AudioData& audioData,
                      AudioService& audioService, const RoomClimateData& roomClimateData,
-                     const NetworkManager& networkManager, const WifiScanData& wifiScanData);
+                     const WifiScanData& wifiScanData);
     void begin();
     void processRequests();
 

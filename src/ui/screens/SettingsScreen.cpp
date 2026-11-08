@@ -5,10 +5,10 @@
 #include "ui/widgets/display/IpAddressWidget.h"
 
 SettingsScreen::SettingsScreen(LoggerInterface& logger, UiController& uiController,
-                               const AppSettings& config, NetworkManager& networkManager,
+                               const AppSettings& config, const NetworkStatus& netStatus,
                                ApplicationMetrics& systemMetrics)
     : BaseWidgetScreen(logger, uiController, config),
-      networkManager_(networkManager),
+      netStatus_(netStatus),
       systemMetrics_(systemMetrics) {}
 
 void SettingsScreen::createWidgets() {
@@ -25,11 +25,10 @@ void SettingsScreen::createWidgets() {
 
     // ── Top bar ────────────────────────────────────────────────────────────
     // Brightness selector — spans the full width.
-    widgetManager_.addWidget(
-        std::make_unique<BrightnessWidget>(
-            WidgetInterface::Dimensions{kGutter, 0, kContentW, kBrightnessH},
-            *uiController_.getDisplayManager(), config_),
-        "brightness");
+    widgetManager_.addWidget(std::make_unique<BrightnessWidget>(
+                                 WidgetInterface::Dimensions{kGutter, 0, kContentW, kBrightnessH},
+                                 *uiController_.getDisplayManager(), config_),
+                             "brightness");
 
     // Dim at night — toggles dimming brightness 50% between 20:00 and 06:00.
     // Actual dimming is applied by DimAtNightJob/DisplayManager in the
@@ -54,13 +53,13 @@ void SettingsScreen::createWidgets() {
     static constexpr uint16_t kResetX = Layout::kScreenW - kGutter - kResetW;  // = 318
     static constexpr uint16_t kResetY = kSwitchY + (kSwitchH - kResetH) / 2;   // = 80
 
-    widgetManager_.addWidget(
-        std::make_unique<ButtonWidget>(
-            uiController_.getDisplayContext(), "Reset",
-            WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
-            EventType::RESET_DEVICE, [this](EventType action) { this->handleAction(action); },
-            Colors::kDanger, TFT_WHITE),
-        "reset_button");
+    widgetManager_.addWidget(std::make_unique<ButtonWidget>(
+                                 uiController_.getDisplayContext(), "Reset",
+                                 WidgetInterface::Dimensions{kResetX, kResetY, kResetW, kResetH}, 0,
+                                 EventType::RESET_DEVICE,
+                                 [this](EventType action) { this->handleAction(action); },
+                                 Colors::kDanger, TFT_WHITE),
+                             "reset_button");
 
     // ── Info widgets ────────────────────────────────────────────────────────
     // IP address / Uptime — sit below the switch/reset row.
@@ -70,12 +69,12 @@ void SettingsScreen::createWidgets() {
 
     widgetManager_.addWidget(
         std::make_unique<IpAddressWidget>(
-            WidgetInterface::Dimensions{kGutter, kInfoRowY, kIpWidth, 40}, networkManager_),
+            WidgetInterface::Dimensions{kGutter, kInfoRowY, kIpWidth, 40}, netStatus_),
         "ip_address");
 
     widgetManager_.addWidget(
-        std::make_unique<UptimeWidget>(
-            WidgetInterface::Dimensions{kUptimeX, kInfoRowY, 200, 40}, systemMetrics_),
+        std::make_unique<UptimeWidget>(WidgetInterface::Dimensions{kUptimeX, kInfoRowY, 200, 40},
+                                       systemMetrics_),
         "uptime");
 
     // ── Bottom bar ─────────────────────────────────────────────────────────

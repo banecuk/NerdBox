@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "config/AppSettings.h"
-#include "config/Environment.h"
 #include "network/NetworkManager.h"
 #include "services/pcMetrics/PcMetrics.h"
 #include "utils/ApplicationMetrics.h"

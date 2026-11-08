@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "ui/resources/FontRegistry.h"
+#include "ui/widgets/base/RateFormat.h"
 
 // Free-function draw helpers shared by a minority of widget subclasses
 // (label-row-above-value/track layouts and tappable pill tracks). Extracted
@@ -19,8 +20,8 @@ using FontLoader = void (*)(LGFX*);
 // The load-font / set-colour / MC_DATUM / drawString / unload sequence that
 // most widgets used to hand-write for every text cell. Draws `text` centred
 // on (cx, cy) with a per-glyph `bg` fill; does not clear anything first.
-inline void drawCenteredText(LGFX* lcd, int16_t cx, int16_t cy, const char* text,
-                             FontLoader font, uint16_t color, uint16_t bg = TFT_BLACK) {
+inline void drawCenteredText(LGFX* lcd, int16_t cx, int16_t cy, const char* text, FontLoader font,
+                             uint16_t color, uint16_t bg = TFT_BLACK) {
     font(lcd);
     lcd->setTextColor(color, bg);
     lcd->setTextDatum(MC_DATUM);
@@ -133,8 +134,8 @@ inline void drawValueWithUnit(LGFX* lcd, int16_t centerX, int16_t centerY, const
 // letter) that it stays the caller's job.
 struct RateRow {
     int16_t x, y, w, h;
-    float value;      // already in display units (MB/s, Mbps, ...)
-    bool hasData;     // false draws "--" instead of a formatted value
+    float value;        // already in display units (MB/s, Mbps, ...)
+    bool hasData;       // false draws "--" instead of a formatted value
     uint8_t intDigits;  // 3 ("999") or 4 ("9999") — sizes the fixed integer column
     uint16_t valueColor;
     // Cache of the last *rendered* text + colour, in/out: a value that rounds
@@ -156,22 +157,8 @@ struct RateRow {
 inline int16_t drawRateRow(LGFX* lcd, const RateRow& row) {
     char intBuf[16];
     char decBuf[4];
-    if (!row.hasData) {
-        snprintf(intBuf, sizeof(intBuf), "--");
-        decBuf[0] = '\0';
-    } else {
-        char full[16];
-        snprintf(full, sizeof(full), "%.1f", static_cast<double>(row.value));
-        char* dot = strchr(full, '.');
-        if (dot) {
-            *dot = '\0';
-            snprintf(intBuf, sizeof(intBuf), "%s", full);
-            snprintf(decBuf, sizeof(decBuf), ".%s", dot + 1);
-        } else {
-            snprintf(intBuf, sizeof(intBuf), "%s", full);
-            decBuf[0] = '\0';
-        }
-    }
+    RateFormat::splitOneDecimal(row.value, row.hasData, intBuf, sizeof(intBuf), decBuf,
+                                sizeof(decBuf));
 
     char buf[20];
     snprintf(buf, sizeof(buf), "%s%s", intBuf, decBuf);

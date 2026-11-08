@@ -13,7 +13,7 @@
     #define DEBUG_MODE 0
 #endif
 
-Logger::Logger(const bool& isTimeSynced) : isTimeSynced_(isTimeSynced) {
+Logger::Logger(const std::atomic<bool>& isTimeSynced) : isTimeSynced_(isTimeSynced) {
     // Serial is initialized by main.cpp using the configured baud rate
     startSerialDrainTask();
 }

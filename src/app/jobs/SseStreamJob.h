@@ -21,7 +21,7 @@
 // stale-timeout half-open-TCP guard) — see docs-local/11-code-quality.md Q1.
 //
 // A derived class supplies: a Config (log wording), its SseStreamTuning,
-// the request path via setPath() (host:port always comes from LIBRE_HM_API,
+// the request path via setPath() (host:port always comes from config.endpoints.pcMetricsApi,
 // resolved here), its own screenGateOpen() rule, and an onEvent() that
 // forwards to its *StreamService. nextDue()/run() are `final` — the
 // scheduling shape is exactly the point of sharing this base.
@@ -35,8 +35,10 @@ class SseStreamJob : public BackgroundJob, public IStreamHealth {
 
     // `tuning` must outlive the job — in practice it's a member of the
     // app-lifetime AppSettings (pcMetricsStream/cpuClockStream/processStream).
+    // host:port are parsed out of baseUrl (AppSettings::endpoints.pcMetricsApi)
+    // once, here.
     SseStreamJob(LoggerInterface& logger, NetworkManager& networkManager, Config config,
-                 const SseStreamTuning& tuning);
+                 const SseStreamTuning& tuning, const char* baseUrl);
 
     JobDue nextDue() const final;
     void run() final;

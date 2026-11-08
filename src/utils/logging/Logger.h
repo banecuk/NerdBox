@@ -3,6 +3,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+#include <atomic>
+
 #include "LoggerInterface.h"
 #include "LogRing.h"
 #include "RecentLogView.h"
@@ -10,7 +12,7 @@
 
 class Logger : public LoggerInterface, public ScreenLogQueue, public RecentLogView {
  public:
-    Logger(const bool& isTimeSynced);
+    explicit Logger(const std::atomic<bool>& isTimeSynced);
     ~Logger() = default;
 
     Logger(const Logger&) = delete;
@@ -36,7 +38,7 @@ class Logger : public LoggerInterface, public ScreenLogQueue, public RecentLogVi
     size_t copyRecentLogs(LogEntry* outEntries, size_t maxCount) override;
 
  private:
-    const bool& isTimeSynced_;
+    const std::atomic<bool>& isTimeSynced_;
 
     static constexpr size_t kScreenQueueCapacity = 25;  // Prevent memory exhaustion
 

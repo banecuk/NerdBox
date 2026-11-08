@@ -3,6 +3,10 @@
 // CI copies this file to Environment.h before building (.github/workflows/ci.yml),
 // so it must declare the same symbol set as the real header. Add any new
 // constant here too, with a placeholder value, or CI breaks.
+//
+// Only src/config/Endpoints.cpp may include this header (CI-enforced). A new
+// constant also needs a field in Endpoints.h and an assignment in
+// Endpoints::fromEnvironment(); everything else reads AppSettings::endpoints.
 
 constexpr char WIFI_SSID[] = "-";
 constexpr char WIFI_PASSWORD[] = "-";

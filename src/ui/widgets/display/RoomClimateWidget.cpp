@@ -8,8 +8,11 @@
 
 RoomClimateWidget::RoomClimateWidget(const WidgetInterface::Dimensions& dims,
                                      uint32_t updateIntervalMs,
-                                     const RoomClimateData& roomClimateData)
-    : Widget(dims, updateIntervalMs), roomClimateData_(roomClimateData) {}
+                                     const RoomClimateData& roomClimateData,
+                                     uint32_t staleTimeoutMs)
+    : Widget(dims, updateIntervalMs),
+      roomClimateData_(roomClimateData),
+      freshness_(roomClimateData.freshness, staleTimeoutMs) {}
 
 void RoomClimateWidget::onDrawStatic() {
     LGFX* lcd = getLcd();

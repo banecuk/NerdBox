@@ -28,7 +28,12 @@ uint8_t rssiToQuality(int8_t rssi);
 // strong, > -75 warn, > -85 degraded, else weak. The tier->colour mapping
 // itself stays in ui/ (this header has no LGFX/Colors dependency, so it
 // compiles under [env:native]).
-enum class SignalTier : uint8_t { kStrong, kWarn, kDegraded, kWeak };
+enum class SignalTier : uint8_t {
+    kStrong,
+    kWarn,
+    kDegraded,
+    kWeak
+};
 SignalTier signalTier(int8_t rssi);
 
 // Neighbours (excluding the entry marked isCurrent) sharing `channel`.
@@ -40,5 +45,25 @@ uint8_t countOnChannel(const WifiApEntry* entries, uint8_t count, uint8_t channe
 // 6=WPA3_PSK, 7=WPA2_WPA3_PSK); anything else (enterprise/WAPI/OWE/newer
 // modes) falls back to "?".
 const char* authName(uint8_t auth);
+
+// Verdict on one WiFi.scanComplete() poll of an async scan.
+enum class ScanPoll : uint8_t {
+    Running,
+    Done,
+    Failed
+};
+
+// scanCompleteResult is WiFi.scanComplete()'s return: >= 0 is the result
+// count, -1 (WIFI_SCAN_RUNNING) still running, -2 (WIFI_SCAN_FAILED) failed.
+//
+// The Arduino core's -2 can't be taken at face value. scanNetworks() arms its
+// own timeout of max_ms_per_chan * 20 and scanComplete() reports -2 once it
+// passes, while the radio is in fact still scanning. A scan while connected
+// keeps returning to the home channel and regularly overruns that. When the
+// radio's SCAN_DONE event does arrive, the core resets its timer and
+// scanComplete() returns the count. So -1 and -2 both mean "keep waiting"
+// until our own deadlineMs (counted from the start call); only then is it a
+// failure. Pure logic; host-tested in test/WifiScanMathTest.cpp.
+ScanPoll classifyScanPoll(int16_t scanCompleteResult, uint32_t elapsedMs, uint32_t deadlineMs);
 
 }  // namespace WifiScanMath

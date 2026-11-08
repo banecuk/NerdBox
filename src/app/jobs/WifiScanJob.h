@@ -19,8 +19,8 @@
 class WifiScanJob : public BackgroundJob {
  public:
     WifiScanJob(WifiScanService& service, WifiScanData& data, SystemState::CoreState& coreState,
-               SystemState::ScreenState& screenState, NetworkManager& networkManager,
-               const AppSettings& config, LoggerInterface& logger)
+                SystemState::ScreenState& screenState, NetworkManager& networkManager,
+                const AppSettings& config, LoggerInterface& logger)
         : service_(service),
           data_(data),
           coreState_(coreState),
@@ -62,8 +62,12 @@ class WifiScanJob : public BackgroundJob {
                 if (service_.poll(data_)) {
                     if (data_.state == WifiScanData::State::FAILED) {
                         failureBackoff_.start(millis(), config_.wifiScanFailureBackoffMs);
-                        logger_.warning("WiFi scan failed");
+                        logger_.warningf("WiFi scan failed after %u ms",
+                                         static_cast<unsigned>(data_.lastScanDurationMs));
                     } else {
+                        LOG_DEBUGF(logger_, "WiFi scan done in %u ms, %u networks",
+                                   static_cast<unsigned>(data_.lastScanDurationMs),
+                                   static_cast<unsigned>(data_.totalFound));
                         failureBackoff_.clear();
                         rescanInterval_.start(millis(), config_.wifiScanRescanIntervalMs);
                     }
@@ -75,7 +79,11 @@ class WifiScanJob : public BackgroundJob {
         }
 
         data_.rescanRequested.store(false);
-        service_.start(data_);
+        if (!service_.start(data_) && data_.state == WifiScanData::State::FAILED) {
+            // Driver refused (radio busy): back off like any other failure
+            // instead of retrying every tick.
+            failureBackoff_.start(millis(), config_.wifiScanFailureBackoffMs);
+        }
     }
 
  private:

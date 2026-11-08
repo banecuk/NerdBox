@@ -131,5 +131,4 @@ class DiskInfoWidget : public Widget {
     void drawStaticUnits(size_t index);
     void drawNoDataMessage();
     void clearArea();
-    void formatRate(char* buf, size_t len, float kbPerSec) const;
 };

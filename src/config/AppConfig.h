@@ -86,6 +86,12 @@ struct HardwareMonitorImpl {
 
 // AirQuality configuration
 struct AirQualityImpl {
+    // Refresh cadence: 30 minutes, within the AirVisual free-tier rate limit.
+    static constexpr uint32_t kRefreshIntervalMs = 30ul * 60ul * 1000ul;
+    // Widget staleness window. The job only fetches once the data is already
+    // kRefreshIntervalMs old, so a window equal to the interval blanked the
+    // widget on every refresh (B42): keep it a multiple (3x).
+    static constexpr uint32_t kStaleTimeoutMs = 3ul * kRefreshIntervalMs;
     // How long to wait before retrying after a failed fetch. Data is only
     // 30-minutes-fresh, so a few minutes of backoff costs nothing and avoids
     // hammering the API (and the shared background task) on outages.
@@ -94,6 +100,10 @@ struct AirQualityImpl {
 
 // RoomClimate (local LAN sensor) configuration
 struct RoomClimateImpl {
+    // Local LAN sensor: cheap to poll.
+    static constexpr uint32_t kRefreshIntervalMs = 60ul * 1000ul;
+    // Same 3x rule as AirQualityImpl::kStaleTimeoutMs (B42).
+    static constexpr uint32_t kStaleTimeoutMs = 3ul * kRefreshIntervalMs;
     // LAN device — retry sooner than the internet-facing APIs do.
     static constexpr uint32_t kFailureBackoffMs = 15000;
 };
@@ -229,6 +239,47 @@ struct NetworkImpl {
     // http://<kMdnsHostname>.local instead of a DHCP-assigned IP. Must be
     // <= 63 chars and contain no dots (mDNS hostname rules).
     static constexpr const char* kMdnsHostname = "nerdbox";
+
+    // WiFi auto-reconnect (NetworkManager): give up on one reconnect attempt
+    // after kReconnectTimeoutMs, and start a new one at most every
+    // kReconnectCheckIntervalMs.
+    static constexpr uint32_t kReconnectTimeoutMs = 10000;
+    static constexpr uint32_t kReconnectCheckIntervalMs = 15000;
+
+    // Internet-reachability probes (NetworkStatusService). Steady-state
+    // cadence once every endpoint has been probed; 45 s is plenty for a
+    // status glyph and keeps traffic to the third-party endpoints low.
+    static constexpr uint32_t kProbeIntervalMs = 45000;
+    // Fast cadence right after boot, until every endpoint has one result.
+    static constexpr uint32_t kWarmupProbeIntervalMs = 1000;
+    // Per-probe HTTP connect/response timeout.
+    static constexpr uint32_t kProbeTimeoutMs = 1500;
+    // How often NetworkStatusService republishes this device's own link
+    // details (A8). 1 s matches WifiLinkWidget's redraw interval, so its RSSI
+    // trace still gets one fresh sample per tick.
+    static constexpr uint32_t kLinkRefreshMs = 1000;
+};
+
+// NTP time sync (NtpService).
+struct NtpImpl {
+    // Per-attempt wait in the boot-time sync loop. Short on purpose: SNTP has
+    // either resolved the time or not, and waiting longer only blocks boot.
+    static constexpr uint32_t kSyncAttemptTimeoutMs = 200;
+    // Spacing of the background re-sync probes while time is still unsynced.
+    static constexpr uint32_t kRetryIntervalMs = 30000;
+};
+
+// Internet-facing JSON fetches (JsonHttpService: AirQuality/RoomClimate/Weather).
+// Worst case per fetch is kDnsTimeoutMs + kConnectTimeoutMs + kResponseTimeoutMs
+// (x kMaxAttempts), which must stay well inside WatchdogImpl::kTimeoutMs
+// (20 s; static_assert below). One attempt: the calling job's failure backoff
+// is the retry (B38).
+struct HttpFetchImpl {
+    static constexpr uint8_t kMaxAttempts = 1;
+    static constexpr uint32_t kRetryDelayMs = 100;
+    static constexpr uint16_t kConnectTimeoutMs = 3000;
+    static constexpr uint16_t kResponseTimeoutMs = 6000;
+    static constexpr uint32_t kDnsTimeoutMs = 4000;
 };
 
 // WiFi scan (WIFI screen's "nearby networks" list) configuration — see
@@ -254,6 +305,13 @@ struct WifiScanImpl {
     // screenGateOpen() is MAIN/GAME/DISKS only), so there's no live stream
     // for a long scan to starve.
     static constexpr uint16_t kMaxMsPerChannel = 300;
+    // Our own deadline for an async scan's result, counted from the start
+    // call. The core's max_ms_per_chan * 20 timeout above makes
+    // scanComplete() report FAILED while the radio is still scanning, so
+    // WifiScanService ignores that and waits for the real SCAN_DONE event up
+    // to this long (see WifiScanMath::classifyScanPoll). Past it, the scan is
+    // stopped and counted as failed.
+    static constexpr uint32_t kResultTimeoutMs = 15000;
     static constexpr bool kShowHidden = true;
     // WifiLinkWidget's RSSI sparkline sample cadence.
     static constexpr uint32_t kRssiTraceIntervalMs = 1000;
@@ -295,7 +353,18 @@ struct UiImpl {
     static constexpr uint8_t kDimAtNightStartHour = 20;  // 20:00
     static constexpr uint8_t kDimAtNightEndHour = 6;     // 06:00
     static constexpr uint8_t kDimAtNightPercent = 60;    // reduce brightness by 60%
+    // How often DimAtNightJob checks the clock. Hour-granularity boundaries,
+    // so once a minute is plenty.
+    static constexpr uint32_t kDimAtNightCheckIntervalMs = 60000;
 };
+
+static_assert(HttpFetchImpl::kMaxAttempts *
+                          (HttpFetchImpl::kDnsTimeoutMs + HttpFetchImpl::kConnectTimeoutMs +
+                           HttpFetchImpl::kResponseTimeoutMs) +
+                      (HttpFetchImpl::kMaxAttempts - 1) * HttpFetchImpl::kRetryDelayMs <
+                  WatchdogImpl::kTimeoutMs,
+              "a JsonHttpService fetch must finish inside the task watchdog window (B38)");
+
 }  // namespace internal
 
 }  // namespace AppConfig

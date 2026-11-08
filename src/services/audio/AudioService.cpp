@@ -1,9 +1,9 @@
 #include "AudioService.h"
 
-#include <Arduino.h>
 #include <cstring>
 
 #include "utils/logging/LogMacros.h"
+#include "utils/Utf8.h"
 
 AudioService::AudioService(AudioData& data, LoggerInterface& logger)
     : data_(data), logger_(logger) {
@@ -22,9 +22,40 @@ AudioData::PlayState AudioService::parsePlayState(const char* name) {
     return AudioData::PlayState::Undefined;
 }
 
-bool AudioService::handlePush(const String& body) {
+namespace {
+
+enum class Event : uint8_t {
+    Unknown,
+    Track,
+    Ping,
+    Paused,
+    Stop,
+    Offline
+};
+
+Event parseEvent(const char* name) {
+    if (strcmp(name, "track") == 0)
+        return Event::Track;
+    if (strcmp(name, "ping") == 0)
+        return Event::Ping;
+    if (strcmp(name, "paused") == 0)
+        return Event::Paused;
+    if (strcmp(name, "stop") == 0)
+        return Event::Stop;
+    if (strcmp(name, "offline") == 0)
+        return Event::Offline;
+    return Event::Unknown;
+}
+
+}  // namespace
+
+bool AudioService::handlePush(const char* body, size_t len, uint32_t nowMs) {
     doc_->clear();
-    const DeserializationError err = deserializeJson(*doc_, body);
+    if (body == nullptr) {
+        body = "";
+        len = 0;
+    }
+    const DeserializationError err = deserializeJson(*doc_, body, len);
     if (err) {
         logger_.errorf("[Audio] Failed to parse push body: %s", err.c_str());
         // Malformed delivery — ask the plugin to resend a full track event
@@ -32,7 +63,17 @@ bool AudioService::handlePush(const String& body) {
         return true;
     }
 
-    const char* event = (*doc_)["event"] | "";
+    const char* eventName = (*doc_)["event"] | "";
+    const Event event = parseEvent(eventName);
+    if (event == Event::Unknown) {
+        // Not necessarily a fault (could be a future protocol addition), so a
+        // warning, and no resync. Rejected before the seq/trackId/session
+        // bookkeeping: an event we don't understand mustn't advance seq or
+        // refresh freshness as if it had been applied.
+        logger_.warningf("[Audio] Unknown push event: %s", eventName);
+        return false;
+    }
+
     const uint32_t seq = (*doc_)["seq"] | 0;
     const uint32_t trackId = (*doc_)["trackId"] | 0;
     const uint32_t session = (*doc_)["session"] | 0;
@@ -56,7 +97,7 @@ bool AudioService::handlePush(const String& body) {
     //    change. Compared against trackEventTrackId_, not data_.trackId,
     //    which every event overwrites — otherwise one lost 409 meant the next
     //    ping matched and stale metadata stuck for the whole track.
-    const bool isHeartbeat = strcmp(event, "ping") == 0 || strcmp(event, "paused") == 0;
+    const bool isHeartbeat = event == Event::Ping || event == Event::Paused;
     if (isHeartbeat && (!data_.hasTrack || trackId != trackEventTrackId_)) {
         LOG_DEBUG(logger_, "[Audio] heartbeat without matching track event - requesting resync");
         needsResync = true;
@@ -67,20 +108,21 @@ bool AudioService::handlePush(const String& body) {
     data_.session = session;
     seenAnyEvent_ = true;
 
-    const uint32_t now = millis();
+    const uint32_t now = nowMs;
 
-    if (strcmp(event, "track") == 0) {
+    if (event == Event::Track) {
         trackEventTrackId_ = trackId;
         const char* title = (*doc_)["title"] | "";
         const char* artist = (*doc_)["artist"] | "";
         const char* album = (*doc_)["album"] | "";
         const char* format = (*doc_)["format"] | "";
         const char* bitrate = (*doc_)["bitrate"] | "";
-        snprintf(data_.title, sizeof(data_.title), "%s", title);
-        snprintf(data_.artist, sizeof(data_.artist), "%s", artist);
-        snprintf(data_.album, sizeof(data_.album), "%s", album);
-        snprintf(data_.format, sizeof(data_.format), "%s", format);
-        snprintf(data_.bitrate, sizeof(data_.bitrate), "%s", bitrate);
+        // UTF-8-aware: a plain snprintf could cut mid code point (B31).
+        Utf8::copyTruncated(data_.title, sizeof(data_.title), title);
+        Utf8::copyTruncated(data_.artist, sizeof(data_.artist), artist);
+        Utf8::copyTruncated(data_.album, sizeof(data_.album), album);
+        Utf8::copyTruncated(data_.format, sizeof(data_.format), format);
+        Utf8::copyTruncated(data_.bitrate, sizeof(data_.bitrate), bitrate);
         data_.durationMs = (*doc_)["durationMs"] | 0;
         data_.positionMs = (*doc_)["positionMs"] | 0;
         const char* playState = (*doc_)["playState"] | "";
@@ -89,35 +131,30 @@ bool AudioService::handlePush(const String& body) {
         data_.hasTrack = true;
         data_.stopped = false;
         data_.offline = false;
-    } else if (strcmp(event, "ping") == 0) {
+    } else if (event == Event::Ping) {
         data_.positionMs = (*doc_)["positionMs"] | 0;
         data_.playState = AudioData::PlayState::Playing;
         data_.isPlaying = true;
         data_.stopped = false;
-    } else if (strcmp(event, "paused") == 0) {
+    } else if (event == Event::Paused) {
         data_.positionMs = (*doc_)["positionMs"] | 0;
         data_.playState = AudioData::PlayState::Paused;
         data_.isPlaying = false;
         data_.stopped = false;
-    } else if (strcmp(event, "stop") == 0) {
+    } else if (event == Event::Stop) {
         data_.positionMs = (*doc_)["positionMs"] | 0;
         data_.playState = AudioData::PlayState::Stopped;
         data_.isPlaying = false;
         data_.stopped = true;
         data_.offline = false;
         data_.stoppedAtMs = now;
-    } else if (strcmp(event, "offline") == 0) {
+    } else {  // Event::Offline
         data_.positionMs = (*doc_)["positionMs"] | 0;
         data_.playState = AudioData::PlayState::Stopped;
         data_.isPlaying = false;
         data_.stopped = true;
         data_.offline = true;
         data_.stoppedAtMs = now;
-    } else {
-        // Not necessarily a fault — could be a future protocol addition
-        // the device doesn't know about yet — so this is a warning, not
-        // an error.
-        logger_.warningf("[Audio] Unknown push event: %s", event);
     }
 
     data_.freshness.publish(now);

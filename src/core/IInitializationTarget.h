@@ -50,7 +50,6 @@ class IInitializationTarget {
 
     // --- System-state flags (one-way; set once during boot) -----------------
     virtual void setScreenInitialized() = 0;
-    virtual void setTimeSynced() = 0;
     virtual void setSystemInitialized() = 0;
 
     // --- Initialisation config ----------------------------------------------

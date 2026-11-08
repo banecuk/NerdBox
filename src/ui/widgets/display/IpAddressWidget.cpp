@@ -6,12 +6,9 @@
 #include "ui/widgets/base/WidgetPainter.h"
 
 IpAddressWidget::IpAddressWidget(const WidgetInterface::Dimensions& dims,
-                                 NetworkManager& networkManager, uint16_t textColor,
+                                 const NetworkStatus& netStatus, uint16_t textColor,
                                  uint16_t bgColor)
-    : Widget(dims, 5000),
-      networkManager_(networkManager),
-      textColor_(textColor),
-      bgColor_(bgColor) {}
+    : Widget(dims, 5000), netStatus_(netStatus), textColor_(textColor), bgColor_(bgColor) {}
 
 // ---------------------------------------------------------------------------
 // Layout — called once from drawStatic(); measures actual font heights so
@@ -50,11 +47,10 @@ void IpAddressWidget::onDraw(bool forceRedraw) {
     if (!getLcd())
         return;
 
-    const bool connected = networkManager_.isConnected();
-    char currentIp[16] = {};
-    if (connected) {
-        networkManager_.getLocalIp(currentIp, sizeof(currentIp));
-    }
+    LinkInfo link;
+    netStatus_.copyLink(link);
+    const bool connected = link.connected;
+    const char* currentIp = connected ? link.ip : "";
 
     const bool ipChanged = lastIp_.setIfChanged(currentIp);
     const bool changed = (connected != lastConnected_) || ipChanged;

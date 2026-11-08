@@ -165,27 +165,27 @@ constexpr ApiEndpoint kApiEndpoints[] = {
      "(resets on a screen change); app.noop_dirty_frames counts frames where a "
      "widget was found dirty but nothing was actually drawn. wifi.ssid/rssi/ip/etc. "
      "are always live; wifi.scan_* (nearby-network scan results) only advance while "
-     "the WIFI screen is open — the scan job is screen-gated."                       },
+     "the WIFI screen is open — the scan job is screen-gated."                        },
     {"GET",  "/api/raw",
      "Last raw NerdWinSense payload, unfiltered — for debugging a field that reads "
      "0 or -1. Triggers a dedicated fetch; not the same connection as the regular "
-     "poll."                                                                           },
+     "poll."                                                                            },
     {"GET",  "/api/pc",
      "Full current PcMetrics snapshot as JSON — every parsed field, including disk "
-     "drives. Verify what the display should show vs. what NerdWinSense sent."         },
+     "drives. Verify what the display should show vs. what NerdWinSense sent."          },
     {"GET",  "/metrics",
      "Prometheus text-exposition of the same data as /api/status and /api/pc — scrape "
-     "target for Prometheus/Grafana, or a bonus sensor source for Home Assistant."     },
-    {"POST", "/restart",         "Reboots the device (ESP.restart()). No confirmation."},
-    {"POST", "/screen/main",     "Switches the display to the Main screen."            },
-    {"POST", "/screen/settings", "Switches the display to the Settings screen."        },
-    {"POST", "/screen/game",     "Switches the display to the Game screen."            },
-    {"POST", "/screen/weather",  "Switches the display to the Weather screen."         },
-    {"POST", "/screen/calendar", "Switches the display to the Calendar screen."        },
-    {"POST", "/screen/disks",    "Switches the display to the Disks screen."           },
-    {"POST", "/screen/cpu-clock", "Switches the display to the CPU Clock screen."      },
-    {"POST", "/screen/processes", "Switches the display to the Processes screen."      },
-    {"POST", "/screen/wifi",     "Switches the display to the WiFi screen."            },
+     "target for Prometheus/Grafana, or a bonus sensor source for Home Assistant."      },
+    {"POST", "/restart",          "Reboots the device (ESP.restart()). No confirmation."},
+    {"POST", "/screen/main",      "Switches the display to the Main screen."            },
+    {"POST", "/screen/settings",  "Switches the display to the Settings screen."        },
+    {"POST", "/screen/game",      "Switches the display to the Game screen."            },
+    {"POST", "/screen/weather",   "Switches the display to the Weather screen."         },
+    {"POST", "/screen/calendar",  "Switches the display to the Calendar screen."        },
+    {"POST", "/screen/disks",     "Switches the display to the Disks screen."           },
+    {"POST", "/screen/cpu-clock", "Switches the display to the CPU Clock screen."       },
+    {"POST", "/screen/processes", "Switches the display to the Processes screen."       },
+    {"POST", "/screen/wifi",      "Switches the display to the WiFi screen."            },
 };
 
 // Streams `text` with HTML special characters escaped, through a small
@@ -204,12 +204,23 @@ void sendHtmlEscaped(WebServer& server, const char* text) {
     for (const char* p = text; *p != '\0'; ++p) {
         const char* rep = nullptr;
         switch (*p) {
-            case '<': rep = "&lt;"; break;
-            case '>': rep = "&gt;"; break;
-            case '&': rep = "&amp;"; break;
-            case '"': rep = "&quot;"; break;
-            case '\'': rep = "&#39;"; break;
-            default: break;
+            case '<':
+                rep = "&lt;";
+                break;
+            case '>':
+                rep = "&gt;";
+                break;
+            case '&':
+                rep = "&amp;";
+                break;
+            case '"':
+                rep = "&quot;";
+                break;
+            case '\'':
+                rep = "&#39;";
+                break;
+            default:
+                break;
         }
         const size_t need = rep ? strlen(rep) : 1;
         if (n + need >= sizeof(out)) {
@@ -307,7 +318,7 @@ void WebPageHandlers::handleConfig() {
     {
         char levels[64];
         size_t offset = 0;
-        for (uint8_t i = 0; i < AppConfig::internal::UiImpl::kBrightnessLevelCount; ++i) {
+        for (uint8_t i = 0; i < AppConfig::Limits::kBrightnessLevelCount; ++i) {
             offset += snprintf(levels + offset, sizeof(levels) - offset, "%s%u", i == 0 ? "" : ",",
                                config_.uiBrightnessLevels[i]);
         }
@@ -321,9 +332,11 @@ void WebPageHandlers::handleConfig() {
             const char* name;
             const SseStreamTuning& t;
         };
-        const NamedTuning tunings[] = {{"pcMetricsStream", config_.pcMetricsStream},
-                                       {"cpuClockStream", config_.cpuClockStream},
-                                       {"processStream", config_.processStream}};
+        const NamedTuning tunings[] = {
+            {"pcMetricsStream", config_.pcMetricsStream},
+            {"cpuClockStream",  config_.cpuClockStream },
+            {"processStream",   config_.processStream  }
+        };
         char key[48];
         for (const NamedTuning& nt : tunings) {
 #define SEND_TUNING(kind, field)                              \
@@ -342,6 +355,14 @@ void WebPageHandlers::handleConfig() {
 #undef SEND_TUNING
         }
     }
+
+    // Endpoints (A9) — only the non-secret ones. wifiSsid/wifiPassword and
+    // airVisualApi (its URL carries the API key) are deliberately left out.
+    SEND_CONFIG_S("endpoints.pcMetricsApi", config_.endpoints.pcMetricsApi);
+    SEND_CONFIG_S("endpoints.roomClimateApi", config_.endpoints.roomClimateApi);
+    SEND_CONFIG_S("endpoints.weatherApi", config_.endpoints.weatherApi);
+    SEND_CONFIG_F("endpoints.ethDownloadMbps", config_.endpoints.ethDownloadMbps);
+    SEND_CONFIG_F("endpoints.ethUploadMbps", config_.endpoints.ethUploadMbps);
 
 #undef SEND_CONFIG_U
 #undef SEND_CONFIG_F

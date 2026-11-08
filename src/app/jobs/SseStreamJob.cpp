@@ -2,18 +2,17 @@
 
 #include <cstring>
 
-#include "config/Environment.h"
 #include "network/UrlUtils.h"
 #include "utils/logging/LogMacros.h"
 
 SseStreamJob::SseStreamJob(LoggerInterface& logger, NetworkManager& networkManager, Config config,
-                           const SseStreamTuning& tuning)
+                           const SseStreamTuning& tuning, const char* baseUrl)
     : logger_(logger),
       networkManager_(networkManager),
       config_(config),
       tuning_(tuning),
       connection_(logger, tuning.maxEventBufferBytes, tuning.maxBytesPerPoll) {
-    UrlUtils::parseHostPort(LIBRE_HM_API, host_, sizeof(host_), port_);
+    UrlUtils::parseHostPort(baseUrl, host_, sizeof(host_), port_);
 }
 
 const char* SseStreamJob::stateName() const {
@@ -43,7 +42,7 @@ JobDue SseStreamJob::nextDue() const {
         // Off-screen: if a connection is still open, run() once more to tear
         // it down, then go idle. Otherwise there's nothing to do.
         return connection_.state() == SseConnection::State::Connected ? JobDue::now()
-                                                                       : JobDue::never();
+                                                                      : JobDue::never();
     }
 
     if (connection_.state() == SseConnection::State::Connected) {

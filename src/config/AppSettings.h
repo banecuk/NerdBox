@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "config/AppConfig.h"
+#include "config/Endpoints.h"
 
 // Connection tuning shared by every SSE stream (PcMetricsStreamJob,
 // CpuClockStreamJob, ProcessStreamJob). One struct instantiated once per
@@ -64,4 +65,17 @@ struct AppSettings {
     SseStreamTuning cpuClockStream =
         SseStreamTuning::from<AppConfig::internal::CpuClockStreamImpl>();
     SseStreamTuning processStream = SseStreamTuning::from<AppConfig::internal::ProcessStreamImpl>();
+
+    // Endpoints/secrets from Environment.h (A9). Empty by default; the
+    // composition root (ApplicationComponents) fills it from
+    // Endpoints::fromEnvironment(). handleConfig() dumps only the
+    // non-secret ones.
+    Endpoints endpoints;
+
+    // AppSettings populated with this installation's Environment.h values.
+    static AppSettings withEnvironment() {
+        AppSettings s;
+        s.endpoints = Endpoints::fromEnvironment();
+        return s;
+    }
 };

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "network/NetworkManager.h"
+#include "services/network/NetworkStatus.h"
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/widgets/base/Widget.h"
@@ -10,7 +10,7 @@
 
 class IpAddressWidget : public Widget {
  public:
-    IpAddressWidget(const WidgetInterface::Dimensions& dims, NetworkManager& networkManager,
+    IpAddressWidget(const WidgetInterface::Dimensions& dims, const NetworkStatus& netStatus,
                     uint16_t textColor = Colors::kInfo, uint16_t bgColor = TFT_BLACK);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
@@ -20,7 +20,8 @@ class IpAddressWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    NetworkManager& networkManager_;
+    // Reads the link snapshot NetworkStatusService publishes (A8).
+    const NetworkStatus& netStatus_;
     uint16_t textColor_;
     uint16_t bgColor_;
     bool lastConnected_ = false;

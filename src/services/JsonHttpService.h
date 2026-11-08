@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include "config/AppSettings.h"
 #include "network/BoundedDns.h"
 #include "network/NetworkManager.h"
 #include "network/UrlUtils.h"
@@ -45,7 +46,7 @@ class JsonHttpService {
         // the router's DNS forwarder stops answering, past the 20 s task
         // watchdog (B38). A success leaves the answer in lwIP's cache, so the
         // GET below resolves instantly. LAN IP literals skip this.
-        if (!BoundedDns::resolve(host_, kDnsTimeoutMs)) {
+        if (!BoundedDns::resolve(host_, config_.httpFetchDnsTimeoutMs)) {
             logger_.warningf("%s: DNS lookup for %s failed or timed out", name_, host_);
             return false;
         }
@@ -55,8 +56,9 @@ class JsonHttpService {
         // These are internet-facing APIs, not LAN-local like NerdWinSense —
         // more headroom than HttpClient's default LAN timeouts, so a
         // legitimately slow response isn't treated as a failure.
-        if (!http.downloadAndParse(url_, *doc_, filter_, kMaxAttempts, kRetryDelayMs,
-                                   kConnectTimeoutMs, kResponseTimeoutMs)) {
+        if (!http.downloadAndParse(url_, *doc_, filter_, config_.httpFetchMaxAttempts,
+                                   config_.httpFetchRetryDelayMs, config_.httpFetchConnectTimeoutMs,
+                                   config_.httpFetchResponseTimeoutMs)) {
             if (http.getLastHttpCode() == HTTP_CODE_OK) {
                 logger_.warningf("%s: JSON parse error: %s", name_,
                                  http.getLastParseError().c_str());
@@ -72,11 +74,13 @@ class JsonHttpService {
 
  protected:
     // name is a short log prefix ("Weather", "AirQuality"); url must outlive
-    // this object — in practice a string literal from Environment.h.
-    JsonHttpService(NetworkManager& networkManager, LoggerInterface& logger, const char* name,
-                    const char* url)
+    // this object — in practice AppSettings::endpoints (A9). Timeouts come
+    // from config's httpFetch* knobs (AppConfig::internal::HttpFetchImpl).
+    JsonHttpService(NetworkManager& networkManager, LoggerInterface& logger,
+                    const AppSettings& config, const char* name, const char* url)
         : logger_(logger),
           networkManager_(networkManager),
+          config_(config),
           name_(name),
           url_(url),
           doc_(std::make_unique<JsonDocument>()) {
@@ -93,17 +97,11 @@ class JsonHttpService {
     LoggerInterface& logger_;
 
  private:
-    // Worst case per fetchData(): kDnsTimeoutMs + kConnectTimeoutMs +
-    // kResponseTimeoutMs ≈ 13 s, well inside the 20 s task watchdog. One
-    // attempt only — two (the old value) was already ~18 s before DNS, and
-    // the calling job's failure backoff provides the retry anyway (B38).
-    static constexpr uint8_t kMaxAttempts = 1;
-    static constexpr uint32_t kRetryDelayMs = 100;
-    static constexpr uint16_t kConnectTimeoutMs = 3000;
-    static constexpr uint16_t kResponseTimeoutMs = 6000;
-    static constexpr uint32_t kDnsTimeoutMs = 4000;
-
+    // Worst case per fetchData(): DNS + connect + response timeouts ≈ 13 s
+    // by default, well inside the 20 s task watchdog; AppConfig.h
+    // static_asserts that the defaults stay there (B38).
     NetworkManager& networkManager_;
+    const AppSettings& config_;
     const char* name_;
     const char* url_;
     char host_[64] = "";

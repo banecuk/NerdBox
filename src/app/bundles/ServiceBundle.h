@@ -48,10 +48,10 @@ struct ServiceBundle {
     ServiceBundle(NetworkManager& networkManager, LoggerInterface& logger,
                   const AppSettings& config, AudioData& audioData)
         : pcMetricsService(networkManager, systemMetrics, logger, config),
-          airQualityService(networkManager, logger),
-          roomClimateService(networkManager, logger),
-          weatherService(networkManager, logger),
-          networkStatusService(logger),
+          airQualityService(networkManager, logger, config, config.endpoints.airVisualApi),
+          roomClimateService(networkManager, logger, config, config.endpoints.roomClimateApi),
+          weatherService(networkManager, logger, config, config.endpoints.weatherApi),
+          networkStatusService(logger, networkManager, config),
           audioService(audioData, logger),
           wifiScanService(logger, config) {}
 };

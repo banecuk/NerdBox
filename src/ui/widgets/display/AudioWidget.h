@@ -21,9 +21,6 @@ class AudioWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    static void formatTime(uint32_t ms, char* buf, size_t bufSize);
-    static void formatQuality(const AudioData& data, char* buf, size_t bufSize);
-
     void computeLayout();
     void drawNowPlaying(bool forceRedraw);
     void drawStoppedMessage(bool forceRedraw);

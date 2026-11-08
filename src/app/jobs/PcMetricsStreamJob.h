@@ -11,7 +11,7 @@
 #include "utils/logging/LoggerInterface.h"
 
 // Streaming counterpart to PcMetricsJob: keeps one SseConnection open to
-// NerdWinSense's SSE endpoint (host:port taken from LIBRE_HM_API, path from
+// NerdWinSense's SSE endpoint (host:port taken from config.endpoints.pcMetricsApi, path from
 // config.pcMetricsStream.streamPath) via the shared SseStreamJob base (see
 // docs-local/11-code-quality.md Q1). Each event's `data:` payload is handed
 // to PcMetricsStreamService, which owns the JsonDocument/filter/parse/publish

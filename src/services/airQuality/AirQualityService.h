@@ -13,18 +13,14 @@
 // the filter and the JSON -> AirQualityData mapping live in AirQualityParser
 // (host-tested), so this class only adds the endpoint URL and the publish.
 //
-// Refresh cadence: 30 minutes — within the AirVisual free-tier rate limit.
+// Refresh cadence and widget staleness window: AppSettings'
+// airQualityRefreshIntervalMs / airQualityStaleTimeoutMs.
 class AirQualityService : public JsonHttpService<AirQualityData, AirQualityService> {
  public:
-    AirQualityService(NetworkManager& networkManager, LoggerInterface& logger);
+    // url must have static storage (AppSettings::endpoints, A9).
+    AirQualityService(NetworkManager& networkManager, LoggerInterface& logger,
+                      const AppSettings& config, const char* url);
     ~AirQualityService() = default;
-
-    static constexpr unsigned long kRefreshIntervalMs = 30UL * 60UL * 1000UL;
-
-    // Widget staleness window. AirQualityJob only fetches once the data is
-    // already kRefreshIntervalMs old, so using the interval itself blanked
-    // the widget on every refresh (B42) — same 3x rule as RoomClimateService.
-    static constexpr unsigned long kStaleTimeoutMs = 3UL * kRefreshIntervalMs;
 
  private:
     friend class JsonHttpService<AirQualityData, AirQualityService>;

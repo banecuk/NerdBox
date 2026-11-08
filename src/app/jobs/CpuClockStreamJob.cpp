@@ -6,12 +6,14 @@ CpuClockStreamJob::CpuClockStreamJob(CpuClockData& data, SystemState::CoreState&
                                      SystemState::ScreenState& screenState,
                                      NetworkManager& networkManager, const AppSettings& config,
                                      LoggerInterface& logger)
-    : SseStreamJob(logger, networkManager, Config{"CPU clock SSE stream", "screen"}, config.cpuClockStream),
+    : SseStreamJob(logger, networkManager, Config{"CPU clock SSE stream", "screen"},
+                   config.cpuClockStream, config.endpoints.pcMetricsApi),
       coreState_(coreState),
       screenState_(screenState),
       streamService_(data, logger) {
     char pathWithQuery[96];
-    snprintf(pathWithQuery, sizeof(pathWithQuery), "%s?intervalMs=%lu", config.cpuClockStream.streamPath,
+    snprintf(pathWithQuery, sizeof(pathWithQuery), "%s?intervalMs=%lu",
+             config.cpuClockStream.streamPath,
              static_cast<unsigned long>(config.cpuClockStream.intervalMs));
     setPath(pathWithQuery);
 }

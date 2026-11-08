@@ -3,6 +3,7 @@
 #include <cstring>
 #include <memory>
 
+#include "ui/widgets/base/MetricTileLayout.h"
 #include "ui/widgets/base/Widget.h"
 
 class MetricWidget : public Widget {
@@ -10,7 +11,12 @@ class MetricWidget : public Widget {
     // Which color ramp calculateBackgroundColor() samples. Replaces three
     // mutually-exclusive booleans (useGpuColors/useDimColors/useRamColors) —
     // see docs-local/12-code-architecture.md, C5.
-    enum class Palette : uint8_t { Default, Dim, Gpu, Ram };
+    enum class Palette : uint8_t {
+        Default,
+        Dim,
+        Gpu,
+        Ram
+    };
 
     // Every tunable knob in one place, with default member initializers
     // matching MetricWidget's own historical defaults. Passed to the
@@ -107,8 +113,8 @@ class MetricWidget : public Widget {
     bool gradientBackground_;
 
     // State
-    int16_t valueX_ = 0;
-    uint16_t valueWidth_ = 0;
+    // Value-area bounds, recomputed by updateDimensionCache() on a resize.
+    MetricTileLayout::Rect valueArea_{0, 0, 0, 0};
     bool dimensionsDirty_ = true;
     int lastDrawnValue_ = -1;
     // Tracks "has this widget completed at least one draw since the last

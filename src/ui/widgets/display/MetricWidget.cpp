@@ -244,10 +244,11 @@ void MetricWidget::unloadValueFont() const {
 }
 
 void MetricWidget::updateDimensionCache() {
-    valueX_ =
-        hasLabel_ ? dimensions_.x + labelWidth_ + kSeparatorWidth : dimensions_.x + borderMargin_;
-    valueWidth_ = hasLabel_ ? dimensions_.width - labelWidth_ - kSeparatorWidth - borderMargin_
-                            : dimensions_.width - (2 * borderMargin_);
+    const MetricTileLayout::Rect tile{
+        static_cast<int16_t>(dimensions_.x), static_cast<int16_t>(dimensions_.y),
+        static_cast<int16_t>(dimensions_.width), static_cast<int16_t>(dimensions_.height)};
+    valueArea_ = MetricTileLayout::valueArea(tile, hasLabel_, static_cast<int16_t>(labelWidth_),
+                                             kSeparatorWidth, static_cast<int16_t>(borderMargin_));
     dimensionsDirty_ = false;
     valueAreaDirty_ = true;
 }
@@ -346,15 +347,11 @@ uint16_t MetricWidget::backgroundColorAtY(int16_t y, int16_t areaY, int16_t area
 
 void MetricWidget::getValueAreaBounds(int16_t& areaX, int16_t& areaY, int16_t& areaWidth,
                                       int16_t& areaHeight) const {
-    if (hasLabel_) {
-        areaX = valueX_;
-        areaWidth = valueWidth_;
-    } else {
-        areaX = dimensions_.x + borderMargin_;
-        areaWidth = dimensions_.width - (2 * borderMargin_);
-    }
-    areaY = dimensions_.y + borderMargin_;
-    areaHeight = dimensions_.height - (2 * borderMargin_);
+    // Cached by updateDimensionCache(); see MetricTileLayout::valueArea().
+    areaX = valueArea_.x;
+    areaY = valueArea_.y;
+    areaWidth = valueArea_.w;
+    areaHeight = valueArea_.h;
 }
 
 void MetricWidget::drawValueText(const char* text, int16_t x, int16_t y, uint16_t bgColor,
@@ -395,17 +392,18 @@ bool MetricWidget::handleTouch(uint16_t x, uint16_t y) {
 }
 
 int16_t MetricWidget::computeStartX(int16_t areaX, int16_t areaWidth, int16_t totalW) const {
+    MetricTileLayout::HAlign align = MetricTileLayout::HAlign::Center;
     if (textAlignment_ == ML_DATUM || textAlignment_ == CL_DATUM || textAlignment_ == BL_DATUM) {
-        return areaX + kTextMargin;
+        align = MetricTileLayout::HAlign::Left;
+    } else if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM ||
+               textAlignment_ == BR_DATUM) {
+        align = MetricTileLayout::HAlign::Right;
     }
-    if (textAlignment_ == MR_DATUM || textAlignment_ == CR_DATUM || textAlignment_ == BR_DATUM) {
-        return areaX + areaWidth - kTextMargin - totalW;
-    }
-    return areaX + areaWidth / 2 - totalW / 2;
+    return MetricTileLayout::startX(areaX, areaWidth, totalW, align, kTextMargin);
 }
 
 bool MetricWidget::layoutShifted(int16_t newTextWidth, int16_t unitWidth) const {
-    return unitWidth > 0 ? (newTextWidth != lastTextWidth_) : (newTextWidth < lastTextWidth_);
+    return MetricTileLayout::needsClear(newTextWidth, lastTextWidth_, unitWidth);
 }
 
 void MetricWidget::safeStringCopy(char* dest, const char* src, size_t destSize) const {

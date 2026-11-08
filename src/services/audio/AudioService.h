@@ -15,11 +15,15 @@ class AudioService {
  public:
     AudioService(AudioData& data, LoggerInterface& logger);
 
-    // Parses one push event body and applies it to the AudioData passed at
-    // construction. Returns true if the caller should request a resync (HTTP
-    // 409 / a `resend` response body, per the plugin's protocol) — a seq gap
-    // or trackId mismatch was detected, or the body failed to parse.
-    bool handlePush(const String& body);
+    // Parses one push event body (len bytes, need not be NUL-terminated) and
+    // applies it to the AudioData passed at construction. nowMs is the
+    // caller's millis(), injected so the protocol logic is host-testable
+    // (test/AudioServiceTest.cpp). Returns true if the caller should request
+    // a resync (HTTP 409 / a `resend` response body, per the plugin's
+    // protocol): a seq gap or trackId mismatch was detected, or the body
+    // failed to parse. An unknown `event` value is ignored entirely (no
+    // bookkeeping or freshness update) and doesn't request a resync.
+    bool handlePush(const char* body, size_t len, uint32_t nowMs);
 
  private:
     static AudioData::PlayState parsePlayState(const char* name);

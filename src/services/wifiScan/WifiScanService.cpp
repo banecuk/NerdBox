@@ -1,5 +1,6 @@
 #include "WifiScanService.h"
 
+#include <esp_wifi.h>
 #include <WiFi.h>
 
 #include <algorithm>
@@ -16,26 +17,45 @@ bool WifiScanService::start(WifiScanData& data) {
     }
 
     WiFi.scanDelete();  // in case a previous result was never drained
-    WiFi.scanNetworks(/*async=*/true, /*show_hidden=*/config_.wifiScanShowHidden,
-                      /*passive=*/false, /*max_ms_per_chan=*/config_.wifiScanMaxMsPerChannel);
+    const int16_t started =
+        WiFi.scanNetworks(/*async=*/true, /*show_hidden=*/config_.wifiScanShowHidden,
+                          /*passive=*/false, /*max_ms_per_chan=*/config_.wifiScanMaxMsPerChannel);
+    scanStartMs_ = millis();
+
+    // Async scanNetworks() returns WIFI_SCAN_RUNNING on success (or when a
+    // scan is already in flight, which we then simply wait for). Anything
+    // else means esp_wifi_scan_start() refused, e.g. the radio is still busy
+    // with an earlier scan. That used to be ignored: the state went to
+    // SCANNING and the next poll() reported a bogus FAILED.
+    if (started != WIFI_SCAN_RUNNING) {
+        data.state = WifiScanData::State::FAILED;
+        data.lastScanDurationMs = 0;
+        logger_.warningf("WiFi scan: driver refused to start a scan (%d)", started);
+        return false;
+    }
 
     data.state = WifiScanData::State::SCANNING;
-    scanStartMs_ = millis();
     return true;
 }
 
 bool WifiScanService::poll(WifiScanData& data) {
     const int16_t result = WiFi.scanComplete();
-    if (result == WIFI_SCAN_RUNNING) {
+    const unsigned long elapsed = millis() - scanStartMs_;
+    const WifiScanMath::ScanPoll verdict =
+        WifiScanMath::classifyScanPoll(result, elapsed, config_.wifiScanResultTimeoutMs);
+    if (verdict == WifiScanMath::ScanPoll::Running) {
+        // Includes the core's premature WIFI_SCAN_FAILED (its own
+        // max_ms_per_chan * 20 timeout): the radio is still scanning and
+        // its SCAN_DONE event will turn scanComplete() into the count.
         return false;
     }
 
-    data.lastScanDurationMs =
-        static_cast<uint16_t>(std::min<unsigned long>(millis() - scanStartMs_, 0xFFFFu));
+    data.lastScanDurationMs = static_cast<uint16_t>(std::min<unsigned long>(elapsed, 0xFFFFu));
 
-    if (result < 0) {  // WIFI_SCAN_FAILED (or any other negative surprise)
+    if (verdict == WifiScanMath::ScanPoll::Failed) {
+        logger_.warningf("WiFi scan: no result after %lu ms, stopping it", elapsed);
+        stopRadioScan();
         data.state = WifiScanData::State::FAILED;
-        WiFi.scanDelete();
         return true;
     }
 
@@ -49,13 +69,28 @@ bool WifiScanService::poll(WifiScanData& data) {
 
 void WifiScanService::abandon(WifiScanData& data) {
     const int16_t result = WiFi.scanComplete();
-    if (result == WIFI_SCAN_RUNNING) {
-        return;  // still running off-screen; checked again next tick
+    const WifiScanMath::ScanPoll verdict = WifiScanMath::classifyScanPoll(
+        result, millis() - scanStartMs_, config_.wifiScanResultTimeoutMs);
+    if (verdict == WifiScanMath::ScanPoll::Running) {
+        // Still running off-screen (possibly past the core's own timeout);
+        // checked again next tick. Marking it IDLE now would let the next
+        // visit start a scan the radio rejects as busy.
+        return;
     }
-    if (result >= 0) {
+    if (verdict == WifiScanMath::ScanPoll::Failed) {
+        stopRadioScan();
+    } else {
         WiFi.scanDelete();
     }
     data.state = WifiScanData::State::IDLE;
+}
+
+void WifiScanService::stopRadioScan() {
+    // Abort a scan the radio never finished, so the next esp_wifi_scan_start()
+    // isn't refused as busy. Harmless if no scan is running. scanDelete()
+    // frees any (late) result list the core may still hold.
+    esp_wifi_scan_stop();
+    WiFi.scanDelete();
 }
 
 void WifiScanService::applyResults(WifiScanData& data, int16_t resultCount) {

@@ -43,6 +43,29 @@ jobs:
         # would silently paper over.
         run: pio run -e ${{ matrix.env }}
 
+  layering:
+    name: Layering invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check include layering
+        # See docs-local/12-code-architecture.md "Layering invariants". Each
+        # check fails the step if its grep finds anything. (Not `! grep`:
+        # bash's `set -e` ignores negated commands, so that never fails.)
+        run: |
+          fail=0
+          if grep -rn '#include "app/' src/services src/ui src/core src/utils src/network; then
+            echo "::error::layers below app/ must not include app/"; fail=1
+          fi
+          if grep -rn '#include "\(ui\|services\)/' src/core src/config src/utils src/network; then
+            echo "::error::core/config/utils/network must not include ui/ or services/"; fail=1
+          fi
+          if grep -rln '#include "config/Environment.h"' src | grep -v '^src/config/Endpoints.cpp$'; then
+            echo "::error::only src/config/Endpoints.cpp may include config/Environment.h (A9)"; fail=1
+          fi
+          exit $fail
+
   native-tests:
     name: Native unit tests
     runs-on: ubuntu-latest

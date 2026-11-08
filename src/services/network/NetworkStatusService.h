@@ -4,7 +4,9 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "config/AppSettings.h"
 #include "config/Limits.h"
+#include "network/NetworkManager.h"
 #include "services/network/InternetVerdict.h"
 #include "services/network/NetworkStatus.h"
 #include "utils/logging/LoggerInterface.h"
@@ -12,7 +14,10 @@
 // Keeps NetworkStatus up to date.
 //
 // WiFi state  — call updateWifi() from the background task every loop tick.
-//               Reads WiFi.status() and WiFi.RSSI() — no network I/O.
+//               Reads WiFi.status() and WiFi.RSSI() — no network I/O. Also
+//               republishes the link details (NetworkStatus::copyLink()) at
+//               most every networkLinkRefreshMs, and at once when the link goes up
+//               or down, so no other task has to query the WiFi driver (A8).
 //
 // Internet    — call maybeTriggerProbe() from the background task every tick.
 //               When the probe interval has elapsed and no probe is running, a
@@ -21,9 +26,9 @@
 //               The rolling 8-slot result buffer prevents a single slow response
 //               from flipping the state.
 //               Until all 8 endpoints have been probed once, probing runs at
-//               the fast kWarmupProbeIntervalMs cadence so the status is
+//               the fast networkWarmupProbeIntervalMs cadence so the status is
 //               accurate within a few seconds of boot; afterwards it settles
-//               into the slow kProbeIntervalMs cadence.
+//               into the slow networkProbeIntervalMs cadence. (Both are AppSettings knobs.)
 //               OK       — at most 1 of the 8 last results failed. A single
 //                          third-party endpoint being flaky says nothing about
 //                          this device's connectivity, so it isn't flagged.
@@ -32,7 +37,8 @@
 //               DOWN     — all 8 failed.
 class NetworkStatusService {
  public:
-    NetworkStatusService(LoggerInterface& logger);
+    NetworkStatusService(LoggerInterface& logger, const NetworkManager& networkManager,
+                         const AppSettings& config);
     ~NetworkStatusService() = default;
 
     NetworkStatusService(const NetworkStatusService&) = delete;
@@ -44,18 +50,6 @@ class NetworkStatusService {
     // Call from background task every loop tick.
     // Spawns a probe task when the interval has elapsed.
     void maybeTriggerProbe(NetworkStatus& status);
-
-    // Steady-state probe interval, used once every endpoint has been probed
-    // at least once. 45s is plenty for a status glyph and cuts the request
-    // volume to the (third-party) probe endpoints roughly 5.5x versus the
-    // previous 8s cadence.
-    static constexpr unsigned long kProbeIntervalMs = 45000UL;
-
-    // Warm-up probe interval, used while any endpoint has never been probed
-    // (i.e. right after boot). Fast enough that all kNumEndpoints slots fill
-    // in a few seconds instead of waiting kNumEndpoints * kProbeIntervalMs
-    // for an accurate status.
-    static constexpr unsigned long kWarmupProbeIntervalMs = 1000UL;
 
     static constexpr uint8_t kNumEndpoints = AppConfig::Limits::kNetworkProbeEndpoints;
     static_assert(sizeof(NetworkStatus{}.endpoint_ok) / sizeof(bool) == kNumEndpoints,
@@ -90,6 +84,12 @@ class NetworkStatusService {
     // State
     // -----------------------------------------------------------------------
     LoggerInterface& logger_;
+    const NetworkManager& networkManager_;
+    const AppSettings& config_;
+
+    unsigned long lastLinkRefreshMs_ = 0;
+    bool linkPublished_ = false;
+    bool lastLinkConnected_ = false;
 
     uint8_t probeTarget_ = 0;  // round-robin index into kProbeUrls
     // Rolling pass/fail buffer, one slot per endpoint. `probed` tracks which
@@ -99,8 +99,9 @@ class NetworkStatusService {
     // failures and misreport DEGRADED/DOWN during the warm-up window.
     ProbeResult probes_[kNumEndpoints] = {};
 
+    // Not tuning knobs: the probe task's stack is sized for HTTPClient, and
+    // its priority must stay at or below the background task's.
     static constexpr uint32_t kProbeStack = 4096;
-    static constexpr uint32_t kProbeTimeoutMs = 1500;
     static constexpr UBaseType_t kProbePriority = 1;
 
     static const char* kProbeUrls[kNumEndpoints];

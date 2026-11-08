@@ -26,7 +26,7 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
     // to avoid heap fragmentation.
     doc_->clear();
     HttpClient& http = networkManager_.getHttpClient();
-    if (!http.downloadAndParse(LIBRE_HM_API, *doc_, filter_)) {
+    if (!http.downloadAndParse(config_.endpoints.pcMetricsApi, *doc_, filter_)) {
         if (http.getLastHttpCode() == HTTP_CODE_OK) {
             logger_.errorf("JSON parsing failed: %s", http.getLastParseError().c_str());
             snprintf(lastError_, sizeof(lastError_), "parse: %s", http.getLastParseError().c_str());
@@ -51,7 +51,7 @@ bool PcMetricsService::fetchData(PcMetrics& outData) {
 
 bool PcMetricsService::fetchRawJson(String& outRaw) {
     HTTPClient http;
-    if (!http.begin(LIBRE_HM_API)) {
+    if (!http.begin(config_.endpoints.pcMetricsApi)) {
         return false;
     }
     http.setConnectTimeout(1000);

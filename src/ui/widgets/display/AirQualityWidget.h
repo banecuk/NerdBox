@@ -4,7 +4,6 @@
 
 #include "core/events/EventTypes.h"
 #include "services/airQuality/AirQualityData.h"
-#include "services/airQuality/AirQualityService.h"
 #include "ui/core/Colors.h"
 #include "ui/resources/FontRegistry.h"
 #include "ui/resources/weather_icons_44.h"
@@ -32,8 +31,8 @@ class AirQualityWidget : public Widget {
     using ActionCallback = std::function<void(EventType)>;
 
     AirQualityWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                     const AirQualityData& airData, EventType action = EventType::NONE,
-                     ActionCallback callback = nullptr);
+                     const AirQualityData& airData, uint32_t staleTimeoutMs,
+                     EventType action = EventType::NONE, ActionCallback callback = nullptr);
 
     bool handleTouch(uint16_t x, uint16_t y) override;
 
@@ -70,7 +69,8 @@ class AirQualityWidget : public Widget {
     // Data is sticky-available (AirQualityService never clears availability
     // on fetch failure) — freshness must be checked by age too, or a stale
     // outage-era reading displays forever with no indication.
-    DataFreshnessGuard freshness_{airData_.freshness, AirQualityService::kStaleTimeoutMs};
+    // Window: AppSettings::airQualityStaleTimeoutMs.
+    DataFreshnessGuard freshness_;
 
     // Optional tap action (mirrors FpsWidget/ButtonWidget): when a callback
     // is set, a tap publishes `action_`, e.g. to open the Weather screen.

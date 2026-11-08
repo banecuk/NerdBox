@@ -1,25 +1,23 @@
 #include "WebServerService.h"
 
-#include "core/ScreenRegistry.h"
 #include "core/events/EventBus.h"
+#include "core/ScreenRegistry.h"
 
 WebServerService::WebServerService(
     WebServer& server, IScreenNavigator& screenNavigator, ApplicationMetrics& systemMetrics,
     PcMetrics& pcMetrics, PcMetricsService& pcMetricsService, IStreamHealth& pcMetricsStreamJob,
     IStreamHealth& cpuClockStreamJob, IStreamHealth& processStreamJob,
     const NetworkStatus& netStatus, const SystemState& systemState, const WeatherData& weatherData,
-    const AppSettings& config, const ITaskStackReporter& taskStackReporter,
-    LoggerInterface& logger, RecentLogView& recentLogView, const AudioData& audioData,
-    AudioService& audioService, const RoomClimateData& roomClimateData,
-    const NetworkManager& networkManager, const WifiScanData& wifiScanData)
+    const AppSettings& config, const ITaskStackReporter& taskStackReporter, LoggerInterface& logger,
+    RecentLogView& recentLogView, const AudioData& audioData, AudioService& audioService,
+    const RoomClimateData& roomClimateData, const WifiScanData& wifiScanData)
     : server_(server),
       screenNavigator_(screenNavigator),
       logger_(logger),
       audioService_(audioService),
       apiHandlers_(server, systemMetrics, pcMetrics, pcMetricsService, pcMetricsStreamJob,
-                   cpuClockStreamJob, processStreamJob, netStatus, systemState, weatherData,
-                   config, taskStackReporter, audioData, roomClimateData, networkManager,
-                   wifiScanData),
+                   cpuClockStreamJob, processStreamJob, netStatus, systemState, weatherData, config,
+                   taskStackReporter, audioData, roomClimateData, wifiScanData),
       pageHandlers_(server, systemMetrics, config, recentLogView) {}
 
 void WebServerService::begin() {
@@ -41,7 +39,8 @@ void WebServerService::begin() {
     // POST-only: these change device state, so a GET (e.g. a LAN prefetcher
     // or a link crawler) can no longer flip the screen as a side effect.
     for (const auto& descriptor : kScreens) {
-        if (descriptor.route == nullptr) continue;
+        if (descriptor.route == nullptr)
+            continue;
         const ScreenName screen = descriptor.screen;
         server_.on(descriptor.route, HTTP_POST, [this, screen]() {
             screenNavigator_.requestScreen(screen);
@@ -74,7 +73,7 @@ void WebServerService::handleRestart() {
 
 void WebServerService::handleAudioPush() {
     const String body = server_.arg("plain");
-    const bool needsResync = audioService_.handlePush(body);
+    const bool needsResync = audioService_.handlePush(body.c_str(), body.length(), millis());
     // The plugin only inspects HTTP 409 or a body containing "resend" — any
     // other response is ordinary success/failure and otherwise ignored.
     if (needsResync) {

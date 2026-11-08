@@ -105,4 +105,11 @@ const char* authName(uint8_t auth) {
     }
 }
 
+ScanPoll classifyScanPoll(int16_t scanCompleteResult, uint32_t elapsedMs, uint32_t deadlineMs) {
+    if (scanCompleteResult >= 0) {
+        return ScanPoll::Done;
+    }
+    return elapsedMs < deadlineMs ? ScanPoll::Running : ScanPoll::Failed;
+}
+
 }  // namespace WifiScanMath

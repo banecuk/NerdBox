@@ -22,7 +22,10 @@ const char* NetworkStatusService::kProbeUrls[NetworkStatusService::kNumEndpoints
 // Constructor
 // ---------------------------------------------------------------------------
 
-NetworkStatusService::NetworkStatusService(LoggerInterface& logger) : logger_(logger) {}
+NetworkStatusService::NetworkStatusService(LoggerInterface& logger,
+                                           const NetworkManager& networkManager,
+                                           const AppSettings& config)
+    : logger_(logger), networkManager_(networkManager), config_(config) {}
 
 // ---------------------------------------------------------------------------
 // updateWifi — cheap, called every background loop tick
@@ -36,6 +39,17 @@ void NetworkStatusService::updateWifi(NetworkStatus& status) {
         status.rssi = 0;
         status.internet = NetworkStatus::Internet::UNKNOWN;
     }
+
+    const unsigned long now = millis();
+    const bool edge = status.wifi_connected != lastLinkConnected_;
+    if (!linkPublished_ || edge || now - lastLinkRefreshMs_ >= config_.networkLinkRefreshMs) {
+        LinkInfo link;
+        networkManager_.fillLinkInfo(link);
+        status.storeLink(link, now);
+        lastLinkRefreshMs_ = now;
+        lastLinkConnected_ = status.wifi_connected;
+        linkPublished_ = true;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -48,7 +62,8 @@ void NetworkStatusService::maybeTriggerProbe(NetworkStatus& status) {
     if (status.probe_running)
         return;
 
-    const unsigned long interval = allEndpointsProbed() ? kProbeIntervalMs : kWarmupProbeIntervalMs;
+    const unsigned long interval = allEndpointsProbed() ? config_.networkProbeIntervalMs
+                                                        : config_.networkWarmupProbeIntervalMs;
     if (status.last_probe != 0 && (millis() - status.last_probe) < interval)
         return;
 
@@ -91,8 +106,8 @@ void NetworkStatusService::runProbe(NetworkStatus& status) {
     bool success = false;
 
     HTTPClient http;
-    http.setTimeout(kProbeTimeoutMs);
-    http.setConnectTimeout(static_cast<int>(kProbeTimeoutMs));
+    http.setTimeout(config_.networkProbeTimeoutMs);
+    http.setConnectTimeout(static_cast<int>(config_.networkProbeTimeoutMs));
 
     if (http.begin(url)) {
         const int code = http.GET();

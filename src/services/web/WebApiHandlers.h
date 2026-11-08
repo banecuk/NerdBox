@@ -4,10 +4,9 @@
 #include <WebServer.h>
 
 #include "config/AppSettings.h"
-#include "core/ITaskStackReporter.h"
 #include "core/IStreamHealth.h"
+#include "core/ITaskStackReporter.h"
 #include "core/state/SystemState.h"
-#include "network/NetworkManager.h"
 #include "services/audio/AudioData.h"
 #include "services/network/NetworkStatus.h"
 #include "services/pcMetrics/PcMetrics.h"
@@ -30,8 +29,7 @@ class WebApiHandlers {
                    const NetworkStatus& netStatus, const SystemState& systemState,
                    const WeatherData& weatherData, const AppSettings& config,
                    const ITaskStackReporter& taskStackReporter, const AudioData& audioData,
-                   const RoomClimateData& roomClimateData, const NetworkManager& networkManager,
-                   const WifiScanData& wifiScanData);
+                   const RoomClimateData& roomClimateData, const WifiScanData& wifiScanData);
 
     void handleApiStatus();
     void handleApiRaw();
@@ -74,6 +72,5 @@ class WebApiHandlers {
     const ITaskStackReporter& taskStackReporter_;
     const AudioData& audioData_;
     const RoomClimateData& roomClimateData_;
-    const NetworkManager& networkManager_;
     const WifiScanData& wifiScanData_;
 };

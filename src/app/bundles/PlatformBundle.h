@@ -1,10 +1,11 @@
 #pragma once
 
-#include <LovyanGFX.hpp>
 #include <esp_heap_caps.h>
 
 #include <memory>
 #include <new>
+
+#include <LovyanGFX.hpp>
 
 #include "config/AppSettings.h"
 #include "network/HttpClient.h"
@@ -64,11 +65,13 @@ struct PlatformBundle {
     NetworkManager networkManager;
     NtpService ntpService;
 
-    // isTimeSynced comes from DataBundle::systemState.core, constructed
-    // before this bundle in ApplicationComponents' declaration order.
-    PlatformBundle(const bool& isTimeSynced, const AppSettings& config)
+    // isTimeSynced is DataBundle::systemState.core.isTimeSynced, constructed
+    // before this bundle in ApplicationComponents' declaration order. The
+    // Logger reads it; NtpService is its single writer.
+    PlatformBundle(std::atomic<bool>& isTimeSynced, const AppSettings& config)
         : logger_(isTimeSynced),
           displayContext(display, colors, logger_, logger_),
           displayManager(display, logger_, config),
-          networkManager(logger_, httpClient, config) {}
+          networkManager(logger_, httpClient, config),
+          ntpService(isTimeSynced, config) {}
 };

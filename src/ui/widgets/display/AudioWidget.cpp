@@ -7,6 +7,7 @@
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
+#include "ui/widgets/display/AudioFormat.h"
 
 namespace {
 constexpr uint16_t kTitleRowH = 20;
@@ -27,8 +28,8 @@ constexpr uint16_t kBottomPadding = 6;
 constexpr uint16_t kRightPadding = 8;
 
 constexpr uint16_t kBarBgColor = Colors::kBorderGrey;  // dark grey-blue track
-constexpr uint16_t kBarColorPlaying = 0x4FFF;  // bright cyan fill
-constexpr uint16_t kBarColorPaused = 0x2D5B;   // dimmed version of the above
+constexpr uint16_t kBarColorPlaying = 0x4FFF;          // bright cyan fill
+constexpr uint16_t kBarColorPaused = 0x2D5B;           // dimmed version of the above
 }  // namespace
 
 AudioWidget::AudioWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
@@ -47,38 +48,6 @@ void AudioWidget::computeLayout() {
     barY_ = dimensions_.y + dimensions_.height - kBarH - kBottomPadding;
     barX_ = dimensions_.x;
     barW_ = dimensions_.width > kRightPadding ? dimensions_.width - kRightPadding : 0;
-}
-
-void AudioWidget::formatTime(uint32_t ms, char* buf, size_t bufSize) {
-    const uint32_t totalSeconds = ms / 1000;
-    const uint32_t minutes = totalSeconds / 60;
-    const uint32_t seconds = totalSeconds % 60;
-    snprintf(buf, bufSize, "%lu:%02lu", static_cast<unsigned long>(minutes),
-             static_cast<unsigned long>(seconds));
-}
-
-void AudioWidget::formatQuality(const AudioData& data, char* buf, size_t bufSize) {
-    char formatUpper[sizeof(AudioData::format)];
-    size_t i = 0;
-    for (; data.format[i] != '\0' && i + 1 < sizeof(formatUpper); ++i)
-        formatUpper[i] = static_cast<char>(toupper(static_cast<unsigned char>(data.format[i])));
-    formatUpper[i] = '\0';
-
-    if (formatUpper[0] == '\0') {
-        buf[0] = '\0';
-        return;
-    }
-
-    // Lossless formats are conventionally shown by name alone ("FLAC");
-    // lossy ones pair the format with its bitrate ("MP3 256").
-    const bool lossless = strcmp(formatUpper, "FLAC") == 0 || strcmp(formatUpper, "WAV") == 0 ||
-                          strcmp(formatUpper, "APE") == 0 || strcmp(formatUpper, "ALAC") == 0;
-
-    if (!lossless && data.bitrate[0] != '\0') {
-        snprintf(buf, bufSize, "%s %s", formatUpper, data.bitrate);
-    } else {
-        snprintf(buf, bufSize, "%s", formatUpper);
-    }
 }
 
 void AudioWidget::onDrawStatic() {
@@ -117,7 +86,7 @@ void AudioWidget::drawStoppedMessage(bool forceRedraw) {
     lastOffline_ = offline;
 
     char posBuf[16];
-    formatTime(audioData_.positionMs, posBuf, sizeof(posBuf));
+    AudioFormat::formatTime(audioData_.positionMs, posBuf, sizeof(posBuf));
     char line2[128];
     snprintf(line2, sizeof(line2), "%s at %s", audioData_.title[0] ? audioData_.title : "-",
              posBuf);
@@ -191,16 +160,10 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
     }
 
     const uint32_t duration = audioData_.durationMs;
-    // Only clamp against duration when it's known — a duration of 0 means
-    // "unknown length" (e.g. a live stream), not "already at the end", so
-    // positionMs should still advance the displayed elapsed time even though
-    // the bar itself has nothing to fill against.
-    const uint32_t position =
-        (duration > 0 && audioData_.positionMs > duration) ? duration : audioData_.positionMs;
-    const uint16_t fillWidth =
-        (duration > 0 && barW_ > 0)
-            ? static_cast<uint16_t>((static_cast<uint64_t>(position) * barW_) / duration)
-            : 0;
+    // duration == 0 means "unknown length" (a live stream): position still
+    // advances, the bar has nothing to fill against (see AudioFormat).
+    const uint32_t position = AudioFormat::clampPosition(audioData_.positionMs, duration);
+    const uint16_t fillWidth = AudioFormat::progressFillWidth(position, duration, barW_);
     const bool playing = audioData_.isPlaying;
     const uint16_t barColor = playing ? kBarColorPlaying : kBarColorPaused;
 
@@ -209,15 +172,21 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
     // every ~1s tick — the full-bar fillRect was visibly flickering. A full
     // repaint only happens when play/pause changes the fill color (or on a
     // forced redraw).
-    if (forceRedraw || audioData_.playState != lastPlayState_) {
-        lcd->fillRect(barX_, barY_, barW_, barH_, kBarBgColor);
+    // An unknown-length track gets no bar background either (B30): an empty
+    // track that can never fill reads as broken. Switching between known and
+    // unknown length forces the full repaint so the background follows.
+    const bool lengthKnown = duration > 0;
+    const uint16_t barBgColor = lengthKnown ? kBarBgColor : TFT_BLACK;
+    if (forceRedraw || audioData_.playState != lastPlayState_ ||
+        lengthKnown != (lastDurationMs_ > 0)) {
+        lcd->fillRect(barX_, barY_, barW_, barH_, barBgColor);
         if (fillWidth > 0)
             lcd->fillRect(barX_, barY_, fillWidth, barH_, barColor);
     } else if (fillWidth != lastBarWidth_) {
         if (fillWidth > lastBarWidth_)
             lcd->fillRect(barX_ + lastBarWidth_, barY_, fillWidth - lastBarWidth_, barH_, barColor);
         else
-            lcd->fillRect(barX_ + fillWidth, barY_, lastBarWidth_ - fillWidth, barH_, kBarBgColor);
+            lcd->fillRect(barX_ + fillWidth, barY_, lastBarWidth_ - fillWidth, barH_, barBgColor);
     }
     lastBarWidth_ = fillWidth;
     lastPlayState_ = audioData_.playState;
@@ -225,16 +194,13 @@ void AudioWidget::drawNowPlaying(bool forceRedraw) {
     // Time (right-aligned, white) with the quality label immediately to its
     // left (grey) — both share one row instead of a separate quality line.
     char quality[24];
-    formatQuality(audioData_, quality, sizeof(quality));
+    AudioFormat::formatQuality(audioData_.format, audioData_.bitrate, quality, sizeof(quality));
     const bool qualityChanged = strcmp(quality, lastQuality_) != 0;
 
-    if (forceRedraw || position != lastPositionMs_ || duration != lastDurationMs_ || qualityChanged) {
-        char elapsed[16];
-        char total[16];
-        formatTime(position, elapsed, sizeof(elapsed));
-        formatTime(duration, total, sizeof(total));
+    if (forceRedraw || position != lastPositionMs_ || duration != lastDurationMs_ ||
+        qualityChanged) {
         char timeLine[40];
-        snprintf(timeLine, sizeof(timeLine), "%s / %s", elapsed, total);
+        AudioFormat::formatTimeLine(position, duration, timeLine, sizeof(timeLine));
 
         lcd->fillRect(dimensions_.x, timeY_, dimensions_.width, kTimeRowH, TFT_BLACK);
         lcd->setClipRect(dimensions_.x, timeY_, dimensions_.width, kTimeRowH);

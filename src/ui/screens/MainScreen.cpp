@@ -33,18 +33,19 @@ void MainScreen::createWidgets() {
     // positive (indoor sensor) — worst case "99.9°C" still needs the full
     // 64px column despite never needing a sign.
     widgetManager_.addWidget(
-        std::make_unique<RoomClimateWidget>(
-            WidgetInterface::Dimensions{224, 0, 64, 56}, 5000, roomClimateData_),
+        std::make_unique<RoomClimateWidget>(WidgetInterface::Dimensions{224, 0, 64, 56}, 5000,
+                                            roomClimateData_, config_.roomClimateStaleTimeoutMs),
         "room_climate");
 
     // Air quality block — right of the room climate widget, same top band.
     // Reorganized into four compact columns (icon | temp+humidity |
     // pressure+wind | AQI). Tappable to the weather forecast screen.
-    widgetManager_.addWidget(
-        std::make_unique<AirQualityWidget>(
-            WidgetInterface::Dimensions{288, 0, 192, 56}, 5000, airQualityData_,
-            EventType::SHOW_WEATHER, [this](EventType action) { this->handleAction(action); }),
-        "air_quality");
+    widgetManager_.addWidget(std::make_unique<AirQualityWidget>(
+                                 WidgetInterface::Dimensions{288, 0, 192, 56}, 5000,
+                                 airQualityData_, config_.airQualityStaleTimeoutMs,
+                                 EventType::SHOW_WEATHER,
+                                 [this](EventType action) { this->handleAction(action); }),
+                             "air_quality");
 
     // Game metrics grid — replaces PcMetricsWidget, directly below threads.
     // Moved up (y=56) since the top band got shorter. 84px tall (28px rows,
@@ -53,9 +54,9 @@ void MainScreen::createWidgets() {
     // around the digits. Tapping any GPU tile opens the game screen
     // (requestScreen() no-ops if already there).
     auto gameMetricsWidget = std::make_unique<PcMetricsWidget>(
-        uiController_.getDisplayContext(),
-        WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 84}, 100, pcMetrics_,
-        EventType::SHOW_GAME, [this](EventType action) { this->handleAction(action); });
+        uiController_.getDisplayContext(), WidgetInterface::Dimensions{0, 56, Layout::kScreenW, 84},
+        100, pcMetrics_, EventType::SHOW_GAME,
+        [this](EventType action) { this->handleAction(action); });
     gameMetricsWidget->setStaleTimeout(5000);
     widgetManager_.addWidget(std::move(gameMetricsWidget), "pc_metrics");
 
@@ -67,10 +68,10 @@ void MainScreen::createWidgets() {
     // docs-local/10-pcmetrics-tile-height.md. Trimmed to 103px to hand the
     // freed pixel to DiskBandWidget's activity lines below.
     widgetManager_.addWidget(
-        std::make_unique<MultiWidget>(
-            WidgetInterface::Dimensions{0, 140, Layout::kScreenW, 103}, 200, pcMetrics_,
-            audioData_, weatherData_, config_, EventType::SHOW_WEATHER,
-            [this](EventType action) { this->handleAction(action); }),
+        std::make_unique<MultiWidget>(WidgetInterface::Dimensions{0, 140, Layout::kScreenW, 103},
+                                      200, pcMetrics_, audioData_, weatherData_, config_,
+                                      EventType::SHOW_WEATHER,
+                                      [this](EventType action) { this->handleAction(action); }),
         "multi");
 
     // Disk band — slim strip, tappable to the disk screen. 26px tall: one
@@ -79,10 +80,10 @@ void MainScreen::createWidgets() {
     // that fits the NotoSans15 value font. Moved below the MultiWidget/FpsWidget
     // row (y=243..269, right above the bottom band).
     widgetManager_.addWidget(
-        std::make_unique<DiskBandWidget>(
-            uiController_.getDisplayContext(),
-            WidgetInterface::Dimensions{0, 243, Layout::kScreenW, 26}, 100, pcMetrics_,
-            EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); }),
+        std::make_unique<DiskBandWidget>(uiController_.getDisplayContext(),
+                                         WidgetInterface::Dimensions{0, 243, Layout::kScreenW, 26},
+                                         100, pcMetrics_, EventType::SHOW_DISKS,
+                                         [this](EventType action) { this->handleAction(action); }),
         "disk_band");
 
     // ── Bottom band is unchanged below this point ──────────────────────────────
@@ -127,18 +128,18 @@ void MainScreen::createWidgets() {
     widgetManager_.addWidget(
         std::make_unique<NetworkTrafficWidget>(
             WidgetInterface::Dimensions{kNetTrafficX, kBandY, kNetTrafficW, kBandH}, 1000,
-            pcMetrics_),
+            pcMetrics_, config_.endpoints.ethUploadMbps, config_.endpoints.ethDownloadMbps),
         "network_traffic");
 
     // Disk summary widget — sum of read/write rates across all drives, right
     // of the network traffic widget. Same layout/font pattern as
     // NetworkTrafficWidget (two stacked rows), but with "R"/"W" letters
     // instead of direction arrows. Tappable to the disk info screen.
-    widgetManager_.addWidget(
-        std::make_unique<DiskSummaryWidget>(
-            WidgetInterface::Dimensions{kDiskSumX, kBandY, kDiskSumW, kBandH}, 100, pcMetrics_,
-            EventType::SHOW_DISKS, [this](EventType action) { this->handleAction(action); }),
-        "disk_summary");
+    widgetManager_.addWidget(std::make_unique<DiskSummaryWidget>(
+                                 WidgetInterface::Dimensions{kDiskSumX, kBandY, kDiskSumW, kBandH},
+                                 100, pcMetrics_, EventType::SHOW_DISKS,
+                                 [this](EventType action) { this->handleAction(action); }),
+                             "disk_summary");
 
     // Network widget — compact, right-aligned next to the clock. Hit box
     // spans the full band height (not just the 24px drawn content) so the
@@ -155,10 +156,10 @@ void MainScreen::createWidgets() {
     // Clock — taller row so Mono24 glyphs get vertical padding. Centered on
     // the same band center as NetworkWidget/NetworkTrafficWidget. Tappable
     // to the calendar screen.
-    widgetManager_.addWidget(
-        std::make_unique<ClockWidget>(
-            WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH}, 1000, TFT_LIGHTGREY,
-            TFT_BLACK, "%H:%M:%S", EventType::SHOW_CALENDAR,
-            [this](EventType action) { this->handleAction(action); }),
-        "clock");
+    widgetManager_.addWidget(std::make_unique<ClockWidget>(
+                                 WidgetInterface::Dimensions{kClockX, kClockY, kClockW, kClockH},
+                                 1000, TFT_LIGHTGREY, TFT_BLACK, "%H:%M:%S",
+                                 EventType::SHOW_CALENDAR,
+                                 [this](EventType action) { this->handleAction(action); }),
+                             "clock");
 }

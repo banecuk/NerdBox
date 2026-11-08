@@ -9,10 +9,10 @@
 
 #include "core/ScreenRegistry.h"
 #include "services/network/NetworkStatusService.h"
+#include "services/pcMetrics/DiskSnapshot.h"
 #include "services/web/ChunkedPrint.h"
 #include "services/wifiScan/WifiScanMath.h"
 #include "utils/DataFreshnessGuard.h"
-#include "services/pcMetrics/DiskSnapshot.h"
 
 namespace {
 // The old snprintf-based handlers formatted these with a fixed number of
@@ -33,7 +33,6 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
                                const AppSettings& config,
                                const ITaskStackReporter& taskStackReporter,
                                const AudioData& audioData, const RoomClimateData& roomClimateData,
-                               const NetworkManager& networkManager,
                                const WifiScanData& wifiScanData)
     : server_(server),
       systemMetrics_(systemMetrics),
@@ -49,7 +48,6 @@ WebApiHandlers::WebApiHandlers(WebServer& server, ApplicationMetrics& systemMetr
       taskStackReporter_(taskStackReporter),
       audioData_(audioData),
       roomClimateData_(roomClimateData),
-      networkManager_(networkManager),
       wifiScanData_(wifiScanData) {}
 
 const char* WebApiHandlers::internetStatusToString(NetworkStatus::Internet status) {
@@ -233,8 +231,8 @@ void WebApiHandlers::writeStatusStreams(JsonDocument& doc) {
 
 void WebApiHandlers::writeStatusUi(JsonDocument& doc) {
     JsonObject ui = doc["ui"].to<JsonObject>();
-    ui["screen"] = screenNameToString(systemState_.screen.activeScreen);
-    ui["time_synced"] = systemState_.core.isTimeSynced;
+    ui["screen"] = screenNameToString(systemState_.screen.activeScreen.load());
+    ui["time_synced"] = systemState_.core.isTimeSynced.load();
 }
 
 void WebApiHandlers::writeStatusWeather(JsonDocument& doc) {
@@ -265,8 +263,8 @@ void WebApiHandlers::writeStatusWifi(JsonDocument& doc) {
     // WIFI screen's data path can be observed without a serial monitor or a
     // visible screen. Scan fields only advance while the WIFI screen is
     // open (see docs-local/13-wifi-screen-plan.md — the job is screen-gated).
-    NetworkManager::LinkInfo link{};
-    networkManager_.fillLinkInfo(link);
+    LinkInfo link;
+    netStatus_.copyLink(link);  // published by NetworkStatusService (A8)
     JsonObject wifi = doc["wifi"].to<JsonObject>();
     wifi["connected"] = link.connected;
     wifi["ssid"] = link.ssid;
@@ -469,17 +467,19 @@ void WebApiHandlers::handleMetrics() {
         const char* label;
         const IStreamHealth& health;
     };
-    const NamedStream streams[] = {{"pc", pcMetricsStreamJob_},
-                                   {"cpu_clock", cpuClockStreamJob_},
-                                   {"process", processStreamJob_}};
+    const NamedStream streams[] = {
+        {"pc",        pcMetricsStreamJob_},
+        {"cpu_clock", cpuClockStreamJob_ },
+        {"process",   processStreamJob_  }
+    };
     writeHeader(out, "nerdbox_stream_reconnects_total", "SSE reconnect count since boot.",
                 "counter");
     for (const NamedStream& st : streams) {
         out.printf("nerdbox_stream_reconnects_total{stream=\"%s\"} %lu\n", st.label,
                    static_cast<unsigned long>(st.health.reconnectCount()));
     }
-    writeHeader(out, "nerdbox_stream_overflow_total",
-                "SSE event-buffer overflow count since boot.", "counter");
+    writeHeader(out, "nerdbox_stream_overflow_total", "SSE event-buffer overflow count since boot.",
+                "counter");
     for (const NamedStream& st : streams) {
         out.printf("nerdbox_stream_overflow_total{stream=\"%s\"} %lu\n", st.label,
                    static_cast<unsigned long>(st.health.overflowCount()));
@@ -555,22 +555,22 @@ void WebApiHandlers::handleMetrics() {
     out.printf("nerdbox_room_humidity_percent %u\n", roomClimateData_.humidity);
 
     // ---- this device's own WiFi link ----
-    NetworkManager::LinkInfo link{};
-    networkManager_.fillLinkInfo(link);
+    LinkInfo link;
+    netStatus_.copyLink(link);  // published by NetworkStatusService (A8)
 
     // nerdbox_wifi_rssi_dbm is already emitted above (from NetworkStatus) —
     // a second HELP/TYPE block for the same name makes strict parsers
     // (promtool, Go expfmt, Telegraf) reject the whole scrape (B45).
 
     writeHeader(out, "nerdbox_wifi_quality_percent", "This device's own WiFi signal quality.",
-               "gauge");
+                "gauge");
     out.printf("nerdbox_wifi_quality_percent %u\n", WifiScanMath::rssiToQuality(link.rssi));
 
     writeHeader(out, "nerdbox_wifi_channel", "This device's own WiFi channel.", "gauge");
     out.printf("nerdbox_wifi_channel %u\n", link.channel);
 
     writeHeader(out, "nerdbox_wifi_neighbours_same_channel",
-               "Nearby APs sharing this device's WiFi channel (last scan).", "gauge");
+                "Nearby APs sharing this device's WiFi channel (last scan).", "gauge");
     out.printf("nerdbox_wifi_neighbours_same_channel %u\n", wifiScanData_.sameChannelCount);
 
     out.flush();

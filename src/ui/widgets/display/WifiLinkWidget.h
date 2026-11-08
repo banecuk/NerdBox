@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config/AppSettings.h"
-#include "network/NetworkManager.h"
+#include "services/network/NetworkStatus.h"
 #include "services/wifiScan/WifiScanData.h"
 #include "ui/core/DisplayContext.h"
 #include "ui/widgets/base/Widget.h"
@@ -12,15 +12,15 @@
 // IP/gateway/mask/DNS/MAC/hostname details strip. Content of WifiScreen's top
 // 0..119 band. See docs-local/13-wifi-screen-plan.md §4.2.
 //
-// Reads NetworkManager::fillLinkInfo() each tick (its own update interval —
-// see AppConfig::WifiScanImpl::kRssiTraceIntervalMs) rather than a shared
-// data struct, since this is the only widget that needs it (§2.2's rationale
-// for not growing DataBundle with it). WifiScanData is read only for
+// Reads the link snapshot NetworkStatusService publishes into NetworkStatus
+// (refreshed ~1 Hz on the background task, A8) each tick (its own update
+// interval — see AppConfig::WifiScanImpl::kRssiTraceIntervalMs), so the
+// screen task never queries the WiFi driver. WifiScanData is read only for
 // sameChannelCount.
 class WifiLinkWidget : public Widget {
  public:
     WifiLinkWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                   uint32_t updateIntervalMs, NetworkManager& networkManager,
+                   uint32_t updateIntervalMs, const NetworkStatus& netStatus,
                    const WifiScanData& wifiScan, const AppSettings& config);
 
  protected:
@@ -28,8 +28,8 @@ class WifiLinkWidget : public Widget {
     void onDrawStatic() override;
 
  private:
-    static constexpr uint16_t kCardH = 76;    // SSID/bars/trace row
-    static constexpr uint16_t kDetailsH = 42;  // IP/GW/MASK/DNS/MAC/HOST strip
+    static constexpr uint16_t kCardH = 76;                      // SSID/bars/trace row
+    static constexpr uint16_t kDetailsH = 42;                   // IP/GW/MASK/DNS/MAC/HOST strip
     static constexpr uint16_t kHairlineY = kCardH + kDetailsH;  // 118, relative to dims_.y
 
     static constexpr int8_t kTraceMinDbm = -90;
@@ -37,7 +37,7 @@ class WifiLinkWidget : public Widget {
     static constexpr size_t kTraceLen = 60;
     static constexpr uint16_t kTraceColW = 2;
 
-    NetworkManager& networkManager_;
+    const NetworkStatus& netStatus_;
     const WifiScanData& wifiScan_;
     const AppSettings& config_;
 
@@ -62,10 +62,10 @@ class WifiLinkWidget : public Widget {
     uint8_t lastChannel_ = 0xFF;
     uint8_t lastNeighbourCount_ = 0xFF;
     bool lastNeighbourAvailable_ = false;  // has a scan ever completed?
-    int8_t lastRssi_ = 127;  // outside the valid dBm range — forces first draw
+    int8_t lastRssi_ = 127;                // outside the valid dBm range — forces first draw
 
     void drawDisconnected();
-    void drawTopRow(const NetworkManager::LinkInfo& link, bool forceRedraw);
-    void drawDetailsStrip(const NetworkManager::LinkInfo& link, bool forceRedraw);
+    void drawTopRow(const LinkInfo& link, bool forceRedraw);
+    void drawDetailsStrip(const LinkInfo& link, bool forceRedraw);
     void drawTrace();
 };

@@ -87,7 +87,6 @@ class ApplicationComponents : public IInitializationTarget {
     void beginWebServer() override;
 
     void setScreenInitialized() override;
-    void setTimeSynced() override;
     void setSystemInitialized() override;
 
     uint8_t initTimeSyncRetries() const override;

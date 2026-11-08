@@ -17,8 +17,9 @@
 // Instantiated as AirQualityJob and RoomClimateJob (see JobBundle.h), which
 // used to be byte-level hand-copies of each other.
 //
-// TService must expose `static constexpr unsigned long kRefreshIntervalMs` and
-// `bool fetchData(TData&)`; TData must expose a `PublishedFlag freshness`.
+// TService must expose `bool fetchData(TData&)`; TData must expose a
+// `PublishedFlag freshness`. The refresh interval and failure backoff are
+// AppSettings knobs passed in by JobBundle.
 //
 // WeatherJob is close to this shape but has its own refreshRequested fast
 // path and screen gating, so it stays separate.
@@ -30,7 +31,7 @@ class PeriodicFetchJob : public BackgroundJob {
  public:
     PeriodicFetchJob(TService& service, TData& data, SystemState::CoreState& coreState,
                      NetworkManager& networkManager, LoggerInterface& logger, const char* name,
-                     uint32_t failureBackoffMs)
+                     uint32_t refreshIntervalMs, uint32_t failureBackoffMs)
         : service_(service),
           data_(data),
           coreState_(coreState),
@@ -38,7 +39,7 @@ class PeriodicFetchJob : public BackgroundJob {
           logger_(logger),
           name_(name),
           failureBackoffMs_(failureBackoffMs),
-          freshness_(data_.freshness, TService::kRefreshIntervalMs) {}
+          freshness_(data_.freshness, refreshIntervalMs) {}
 
     JobDue nextDue() const override {
         if (!coreState_.isInitialized || !networkManager_.isConnected() || freshness_.isFresh()) {

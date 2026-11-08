@@ -24,7 +24,7 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
                 ctx.airQualityData, ctx.netStatus, ctx.audioData, ctx.weatherData, ctx.roomClimate);
         case ScreenName::SETTINGS:
             return std::make_unique<SettingsScreen>(ctx.logger, ctx.controller, ctx.config,
-                                                    ctx.networkManager, ctx.systemMetrics);
+                                                    ctx.netStatus, ctx.systemMetrics);
         case ScreenName::GAME:
             return std::make_unique<GameScreen>(ctx.logger, ctx.metrics, ctx.controller,
                                                 ctx.config);
@@ -43,8 +43,8 @@ std::unique_ptr<ScreenInterface> ScreenFactory::createScreen(ScreenName name,
         case ScreenName::CALENDAR:
             return std::make_unique<CalendarScreen>(ctx.logger, ctx.controller, ctx.config);
         case ScreenName::WIFI:
-            return std::make_unique<WifiScreen>(ctx.logger, ctx.networkManager, ctx.wifiScan,
-                                                ctx.netStatus, ctx.controller, ctx.config);
+            return std::make_unique<WifiScreen>(ctx.logger, ctx.wifiScan, ctx.netStatus,
+                                                ctx.controller, ctx.config);
         case ScreenName::NONE:
             return nullptr;
     }

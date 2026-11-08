@@ -13,9 +13,11 @@
 
 AirQualityWidget::AirQualityWidget(const WidgetInterface::Dimensions& dims,
                                    uint32_t updateIntervalMs, const AirQualityData& airData,
-                                   EventType action, ActionCallback callback)
+                                   uint32_t staleTimeoutMs, EventType action,
+                                   ActionCallback callback)
     : Widget(dims, updateIntervalMs),
       airData_(airData),
+      freshness_(airData.freshness, staleTimeoutMs),
       action_(action),
       callback_(std::move(callback)) {}
 

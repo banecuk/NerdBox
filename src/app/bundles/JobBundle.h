@@ -71,16 +71,16 @@ struct JobBundle {
                        data.systemState.screen, platform.networkManager, config, platform.logger_),
           airQualityJob(services.airQualityService, data.airQualityData, data.systemState.core,
                         platform.networkManager, platform.logger_, "AirQuality",
-                        config.airQualityFailureBackoffMs),
+                        config.airQualityRefreshIntervalMs, config.airQualityFailureBackoffMs),
           roomClimateJob(services.roomClimateService, data.roomClimateData, data.systemState.core,
                          platform.networkManager, platform.logger_, "RoomClimate",
-                         config.roomClimateFailureBackoffMs),
+                         config.roomClimateRefreshIntervalMs, config.roomClimateFailureBackoffMs),
           networkStatusJob(services.networkStatusService, data.netStatus),
           dimAtNightJob(platform.ntpService, platform.displayManager, config),
           weatherJob(services.weatherService, data.weatherData, data.systemState.core,
                      platform.networkManager, config, platform.logger_),
           wifiScanJob(services.wifiScanService, *data.wifiScanData, data.systemState.core,
-                     data.systemState.screen, platform.networkManager, config, platform.logger_),
+                      data.systemState.screen, platform.networkManager, config, platform.logger_),
           pcMetricsStreamJob(std::make_unique<PcMetricsStreamJob>(
               data.pcMetrics, data.systemState.core, data.systemState.screen,
               platform.networkManager, config, platform.logger_, services.systemMetrics)),
@@ -92,11 +92,9 @@ struct JobBundle {
               platform.networkManager, config, platform.logger_)) {}
 
     std::vector<BackgroundJob*> asVector() {
-        return {&wifiReconnectJob,        &ntpRetryJob,
-                &pcMetricsJob,            pcMetricsStreamJob.get(),
-                &airQualityJob,           &roomClimateJob,
-                &networkStatusJob,        &dimAtNightJob,
-                &weatherJob,              &wifiScanJob,
-                cpuClockStreamJob.get(),  processStreamJob.get()};
+        return {
+            &wifiReconnectJob, &ntpRetryJob,    &pcMetricsJob,           pcMetricsStreamJob.get(),
+            &airQualityJob,    &roomClimateJob, &networkStatusJob,       &dimAtNightJob,
+            &weatherJob,       &wifiScanJob,    cpuClockStreamJob.get(), processStreamJob.get()};
     }
 };

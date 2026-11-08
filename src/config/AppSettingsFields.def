@@ -68,9 +68,16 @@ AS_FIELD(U, uint8_t, hardwareMonitorThreadsPerformanceCount,
 AS_FIELD(B, bool, hardwareMonitorThreadsCoreClassTint,
          AppConfig::internal::HardwareMonitorImpl::kThreadsCoreClassTint)
 
+AS_FIELD(U, uint32_t, airQualityRefreshIntervalMs,
+         AppConfig::internal::AirQualityImpl::kRefreshIntervalMs)
+AS_FIELD(U, uint32_t, airQualityStaleTimeoutMs, AppConfig::internal::AirQualityImpl::kStaleTimeoutMs)
 AS_FIELD(U, uint32_t, airQualityFailureBackoffMs,
          AppConfig::internal::AirQualityImpl::kFailureBackoffMs)
 
+AS_FIELD(U, uint32_t, roomClimateRefreshIntervalMs,
+         AppConfig::internal::RoomClimateImpl::kRefreshIntervalMs)
+AS_FIELD(U, uint32_t, roomClimateStaleTimeoutMs,
+         AppConfig::internal::RoomClimateImpl::kStaleTimeoutMs)
 AS_FIELD(U, uint32_t, roomClimateFailureBackoffMs,
          AppConfig::internal::RoomClimateImpl::kFailureBackoffMs)
 
@@ -105,10 +112,31 @@ AS_FIELD(U, uint32_t, multiWidgetActivityEnterHoldMs,
 AS_FIELD(U, uint8_t, multiWidgetForecastDays, AppConfig::internal::MultiWidgetImpl::kForecastDays)
 
 AS_FIELD(S, const char*, networkMdnsHostname, AppConfig::internal::NetworkImpl::kMdnsHostname)
+AS_FIELD(U, uint32_t, networkReconnectTimeoutMs,
+         AppConfig::internal::NetworkImpl::kReconnectTimeoutMs)
+AS_FIELD(U, uint32_t, networkReconnectCheckIntervalMs,
+         AppConfig::internal::NetworkImpl::kReconnectCheckIntervalMs)
+AS_FIELD(U, uint32_t, networkProbeIntervalMs, AppConfig::internal::NetworkImpl::kProbeIntervalMs)
+AS_FIELD(U, uint32_t, networkWarmupProbeIntervalMs,
+         AppConfig::internal::NetworkImpl::kWarmupProbeIntervalMs)
+AS_FIELD(U, uint32_t, networkProbeTimeoutMs, AppConfig::internal::NetworkImpl::kProbeTimeoutMs)
+AS_FIELD(U, uint32_t, networkLinkRefreshMs, AppConfig::internal::NetworkImpl::kLinkRefreshMs)
+
+AS_FIELD(U, uint32_t, ntpSyncAttemptTimeoutMs, AppConfig::internal::NtpImpl::kSyncAttemptTimeoutMs)
+AS_FIELD(U, uint32_t, ntpRetryIntervalMs, AppConfig::internal::NtpImpl::kRetryIntervalMs)
+
+AS_FIELD(U, uint8_t, httpFetchMaxAttempts, AppConfig::internal::HttpFetchImpl::kMaxAttempts)
+AS_FIELD(U, uint32_t, httpFetchRetryDelayMs, AppConfig::internal::HttpFetchImpl::kRetryDelayMs)
+AS_FIELD(U, uint16_t, httpFetchConnectTimeoutMs,
+         AppConfig::internal::HttpFetchImpl::kConnectTimeoutMs)
+AS_FIELD(U, uint16_t, httpFetchResponseTimeoutMs,
+         AppConfig::internal::HttpFetchImpl::kResponseTimeoutMs)
+AS_FIELD(U, uint32_t, httpFetchDnsTimeoutMs, AppConfig::internal::HttpFetchImpl::kDnsTimeoutMs)
 
 AS_FIELD(U, uint32_t, wifiScanRescanIntervalMs, AppConfig::internal::WifiScanImpl::kRescanIntervalMs)
 AS_FIELD(U, uint32_t, wifiScanFailureBackoffMs, AppConfig::internal::WifiScanImpl::kFailureBackoffMs)
 AS_FIELD(U, uint16_t, wifiScanMaxMsPerChannel, AppConfig::internal::WifiScanImpl::kMaxMsPerChannel)
+AS_FIELD(U, uint32_t, wifiScanResultTimeoutMs, AppConfig::internal::WifiScanImpl::kResultTimeoutMs)
 AS_FIELD(B, bool, wifiScanShowHidden, AppConfig::internal::WifiScanImpl::kShowHidden)
 AS_FIELD(U, uint32_t, wifiScanRssiTraceIntervalMs,
          AppConfig::internal::WifiScanImpl::kRssiTraceIntervalMs)
@@ -124,6 +152,8 @@ AS_FIELD(U, uint32_t, uiDisplayLockTimeoutMs, AppConfig::internal::UiImpl::kDisp
 AS_FIELD(U, uint8_t, uiDimAtNightStartHour, AppConfig::internal::UiImpl::kDimAtNightStartHour)
 AS_FIELD(U, uint8_t, uiDimAtNightEndHour, AppConfig::internal::UiImpl::kDimAtNightEndHour)
 AS_FIELD(U, uint8_t, uiDimAtNightPercent, AppConfig::internal::UiImpl::kDimAtNightPercent)
+AS_FIELD(U, uint32_t, uiDimAtNightCheckIntervalMs,
+         AppConfig::internal::UiImpl::kDimAtNightCheckIntervalMs)
 AS_FIELD(B, bool, uiDefaultDimAtNightEnabled,
          AppConfig::internal::UiImpl::kDefaultDimAtNightEnabled)
 AS_FIELD(S, const char*, uiNvsNamespace, AppConfig::internal::UiImpl::kNvsNamespace)

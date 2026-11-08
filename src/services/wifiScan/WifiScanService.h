@@ -12,12 +12,16 @@ class WifiScanService {
  public:
     WifiScanService(LoggerInterface& logger, const AppSettings& config);
 
-    // Kicks off an async scan. Returns false if one is already running.
+    // Kicks off an async scan. Returns false if one is already running, or if
+    // the driver refused to start one; the latter sets data.state = FAILED.
     bool start(WifiScanData& data);
 
     // Polls an in-flight scan. Returns true once it has completed (ok or
     // failed) — data.state/entries/count/etc. are updated in place either
-    // way. Returns false (no-op) while still running.
+    // way. Returns false (no-op) while still running. The core's own early
+    // "failed" (its max_ms_per_chan * 20 timeout) counts as still running;
+    // only config.wifiScanResultTimeoutMs without a result is a failure (see
+    // WifiScanMath::classifyScanPoll).
     bool poll(WifiScanData& data);
 
     // Screen left mid-scan: an async scan cannot be cancelled, only drained.
@@ -33,4 +37,5 @@ class WifiScanService {
     unsigned long scanStartMs_ = 0;
 
     void applyResults(WifiScanData& data, int16_t resultCount);
+    void stopRadioScan();
 };

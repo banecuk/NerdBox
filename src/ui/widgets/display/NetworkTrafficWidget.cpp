@@ -1,12 +1,16 @@
 #include "NetworkTrafficWidget.h"
 
-#include "config/Environment.h"
 #include "ui/core/Colors.h"
 #include "ui/widgets/base/WidgetPainter.h"
 
 NetworkTrafficWidget::NetworkTrafficWidget(const WidgetInterface::Dimensions& dims,
-                                           uint32_t updateIntervalMs, PcMetrics& pcMetrics)
-    : Widget(dims, updateIntervalMs), pcMetrics_(pcMetrics), freshnessGuard_(pcMetrics.freshness) {}
+                                           uint32_t updateIntervalMs, PcMetrics& pcMetrics,
+                                           float uploadLinkMbps, float downloadLinkMbps)
+    : Widget(dims, updateIntervalMs),
+      pcMetrics_(pcMetrics),
+      freshnessGuard_(pcMetrics.freshness),
+      uploadLinkMbps_(uploadLinkMbps),
+      downloadLinkMbps_(downloadLinkMbps) {}
 
 void NetworkTrafficWidget::onDrawStatic() {
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
@@ -30,9 +34,9 @@ void NetworkTrafficWidget::onDraw(bool forceRedraw) {
 
     const bool dataAvailabilityChanged = forceRedraw || hasData != lastHasData_;
     const int16_t rowH = dimensions_.height / 2;
-    drawRow(dimensions_.y, true, upMbps, ETH_UPLOAD_MBPS, hasData, dataAvailabilityChanged,
+    drawRow(dimensions_.y, true, upMbps, uploadLinkMbps_, hasData, dataAvailabilityChanged,
             lastUpText_, sizeof(lastUpText_), lastUpColor_);
-    drawRow(dimensions_.y + rowH, false, downMbps, ETH_DOWNLOAD_MBPS, hasData,
+    drawRow(dimensions_.y + rowH, false, downMbps, downloadLinkMbps_, hasData,
             dataAvailabilityChanged, lastDownText_, sizeof(lastDownText_), lastDownColor_);
 
     lastHasData_ = hasData;
@@ -45,10 +49,18 @@ void NetworkTrafficWidget::drawRow(int16_t rowY, bool isUp, float mbps, float ma
     const uint16_t color = hasData ? trafficColor(mbps, percent) : Colors::kHairline;
 
     const int16_t rowH = dimensions_.height / 2;
-    const WidgetPainter::RateRow row{static_cast<int16_t>(dimensions_.x), rowY,
-                                     static_cast<int16_t>(dimensions_.width), rowH,
-                                     mbps, hasData, /*intDigits=*/3, color,
-                                     lastText, lastTextSize, &lastColor, forceRedraw};
+    const WidgetPainter::RateRow row{static_cast<int16_t>(dimensions_.x),
+                                     rowY,
+                                     static_cast<int16_t>(dimensions_.width),
+                                     rowH,
+                                     mbps,
+                                     hasData,
+                                     /*intDigits=*/3,
+                                     color,
+                                     lastText,
+                                     lastTextSize,
+                                     &lastColor,
+                                     forceRedraw};
     const int16_t suffixX = WidgetPainter::drawRateRow(getLcd(), row);
     if (suffixX < 0)
         return;  // rendered text+colour unchanged — arrow stays as-is too

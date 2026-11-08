@@ -65,7 +65,9 @@ void WifiScanListWidget::onDraw(bool forceRedraw) {
     // redrawing it every tick just repaints identical pixels.
     const bool bodyChange = structuralChange || freshnessChanged;
 
-    if (data_.state == WifiScanData::State::FAILED) {
+    // A failed rescan keeps the last good list on screen (the header says
+    // "scan failed"); the big empty-state message is only for "never had one".
+    if (data_.state == WifiScanData::State::FAILED && !data_.freshness.available()) {
         if (bodyChange)
             drawEmptyState("SCAN FAILED", Colors::kDanger);
     } else if (!data_.freshness.available()) {
@@ -157,10 +159,10 @@ void WifiScanListWidget::drawRow(uint8_t row, const WifiApEntry& entry, bool for
 
     const WifiScanMath::SignalTier tier = WifiScanMath::signalTier(entry.rssi);
     const uint16_t tierC = tierColor(tier);
-    const uint8_t filled = tier == WifiScanMath::SignalTier::kStrong    ? 4
-                          : tier == WifiScanMath::SignalTier::kWarn     ? 3
-                          : tier == WifiScanMath::SignalTier::kDegraded ? 2
-                                                                          : 1;
+    const uint8_t filled = tier == WifiScanMath::SignalTier::kStrong     ? 4
+                           : tier == WifiScanMath::SignalTier::kWarn     ? 3
+                           : tier == WifiScanMath::SignalTier::kDegraded ? 2
+                                                                         : 1;
 
     // Bars.
     static constexpr uint8_t kBarHeights[4] = {4, 7, 10, 13};

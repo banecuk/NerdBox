@@ -1,11 +1,11 @@
 #include "AirQualityService.h"
 
-#include "config/Environment.h"
 #include "services/airQuality/AirQualityParser.h"
 #include "utils/logging/LogMacros.h"
 
-AirQualityService::AirQualityService(NetworkManager& networkManager, LoggerInterface& logger)
-    : JsonHttpService(networkManager, logger, "AirQuality", AIR_VISUAL_API) {
+AirQualityService::AirQualityService(NetworkManager& networkManager, LoggerInterface& logger,
+                                     const AppSettings& config, const char* url)
+    : JsonHttpService(networkManager, logger, config, "AirQuality", url) {
     init();
 }
 

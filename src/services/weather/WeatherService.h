@@ -18,7 +18,9 @@
 // single bounded fetch per call.
 class WeatherService : public JsonHttpService<WeatherData, WeatherService> {
  public:
-    WeatherService(NetworkManager& networkManager, LoggerInterface& logger);
+    // url must have static storage (AppSettings::endpoints, A9).
+    WeatherService(NetworkManager& networkManager, LoggerInterface& logger,
+                   const AppSettings& config, const char* url);
     ~WeatherService() = default;
 
  private:

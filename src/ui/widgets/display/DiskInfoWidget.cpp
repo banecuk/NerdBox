@@ -8,6 +8,7 @@
 #include "ui/core/Colors.h"
 #include "ui/core/UiText.h"
 #include "ui/resources/FontRegistry.h"
+#include "ui/widgets/base/RateFormat.h"
 
 DiskInfoWidget::DiskInfoWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
                                uint32_t updateIntervalMs, PcMetrics& pcMetrics)
@@ -194,10 +195,10 @@ void DiskInfoWidget::drawRate(size_t index, bool stale, uint8_t role) {
         (role == kRateRead) ? (kWriteX - kRateValueRightGap) : (kScreenWidth - kRateValueRightGap);
 
     char rateText[16];
-    formatRate(rateText, sizeof(rateText), kb);
+    RateFormat::formatWholeMb(rateText, sizeof(rateText), kb);
 
     const bool hasActivity = kb > 0.0f;
-    const int rateMb = static_cast<int>(kb / 1024.0f + 0.5f);
+    const int rateMb = RateFormat::kbToWholeMb(kb);
     const uint16_t valueColor =
         stale ? Colors::kInactiveText
               : (rateMb > kHighRateThresholdMbPerSec ? kHighRateColor : kIdleRateColor);
@@ -305,10 +306,6 @@ void DiskInfoWidget::clearArea() {
         return;
     getLcd()->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height,
                        TFT_BLACK);
-}
-
-void DiskInfoWidget::formatRate(char* buf, size_t len, float kbPerSec) const {
-    snprintf(buf, len, "%d", static_cast<int>(kbPerSec / 1024.0f + 0.5f));
 }
 
 bool DiskInfoWidget::handleTouch(uint16_t x, uint16_t y) {

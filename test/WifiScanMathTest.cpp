@@ -3,8 +3,7 @@
 #include <gtest/gtest.h>
 
 namespace {
-WifiApEntry makeEntry(int8_t rssi, uint8_t bssidId, uint8_t channel = 1,
-                      bool isCurrent = false) {
+WifiApEntry makeEntry(int8_t rssi, uint8_t bssidId, uint8_t channel = 1, bool isCurrent = false) {
     WifiApEntry e;
     e.rssi = rssi;
     e.channel = channel;
@@ -45,14 +44,12 @@ TEST(WifiScanMathTest, TopNCutKeepsStrongestNotFirstSeen) {
 
     // A much stronger AP arrives last — it must still make the cut, bumping
     // the weakest entry rather than being dropped for arriving late.
-    WifiScanMath::insertSorted(entries, count,
-                               makeEntry(-20, WifiScanData::kMaxEntries));
+    WifiScanMath::insertSorted(entries, count, makeEntry(-20, WifiScanData::kMaxEntries));
     EXPECT_EQ(count, WifiScanData::kMaxEntries);
     EXPECT_EQ(entries[0].rssi, -20);
 
     // A weaker-than-everything-kept AP must not displace anything.
-    WifiScanMath::insertSorted(entries, count,
-                               makeEntry(-95, WifiScanData::kMaxEntries + 1));
+    WifiScanMath::insertSorted(entries, count, makeEntry(-95, WifiScanData::kMaxEntries + 1));
     EXPECT_EQ(count, WifiScanData::kMaxEntries);
     for (uint8_t i = 0; i < count; ++i) {
         EXPECT_NE(entries[i].rssi, -95);
@@ -118,9 +115,9 @@ TEST(WifiScanMathTest, SignalTierBoundaries) {
 
 TEST(WifiScanMathTest, CountsNeighboursOnSameChannelExcludingSelf) {
     WifiApEntry entries[4] = {
-        makeEntry(-50, 1, 6, /*isCurrent=*/true),   // us — must not count
-        makeEntry(-60, 2, 6, /*isCurrent=*/false),  // same channel
-        makeEntry(-70, 3, 6, /*isCurrent=*/false),  // same channel
+        makeEntry(-50, 1, 6, /*isCurrent=*/true),    // us — must not count
+        makeEntry(-60, 2, 6, /*isCurrent=*/false),   // same channel
+        makeEntry(-70, 3, 6, /*isCurrent=*/false),   // same channel
         makeEntry(-80, 4, 11, /*isCurrent=*/false),  // different channel
     };
 
@@ -146,4 +143,34 @@ TEST(WifiScanMathTest, AuthNameFallsBackForUnmodeledModes) {
     EXPECT_STREQ(WifiScanMath::authName(8), "?");  // WAPI
     EXPECT_STREQ(WifiScanMath::authName(9), "?");  // OWE
     EXPECT_STREQ(WifiScanMath::authName(200), "?");
+}
+
+// ---------------------------------------------------------------------------
+// classifyScanPoll — the Arduino core's premature WIFI_SCAN_FAILED
+// ---------------------------------------------------------------------------
+
+using WifiScanMath::ScanPoll;
+
+TEST(WifiScanMathTest, ScanPollCountIsDone) {
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(0, 100, 15000), ScanPoll::Done);
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(17, 20000, 15000), ScanPoll::Done);
+}
+
+TEST(WifiScanMathTest, ScanPollRunningBeforeDeadline) {
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(-1, 3000, 15000), ScanPoll::Running);
+}
+
+TEST(WifiScanMathTest, CorePrematureFailedKeepsWaiting) {
+    // The core's own 300 ms * 20 = 6 s timeout fired; the radio is still
+    // scanning and will deliver SCAN_DONE later. Not a failure yet.
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(-2, 6001, 15000), ScanPoll::Running);
+}
+
+TEST(WifiScanMathTest, LateResultAfterCoreTimeoutIsDone) {
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(9, 7500, 15000), ScanPoll::Done);
+}
+
+TEST(WifiScanMathTest, ScanPollFailsAtOwnDeadline) {
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(-2, 15000, 15000), ScanPoll::Failed);
+    EXPECT_EQ(WifiScanMath::classifyScanPoll(-1, 15001, 15000), ScanPoll::Failed);
 }

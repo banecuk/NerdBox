@@ -2,7 +2,6 @@
 
 #include <ArduinoJson.h>
 
-#include "config/Environment.h"
 #include "network/NetworkManager.h"
 #include "services/JsonHttpService.h"
 #include "services/roomClimate/RoomClimateData.h"
@@ -16,18 +15,14 @@
 // JsonHttpService; only the filter and the parse are specific to this
 // endpoint.
 //
-// Refresh cadence: 60s — it's a LAN device, so the fetch is cheap.
+// Refresh cadence and widget staleness window: AppSettings'
+// roomClimateRefreshIntervalMs / roomClimateStaleTimeoutMs.
 class RoomClimateService : public JsonHttpService<RoomClimateData, RoomClimateService> {
  public:
-    RoomClimateService(NetworkManager& networkManager, LoggerInterface& logger);
+    // url must have static storage (AppSettings::endpoints, A9).
+    RoomClimateService(NetworkManager& networkManager, LoggerInterface& logger,
+                       const AppSettings& config, const char* url);
     ~RoomClimateService() = default;
-
-    static constexpr unsigned long kRefreshIntervalMs = 60UL * 1000UL;
-
-    // Widget staleness window: a single missed 60s fetch shouldn't flip the
-    // display to "No Data" for a full minute, which reads as a fault rather
-    // than a blip.
-    static constexpr unsigned long kStaleTimeoutMs = 3UL * kRefreshIntervalMs;
 
  private:
     friend class JsonHttpService<RoomClimateData, RoomClimateService>;

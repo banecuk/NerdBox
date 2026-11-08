@@ -1,7 +1,6 @@
 #pragma once
 
 #include "services/roomClimate/RoomClimateData.h"
-#include "services/roomClimate/RoomClimateService.h"
 #include "ui/core/Colors.h"
 #include "ui/widgets/base/Widget.h"
 #include "utils/DataFreshnessGuard.h"
@@ -23,7 +22,7 @@
 class RoomClimateWidget : public Widget {
  public:
     RoomClimateWidget(const WidgetInterface::Dimensions& dims, uint32_t updateIntervalMs,
-                      const RoomClimateData& roomClimateData);
+                      const RoomClimateData& roomClimateData, uint32_t staleTimeoutMs);
 
  protected:
     void onDraw(bool forceRedraw) override;
@@ -38,7 +37,8 @@ class RoomClimateWidget : public Widget {
 
     const RoomClimateData& roomClimateData_;
 
-    DataFreshnessGuard freshness_{roomClimateData_.freshness, RoomClimateService::kStaleTimeoutMs};
+    // Window: AppSettings::roomClimateStaleTimeoutMs.
+    DataFreshnessGuard freshness_;
 
     // Cached values for dirty detection
     int16_t lastTempX10_ = INT16_MIN;

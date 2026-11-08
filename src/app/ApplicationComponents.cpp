@@ -6,7 +6,8 @@
 // in ApplicationComponents.h (which is what actually governs construction
 // order) so the two stay easy to keep in sync — see the comment there.
 ApplicationComponents::ApplicationComponents()
-    : platform(data.systemState.core.isTimeSynced, config),
+    : config(AppSettings::withEnvironment()),
+      platform(data.systemState.core.isTimeSynced, config),
       services(platform.networkManager, platform.logger_, config, data.audioData),
       jobs(platform, data, services, config),
       uiController(platform.displayContext, platform.displayManager, services.systemMetrics,
@@ -18,7 +19,6 @@ ApplicationComponents::ApplicationComponents()
                 uiController,
                 config,
                 services.systemMetrics,
-                platform.networkManager,
                 data.airQualityData,
                 data.netStatus,
                 data.weatherData,
@@ -33,8 +33,7 @@ ApplicationComponents::ApplicationComponents()
                        services.pcMetricsService, *jobs.pcMetricsStreamJob, *jobs.cpuClockStreamJob,
                        *jobs.processStreamJob, data.netStatus, data.systemState, data.weatherData,
                        config, taskManager, platform.logger_, platform.logger_, data.audioData,
-                       services.audioService, data.roomClimateData, platform.networkManager,
-                       *data.wifiScanData),
+                       services.audioService, data.roomClimateData, *data.wifiScanData),
       initStateMachine(*this) {
     // uiController is constructed before screenCtx (declaration order) and
     // screenCtx holds a reference back to it, so the reverse link — giving
@@ -87,9 +86,6 @@ void ApplicationComponents::beginWebServer() {
 
 void ApplicationComponents::setScreenInitialized() {
     data.systemState.screen.isInitialized = true;
-}
-void ApplicationComponents::setTimeSynced() {
-    data.systemState.core.isTimeSynced = true;
 }
 void ApplicationComponents::setSystemInitialized() {
     data.systemState.core.isInitialized = true;

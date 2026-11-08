@@ -2,8 +2,9 @@
 
 #include "utils/logging/LogMacros.h"
 
-RoomClimateService::RoomClimateService(NetworkManager& networkManager, LoggerInterface& logger)
-    : JsonHttpService(networkManager, logger, "RoomClimate", ROOM_CLIMATE_API) {
+RoomClimateService::RoomClimateService(NetworkManager& networkManager, LoggerInterface& logger,
+                                       const AppSettings& config, const char* url)
+    : JsonHttpService(networkManager, logger, config, "RoomClimate", url) {
     init();
 }
 

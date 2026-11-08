@@ -29,12 +29,9 @@ uint16_t tierColor(WifiScanMath::SignalTier tier) {
 }  // namespace
 
 WifiLinkWidget::WifiLinkWidget(DisplayContext& context, const WidgetInterface::Dimensions& dims,
-                               uint32_t updateIntervalMs, NetworkManager& networkManager,
+                               uint32_t updateIntervalMs, const NetworkStatus& netStatus,
                                const WifiScanData& wifiScan, const AppSettings& config)
-    : Widget(dims, updateIntervalMs),
-      networkManager_(networkManager),
-      wifiScan_(wifiScan),
-      config_(config) {}
+    : Widget(dims, updateIntervalMs), netStatus_(netStatus), wifiScan_(wifiScan), config_(config) {}
 
 void WifiLinkWidget::onDrawStatic() {
     LGFX* lcd = getLcd();
@@ -53,8 +50,8 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
     if (!lcd)
         return;
 
-    NetworkManager::LinkInfo link{};
-    networkManager_.fillLinkInfo(link);
+    LinkInfo link;
+    netStatus_.copyLink(link);
 
     if (!link.connected) {
         if (forceRedraw || lastConnected_) {
@@ -70,8 +67,8 @@ void WifiLinkWidget::onDraw(bool forceRedraw) {
         // Structural change (screen entry or a fresh connect) — the whole
         // card was just cleared by drawDisconnected()/onDrawStatic(), so
         // force every cached string to redraw below.
-        lastIp_[0] = lastGateway_[0] = lastMask_[0] = lastDns_[0] = lastMac_[0] =
-            lastHostname_[0] = lastSsid_[0] = '\0';
+        lastIp_[0] = lastGateway_[0] = lastMask_[0] = lastDns_[0] = lastMac_[0] = lastHostname_[0] =
+            lastSsid_[0] = '\0';
         lastAuth_ = lastChannel_ = lastNeighbourCount_ = 0xFF;
         lastNeighbourAvailable_ = false;
         lastRssi_ = 127;
@@ -115,7 +112,7 @@ void WifiLinkWidget::drawDisconnected() {
 // Top row: SSID + subtitle (left), bars/dBm + trace/quality (right)
 // ---------------------------------------------------------------------------
 
-void WifiLinkWidget::drawTopRow(const NetworkManager::LinkInfo& link, bool forceRedraw) {
+void WifiLinkWidget::drawTopRow(const LinkInfo& link, bool forceRedraw) {
     LGFX* lcd = getLcd();
     const uint16_t rightColX = dimensions_.x + dimensions_.width - 190;
     const uint16_t row1Y = dimensions_.y + 8;
@@ -168,10 +165,10 @@ void WifiLinkWidget::drawTopRow(const NetworkManager::LinkInfo& link, bool force
         lcd->setTextColor(kLabelColor, kBgColor);
         lcd->drawString(prefix, dimensions_.x + 10, row2Y + 6);
         const uint16_t prefixW = static_cast<uint16_t>(lcd->textWidth(prefix));
-        const uint16_t suffixColor = !neighbourAvailable                     ? kLabelColor
-                                     : wifiScan_.sameChannelCount >= 6   ? Colors::kDanger
+        const uint16_t suffixColor = !neighbourAvailable               ? kLabelColor
+                                     : wifiScan_.sameChannelCount >= 6 ? Colors::kDanger
                                      : wifiScan_.sameChannelCount >= 3 ? Colors::kWarn
-                                                                        : kLabelColor;
+                                                                       : kLabelColor;
         lcd->setTextColor(suffixColor, kBgColor);
         lcd->drawString(suffix, dimensions_.x + 10 + prefixW, row2Y + 6);
         Fonts::unload(lcd);
@@ -186,21 +183,21 @@ void WifiLinkWidget::drawTopRow(const NetworkManager::LinkInfo& link, bool force
     // RSSI (and therefore the bars/colour/number) actually moved.
     if (forceRedraw || link.rssi != lastRssi_) {
         lcd->fillRect(rightColX, row1Y, dimensions_.width - (rightColX - dimensions_.x), 34,
-                     kBgColor);
+                      kBgColor);
         static constexpr uint8_t kBarCount = 4;
         static constexpr uint8_t kBarWidth = 8;
         static constexpr uint8_t kBarGap = 4;
         static constexpr uint8_t kBarHeights[kBarCount] = {8, 14, 20, 26};
-        const uint8_t filled = tier == WifiScanMath::SignalTier::kStrong    ? 4
-                              : tier == WifiScanMath::SignalTier::kWarn     ? 3
-                              : tier == WifiScanMath::SignalTier::kDegraded ? 2
-                                                                              : 1;
+        const uint8_t filled = tier == WifiScanMath::SignalTier::kStrong     ? 4
+                               : tier == WifiScanMath::SignalTier::kWarn     ? 3
+                               : tier == WifiScanMath::SignalTier::kDegraded ? 2
+                                                                             : 1;
         const uint16_t barsBaselineY = row1Y + 30;
         for (uint8_t i = 0; i < kBarCount; ++i) {
             const uint16_t bx = rightColX + i * (kBarWidth + kBarGap);
             const uint8_t bh = kBarHeights[i];
             lcd->fillRect(bx, barsBaselineY - bh, kBarWidth, bh,
-                         (i < filled) ? tierC : Colors::kHairline);
+                          (i < filled) ? tierC : Colors::kHairline);
         }
 
         char dbm[12];
@@ -229,7 +226,8 @@ void WifiLinkWidget::drawTrace() {
     const size_t count = rssiTrace_.size();
     const size_t offset = kTraceLen - count;
     const WifiScanMath::SignalTier latestTier =
-        count > 0 ? WifiScanMath::signalTier(rssiTrace_.at(count - 1)) : WifiScanMath::SignalTier::kWeak;
+        count > 0 ? WifiScanMath::signalTier(rssiTrace_.at(count - 1))
+                  : WifiScanMath::SignalTier::kWeak;
     const uint16_t traceColor = tierColor(latestTier);
 
     for (size_t col = 0; col < kTraceLen; ++col) {
@@ -268,14 +266,14 @@ void WifiLinkWidget::drawTrace() {
 // Details strip — IP/GW/MASK (row 1), DNS/MAC/HOST (row 2)
 // ---------------------------------------------------------------------------
 
-void WifiLinkWidget::drawDetailsStrip(const NetworkManager::LinkInfo& link, bool forceRedraw) {
+void WifiLinkWidget::drawDetailsStrip(const LinkInfo& link, bool forceRedraw) {
     LGFX* lcd = getLcd();
     const uint16_t rowY1 = dimensions_.y + kCardH + 4;
     const uint16_t rowY2 = dimensions_.y + kCardH + 22;
     static constexpr uint16_t kColX[3] = {8, 170, 330};
 
-    auto drawField = [&](uint16_t x, uint16_t y, const char* label, const char* value,
-                         char* cache, size_t cacheSize) {
+    auto drawField = [&](uint16_t x, uint16_t y, const char* label, const char* value, char* cache,
+                         size_t cacheSize) {
         if (!forceRedraw && strcmp(value, cache) == 0)
             return;
         strncpy(cache, value, cacheSize - 1);
@@ -284,7 +282,7 @@ void WifiLinkWidget::drawDetailsStrip(const NetworkManager::LinkInfo& link, bool
         char buf[80];
         snprintf(buf, sizeof(buf), "%s %s", label, value);
         lcd->fillRect(dimensions_.x + x, y, x == kColX[2] ? dimensions_.width - x - 8 : 160, 16,
-                     kBgColor);
+                      kBgColor);
         Fonts::loadLabel(lcd);
         lcd->setTextColor(kValueColor, kBgColor);
         lcd->setTextDatum(TL_DATUM);

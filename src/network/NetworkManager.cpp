@@ -1,9 +1,10 @@
 #include "NetworkManager.h"
 
-#include <ESPmDNS.h>
 #include <esp_wifi.h>
 
 #include <cstring>
+
+#include <ESPmDNS.h>
 
 NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
                                const AppSettings& config)
@@ -11,7 +12,7 @@ NetworkManager::NetworkManager(LoggerInterface& logger, HttpClient& httpClient,
 
 bool NetworkManager::connect() {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(config_.endpoints.wifiSsid, config_.endpoints.wifiPassword);
     logger_.info("Connecting to WiFi...", true);
 
     // waitForConnectResult() blocks once for the whole timeout below — it
@@ -19,7 +20,7 @@ bool NetworkManager::connect() {
     // connect attempts here; despite the name, it's just a multiplier used
     // to size this one overall timeout (retries * per-retry delay). The
     // background task's own reconnect loop, checkAndReconnect(), uses its
-    // own separate kReconnectTimeoutMs/kReconnectCheckIntervalMs constants,
+    // own separate networkReconnectTimeoutMs/networkReconnectCheckIntervalMs knobs,
     // not these config fields.
     uint32_t timeoutMs = config_.initNetworkRetries * config_.initNetworkRetryDelayMs;
     wl_status_t status = static_cast<wl_status_t>(WiFi.waitForConnectResult(timeoutMs));
@@ -44,7 +45,7 @@ void NetworkManager::startReconnect(uint32_t now) {
 
     // Cleanly tear down before re-joining; false = keep credentials
     WiFi.disconnect(false);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(config_.endpoints.wifiSsid, config_.endpoints.wifiPassword);
 
     reconnecting_ = true;
     reconnectStartMs_ = now;
@@ -137,7 +138,7 @@ bool NetworkManager::checkAndReconnect() {
 
     if (!reconnecting_) {
         // Back off — do not hammer the WiFi stack
-        if (now - lastReconnectAttemptMs_ < kReconnectCheckIntervalMs) {
+        if (now - lastReconnectAttemptMs_ < config_.networkReconnectCheckIntervalMs) {
             return false;
         }
         lastReconnectAttemptMs_ = now;
@@ -145,9 +146,9 @@ bool NetworkManager::checkAndReconnect() {
         return false;
     }
 
-    if (now - reconnectStartMs_ >= kReconnectTimeoutMs) {
-        logger_.errorf("Reconnect attempt %u timed out after %u ms", reconnectAttempts_,
-                       kReconnectTimeoutMs);
+    if (now - reconnectStartMs_ >= config_.networkReconnectTimeoutMs) {
+        logger_.errorf("Reconnect attempt %u timed out after %lu ms", reconnectAttempts_,
+                       static_cast<unsigned long>(config_.networkReconnectTimeoutMs));
         reconnecting_ = false;
         lastReconnectAttemptMs_ = now;
     }
