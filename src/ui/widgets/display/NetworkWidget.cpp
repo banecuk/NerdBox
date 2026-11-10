@@ -19,16 +19,17 @@ void NetworkWidget::onDrawStatic() {
 
     lcd->fillRect(dimensions_.x, dimensions_.y, dimensions_.width, dimensions_.height, TFT_BLACK);
 
-    // Separator between wifi and globe sections
+    // Separator between wifi and dot sections
     const int16_t sepX = dimensions_.x + kWifiSectionW;
     lcd->drawFastVLine(sepX, contentTop() + 3, kContentH - 6, Colors::kHairline);
 
     // Reset cache so onDraw does a full repaint
     lastConnected_ = false;
     lastRssiBracket_ = -1;
-    lastInternet_ = NetworkStatus::Internet::UNKNOWN;
-    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i)
+    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i) {
         lastEndpointOk_[i] = false;
+        lastEndpointProbed_[i] = false;
+    }
     lastInitialized_ = false;
 }
 
@@ -42,24 +43,22 @@ void NetworkWidget::onDraw(bool forceRedraw) {
 
     const bool connected = status_.wifi_connected;
     const int8_t bracket = rssiBracket();
-    const auto internet = status_.internet;
 
     const bool changed = forceRedraw || !lastInitialized_ || connected != lastConnected_ ||
-                         bracket != lastRssiBracket_ || internet != lastInternet_ ||
-                         endpointsDirty();
+                         bracket != lastRssiBracket_ || endpointsDirty();
 
     if (!changed)
         return;
 
     drawWifi();
-    drawGlobe();
     drawDotGrid();
 
     lastConnected_ = connected;
     lastRssiBracket_ = bracket;
-    lastInternet_ = internet;
-    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i)
+    for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i) {
         lastEndpointOk_[i] = status_.endpoint_ok[i];
+        lastEndpointProbed_[i] = status_.endpoint_probed[i];
+    }
     lastInitialized_ = true;
 }
 
@@ -94,51 +93,8 @@ void NetworkWidget::drawWifi() {
 }
 
 // ---------------------------------------------------------------------------
-// drawGlobe — globe icon coloured by internet state
-// ---------------------------------------------------------------------------
-
-void NetworkWidget::drawGlobe() {
-    LGFX* lcd = getLcd();
-    if (!lcd)
-        return;
-
-    // Clear globe section (between separator and dot section)
-    const int16_t secX = dimensions_.x + kWifiSectionW + kSepW;
-    lcd->fillRect(secX, contentTop(), kGlobeSectionW, kContentH, TFT_BLACK);
-
-    const uint16_t c = internetColor();
-
-    // Centre globe in its section
-    const int16_t cx = secX + kGlobeSectionW / 2;
-    const int16_t cy = contentTop() + kContentH / 2;
-
-    // Outer circle — anti-aliased ring (see docs-local/03-visual-ux.md V5):
-    // a filled AA disc, then a black AA disc one pixel smaller punched out of
-    // its centre. Safe on this write-only panel the same way ButtonWidget's
-    // fill is (both AA edges blend against readRect()'s hard-coded black
-    // stub, which matches this section's actual black background).
-    lcd->fillSmoothCircle(cx, cy, kGlobeR, c);
-    lcd->fillSmoothCircle(cx, cy, kGlobeR - 1, TFT_BLACK);
-
-    // Three horizontal latitude lines at 40%, 0%, -40% of radius
-    for (int8_t frac : {-4, 0, 4}) {
-        const int16_t ly = cy + (frac * static_cast<int16_t>(kGlobeR)) / 10;
-        const int16_t dy = ly - cy;
-        const int16_t r2 = kGlobeR * kGlobeR;
-        const int16_t dy2 = dy * dy;
-        if (dy2 >= r2)
-            continue;
-        const int16_t hw = static_cast<int16_t>(sqrtf(static_cast<float>(r2 - dy2)));
-        lcd->drawWideLine(cx - hw + 1, ly, cx + hw - 2, ly, 0.6f, c);
-    }
-
-    // Vertical axis
-    lcd->drawWideLine(cx, cy - kGlobeR + 1, cx, cy + kGlobeR - 2, 0.6f, c);
-}
-
-// ---------------------------------------------------------------------------
 // drawDotGrid — 4 columns × 2 rows, one dot per endpoint
-//              white = OK, red = failed/unknown
+//              white = OK, red = failed, dark grey = not probed yet
 // ---------------------------------------------------------------------------
 
 void NetworkWidget::drawDotGrid() {
@@ -146,8 +102,8 @@ void NetworkWidget::drawDotGrid() {
     if (!lcd)
         return;
 
-    // Section starts after globe section
-    const int16_t secX = dimensions_.x + kWifiSectionW + kSepW + kGlobeSectionW;
+    // Section starts right after the separator
+    const int16_t secX = dimensions_.x + kWifiSectionW + kSepW;
     lcd->fillRect(secX, contentTop(), kDotSectionW, kContentH, TFT_BLACK);
 
     // Centre the 4×2 grid within the dot section
@@ -163,7 +119,9 @@ void NetworkWidget::drawDotGrid() {
             const uint8_t idx = row * kDotCols + col;
             const int16_t cx = originX + col * kDotSpacX;
             const int16_t cy = originY + row * kDotSpacY;
-            const uint16_t c = status_.endpoint_ok[idx] ? kColorDotOk : kColorDotFail;
+            const uint16_t c = !status_.endpoint_probed[idx] ? kColorDotUnknown
+                               : status_.endpoint_ok[idx]    ? kColorDotOk
+                                                             : kColorDotFail;
             lcd->fillSmoothCircle(cx, cy, kDotR, c);
         }
     }
@@ -191,22 +149,6 @@ uint16_t NetworkWidget::wifiColor() const {
     return kColorDown;
 }
 
-uint16_t NetworkWidget::internetColor() const {
-    using I = NetworkStatus::Internet;
-    switch (status_.internet) {
-        case I::OK:
-            return kColorOk;
-        case I::WARNING:
-            return kColorWarning;
-        case I::DEGRADED:
-            return kColorDegraded;
-        case I::DOWN:
-            return kColorDown;
-        default:
-            return kColorUnknown;
-    }
-}
-
 int8_t NetworkWidget::rssiBracket() const {
     if (!status_.wifi_connected)
         return 0;
@@ -225,7 +167,8 @@ int8_t NetworkWidget::rssiBracket() const {
 
 bool NetworkWidget::endpointsDirty() const {
     for (uint8_t i = 0; i < NetworkStatusService::kNumEndpoints; ++i) {
-        if (status_.endpoint_ok[i] != lastEndpointOk_[i])
+        if (status_.endpoint_ok[i] != lastEndpointOk_[i] ||
+            status_.endpoint_probed[i] != lastEndpointProbed_[i])
             return true;
     }
     return false;

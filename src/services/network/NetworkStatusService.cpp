@@ -171,6 +171,7 @@ void NetworkStatusService::recordResult(NetworkStatus& status, uint8_t endpointI
     probes_[endpointIdx].ok = success;
     probes_[endpointIdx].probed = true;
     status.endpoint_ok[endpointIdx] = success;
+    status.endpoint_probed[endpointIdx] = true;
     status.internet = classifyInternet(probes_, kNumEndpoints);
 }
 

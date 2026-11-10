@@ -52,12 +52,18 @@ void BootScreen::draw() {
 
     char message[200];
     LogLevel level;
+    // Only repaint the header lines when a new message changed them. They
+    // used to be cleared and redrawn every 16ms tick, which flickered
+    // visibly while boot sat on one step (e.g. "Syncing time" retries).
+    bool statusChanged = false;
+    bool pinnedChanged = false;
     while (screenLogQueue_.popScreenMessage(message, sizeof(message), &level)) {
         // Rolling status line — always the most recently popped message.
         strncpy(statusMessage_, message, sizeof(statusMessage_) - 1);
         statusMessage_[sizeof(statusMessage_) - 1] = '\0';
         statusLevel_ = level;
         hasStatusMessage_ = true;
+        statusChanged = true;
 
         // Pin the most recent WARN+ line so it can't scroll away beneath
         // later INFO chatter (e.g. a WiFi failure followed by NTP retries).
@@ -67,6 +73,7 @@ void BootScreen::draw() {
             pinnedMessage_[sizeof(pinnedMessage_) - 1] = '\0';
             pinnedLevel_ = level;
             hasPinnedMessage_ = true;
+            pinnedChanged = true;
         }
 
         // Once the log area is full, wipe it and start again from the top
@@ -89,9 +96,9 @@ void BootScreen::draw() {
         lineY_ += lineHeight_;
     }
 
-    if (hasStatusMessage_)
+    if (statusChanged)
         drawStatusLine();
-    if (hasPinnedMessage_)
+    if (pinnedChanged)
         drawPinnedLine();
 }
 

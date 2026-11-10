@@ -60,6 +60,11 @@ struct NetworkStatus {
     // Updated atomically (bool is word-sized on Xtensa) — no mutex needed.
     bool endpoint_ok[AppConfig::Limits::kNetworkProbeEndpoints] = {};
 
+    // Per-endpoint "has been probed at least once" — lets NetworkWidget show
+    // a not-yet-checked endpoint as neutral instead of as a failure (both are
+    // endpoint_ok == false). Written after endpoint_ok, never cleared.
+    bool endpoint_probed[AppConfig::Limits::kNetworkProbeEndpoints] = {};
+
     // Set true while a probe is in flight on NetworkStatusService's persistent
     // probe task; guards against waking it again (and rewriting its context)
     // mid-probe. std::atomic (not volatile) so the probe task's writes to
